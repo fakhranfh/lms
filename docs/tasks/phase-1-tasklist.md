@@ -8,12 +8,12 @@ Reference: [PRD.md](PRD.md) — Section 18 (Roadmap, Phase 1), Section 3 (Techni
 
 ## 1. UUID Primary Key Configuration
 
-- [ ] Enable the `uuid-ossp` (or `pgcrypto`) PostgreSQL extension via migration so `uuid_generate_v4()` is available.
-- [ ] Create a reusable `HasUuid` trait (`app/Traits/HasUuid.php`) that:
-  - [ ] Sets `$incrementing = false` and `$keyType = 'string'`.
-  - [ ] Auto-generates a UUIDv4 on the `creating` model event if `id` isn't already set.
+- [x] Enable the `uuid-ossp` (or `pgcrypto`) PostgreSQL extension via migration so `uuid_generate_v4()` is available.
+- [x] Create a reusable `HasUuid` trait (`app/Traits/HasUuid.php`) that:
+  - [x] Sets `$incrementing = false` and `$keyType = 'string'`.
+  - [x] Auto-generates a UUIDv4 on the `creating` model event if `id` isn't already set.
 - [ ] Confirm migrations use `$table->uuid('id')->primary()` (not `id()`/auto-increment) for every tenant-scoped table introduced in this phase.
-- [ ] Write a unit test asserting a model using `HasUuid` receives a valid UUIDv4 `id` on creation without one being explicitly passed.
+- [x] Write a unit test asserting a model using `HasUuid` receives a valid UUIDv4 `id` on creation without one being explicitly passed.
 
 ## 2. `tenants` Migration & Model
 

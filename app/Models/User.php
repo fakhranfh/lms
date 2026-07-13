@@ -3,22 +3,24 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasViewerTimezoneDates;
+use App\Traits\HasUuid;
 use Database\Factories\UserFactory;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'pending_email', 'password', 'profile_photo_path', 'timezone'])]
+#[Fillable(['name', 'email', 'pending_email', 'password', 'profile_photo_path', 'timezone', 'tenant_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use CanResetPassword, HasFactory, HasRoles, HasViewerTimezoneDates, Notifiable;
+    use CanResetPassword, HasFactory, HasRoles, HasUuid, HasViewerTimezoneDates, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -40,5 +42,15 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return parent::hasVerifiedEmail();
+    }
+
+    /**
+     * Get the tenant the user belongs to.
+     *
+     * @return BelongsTo<Tenant, $this>
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
     }
 }

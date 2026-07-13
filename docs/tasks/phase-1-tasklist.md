@@ -28,25 +28,25 @@ Reference: [PRD.md](PRD.md) — Section 18 (Roadmap, Phase 1), Section 3 (Techni
 
 ## 3. `users` Table — Tenant Scoping
 
-- [ ] Modify the default `users` migration (or add a follow-up migration) to:
-  - [ ] Convert `id` to UUID PK (via `HasUuid` convention) — coordinate with Fortify/auth scaffolding so login/session code isn't broken.
-  - [ ] Add `tenant_id` (UUID, foreign key → `tenants.id`, indexed, `CASCADE ON DELETE`).
-- [ ] Update `User` model:
-  - [ ] Apply `HasUuid` trait.
-  - [ ] Add `belongsTo(Tenant::class)` relationship.
-  - [ ] Add `tenant_id` to `$fillable` (or set automatically — see Global Scope section).
-- [ ] Update `UserFactory` to associate a `Tenant` (via factory relationship) on creation.
-- [ ] Confirm existing Fortify auth flows (login/register) still function against the UUID-keyed, tenant-scoped `users` table — run the existing auth test suite.
+- [x] Modify the default `users` migration (or add a follow-up migration) to:
+  - [x] Convert `id` to UUID PK (via `HasUuid` convention) — coordinate with Fortify/auth scaffolding so login/session code isn't broken.
+  - [x] Add `tenant_id` (UUID, foreign key → `tenants.id`, indexed, `CASCADE ON DELETE`).
+- [x] Update `User` model:
+  - [x] Apply `HasUuid` trait.
+  - [x] Add `belongsTo(Tenant::class)` relationship.
+  - [x] Add `tenant_id` to `$fillable` (or set automatically — see Global Scope section).
+- [x] Update `UserFactory` to associate a `Tenant` (via factory relationship) on creation.
+- [x] Confirm existing Fortify auth flows (login/register) still function against the UUID-keyed, tenant-scoped `users` table — run the existing auth test suite.
 
 ## 4. Global Tenant Scope
 
 - [ ] Create `app/Models/Scopes/TenantScope.php` implementing `Illuminate\Database\Eloquent\Scope`:
-  - [ ] Applies a `where('tenant_id', ...)` constraint using the currently authenticated user's `tenant_id` (or resolved tenant context — see below).
-- [ ] Decide and document how "current tenant" is resolved (e.g., `auth()->user()->tenant_id`, a bound singleton, or middleware-set context). Record the decision in this file's Open Questions.
+  - [ ] Applies a `where('tenant_id', ...)` constraint using the currently authenticated user's `tenant_id` (or resolved tenant context — see Resolved Decisions: Subdomain-based Tenant Resolution).
 - [ ] Create a `BelongsToTenant` trait that:
   - [ ] Registers `TenantScope` in the model's `booted()` method.
-  - [ ] Auto-fills `tenant_id` on `creating` from the current tenant context.
+  - [ ] Auto-fills `tenant_id` on `creating` from the current tenant context (`CurrentTenant` singleton).
 - [ ] Apply `BelongsToTenant` to every tenant-scoped model introduced in this phase (`User`; later phases will apply it to `Course`, `Role`, etc.).
+- [ ] Refactor `CreateNewUser` action to use `CurrentTenant` singleton instead of auto-creating a tenant. User will auto-join the tenant resolved from their request subdomain via `ResolveTenantFromDomain` middleware.
 - [ ] Write tests proving:
   - [ ] A query for tenant-scoped models run as User A never returns rows belonging to Tenant B.
   - [ ] Creating a record without explicitly setting `tenant_id` still assigns the correct tenant automatically.
@@ -63,16 +63,35 @@ Reference: [PRD.md](PRD.md) — Section 18 (Roadmap, Phase 1), Section 3 (Techni
 
 ## Resolved Decisions
 
-### Tenant context resolution
-**Decision:** Middleware + app-bound singleton.
-- [ ] Create a `CurrentTenant` class (e.g., `app/Support/CurrentTenant.php`) holding the resolved `tenant_id`, bound as a singleton in a service provider.
-- [ ] Add middleware (e.g., `SetTenantContext`) that reads `auth()->user()->tenant_id` on each authenticated HTTP request and sets it on the `CurrentTenant` singleton; register it in the web middleware group.
-- [ ] `TenantScope` and `BelongsToTenant` read from `CurrentTenant` (not directly from `auth()->user()`) so behavior is identical across HTTP, console, and queue contexts.
-- [ ] Queue jobs must serialize `tenant_id` explicitly in their payload/constructor and set it on `CurrentTenant` at the start of `handle()`, before touching any tenant-scoped model.
-- [ ] Console commands and Super Admin cross-tenant actions bypass scoping explicitly via `Model::withoutGlobalScope(TenantScope::class)` — never by leaving `CurrentTenant` unset.
-- [ ] Write a test proving a queued job correctly scopes queries to the tenant_id passed in its payload, independent of any authenticated session.
+### Subdomain-based Tenant Resolution
+**Decision:** Extract tenant from request subdomain/domain via middleware, store in singleton, apply to all contexts.
 
-### Tenant.domain validation
-**Decision:** Add basic format validation now, even though custom-domain routing is not implemented yet (PRD Section 3 marks it reserved for future use).
-- [ ] Add a `StoreTenantRequest`/`UpdateTenantRequest` form request with a `domain` rule: nullable, valid hostname format (e.g., `regex` for a domain-like string, no protocol/path), plus the existing DB `unique` constraint.
-- [ ] Write a test asserting an invalid `domain` value (e.g., containing spaces, protocol, or path) is rejected at the validation layer.
+**Architecture:**
+- Tenant domains are stored in `tenants.domain` (e.g., `school1.lms.local`, `school2.lms.local`).
+- Each school accesses the app via its own subdomain: `https://school1.lms.local/`.
+- Admin panel accessed via reserved subdomain (e.g., `admin.lms.local`) or root domain.
+
+**Implementation:**
+- [ ] Create `CurrentTenant` class (e.g., `app/Support/CurrentTenant.php`) holding resolved `tenant_id` as a singleton.
+- [ ] Create `ResolveTenantFromDomain` middleware that:
+  - [ ] Extracts subdomain/domain from the current request.
+  - [ ] Queries `tenants` table to find matching `domain` record.
+  - [ ] Sets resolved tenant on `CurrentTenant` singleton.
+  - [ ] Redirects to admin panel or throws 404 if domain not found.
+  - [ ] Register in app middleware group so it runs on every request.
+- [ ] `TenantScope` and `BelongsToTenant` read from `CurrentTenant` so behavior is identical across HTTP, console, and queue contexts.
+- [ ] Refactor `CreateNewUser` to use `CurrentTenant::getTenantId()` — user auto-joins the tenant resolved from the subdomain they're registering on.
+- [ ] Queue jobs must serialize `tenant_id` explicitly and set it on `CurrentTenant` at start of `handle()`, before touching any tenant-scoped model.
+- [ ] Console commands and Super Admin cross-tenant actions bypass scoping via `Model::withoutGlobalScope(TenantScope::class)` — never by leaving `CurrentTenant` unset.
+- [ ] Write a test proving a queued job correctly scopes queries to the tenant_id passed in its payload.
+
+**Domain Management:**
+- [ ] Add unique constraint on `tenants.domain` field.
+- [ ] Seed a "Default Tenant" with domain (e.g., `admin.lms.local` or `localhost`).
+- [ ] Create admin panel command/controller to register new schools with their subdomain (deferred to later phase, but scaffold the migration/model field now).
+
+### Tenant domain validation
+**Decision:** Enforce valid hostname format for `tenants.domain` since it's now critical for subdomain resolution (not just a future feature).
+- [ ] Add a `StoreTenantRequest`/`UpdateTenantRequest` form request with a `domain` rule: unique, valid hostname format (e.g., `regex` for a domain-like string, no protocol/path, no trailing slash).
+- [ ] Examples of valid domains: `school1.lms.local`, `myschool.lms.com`, `admin.lms.local`.
+- [ ] Write a test asserting an invalid `domain` value (e.g., containing spaces, `http://`, path, trailing slash) is rejected at validation layer.

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Fortify;
 
+use App\Models\Tenant;
 use App\Models\User;
 use App\Services\IpGeolocationService;
 use Illuminate\Support\Facades\Hash;
@@ -39,7 +40,10 @@ class CreateNewUser implements CreatesNewUsers
 
         $timezone = $this->ipGeolocationService->detectTimezone(request()->ip()) ?? config('app.timezone');
 
+        $tenant = Tenant::create(['name' => "{$input['name']}'s Organization"]);
+
         return User::create([
+            'tenant_id' => $tenant->id,
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => Hash::make($input['password']),

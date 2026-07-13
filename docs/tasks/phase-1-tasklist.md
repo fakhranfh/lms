@@ -12,19 +12,19 @@ Reference: [PRD.md](PRD.md) — Section 18 (Roadmap, Phase 1), Section 3 (Techni
 - [x] Create a reusable `HasUuid` trait (`app/Traits/HasUuid.php`) that:
   - [x] Sets `$incrementing = false` and `$keyType = 'string'`.
   - [x] Auto-generates a UUIDv4 on the `creating` model event if `id` isn't already set.
-- [ ] Confirm migrations use `$table->uuid('id')->primary()` (not `id()`/auto-increment) for every tenant-scoped table introduced in this phase.
+- [x] Confirm migrations use `$table->uuid('id')->primary()` (not `id()`/auto-increment) for every tenant-scoped table introduced in this phase.
 - [x] Write a unit test asserting a model using `HasUuid` receives a valid UUIDv4 `id` on creation without one being explicitly passed.
 
 ## 2. `tenants` Migration & Model
 
-- [ ] Generate migration: `php artisan make:migration create_tenants_table --no-interaction`.
-  - [ ] Columns per ERD: `id` (UUID PK), `name` (`VARCHAR(255)`, not null), `domain` (`VARCHAR(255)`, unique, nullable), timestamps.
-- [ ] Generate model: `php artisan make:model Tenant --no-interaction` (skip `-m`, migration already exists).
-  - [ ] Apply `HasUuid` trait.
-  - [ ] Add `$fillable` (`name`, `domain`).
-  - [ ] Define `hasMany` relationship to `User`.
-- [ ] Generate `TenantFactory` (`php artisan make:factory TenantFactory --no-interaction`) with realistic fake `name`/`domain`.
-- [ ] Write a feature/unit test covering: tenant creation, unique `domain` constraint violation.
+- [x] Generate migration: `php artisan make:migration create_tenants_table --no-interaction`.
+  - [x] Columns per ERD: `id` (UUID PK), `name` (`VARCHAR(255)`, not null), `domain` (`VARCHAR(255)`, unique, nullable), timestamps.
+- [x] Generate model: `php artisan make:model Tenant --no-interaction` (skip `-m`, migration already exists).
+  - [x] Apply `HasUuid` trait.
+  - [x] Add `$fillable` (`name`, `domain`).
+  - [x] Define `hasMany` relationship to `User`.
+- [x] Generate `TenantFactory` (`php artisan make:factory TenantFactory --no-interaction`) with realistic fake `name`/`domain`.
+- [x] Write a feature/unit test covering: tenant creation, unique `domain` constraint violation.
 
 ## 3. `users` Table — Tenant Scoping
 

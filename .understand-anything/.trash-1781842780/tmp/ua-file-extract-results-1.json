@@ -1,0 +1,642 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 6,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "app/Actions/Fortify/CreateNewUser.php",
+      "language": "php",
+      "fileCategory": "code",
+      "totalLines": 43,
+      "nonEmptyLines": 38,
+      "functions": [
+        {
+          "name": "create",
+          "startLine": 23,
+          "endLine": 42,
+          "params": [
+            "$input"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "CreateNewUser",
+          "startLine": 12,
+          "endLine": 43,
+          "methods": [
+            "create"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "CreateNewUser",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "create",
+          "callee": "Validator::make($input, [\n            'name' => ['required', 'string', 'max:255'],\n            'email' => [\n                'required',\n                'string',\n                'email',\n                'max:255',\n                Rule::unique(User::class),\n            ],\n            'password' => $this->passwordRules(),\n        ])->validate",
+          "lineNumber": 25
+        },
+        {
+          "caller": "create",
+          "callee": "Validator::make",
+          "lineNumber": 25
+        },
+        {
+          "caller": "create",
+          "callee": "Rule::unique",
+          "lineNumber": 32
+        },
+        {
+          "caller": "create",
+          "callee": "$this->passwordRules",
+          "lineNumber": 34
+        },
+        {
+          "caller": "create",
+          "callee": "User::create",
+          "lineNumber": 37
+        },
+        {
+          "caller": "create",
+          "callee": "Hash::make",
+          "lineNumber": 40
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "app/Actions/Fortify/ResetUserPassword.php",
+      "language": "php",
+      "fileCategory": "code",
+      "totalLines": 32,
+      "nonEmptyLines": 27,
+      "functions": [
+        {
+          "name": "reset",
+          "startLine": 22,
+          "endLine": 31,
+          "params": [
+            "$user",
+            "$input"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "ResetUserPassword",
+          "startLine": 11,
+          "endLine": 32,
+          "methods": [
+            "reset"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ResetUserPassword",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "reset",
+          "callee": "Validator::make($input, [\n            'password' => $this->passwordRules(),\n        ])->validate",
+          "lineNumber": 24
+        },
+        {
+          "caller": "reset",
+          "callee": "Validator::make",
+          "lineNumber": 24
+        },
+        {
+          "caller": "reset",
+          "callee": "$this->passwordRules",
+          "lineNumber": 25
+        },
+        {
+          "caller": "reset",
+          "callee": "$user->forceFill([\n            'password' => Hash::make($input['password']),\n        ])->save",
+          "lineNumber": 28
+        },
+        {
+          "caller": "reset",
+          "callee": "$user->forceFill",
+          "lineNumber": 28
+        },
+        {
+          "caller": "reset",
+          "callee": "Hash::make",
+          "lineNumber": 29
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "language": "php",
+      "fileCategory": "code",
+      "totalLines": 61,
+      "nonEmptyLines": 54,
+      "functions": [
+        {
+          "name": "update",
+          "startLine": 21,
+          "endLine": 44,
+          "params": [
+            "$user",
+            "$input"
+          ]
+        },
+        {
+          "name": "updateVerifiedUser",
+          "startLine": 51,
+          "endLine": 60,
+          "params": [
+            "$user",
+            "$input"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "UpdateUserProfileInformation",
+          "startLine": 12,
+          "endLine": 61,
+          "methods": [
+            "update",
+            "updateVerifiedUser"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "UpdateUserProfileInformation",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "update",
+          "callee": "Validator::make($input, [\n            'name' => ['required', 'string', 'max:255'],\n\n            'email' => [\n                'required',\n                'string',\n                'email',\n                'max:255',\n                Rule::unique('users')->ignore($user->id),\n            ],\n        ])->validateWithBag",
+          "lineNumber": 23
+        },
+        {
+          "caller": "update",
+          "callee": "Validator::make",
+          "lineNumber": 23
+        },
+        {
+          "caller": "update",
+          "callee": "Rule::unique('users')->ignore",
+          "lineNumber": 31
+        },
+        {
+          "caller": "update",
+          "callee": "Rule::unique",
+          "lineNumber": 31
+        },
+        {
+          "caller": "update",
+          "callee": "$this->updateVerifiedUser",
+          "lineNumber": 37
+        },
+        {
+          "caller": "update",
+          "callee": "$user->forceFill([\n                'name' => $input['name'],\n                'email' => $input['email'],\n            ])->save",
+          "lineNumber": 39
+        },
+        {
+          "caller": "update",
+          "callee": "$user->forceFill",
+          "lineNumber": 39
+        },
+        {
+          "caller": "updateVerifiedUser",
+          "callee": "$user->forceFill([\n            'name' => $input['name'],\n            'email' => $input['email'],\n            'email_verified_at' => null,\n        ])->save",
+          "lineNumber": 53
+        },
+        {
+          "caller": "updateVerifiedUser",
+          "callee": "$user->forceFill",
+          "lineNumber": 53
+        },
+        {
+          "caller": "updateVerifiedUser",
+          "callee": "$user->sendEmailVerificationNotification",
+          "lineNumber": 59
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "language": "php",
+      "fileCategory": "code",
+      "totalLines": 13,
+      "nonEmptyLines": 10,
+      "functions": [
+        {
+          "name": "toResponse",
+          "startLine": 9,
+          "endLine": 12,
+          "params": [
+            "$request"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "CustomPasswordResetLinkResponse",
+          "startLine": 7,
+          "endLine": 13,
+          "methods": [
+            "toResponse"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "CustomPasswordResetLinkResponse",
+          "line": 7,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "toResponse",
+          "callee": "back()->with",
+          "lineNumber": 11
+        },
+        {
+          "caller": "toResponse",
+          "callee": "back",
+          "lineNumber": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "app/Http/Responses/CustomPasswordResetResponse.php",
+      "language": "php",
+      "fileCategory": "code",
+      "totalLines": 14,
+      "nonEmptyLines": 11,
+      "functions": [
+        {
+          "name": "toResponse",
+          "startLine": 9,
+          "endLine": 13,
+          "params": [
+            "$request"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "CustomPasswordResetResponse",
+          "startLine": 7,
+          "endLine": 14,
+          "methods": [
+            "toResponse"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "CustomPasswordResetResponse",
+          "line": 7,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "toResponse",
+          "callee": "redirect(route('login'))->with",
+          "lineNumber": 11
+        },
+        {
+          "caller": "toResponse",
+          "callee": "redirect",
+          "lineNumber": 11
+        },
+        {
+          "caller": "toResponse",
+          "callee": "route",
+          "lineNumber": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "app/Providers/FortifyServiceProvider.php",
+      "language": "php",
+      "fileCategory": "code",
+      "totalLines": 96,
+      "nonEmptyLines": 80,
+      "functions": [
+        {
+          "name": "register",
+          "startLine": 27,
+          "endLine": 30,
+          "params": []
+        },
+        {
+          "name": "boot",
+          "startLine": 35,
+          "endLine": 95,
+          "params": []
+        }
+      ],
+      "classes": [
+        {
+          "name": "FortifyServiceProvider",
+          "startLine": 22,
+          "endLine": 96,
+          "methods": [
+            "register",
+            "boot"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "FortifyServiceProvider",
+          "line": 22,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "boot",
+          "callee": "Fortify::createUsersUsing",
+          "lineNumber": 37
+        },
+        {
+          "caller": "boot",
+          "callee": "Fortify::updateUserProfileInformationUsing",
+          "lineNumber": 38
+        },
+        {
+          "caller": "boot",
+          "callee": "Fortify::updateUserPasswordsUsing",
+          "lineNumber": 39
+        },
+        {
+          "caller": "boot",
+          "callee": "Fortify::resetUserPasswordsUsing",
+          "lineNumber": 40
+        },
+        {
+          "caller": "boot",
+          "callee": "Fortify::redirectUserForTwoFactorAuthenticationUsing",
+          "lineNumber": 41
+        },
+        {
+          "caller": "boot",
+          "callee": "Fortify::registerView",
+          "lineNumber": 43
+        },
+        {
+          "caller": "boot",
+          "callee": "view",
+          "lineNumber": 44
+        },
+        {
+          "caller": "boot",
+          "callee": "Fortify::loginView",
+          "lineNumber": 47
+        },
+        {
+          "caller": "boot",
+          "callee": "view",
+          "lineNumber": 48
+        },
+        {
+          "caller": "boot",
+          "callee": "Fortify::requestPasswordResetLinkView",
+          "lineNumber": 51
+        },
+        {
+          "caller": "boot",
+          "callee": "view",
+          "lineNumber": 52
+        },
+        {
+          "caller": "boot",
+          "callee": "Fortify::resetPasswordView",
+          "lineNumber": 55
+        },
+        {
+          "caller": "boot",
+          "callee": "view",
+          "lineNumber": 56
+        },
+        {
+          "caller": "boot",
+          "callee": "ResetPassword::toMailUsing",
+          "lineNumber": 59
+        },
+        {
+          "caller": "boot",
+          "callee": "(new \\Illuminate\\Notifications\\Messages\\MailMessage)\n                ->subject('Reset Your Password')\n                ->line('You are receiving this email because we received a password reset request for your account.')\n                ->action('Reset Password', url(config('app.url').\"/reset-password?token=\".$token.'&email='.urlencode($notifiable->getEmailForPasswordReset())))\n                ->line('This link will expire in 60 minutes.')->line",
+          "lineNumber": 60
+        },
+        {
+          "caller": "boot",
+          "callee": "(new \\Illuminate\\Notifications\\Messages\\MailMessage)\n                ->subject('Reset Your Password')\n                ->line('You are receiving this email because we received a password reset request for your account.')\n                ->action('Reset Password', url(config('app.url').\"/reset-password?token=\".$token.'&email='.urlencode($notifiable->getEmailForPasswordReset())))->line",
+          "lineNumber": 60
+        },
+        {
+          "caller": "boot",
+          "callee": "(new \\Illuminate\\Notifications\\Messages\\MailMessage)\n                ->subject('Reset Your Password')\n                ->line('You are receiving this email because we received a password reset request for your account.')->action",
+          "lineNumber": 60
+        },
+        {
+          "caller": "boot",
+          "callee": "(new \\Illuminate\\Notifications\\Messages\\MailMessage)\n                ->subject('Reset Your Password')->line",
+          "lineNumber": 60
+        },
+        {
+          "caller": "boot",
+          "callee": "(new \\Illuminate\\Notifications\\Messages\\MailMessage)->subject",
+          "lineNumber": 60
+        },
+        {
+          "caller": "boot",
+          "callee": "url",
+          "lineNumber": 63
+        },
+        {
+          "caller": "boot",
+          "callee": "config",
+          "lineNumber": 63
+        },
+        {
+          "caller": "boot",
+          "callee": "urlencode",
+          "lineNumber": 63
+        },
+        {
+          "caller": "boot",
+          "callee": "$notifiable->getEmailForPasswordReset",
+          "lineNumber": 63
+        },
+        {
+          "caller": "boot",
+          "callee": "$this->app->singleton",
+          "lineNumber": 68
+        },
+        {
+          "caller": "boot",
+          "callee": "$this->app->singleton",
+          "lineNumber": 73
+        },
+        {
+          "caller": "boot",
+          "callee": "RateLimiter::for",
+          "lineNumber": 78
+        },
+        {
+          "caller": "boot",
+          "callee": "Str::transliterate",
+          "lineNumber": 79
+        },
+        {
+          "caller": "boot",
+          "callee": "Str::lower",
+          "lineNumber": 79
+        },
+        {
+          "caller": "boot",
+          "callee": "$request->input",
+          "lineNumber": 79
+        },
+        {
+          "caller": "boot",
+          "callee": "Fortify::username",
+          "lineNumber": 79
+        },
+        {
+          "caller": "boot",
+          "callee": "$request->ip",
+          "lineNumber": 79
+        },
+        {
+          "caller": "boot",
+          "callee": "Limit::perMinute(5)->by",
+          "lineNumber": 81
+        },
+        {
+          "caller": "boot",
+          "callee": "Limit::perMinute",
+          "lineNumber": 81
+        },
+        {
+          "caller": "boot",
+          "callee": "RateLimiter::for",
+          "lineNumber": 84
+        },
+        {
+          "caller": "boot",
+          "callee": "Limit::perMinute(5)->by",
+          "lineNumber": 85
+        },
+        {
+          "caller": "boot",
+          "callee": "Limit::perMinute",
+          "lineNumber": 85
+        },
+        {
+          "caller": "boot",
+          "callee": "$request->session()->get",
+          "lineNumber": 85
+        },
+        {
+          "caller": "boot",
+          "callee": "$request->session",
+          "lineNumber": 85
+        },
+        {
+          "caller": "boot",
+          "callee": "RateLimiter::for",
+          "lineNumber": 88
+        },
+        {
+          "caller": "boot",
+          "callee": "$request->input",
+          "lineNumber": 89
+        },
+        {
+          "caller": "boot",
+          "callee": "Limit::perMinute(10)->by",
+          "lineNumber": 91
+        },
+        {
+          "caller": "boot",
+          "callee": "Limit::perMinute",
+          "lineNumber": 91
+        },
+        {
+          "caller": "boot",
+          "callee": "$request->session()->getId",
+          "lineNumber": 92
+        },
+        {
+          "caller": "boot",
+          "callee": "$request->session",
+          "lineNumber": 92
+        },
+        {
+          "caller": "boot",
+          "callee": "$request->ip",
+          "lineNumber": 92
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 1
+      }
+    }
+  ]
+}

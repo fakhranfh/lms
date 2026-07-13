@@ -1,0 +1,221 @@
+{
+  "nodes": [
+    {
+      "id": "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "type": "file",
+      "name": "UpdateUserPassword.php",
+      "filePath": "app/Actions/Fortify/UpdateUserPassword.php",
+      "summary": "Updates the authenticated user password with current-password verification.",
+      "tags": [
+        "action",
+        "fortify",
+        "authentication",
+        "password"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Models/User.php",
+      "type": "file",
+      "name": "User.php",
+      "filePath": "app/Models/User.php",
+      "summary": "Core User model with Fortify two-factor authentication and passkey support.",
+      "tags": [
+        "model",
+        "eloquent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:config/auth.php",
+      "type": "file",
+      "name": "auth.php",
+      "filePath": "config/auth.php",
+      "summary": "Authentication guard and provider configuration with Fortify defaults.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:database/factories/UserFactory.php",
+      "type": "file",
+      "name": "UserFactory.php",
+      "filePath": "database/factories/UserFactory.php",
+      "summary": "Model factory generating test User instances with hashed passwords.",
+      "tags": [
+        "factory",
+        "testing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:database/seeders/DatabaseSeeder.php",
+      "type": "file",
+      "name": "DatabaseSeeder.php",
+      "filePath": "database/seeders/DatabaseSeeder.php",
+      "summary": "Primary database seeder coordinating all seed operations.",
+      "tags": [
+        "seeder",
+        "database"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:app/Actions/Fortify/UpdateUserPassword.php:update",
+      "type": "function",
+      "name": "update",
+      "filePath": "app/Actions/Fortify/UpdateUserPassword.php",
+      "summary": "update method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:app/Actions/Fortify/UpdateUserPassword.php:UpdateUserPassword",
+      "type": "class",
+      "name": "UpdateUserPassword",
+      "filePath": "app/Actions/Fortify/UpdateUserPassword.php",
+      "summary": "UpdateUserPassword class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Models/User.php:User",
+      "type": "class",
+      "name": "User",
+      "filePath": "app/Models/User.php",
+      "summary": "User class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:database/factories/UserFactory.php:definition",
+      "type": "function",
+      "name": "definition",
+      "filePath": "database/factories/UserFactory.php",
+      "summary": "definition method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:database/factories/UserFactory.php:UserFactory",
+      "type": "class",
+      "name": "UserFactory",
+      "filePath": "database/factories/UserFactory.php",
+      "summary": "UserFactory class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:database/seeders/DatabaseSeeder.php:DatabaseSeeder",
+      "type": "class",
+      "name": "DatabaseSeeder",
+      "filePath": "database/seeders/DatabaseSeeder.php",
+      "summary": "DatabaseSeeder class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "target": "function:app/Actions/Fortify/UpdateUserPassword.php:update",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "target": "class:app/Actions/Fortify/UpdateUserPassword.php:UpdateUserPassword",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Models/User.php",
+      "target": "class:app/Models/User.php:User",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:database/factories/UserFactory.php",
+      "target": "function:database/factories/UserFactory.php:definition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:database/factories/UserFactory.php",
+      "target": "class:database/factories/UserFactory.php:UserFactory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:database/seeders/DatabaseSeeder.php",
+      "target": "class:database/seeders/DatabaseSeeder.php:DatabaseSeeder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Models/User.php",
+      "target": "file:database/factories/UserFactory.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:config/auth.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:database/factories/UserFactory.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:database/seeders/DatabaseSeeder.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:config/auth.php",
+      "target": "file:app/Models/User.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

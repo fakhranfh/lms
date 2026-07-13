@@ -1,0 +1,1857 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "Laravel 13 Boilerplate",
+    "languages": [
+      "css",
+      "javascript",
+      "json",
+      "markdown",
+      "php",
+      "txt",
+      "xml",
+      "yaml"
+    ],
+    "frameworks": [
+      "Laravel",
+      "Laravel Fortify",
+      "Tailwind CSS",
+      "Vite",
+      "Pest",
+      "GitHub Actions"
+    ],
+    "description": "A personal finance tracker using WhatsApp as its primary interface. Log income and expenses by sending chat messages, with real-time processing and a Laravel-powered dashboard.",
+    "analyzedAt": "2026-06-19T04:13:08.732Z",
+    "gitCommitHash": "40b1cfec31dfa5a31b163f6e181d174a77e93209"
+  },
+  "nodes": [
+    {
+      "id": "file:app/Actions/Fortify/CreateNewUser.php",
+      "type": "file",
+      "name": "CreateNewUser.php",
+      "filePath": "app/Actions/Fortify/CreateNewUser.php",
+      "summary": "Handles new user registration with validation and creation logic.",
+      "tags": [
+        "action",
+        "fortify",
+        "authentication"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Actions/Fortify/ResetUserPassword.php",
+      "type": "file",
+      "name": "ResetUserPassword.php",
+      "filePath": "app/Actions/Fortify/ResetUserPassword.php",
+      "summary": "Resets a user password using Fortify password reset flow.",
+      "tags": [
+        "action",
+        "fortify",
+        "authentication",
+        "password"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "type": "file",
+      "name": "UpdateUserProfileInformation.php",
+      "filePath": "app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "summary": "Updates authenticated user profile information with unique email validation.",
+      "tags": [
+        "action",
+        "fortify",
+        "authentication"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "type": "file",
+      "name": "CustomPasswordResetLinkResponse.php",
+      "filePath": "app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "summary": "Custom Fortify response for password reset link requests.",
+      "tags": [
+        "response",
+        "authentication",
+        "password"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Http/Responses/CustomPasswordResetResponse.php",
+      "type": "file",
+      "name": "CustomPasswordResetResponse.php",
+      "filePath": "app/Http/Responses/CustomPasswordResetResponse.php",
+      "summary": "Custom Fortify response after successful password reset.",
+      "tags": [
+        "response",
+        "authentication",
+        "password"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Providers/FortifyServiceProvider.php",
+      "type": "file",
+      "name": "FortifyServiceProvider.php",
+      "filePath": "app/Providers/FortifyServiceProvider.php",
+      "summary": "Registers Fortify authentication actions and custom response bindings.",
+      "tags": [
+        "service-provider",
+        "fortify",
+        "authentication"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:app/Actions/Fortify/CreateNewUser.php:create",
+      "type": "function",
+      "name": "create",
+      "filePath": "app/Actions/Fortify/CreateNewUser.php",
+      "summary": "create method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Actions/Fortify/CreateNewUser.php:CreateNewUser",
+      "type": "class",
+      "name": "CreateNewUser",
+      "filePath": "app/Actions/Fortify/CreateNewUser.php",
+      "summary": "CreateNewUser class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:app/Actions/Fortify/ResetUserPassword.php:reset",
+      "type": "function",
+      "name": "reset",
+      "filePath": "app/Actions/Fortify/ResetUserPassword.php",
+      "summary": "reset method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:app/Actions/Fortify/ResetUserPassword.php:ResetUserPassword",
+      "type": "class",
+      "name": "ResetUserPassword",
+      "filePath": "app/Actions/Fortify/ResetUserPassword.php",
+      "summary": "ResetUserPassword class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:app/Actions/Fortify/UpdateUserProfileInformation.php:update",
+      "type": "function",
+      "name": "update",
+      "filePath": "app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "summary": "update method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:app/Actions/Fortify/UpdateUserProfileInformation.php:updateVerifiedUser",
+      "type": "function",
+      "name": "updateVerifiedUser",
+      "filePath": "app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "summary": "updateVerifiedUser method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:app/Actions/Fortify/UpdateUserProfileInformation.php:UpdateUserProfileInformation",
+      "type": "class",
+      "name": "UpdateUserProfileInformation",
+      "filePath": "app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "summary": "UpdateUserProfileInformation class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Http/Responses/CustomPasswordResetLinkResponse.php:CustomPasswordResetLinkResponse",
+      "type": "class",
+      "name": "CustomPasswordResetLinkResponse",
+      "filePath": "app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "summary": "CustomPasswordResetLinkResponse class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Http/Responses/CustomPasswordResetResponse.php:CustomPasswordResetResponse",
+      "type": "class",
+      "name": "CustomPasswordResetResponse",
+      "filePath": "app/Http/Responses/CustomPasswordResetResponse.php",
+      "summary": "CustomPasswordResetResponse class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:app/Providers/FortifyServiceProvider.php:boot",
+      "type": "function",
+      "name": "boot",
+      "filePath": "app/Providers/FortifyServiceProvider.php",
+      "summary": "boot method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Providers/FortifyServiceProvider.php:FortifyServiceProvider",
+      "type": "class",
+      "name": "FortifyServiceProvider",
+      "filePath": "app/Providers/FortifyServiceProvider.php",
+      "summary": "FortifyServiceProvider class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "type": "file",
+      "name": "UpdateUserPassword.php",
+      "filePath": "app/Actions/Fortify/UpdateUserPassword.php",
+      "summary": "Updates the authenticated user password with current-password verification.",
+      "tags": [
+        "action",
+        "fortify",
+        "authentication",
+        "password"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Models/User.php",
+      "type": "file",
+      "name": "User.php",
+      "filePath": "app/Models/User.php",
+      "summary": "Core User model with Fortify two-factor authentication and passkey support.",
+      "tags": [
+        "model",
+        "eloquent"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:config/auth.php",
+      "type": "file",
+      "name": "auth.php",
+      "filePath": "config/auth.php",
+      "summary": "Authentication guard and provider configuration with Fortify defaults.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:database/factories/UserFactory.php",
+      "type": "file",
+      "name": "UserFactory.php",
+      "filePath": "database/factories/UserFactory.php",
+      "summary": "Model factory generating test User instances with hashed passwords.",
+      "tags": [
+        "factory",
+        "testing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:database/seeders/DatabaseSeeder.php",
+      "type": "file",
+      "name": "DatabaseSeeder.php",
+      "filePath": "database/seeders/DatabaseSeeder.php",
+      "summary": "Primary database seeder coordinating all seed operations.",
+      "tags": [
+        "seeder",
+        "database"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:app/Actions/Fortify/UpdateUserPassword.php:update",
+      "type": "function",
+      "name": "update",
+      "filePath": "app/Actions/Fortify/UpdateUserPassword.php",
+      "summary": "update method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:app/Actions/Fortify/UpdateUserPassword.php:UpdateUserPassword",
+      "type": "class",
+      "name": "UpdateUserPassword",
+      "filePath": "app/Actions/Fortify/UpdateUserPassword.php",
+      "summary": "UpdateUserPassword class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Models/User.php:User",
+      "type": "class",
+      "name": "User",
+      "filePath": "app/Models/User.php",
+      "summary": "User class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:database/factories/UserFactory.php:definition",
+      "type": "function",
+      "name": "definition",
+      "filePath": "database/factories/UserFactory.php",
+      "summary": "definition method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:database/factories/UserFactory.php:UserFactory",
+      "type": "class",
+      "name": "UserFactory",
+      "filePath": "database/factories/UserFactory.php",
+      "summary": "UserFactory class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:database/seeders/DatabaseSeeder.php:DatabaseSeeder",
+      "type": "class",
+      "name": "DatabaseSeeder",
+      "filePath": "database/seeders/DatabaseSeeder.php",
+      "summary": "DatabaseSeeder class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:.env.example",
+      "type": "config",
+      "name": ".env.example",
+      "filePath": ".env.example",
+      "summary": "config file (65 lines).",
+      "tags": [
+        "configuration",
+        "environment"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "AGENTS.md",
+      "summary": "Agent guidelines for Laravel Boost with coding conventions and tool instructions.",
+      "tags": [
+        "documentation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:boost.json",
+      "type": "config",
+      "name": "boost.json",
+      "filePath": "boost.json",
+      "summary": "config file (16 lines).",
+      "tags": [
+        "configuration",
+        "laravel-boost"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:composer.json",
+      "type": "config",
+      "name": "composer.json",
+      "filePath": "composer.json",
+      "summary": "PHP dependency manifest defining Laravel, Fortify, and dev packages.",
+      "tags": [
+        "configuration",
+        "dependency-management"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:opencode.json",
+      "type": "config",
+      "name": "opencode.json",
+      "filePath": "opencode.json",
+      "summary": "config file (13 lines).",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "package.json",
+      "summary": "Node.js dependency manifest with Vite, Tailwind CSS, and build tools.",
+      "tags": [
+        "configuration",
+        "dependency-management"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:phpunit.xml",
+      "type": "config",
+      "name": "phpunit.xml",
+      "filePath": "phpunit.xml",
+      "summary": "PHPUnit configuration with test suite definitions and environment settings.",
+      "tags": [
+        "configuration",
+        "testing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "Project overview: Laravel 13 Boilerplate personal finance tracker via WhatsApp.",
+      "tags": [
+        "documentation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:.gitattributes",
+      "type": "file",
+      "name": ".gitattributes",
+      "filePath": ".gitattributes",
+      "summary": "PHP source file (11 lines).",
+      "tags": [
+        "configuration",
+        "git"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:.husky/commit-msg",
+      "type": "file",
+      "name": "commit-msg",
+      "filePath": ".husky/commit-msg",
+      "summary": "PHP source file (0 lines).",
+      "tags": [
+        "git-hooks",
+        "commitlint"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:.npmrc",
+      "type": "file",
+      "name": ".npmrc",
+      "filePath": ".npmrc",
+      "summary": "PHP source file (2 lines).",
+      "tags": [
+        "configuration",
+        "npm"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:.understand-anything/.understandignore",
+      "type": "file",
+      "name": ".understandignore",
+      "filePath": ".understand-anything/.understandignore",
+      "summary": "PHP source file (65 lines).",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:app/Actions/Fortify/PasswordValidationRules.php",
+      "type": "file",
+      "name": "PasswordValidationRules.php",
+      "filePath": "app/Actions/Fortify/PasswordValidationRules.php",
+      "summary": "Provides default Laravel password validation rules.",
+      "tags": [
+        "action",
+        "fortify",
+        "authentication",
+        "password"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Http/Controllers/Controller.php",
+      "type": "file",
+      "name": "Controller.php",
+      "filePath": "app/Http/Controllers/Controller.php",
+      "summary": "Base controller class extended by all application controllers.",
+      "tags": [
+        "controller"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Http/Middleware/EnsureTokenIsValid.php",
+      "type": "file",
+      "name": "EnsureTokenIsValid.php",
+      "filePath": "app/Http/Middleware/EnsureTokenIsValid.php",
+      "summary": "Middleware that validates API tokens for route protection.",
+      "tags": [
+        "middleware"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "type": "file",
+      "name": "CustomVerifyEmailViewResponse.php",
+      "filePath": "app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "summary": "Custom Fortify response for email verification view handling.",
+      "tags": [
+        "response"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Providers/AppServiceProvider.php",
+      "type": "file",
+      "name": "AppServiceProvider.php",
+      "filePath": "app/Providers/AppServiceProvider.php",
+      "summary": "Application service provider bootstrapping app-level services.",
+      "tags": [
+        "service-provider"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:artisan",
+      "type": "file",
+      "name": "artisan",
+      "filePath": "artisan",
+      "summary": "PHP source file (18 lines).",
+      "tags": [
+        "entry-point",
+        "cli"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:bootstrap/app.php",
+      "type": "file",
+      "name": "app.php",
+      "filePath": "bootstrap/app.php",
+      "summary": "Laravel application bootstrap configuring routing, middleware, and exceptions.",
+      "tags": [
+        "bootstrap",
+        "entry-point"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:bootstrap/providers.php",
+      "type": "file",
+      "name": "providers.php",
+      "filePath": "bootstrap/providers.php",
+      "summary": "Service provider manifest for optimized provider loading.",
+      "tags": [
+        "bootstrap",
+        "entry-point"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:commitlint.config.js",
+      "type": "file",
+      "name": "commitlint.config.js",
+      "filePath": "commitlint.config.js",
+      "summary": "PHP source file (2 lines).",
+      "tags": [
+        "configuration",
+        "commitlint"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:config/app.php",
+      "type": "file",
+      "name": "app.php",
+      "filePath": "config/app.php",
+      "summary": "Core application configuration: name, env, providers, and aliases.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/cache.php",
+      "type": "file",
+      "name": "cache.php",
+      "filePath": "config/cache.php",
+      "summary": "Cache store configuration with Redis and file driver settings.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/database.php",
+      "type": "file",
+      "name": "database.php",
+      "filePath": "config/database.php",
+      "summary": "Database connection configuration for multiple environments.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/filesystems.php",
+      "type": "file",
+      "name": "filesystems.php",
+      "filePath": "config/filesystems.php",
+      "summary": "Filesystem disk configuration for local, S3, and other storage drivers.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/fortify.php",
+      "type": "file",
+      "name": "fortify.php",
+      "filePath": "config/fortify.php",
+      "summary": "Laravel Fortify configuration: auth features, password rules, and verification settings.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/logging.php",
+      "type": "file",
+      "name": "logging.php",
+      "filePath": "config/logging.php",
+      "summary": "Logging channel configuration with stack and daily driver settings.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/mail.php",
+      "type": "file",
+      "name": "mail.php",
+      "filePath": "config/mail.php",
+      "summary": "Mail driver configuration for SMTP, Mailgun, and other transports.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/queue.php",
+      "type": "file",
+      "name": "queue.php",
+      "filePath": "config/queue.php",
+      "summary": "Queue connection configuration for database, Redis, and SQS drivers.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/services.php",
+      "type": "file",
+      "name": "services.php",
+      "filePath": "config/services.php",
+      "summary": "Third-party service integrations configuration.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:config/session.php",
+      "type": "file",
+      "name": "session.php",
+      "filePath": "config/session.php",
+      "summary": "Session driver and lifetime configuration.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:database/migrations/0001_01_01_000000_create_users_table.php",
+      "type": "file",
+      "name": "0001_01_01_000000_create_users_table.php",
+      "filePath": "database/migrations/0001_01_01_000000_create_users_table.php",
+      "summary": "Creates the users table with name, email, and password columns.",
+      "tags": [
+        "migration",
+        "database"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:app/Http/Controllers/Controller.php:Controller",
+      "type": "class",
+      "name": "Controller",
+      "filePath": "app/Http/Controllers/Controller.php",
+      "summary": "Controller class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:app/Http/Middleware/EnsureTokenIsValid.php:handle",
+      "type": "function",
+      "name": "handle",
+      "filePath": "app/Http/Middleware/EnsureTokenIsValid.php",
+      "summary": "handle method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Http/Middleware/EnsureTokenIsValid.php:EnsureTokenIsValid",
+      "type": "class",
+      "name": "EnsureTokenIsValid",
+      "filePath": "app/Http/Middleware/EnsureTokenIsValid.php",
+      "summary": "EnsureTokenIsValid class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Http/Responses/CustomVerifyEmailViewResponse.php:CustomVerifyEmailViewResponse",
+      "type": "class",
+      "name": "CustomVerifyEmailViewResponse",
+      "filePath": "app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "summary": "CustomVerifyEmailViewResponse class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Providers/AppServiceProvider.php:AppServiceProvider",
+      "type": "class",
+      "name": "AppServiceProvider",
+      "filePath": "app/Providers/AppServiceProvider.php",
+      "summary": "AppServiceProvider class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:database/migrations/0001_01_01_000001_create_cache_table.php",
+      "type": "file",
+      "name": "0001_01_01_000001_create_cache_table.php",
+      "filePath": "database/migrations/0001_01_01_000001_create_cache_table.php",
+      "summary": "Creates the cache table for database cache driver.",
+      "tags": [
+        "migration",
+        "database"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:database/migrations/0001_01_01_000002_create_jobs_table.php",
+      "type": "file",
+      "name": "0001_01_01_000002_create_jobs_table.php",
+      "filePath": "database/migrations/0001_01_01_000002_create_jobs_table.php",
+      "summary": "Creates the jobs table for database queue driver.",
+      "tags": [
+        "migration",
+        "database"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+      "type": "file",
+      "name": "2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+      "filePath": "database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+      "summary": "Adds two-factor authentication columns to users table.",
+      "tags": [
+        "migration",
+        "database",
+        "authentication",
+        "2fa"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:database/migrations/2026_06_13_081623_create_passkeys_table.php",
+      "type": "file",
+      "name": "2026_06_13_081623_create_passkeys_table.php",
+      "filePath": "database/migrations/2026_06_13_081623_create_passkeys_table.php",
+      "summary": "Creates the passkeys table for WebAuthn passkey authentication.",
+      "tags": [
+        "migration",
+        "database",
+        "authentication",
+        "passkey"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:public/.htaccess",
+      "type": "file",
+      "name": ".htaccess",
+      "filePath": "public/.htaccess",
+      "summary": "PHP source file (25 lines).",
+      "tags": [
+        "configuration",
+        "apache",
+        "security"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:public/index.php",
+      "type": "file",
+      "name": "index.php",
+      "filePath": "public/index.php",
+      "summary": "Laravel application entry point that bootstraps the HTTP kernel.",
+      "tags": [
+        "entry-point"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:public/robots.txt",
+      "type": "document",
+      "name": "robots.txt",
+      "filePath": "public/robots.txt",
+      "summary": "docs file (2 lines).",
+      "tags": [
+        "documentation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:resources/css/app.css",
+      "type": "file",
+      "name": "app.css",
+      "filePath": "resources/css/app.css",
+      "summary": "Application Tailwind CSS entry point.",
+      "tags": [
+        "stylesheet",
+        "tailwind"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:resources/js/app.js",
+      "type": "file",
+      "name": "app.js",
+      "filePath": "resources/js/app.js",
+      "summary": "Application JavaScript entry point with Vite imports.",
+      "tags": [
+        "javascript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:resources/views/auth/forgot-password.blade.php",
+      "type": "file",
+      "name": "forgot-password.blade.php",
+      "filePath": "resources/views/auth/forgot-password.blade.php",
+      "summary": "Password reset request form for email-based recovery.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:resources/views/auth/login.blade.php",
+      "type": "file",
+      "name": "login.blade.php",
+      "filePath": "resources/views/auth/login.blade.php",
+      "summary": "Login page with email/password form and forgot-password link.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:resources/views/auth/master.blade.php",
+      "type": "file",
+      "name": "master.blade.php",
+      "filePath": "resources/views/auth/master.blade.php",
+      "summary": "Auth layout master template with head, body, and guest layout structure.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:resources/views/auth/register.blade.php",
+      "type": "file",
+      "name": "register.blade.php",
+      "filePath": "resources/views/auth/register.blade.php",
+      "summary": "Registration page with name, email, password, and confirmation fields.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:resources/views/auth/reset-password.blade.php",
+      "type": "file",
+      "name": "reset-password.blade.php",
+      "filePath": "resources/views/auth/reset-password.blade.php",
+      "summary": "New password form shown after clicking reset link from email.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:resources/views/auth/success-and-error-alert.blade.php",
+      "type": "file",
+      "name": "success-and-error-alert.blade.php",
+      "filePath": "resources/views/auth/success-and-error-alert.blade.php",
+      "summary": "Reusable alert component for auth form success and error feedback.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:resources/views/auth/verify-email.blade.php",
+      "type": "file",
+      "name": "verify-email.blade.php",
+      "filePath": "resources/views/auth/verify-email.blade.php",
+      "summary": "Email verification prompt with resend link.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:resources/views/dashboard.blade.php",
+      "type": "file",
+      "name": "dashboard.blade.php",
+      "filePath": "resources/views/dashboard.blade.php",
+      "summary": "Authenticated user dashboard displaying user information.",
+      "tags": [
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:resources/views/landing-page.blade.php",
+      "type": "file",
+      "name": "landing-page.blade.php",
+      "filePath": "resources/views/landing-page.blade.php",
+      "summary": "Public landing page shown to unauthenticated visitors.",
+      "tags": [
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:resources/views/master.blade.php",
+      "type": "file",
+      "name": "master.blade.php",
+      "filePath": "resources/views/master.blade.php",
+      "summary": "Main application layout with HTML structure, meta tags, and Vite assets.",
+      "tags": [
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:routes/console.php",
+      "type": "file",
+      "name": "console.php",
+      "filePath": "routes/console.php",
+      "summary": "Console route definitions for Artisan closure commands.",
+      "tags": [
+        "routing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:routes/web.php",
+      "type": "file",
+      "name": "web.php",
+      "filePath": "routes/web.php",
+      "summary": "Web route definitions with Fortify auth routes and dashboard.",
+      "tags": [
+        "routing"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/Feature/ExampleTest.php",
+      "type": "file",
+      "name": "ExampleTest.php",
+      "filePath": "tests/Feature/ExampleTest.php",
+      "summary": "Example feature test verifying application returns successful response.",
+      "tags": [
+        "test",
+        "pest"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/Pest.php",
+      "type": "file",
+      "name": "Pest.php",
+      "filePath": "tests/Pest.php",
+      "summary": "Pest test configuration with global setup and helper functions.",
+      "tags": [
+        "test",
+        "pest"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/TestCase.php",
+      "type": "file",
+      "name": "TestCase.php",
+      "filePath": "tests/TestCase.php",
+      "summary": "Base test case class extending Laravel testing utilities.",
+      "tags": [
+        "test",
+        "pest"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/Unit/ExampleTest.php",
+      "type": "file",
+      "name": "ExampleTest.php",
+      "filePath": "tests/Unit/ExampleTest.php",
+      "summary": "Example unit test placeholder.",
+      "tags": [
+        "test",
+        "pest"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/Pest.php:something",
+      "type": "function",
+      "name": "something",
+      "filePath": "tests/Pest.php",
+      "summary": "something method",
+      "tags": [
+        "method",
+        "public"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:tests/TestCase.php:TestCase",
+      "type": "class",
+      "name": "TestCase",
+      "filePath": "tests/TestCase.php",
+      "summary": "TestCase class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:vite.config.js",
+      "type": "file",
+      "name": "vite.config.js",
+      "filePath": "vite.config.js",
+      "summary": "Vite build configuration with Laravel and Tailwind CSS plugins.",
+      "tags": [
+        "build-tool",
+        "vite"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:app/Actions/Fortify/CreateNewUser.php",
+      "target": "function:app/Actions/Fortify/CreateNewUser.php:create",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/CreateNewUser.php",
+      "target": "class:app/Actions/Fortify/CreateNewUser.php:CreateNewUser",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/ResetUserPassword.php",
+      "target": "function:app/Actions/Fortify/ResetUserPassword.php:reset",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/ResetUserPassword.php",
+      "target": "class:app/Actions/Fortify/ResetUserPassword.php:ResetUserPassword",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "target": "function:app/Actions/Fortify/UpdateUserProfileInformation.php:update",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "target": "function:app/Actions/Fortify/UpdateUserProfileInformation.php:updateVerifiedUser",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "target": "class:app/Actions/Fortify/UpdateUserProfileInformation.php:UpdateUserProfileInformation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "target": "class:app/Http/Responses/CustomPasswordResetLinkResponse.php:CustomPasswordResetLinkResponse",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Http/Responses/CustomPasswordResetResponse.php",
+      "target": "class:app/Http/Responses/CustomPasswordResetResponse.php:CustomPasswordResetResponse",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "function:app/Providers/FortifyServiceProvider.php:boot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "class:app/Providers/FortifyServiceProvider.php:FortifyServiceProvider",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/CreateNewUser.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Actions/Fortify/ResetUserPassword.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "file:app/Actions/Fortify/CreateNewUser.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "file:app/Actions/Fortify/ResetUserPassword.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "file:app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "file:app/Http/Responses/CustomPasswordResetResponse.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "target": "function:app/Actions/Fortify/UpdateUserPassword.php:update",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "target": "class:app/Actions/Fortify/UpdateUserPassword.php:UpdateUserPassword",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Models/User.php",
+      "target": "class:app/Models/User.php:User",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:database/factories/UserFactory.php",
+      "target": "function:database/factories/UserFactory.php:definition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:database/factories/UserFactory.php",
+      "target": "class:database/factories/UserFactory.php:UserFactory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:database/seeders/DatabaseSeeder.php",
+      "target": "class:database/seeders/DatabaseSeeder.php:DatabaseSeeder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Models/User.php",
+      "target": "file:database/factories/UserFactory.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:config/auth.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:database/factories/UserFactory.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:database/seeders/DatabaseSeeder.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:config/auth.php",
+      "target": "file:app/Models/User.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:AGENTS.md",
+      "target": "file:public/index.php",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:AGENTS.md",
+      "target": "file:app/Providers/FortifyServiceProvider.php",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:public/index.php",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:app/Providers/FortifyServiceProvider.php",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:app/Http/Controllers/Controller.php",
+      "target": "class:app/Http/Controllers/Controller.php:Controller",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Http/Middleware/EnsureTokenIsValid.php",
+      "target": "function:app/Http/Middleware/EnsureTokenIsValid.php:handle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Http/Middleware/EnsureTokenIsValid.php",
+      "target": "class:app/Http/Middleware/EnsureTokenIsValid.php:EnsureTokenIsValid",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "target": "class:app/Http/Responses/CustomVerifyEmailViewResponse.php:CustomVerifyEmailViewResponse",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Providers/AppServiceProvider.php",
+      "target": "class:app/Providers/AppServiceProvider.php:AppServiceProvider",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Providers/AppServiceProvider.php",
+      "target": "file:app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Actions/Fortify/CreateNewUser.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Actions/Fortify/PasswordValidationRules.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Actions/Fortify/ResetUserPassword.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Http/Responses/CustomPasswordResetResponse.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:database/migrations/0001_01_01_000000_create_users_table.php",
+      "target": "file:app/Models/User.php",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/Pest.php",
+      "target": "function:tests/Pest.php:something",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tests/TestCase.php",
+      "target": "class:tests/TestCase.php:TestCase",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:routes/web.php",
+      "target": "file:app/Http/Middleware/EnsureTokenIsValid.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:routes/web.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+      "target": "file:app/Models/User.php",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:database/migrations/2026_06_13_081623_create_passkeys_table.php",
+      "target": "file:app/Models/User.php",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:entry-point",
+      "name": "Entry Point & Bootstrap",
+      "description": "Application entry point and bootstrap files.",
+      "nodeIds": [
+        "file:.gitattributes",
+        "file:.husky/commit-msg",
+        "file:.understand-anything/.understandignore",
+        "file:artisan",
+        "file:bootstrap/app.php",
+        "file:bootstrap/providers.php",
+        "file:public/.htaccess",
+        "file:public/index.php"
+      ]
+    },
+    {
+      "id": "layer:routing",
+      "name": "Routing",
+      "description": "Route definitions mapping URLs to controllers and middleware.",
+      "nodeIds": [
+        "file:routes/console.php",
+        "file:routes/web.php"
+      ]
+    },
+    {
+      "id": "layer:middleware",
+      "name": "HTTP Middleware",
+      "description": "Request middleware filtering HTTP requests.",
+      "nodeIds": [
+        "file:app/Http/Middleware/EnsureTokenIsValid.php"
+      ]
+    },
+    {
+      "id": "layer:controllers",
+      "name": "Controllers",
+      "description": "HTTP controllers handling requests and responses.",
+      "nodeIds": [
+        "file:app/Http/Controllers/Controller.php"
+      ]
+    },
+    {
+      "id": "layer:actions",
+      "name": "Fortify Actions",
+      "description": "Fortify action classes: registration, password, profile.",
+      "nodeIds": [
+        "file:app/Actions/Fortify/CreateNewUser.php",
+        "file:app/Actions/Fortify/ResetUserPassword.php",
+        "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+        "file:app/Actions/Fortify/UpdateUserPassword.php",
+        "file:app/Actions/Fortify/PasswordValidationRules.php"
+      ]
+    },
+    {
+      "id": "layer:models",
+      "name": "Models & Entities",
+      "description": "Eloquent ORM models and relationships.",
+      "nodeIds": [
+        "file:app/Models/User.php"
+      ]
+    },
+    {
+      "id": "layer:providers",
+      "name": "Service Providers",
+      "description": "Service providers registering bindings and bootstrapping.",
+      "nodeIds": [
+        "file:app/Providers/FortifyServiceProvider.php",
+        "file:app/Providers/AppServiceProvider.php"
+      ]
+    },
+    {
+      "id": "layer:responses",
+      "name": "Custom Responses",
+      "description": "Custom Fortify response contracts.",
+      "nodeIds": [
+        "file:app/Http/Responses/CustomPasswordResetLinkResponse.php",
+        "file:app/Http/Responses/CustomPasswordResetResponse.php",
+        "file:app/Http/Responses/CustomVerifyEmailViewResponse.php"
+      ]
+    },
+    {
+      "id": "layer:configuration",
+      "name": "Configuration",
+      "description": "Application and package configuration files.",
+      "nodeIds": [
+        "file:config/auth.php",
+        "config:.env.example",
+        "config:boost.json",
+        "config:opencode.json",
+        "file:.npmrc",
+        "file:config/app.php",
+        "file:config/cache.php",
+        "file:config/database.php",
+        "file:config/filesystems.php",
+        "file:config/fortify.php",
+        "file:config/logging.php",
+        "file:config/mail.php",
+        "file:config/queue.php",
+        "file:config/services.php",
+        "file:config/session.php"
+      ]
+    },
+    {
+      "id": "layer:views",
+      "name": "Blade Views",
+      "description": "Blade templates for authentication and pages.",
+      "nodeIds": [
+        "file:resources/views/auth/forgot-password.blade.php",
+        "file:resources/views/auth/login.blade.php",
+        "file:resources/views/auth/master.blade.php",
+        "file:resources/views/auth/register.blade.php",
+        "file:resources/views/auth/reset-password.blade.php",
+        "file:resources/views/auth/success-and-error-alert.blade.php",
+        "file:resources/views/auth/verify-email.blade.php",
+        "file:resources/views/dashboard.blade.php",
+        "file:resources/views/landing-page.blade.php",
+        "file:resources/views/master.blade.php"
+      ]
+    },
+    {
+      "id": "layer:assets",
+      "name": "Frontend Assets",
+      "description": "CSS, JavaScript, and build tool configuration.",
+      "nodeIds": [
+        "file:commitlint.config.js",
+        "file:resources/css/app.css",
+        "file:resources/js/app.js",
+        "file:vite.config.js"
+      ]
+    },
+    {
+      "id": "layer:database",
+      "name": "Database Layer",
+      "description": "Migrations, factories, and seeders.",
+      "nodeIds": [
+        "file:database/factories/UserFactory.php",
+        "file:database/seeders/DatabaseSeeder.php",
+        "file:database/migrations/0001_01_01_000000_create_users_table.php",
+        "file:database/migrations/0001_01_01_000001_create_cache_table.php",
+        "file:database/migrations/0001_01_01_000002_create_jobs_table.php",
+        "file:database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+        "file:database/migrations/2026_06_13_081623_create_passkeys_table.php"
+      ]
+    },
+    {
+      "id": "layer:testing",
+      "name": "Testing",
+      "description": "Pest test suite with feature and unit tests.",
+      "nodeIds": [
+        "file:tests/Feature/ExampleTest.php",
+        "file:tests/Pest.php",
+        "file:tests/TestCase.php",
+        "file:tests/Unit/ExampleTest.php"
+      ]
+    },
+    {
+      "id": "layer:documentation",
+      "name": "Documentation",
+      "description": "Project documentation and guidelines.",
+      "nodeIds": [
+        "document:AGENTS.md",
+        "document:README.md",
+        "document:public/robots.txt"
+      ]
+    },
+    {
+      "id": "layer:manifests",
+      "name": "Package Manifests",
+      "description": "Dependency manifests and build configuration.",
+      "nodeIds": [
+        "config:composer.json",
+        "config:package.json",
+        "config:phpunit.xml"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Project Overview",
+      "description": "Start with the README to understand Laravel 13 Boilerplate — a WhatsApp-based personal finance tracker built on Laravel. The AGENTS.md file provides coding guidelines and conventions.",
+      "nodeIds": [
+        "document:README.md",
+        "document:AGENTS.md"
+      ]
+    },
+    {
+      "order": 2,
+      "title": "Application Entry Point",
+      "description": "The public/index.php is the HTTP entry point that bootstraps the Laravel kernel. bootstrap/app.php configures routing, middleware, and exception handling.",
+      "nodeIds": [
+        "file:public/index.php",
+        "file:bootstrap/app.php",
+        "file:bootstrap/providers.php"
+      ]
+    },
+    {
+      "order": 3,
+      "title": "Routing & Middleware",
+      "description": "routes/web.php defines all web routes including Fortify auth routes and the dashboard. The EnsureTokenIsValid middleware protects API endpoints.",
+      "nodeIds": [
+        "file:routes/web.php",
+        "file:routes/console.php",
+        "file:app/Http/Middleware/EnsureTokenIsValid.php"
+      ]
+    },
+    {
+      "order": 4,
+      "title": "Fortify Authentication Actions",
+      "description": "Fortify action classes in app/Actions/Fortify/ handle user registration, password updates, password resets, and profile information changes. These are the core auth business logic.",
+      "nodeIds": [
+        "file:app/Actions/Fortify/CreateNewUser.php",
+        "file:app/Actions/Fortify/UpdateUserPassword.php",
+        "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+        "file:app/Actions/Fortify/ResetUserPassword.php",
+        "file:app/Actions/Fortify/PasswordValidationRules.php"
+      ]
+    },
+    {
+      "order": 5,
+      "title": "Custom Fortify Responses",
+      "description": "Custom response classes override default Fortify behavior for password reset links, password reset confirmations, and email verification views.",
+      "nodeIds": [
+        "file:app/Http/Responses/CustomPasswordResetLinkResponse.php",
+        "file:app/Http/Responses/CustomPasswordResetResponse.php",
+        "file:app/Http/Responses/CustomVerifyEmailViewResponse.php"
+      ]
+    },
+    {
+      "order": 6,
+      "title": "User Model & Authentication Config",
+      "description": "The User model supports two-factor authentication and passkeys (WebAuthn). config/fortify.php and config/auth.php configure all authentication features.",
+      "nodeIds": [
+        "file:app/Models/User.php",
+        "file:config/fortify.php",
+        "file:config/auth.php"
+      ]
+    },
+    {
+      "order": 7,
+      "title": "Service Providers",
+      "description": "FortifyServiceProvider binds Fortify actions and custom responses. AppServiceProvider handles general application bootstrapping.",
+      "nodeIds": [
+        "file:app/Providers/FortifyServiceProvider.php",
+        "file:app/Providers/AppServiceProvider.php"
+      ]
+    },
+    {
+      "order": 8,
+      "title": "Database Layer",
+      "description": "Migrations create users, cache, jobs, passkeys tables with two-factor columns. UserFactory generates test data. DatabaseSeeder coordinates seeding.",
+      "nodeIds": [
+        "file:database/migrations/0001_01_01_000000_create_users_table.php",
+        "file:database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+        "file:database/migrations/2026_06_13_081623_create_passkeys_table.php",
+        "file:database/factories/UserFactory.php",
+        "file:database/seeders/DatabaseSeeder.php"
+      ]
+    },
+    {
+      "order": 9,
+      "title": "Blade Views & UI",
+      "description": "Authentication views (login, register, forgot/reset password, verify email) use a shared auth layout. master.blade.php is the main app layout with Vite assets.",
+      "nodeIds": [
+        "file:resources/views/auth/login.blade.php",
+        "file:resources/views/auth/register.blade.php",
+        "file:resources/views/auth/forgot-password.blade.php",
+        "file:resources/views/auth/reset-password.blade.php",
+        "file:resources/views/auth/verify-email.blade.php",
+        "file:resources/views/master.blade.php"
+      ]
+    },
+    {
+      "order": 10,
+      "title": "Frontend Build Pipeline",
+      "description": "Vite bundles CSS (Tailwind v4) and JavaScript. vite.config.js configures the Laravel Vite plugin. resources/css/app.css is the Tailwind entry point.",
+      "nodeIds": [
+        "file:vite.config.js",
+        "file:resources/css/app.css",
+        "file:resources/js/app.js"
+      ]
+    },
+    {
+      "order": 11,
+      "title": "Configuration Files",
+      "description": "Core Laravel config files for app, database, cache, session, queue, mail, filesystems, logging, and services. Each controls a subsystem of the application.",
+      "nodeIds": [
+        "file:config/app.php",
+        "file:config/database.php",
+        "file:config/cache.php",
+        "file:config/session.php",
+        "file:config/queue.php",
+        "file:config/mail.php",
+        "file:config/filesystems.php",
+        "file:config/logging.php",
+        "file:config/services.php"
+      ]
+    },
+    {
+      "order": 12,
+      "title": "Testing with Pest",
+      "description": "Pest PHP test suite with feature and unit tests. Tests/Pest.php contains global configuration. TestCase.php provides the base test class.",
+      "nodeIds": [
+        "file:tests/Pest.php",
+        "file:tests/TestCase.php",
+        "file:tests/Feature/ExampleTest.php",
+        "file:tests/Unit/ExampleTest.php"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "nodes": [
+    {
+      "id": "config:.env.example",
+      "type": "config",
+      "name": ".env.example",
+      "filePath": ".env.example",
+      "summary": "config file (65 lines).",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "AGENTS.md",
+      "summary": "Agent guidelines for Laravel Boost with coding conventions and tool instructions.",
+      "tags": [
+        "documentation"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:boost.json",
+      "type": "config",
+      "name": "boost.json",
+      "filePath": "boost.json",
+      "summary": "config file (16 lines).",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:composer.json",
+      "type": "config",
+      "name": "composer.json",
+      "filePath": "composer.json",
+      "summary": "PHP dependency manifest defining Laravel, Fortify, and dev packages.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:opencode.json",
+      "type": "config",
+      "name": "opencode.json",
+      "filePath": "opencode.json",
+      "summary": "config file (13 lines).",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "package.json",
+      "summary": "Node.js dependency manifest with Vite, Tailwind CSS, and build tools.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:phpunit.xml",
+      "type": "config",
+      "name": "phpunit.xml",
+      "filePath": "phpunit.xml",
+      "summary": "PHPUnit configuration with test suite definitions and environment settings.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "Project overview: Laravel 13 Boilerplate personal finance tracker via WhatsApp.",
+      "tags": [
+        "documentation"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:AGENTS.md",
+      "target": "file:public/index.php",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:AGENTS.md",
+      "target": "file:app/Providers/FortifyServiceProvider.php",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:public/index.php",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:app/Providers/FortifyServiceProvider.php",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

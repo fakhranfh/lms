@@ -1,0 +1,796 @@
+{
+  "schemaVersion": 1,
+  "algorithm": "louvain",
+  "totalFiles": 73,
+  "totalBatches": 7,
+  "exportsByPath": {
+    ".gitattributes": [],
+    ".husky/commit-msg": [],
+    ".npmrc": [],
+    ".understand-anything/.understandignore": [],
+    "app/Actions/Fortify/CreateNewUser.php": [
+      "CreateNewUser"
+    ],
+    "app/Actions/Fortify/PasswordValidationRules.php": [],
+    "app/Actions/Fortify/ResetUserPassword.php": [
+      "ResetUserPassword"
+    ],
+    "app/Actions/Fortify/UpdateUserPassword.php": [
+      "UpdateUserPassword"
+    ],
+    "app/Actions/Fortify/UpdateUserProfileInformation.php": [
+      "UpdateUserProfileInformation"
+    ],
+    "app/Http/Controllers/Controller.php": [
+      "Controller"
+    ],
+    "app/Http/Middleware/EnsureTokenIsValid.php": [
+      "EnsureTokenIsValid"
+    ],
+    "app/Http/Responses/CustomPasswordResetLinkResponse.php": [
+      "CustomPasswordResetLinkResponse"
+    ],
+    "app/Http/Responses/CustomPasswordResetResponse.php": [
+      "CustomPasswordResetResponse"
+    ],
+    "app/Http/Responses/CustomVerifyEmailViewResponse.php": [
+      "CustomVerifyEmailViewResponse"
+    ],
+    "app/Models/User.php": [
+      "User"
+    ],
+    "app/Providers/AppServiceProvider.php": [
+      "AppServiceProvider"
+    ],
+    "app/Providers/FortifyServiceProvider.php": [
+      "FortifyServiceProvider"
+    ],
+    "artisan": [],
+    "bootstrap/app.php": [],
+    "bootstrap/providers.php": [],
+    "commitlint.config.js": [],
+    "config/app.php": [],
+    "config/auth.php": [],
+    "config/cache.php": [],
+    "config/database.php": [],
+    "config/filesystems.php": [],
+    "config/fortify.php": [],
+    "config/logging.php": [],
+    "config/mail.php": [],
+    "config/queue.php": [],
+    "config/services.php": [],
+    "config/session.php": [],
+    "database/factories/UserFactory.php": [
+      "UserFactory"
+    ],
+    "database/migrations/0001_01_01_000000_create_users_table.php": [],
+    "database/migrations/0001_01_01_000001_create_cache_table.php": [],
+    "database/migrations/0001_01_01_000002_create_jobs_table.php": [],
+    "database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php": [],
+    "database/migrations/2026_06_13_081623_create_passkeys_table.php": [],
+    "database/seeders/DatabaseSeeder.php": [
+      "DatabaseSeeder"
+    ],
+    "public/.htaccess": [],
+    "public/index.php": [],
+    "resources/js/app.js": [],
+    "resources/views/auth/forgot-password.blade.php": [],
+    "resources/views/auth/login.blade.php": [],
+    "resources/views/auth/master.blade.php": [],
+    "resources/views/auth/register.blade.php": [],
+    "resources/views/auth/reset-password.blade.php": [],
+    "resources/views/auth/success-and-error-alert.blade.php": [],
+    "resources/views/auth/verify-email.blade.php": [],
+    "resources/views/dashboard.blade.php": [],
+    "resources/views/landing-page.blade.php": [],
+    "resources/views/master.blade.php": [],
+    "routes/console.php": [],
+    "routes/web.php": [],
+    "tests/Feature/ExampleTest.php": [],
+    "tests/Pest.php": [
+      "something"
+    ],
+    "tests/TestCase.php": [
+      "TestCase"
+    ],
+    "tests/Unit/ExampleTest.php": [],
+    "vite.config.js": []
+  },
+  "batches": [
+    {
+      "batchIndex": 1,
+      "files": [
+        {
+          "path": "app/Actions/Fortify/CreateNewUser.php",
+          "language": "php",
+          "sizeLines": 43,
+          "fileCategory": "code"
+        },
+        {
+          "path": "app/Actions/Fortify/ResetUserPassword.php",
+          "language": "php",
+          "sizeLines": 32,
+          "fileCategory": "code"
+        },
+        {
+          "path": "app/Actions/Fortify/UpdateUserProfileInformation.php",
+          "language": "php",
+          "sizeLines": 61,
+          "fileCategory": "code"
+        },
+        {
+          "path": "app/Http/Responses/CustomPasswordResetLinkResponse.php",
+          "language": "php",
+          "sizeLines": 13,
+          "fileCategory": "code"
+        },
+        {
+          "path": "app/Http/Responses/CustomPasswordResetResponse.php",
+          "language": "php",
+          "sizeLines": 13,
+          "fileCategory": "code"
+        },
+        {
+          "path": "app/Providers/FortifyServiceProvider.php",
+          "language": "php",
+          "sizeLines": 96,
+          "fileCategory": "code"
+        }
+      ],
+      "batchImportData": {
+        "app/Actions/Fortify/CreateNewUser.php": [
+          "app/Models/User.php"
+        ],
+        "app/Actions/Fortify/ResetUserPassword.php": [
+          "app/Models/User.php"
+        ],
+        "app/Actions/Fortify/UpdateUserProfileInformation.php": [
+          "app/Models/User.php"
+        ],
+        "app/Http/Responses/CustomPasswordResetLinkResponse.php": [],
+        "app/Http/Responses/CustomPasswordResetResponse.php": [],
+        "app/Providers/FortifyServiceProvider.php": [
+          "app/Actions/Fortify/CreateNewUser.php",
+          "app/Actions/Fortify/ResetUserPassword.php",
+          "app/Actions/Fortify/UpdateUserPassword.php",
+          "app/Actions/Fortify/UpdateUserProfileInformation.php",
+          "app/Http/Responses/CustomPasswordResetLinkResponse.php",
+          "app/Http/Responses/CustomPasswordResetResponse.php"
+        ]
+      },
+      "neighborMap": {
+        "app/Actions/Fortify/CreateNewUser.php": [
+          {
+            "path": "app/Models/User.php",
+            "batchIndex": 2,
+            "symbols": [
+              "User"
+            ]
+          }
+        ],
+        "app/Actions/Fortify/ResetUserPassword.php": [
+          {
+            "path": "app/Models/User.php",
+            "batchIndex": 2,
+            "symbols": [
+              "User"
+            ]
+          }
+        ],
+        "app/Actions/Fortify/UpdateUserProfileInformation.php": [
+          {
+            "path": "app/Models/User.php",
+            "batchIndex": 2,
+            "symbols": [
+              "User"
+            ]
+          }
+        ],
+        "app/Providers/FortifyServiceProvider.php": [
+          {
+            "path": "app/Actions/Fortify/UpdateUserPassword.php",
+            "batchIndex": 2,
+            "symbols": [
+              "UpdateUserPassword"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "batchIndex": 2,
+      "files": [
+        {
+          "path": "app/Actions/Fortify/UpdateUserPassword.php",
+          "language": "php",
+          "sizeLines": 35,
+          "fileCategory": "code"
+        },
+        {
+          "path": "app/Models/User.php",
+          "language": "php",
+          "sizeLines": 33,
+          "fileCategory": "code"
+        },
+        {
+          "path": "config/auth.php",
+          "language": "php",
+          "sizeLines": 117,
+          "fileCategory": "code"
+        },
+        {
+          "path": "database/factories/UserFactory.php",
+          "language": "php",
+          "sizeLines": 45,
+          "fileCategory": "code"
+        },
+        {
+          "path": "database/seeders/DatabaseSeeder.php",
+          "language": "php",
+          "sizeLines": 25,
+          "fileCategory": "code"
+        }
+      ],
+      "batchImportData": {
+        "app/Actions/Fortify/UpdateUserPassword.php": [
+          "app/Models/User.php"
+        ],
+        "app/Models/User.php": [
+          "database/factories/UserFactory.php"
+        ],
+        "config/auth.php": [
+          "app/Models/User.php"
+        ],
+        "database/factories/UserFactory.php": [
+          "app/Models/User.php"
+        ],
+        "database/seeders/DatabaseSeeder.php": [
+          "app/Models/User.php"
+        ]
+      },
+      "neighborMap": {
+        "app/Actions/Fortify/UpdateUserPassword.php": [
+          {
+            "path": "app/Providers/FortifyServiceProvider.php",
+            "batchIndex": 1,
+            "symbols": [
+              "FortifyServiceProvider"
+            ]
+          }
+        ],
+        "app/Models/User.php": [
+          {
+            "path": "app/Actions/Fortify/CreateNewUser.php",
+            "batchIndex": 1,
+            "symbols": [
+              "CreateNewUser"
+            ]
+          },
+          {
+            "path": "app/Actions/Fortify/ResetUserPassword.php",
+            "batchIndex": 1,
+            "symbols": [
+              "ResetUserPassword"
+            ]
+          },
+          {
+            "path": "app/Actions/Fortify/UpdateUserProfileInformation.php",
+            "batchIndex": 1,
+            "symbols": [
+              "UpdateUserProfileInformation"
+            ]
+          },
+          {
+            "path": "routes/web.php",
+            "batchIndex": 6,
+            "symbols": []
+          }
+        ]
+      }
+    },
+    {
+      "batchIndex": 3,
+      "files": [
+        {
+          "path": ".env.example",
+          "language": "config",
+          "sizeLines": 65,
+          "fileCategory": "config"
+        },
+        {
+          "path": "AGENTS.md",
+          "language": "markdown",
+          "sizeLines": 156,
+          "fileCategory": "docs"
+        },
+        {
+          "path": "README.md",
+          "language": "markdown",
+          "sizeLines": 27,
+          "fileCategory": "docs"
+        },
+        {
+          "path": "boost.json",
+          "language": "json",
+          "sizeLines": 16,
+          "fileCategory": "config"
+        },
+        {
+          "path": "composer.json",
+          "language": "json",
+          "sizeLines": 93,
+          "fileCategory": "config"
+        },
+        {
+          "path": "opencode.json",
+          "language": "json",
+          "sizeLines": 13,
+          "fileCategory": "config"
+        },
+        {
+          "path": "package.json",
+          "language": "json",
+          "sizeLines": 20,
+          "fileCategory": "config"
+        },
+        {
+          "path": "phpunit.xml",
+          "language": "xml",
+          "sizeLines": 36,
+          "fileCategory": "config"
+        }
+      ],
+      "batchImportData": {
+        ".env.example": [],
+        "AGENTS.md": [],
+        "README.md": [],
+        "boost.json": [],
+        "composer.json": [],
+        "opencode.json": [],
+        "package.json": [],
+        "phpunit.xml": []
+      },
+      "neighborMap": {}
+    },
+    {
+      "batchIndex": 4,
+      "files": [
+        {
+          "path": ".understand-anything/tmp/ua-import-map-input.json",
+          "language": "json",
+          "sizeLines": 0,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-import-map-output.json",
+          "language": "json",
+          "sizeLines": 155,
+          "fileCategory": "config"
+        },
+        {
+          "path": ".understand-anything/tmp/ua-scan-files.json",
+          "language": "json",
+          "sizeLines": 737,
+          "fileCategory": "config"
+        }
+      ],
+      "batchImportData": {
+        ".understand-anything/tmp/ua-import-map-input.json": [],
+        ".understand-anything/tmp/ua-import-map-output.json": [],
+        ".understand-anything/tmp/ua-scan-files.json": []
+      },
+      "neighborMap": {}
+    },
+    {
+      "batchIndex": 5,
+      "files": [
+        {
+          "path": ".gitattributes",
+          "language": "unknown",
+          "sizeLines": 11,
+          "fileCategory": "code"
+        },
+        {
+          "path": ".husky/commit-msg",
+          "language": "unknown",
+          "sizeLines": 0,
+          "fileCategory": "code"
+        },
+        {
+          "path": ".npmrc",
+          "language": "unknown",
+          "sizeLines": 2,
+          "fileCategory": "code"
+        },
+        {
+          "path": ".understand-anything/.understandignore",
+          "language": "unknown",
+          "sizeLines": 65,
+          "fileCategory": "code"
+        },
+        {
+          "path": ".understand-anything/intermediate/scan-result.json",
+          "language": "json",
+          "sizeLines": 882,
+          "fileCategory": "config"
+        },
+        {
+          "path": "app/Actions/Fortify/PasswordValidationRules.php",
+          "language": "php",
+          "sizeLines": 28,
+          "fileCategory": "code"
+        },
+        {
+          "path": "app/Http/Controllers/Controller.php",
+          "language": "php",
+          "sizeLines": 8,
+          "fileCategory": "code"
+        },
+        {
+          "path": "app/Http/Middleware/EnsureTokenIsValid.php",
+          "language": "php",
+          "sizeLines": 44,
+          "fileCategory": "code"
+        },
+        {
+          "path": "app/Http/Responses/CustomVerifyEmailViewResponse.php",
+          "language": "php",
+          "sizeLines": 12,
+          "fileCategory": "code"
+        },
+        {
+          "path": "app/Providers/AppServiceProvider.php",
+          "language": "php",
+          "sizeLines": 28,
+          "fileCategory": "code"
+        },
+        {
+          "path": "artisan",
+          "language": "unknown",
+          "sizeLines": 18,
+          "fileCategory": "code"
+        },
+        {
+          "path": "bootstrap/app.php",
+          "language": "php",
+          "sizeLines": 21,
+          "fileCategory": "code"
+        },
+        {
+          "path": "bootstrap/providers.php",
+          "language": "php",
+          "sizeLines": 6,
+          "fileCategory": "code"
+        },
+        {
+          "path": "commitlint.config.js",
+          "language": "javascript",
+          "sizeLines": 2,
+          "fileCategory": "code"
+        },
+        {
+          "path": "config/app.php",
+          "language": "php",
+          "sizeLines": 126,
+          "fileCategory": "code"
+        },
+        {
+          "path": "config/cache.php",
+          "language": "php",
+          "sizeLines": 136,
+          "fileCategory": "code"
+        },
+        {
+          "path": "config/database.php",
+          "language": "php",
+          "sizeLines": 184,
+          "fileCategory": "code"
+        },
+        {
+          "path": "config/filesystems.php",
+          "language": "php",
+          "sizeLines": 80,
+          "fileCategory": "code"
+        },
+        {
+          "path": "config/fortify.php",
+          "language": "php",
+          "sizeLines": 180,
+          "fileCategory": "code"
+        },
+        {
+          "path": "config/logging.php",
+          "language": "php",
+          "sizeLines": 132,
+          "fileCategory": "code"
+        },
+        {
+          "path": "config/mail.php",
+          "language": "php",
+          "sizeLines": 118,
+          "fileCategory": "code"
+        },
+        {
+          "path": "config/queue.php",
+          "language": "php",
+          "sizeLines": 129,
+          "fileCategory": "code"
+        },
+        {
+          "path": "config/services.php",
+          "language": "php",
+          "sizeLines": 38,
+          "fileCategory": "code"
+        },
+        {
+          "path": "config/session.php",
+          "language": "php",
+          "sizeLines": 233,
+          "fileCategory": "code"
+        },
+        {
+          "path": "database/migrations/0001_01_01_000000_create_users_table.php",
+          "language": "php",
+          "sizeLines": 49,
+          "fileCategory": "code"
+        }
+      ],
+      "batchImportData": {
+        ".gitattributes": [],
+        ".husky/commit-msg": [],
+        ".npmrc": [],
+        ".understand-anything/.understandignore": [],
+        ".understand-anything/intermediate/scan-result.json": [],
+        "app/Actions/Fortify/PasswordValidationRules.php": [],
+        "app/Http/Controllers/Controller.php": [],
+        "app/Http/Middleware/EnsureTokenIsValid.php": [],
+        "app/Http/Responses/CustomVerifyEmailViewResponse.php": [],
+        "app/Providers/AppServiceProvider.php": [
+          "app/Http/Responses/CustomVerifyEmailViewResponse.php"
+        ],
+        "artisan": [],
+        "bootstrap/app.php": [],
+        "bootstrap/providers.php": [],
+        "commitlint.config.js": [],
+        "config/app.php": [],
+        "config/cache.php": [],
+        "config/database.php": [],
+        "config/filesystems.php": [],
+        "config/fortify.php": [],
+        "config/logging.php": [],
+        "config/mail.php": [],
+        "config/queue.php": [],
+        "config/services.php": [],
+        "config/session.php": [],
+        "database/migrations/0001_01_01_000000_create_users_table.php": []
+      },
+      "neighborMap": {
+        "app/Http/Middleware/EnsureTokenIsValid.php": [
+          {
+            "path": "routes/web.php",
+            "batchIndex": 6,
+            "symbols": []
+          }
+        ]
+      }
+    },
+    {
+      "batchIndex": 6,
+      "files": [
+        {
+          "path": "database/migrations/0001_01_01_000001_create_cache_table.php",
+          "language": "php",
+          "sizeLines": 35,
+          "fileCategory": "code"
+        },
+        {
+          "path": "database/migrations/0001_01_01_000002_create_jobs_table.php",
+          "language": "php",
+          "sizeLines": 59,
+          "fileCategory": "code"
+        },
+        {
+          "path": "database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+          "language": "php",
+          "sizeLines": 42,
+          "fileCategory": "code"
+        },
+        {
+          "path": "database/migrations/2026_06_13_081623_create_passkeys_table.php",
+          "language": "php",
+          "sizeLines": 35,
+          "fileCategory": "code"
+        },
+        {
+          "path": "public/.htaccess",
+          "language": "unknown",
+          "sizeLines": 25,
+          "fileCategory": "code"
+        },
+        {
+          "path": "public/index.php",
+          "language": "php",
+          "sizeLines": 20,
+          "fileCategory": "code"
+        },
+        {
+          "path": "public/robots.txt",
+          "language": "txt",
+          "sizeLines": 2,
+          "fileCategory": "docs"
+        },
+        {
+          "path": "resources/css/app.css",
+          "language": "css",
+          "sizeLines": 9,
+          "fileCategory": "markup"
+        },
+        {
+          "path": "resources/js/app.js",
+          "language": "javascript",
+          "sizeLines": 1,
+          "fileCategory": "code"
+        },
+        {
+          "path": "resources/views/auth/forgot-password.blade.php",
+          "language": "php",
+          "sizeLines": 106,
+          "fileCategory": "code"
+        },
+        {
+          "path": "resources/views/auth/login.blade.php",
+          "language": "php",
+          "sizeLines": 130,
+          "fileCategory": "code"
+        },
+        {
+          "path": "resources/views/auth/master.blade.php",
+          "language": "php",
+          "sizeLines": 31,
+          "fileCategory": "code"
+        },
+        {
+          "path": "resources/views/auth/register.blade.php",
+          "language": "php",
+          "sizeLines": 178,
+          "fileCategory": "code"
+        },
+        {
+          "path": "resources/views/auth/reset-password.blade.php",
+          "language": "php",
+          "sizeLines": 190,
+          "fileCategory": "code"
+        },
+        {
+          "path": "resources/views/auth/success-and-error-alert.blade.php",
+          "language": "php",
+          "sizeLines": 40,
+          "fileCategory": "code"
+        },
+        {
+          "path": "resources/views/auth/verify-email.blade.php",
+          "language": "php",
+          "sizeLines": 49,
+          "fileCategory": "code"
+        },
+        {
+          "path": "resources/views/dashboard.blade.php",
+          "language": "php",
+          "sizeLines": 100,
+          "fileCategory": "code"
+        },
+        {
+          "path": "resources/views/landing-page.blade.php",
+          "language": "php",
+          "sizeLines": 89,
+          "fileCategory": "code"
+        },
+        {
+          "path": "resources/views/master.blade.php",
+          "language": "php",
+          "sizeLines": 122,
+          "fileCategory": "code"
+        },
+        {
+          "path": "routes/console.php",
+          "language": "php",
+          "sizeLines": 8,
+          "fileCategory": "code"
+        },
+        {
+          "path": "routes/web.php",
+          "language": "php",
+          "sizeLines": 65,
+          "fileCategory": "code"
+        },
+        {
+          "path": "tests/Feature/ExampleTest.php",
+          "language": "php",
+          "sizeLines": 7,
+          "fileCategory": "code"
+        },
+        {
+          "path": "tests/Pest.php",
+          "language": "php",
+          "sizeLines": 50,
+          "fileCategory": "code"
+        },
+        {
+          "path": "tests/TestCase.php",
+          "language": "php",
+          "sizeLines": 10,
+          "fileCategory": "code"
+        },
+        {
+          "path": "tests/Unit/ExampleTest.php",
+          "language": "php",
+          "sizeLines": 5,
+          "fileCategory": "code"
+        }
+      ],
+      "batchImportData": {
+        "database/migrations/0001_01_01_000001_create_cache_table.php": [],
+        "database/migrations/0001_01_01_000002_create_jobs_table.php": [],
+        "database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php": [],
+        "database/migrations/2026_06_13_081623_create_passkeys_table.php": [],
+        "public/.htaccess": [],
+        "public/index.php": [],
+        "public/robots.txt": [],
+        "resources/css/app.css": [],
+        "resources/js/app.js": [],
+        "resources/views/auth/forgot-password.blade.php": [],
+        "resources/views/auth/login.blade.php": [],
+        "resources/views/auth/master.blade.php": [],
+        "resources/views/auth/register.blade.php": [],
+        "resources/views/auth/reset-password.blade.php": [],
+        "resources/views/auth/success-and-error-alert.blade.php": [],
+        "resources/views/auth/verify-email.blade.php": [],
+        "resources/views/dashboard.blade.php": [],
+        "resources/views/landing-page.blade.php": [],
+        "resources/views/master.blade.php": [],
+        "routes/console.php": [],
+        "routes/web.php": [
+          "app/Http/Middleware/EnsureTokenIsValid.php",
+          "app/Models/User.php"
+        ],
+        "tests/Feature/ExampleTest.php": [],
+        "tests/Pest.php": [],
+        "tests/TestCase.php": [],
+        "tests/Unit/ExampleTest.php": []
+      },
+      "neighborMap": {
+        "routes/web.php": [
+          {
+            "path": "app/Http/Middleware/EnsureTokenIsValid.php",
+            "batchIndex": 5,
+            "symbols": [
+              "EnsureTokenIsValid"
+            ]
+          },
+          {
+            "path": "app/Models/User.php",
+            "batchIndex": 2,
+            "symbols": [
+              "User"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "batchIndex": 7,
+      "files": [
+        {
+          "path": "vite.config.js",
+          "language": "javascript",
+          "sizeLines": 24,
+          "fileCategory": "code"
+        }
+      ],
+      "batchImportData": {
+        "vite.config.js": []
+      },
+      "neighborMap": {}
+    }
+  ]
+}

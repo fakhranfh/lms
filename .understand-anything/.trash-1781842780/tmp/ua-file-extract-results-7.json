@@ -1,0 +1,20 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 1,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "vite.config.js",
+      "language": "javascript",
+      "fileCategory": "code",
+      "totalLines": 24,
+      "nonEmptyLines": 23,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

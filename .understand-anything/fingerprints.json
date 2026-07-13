@@ -1,0 +1,1656 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "40b1cfec31dfa5a31b163f6e181d174a77e93209",
+  "generatedAt": "2026-06-19T04:19:31.719Z",
+  "files": {
+    ".gitattributes": {
+      "filePath": ".gitattributes",
+      "contentHash": "a40eb27ee0b545ca5b5542daaf99fec51f84f23b3766a6353864ef2a115bc51c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 12,
+      "hasStructuralAnalysis": false
+    },
+    ".husky/commit-msg": {
+      "filePath": ".husky/commit-msg",
+      "contentHash": "592963c3ac478dff00cf5918bf2ee72d295f9d21b3d49577b1f52c29bb48ad87",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    },
+    ".npmrc": {
+      "filePath": ".npmrc",
+      "contentHash": "e968d1d336604e9986ea31306a4d9e1442f4312fca262f444384baf928d6560e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": false
+    },
+    ".understand-anything/.understandignore": {
+      "filePath": ".understand-anything/.understandignore",
+      "contentHash": "401e01f24d2c8cd46a995b589533ba843b5066336223c9562f746a1b02b44056",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 66,
+      "hasStructuralAnalysis": false
+    },
+    "app/Actions/Fortify/CreateNewUser.php": {
+      "filePath": "app/Actions/Fortify/CreateNewUser.php",
+      "contentHash": "bb1994a087032710b41c34881baf2ee2237d6dffcea7485b7fa1d87c71666ec7",
+      "functions": [
+        {
+          "name": "create",
+          "params": [
+            "$input"
+          ],
+          "returnType": "User",
+          "exported": false,
+          "lineCount": 20
+        }
+      ],
+      "classes": [
+        {
+          "name": "CreateNewUser",
+          "methods": [
+            "create"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 32
+        }
+      ],
+      "imports": [
+        {
+          "source": "App\\Models\\User",
+          "specifiers": [
+            "User"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Hash",
+          "specifiers": [
+            "Hash"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Validator",
+          "specifiers": [
+            "Validator"
+          ]
+        },
+        {
+          "source": "Illuminate\\Validation\\Rule",
+          "specifiers": [
+            "Rule"
+          ]
+        },
+        {
+          "source": "Illuminate\\Validation\\ValidationException",
+          "specifiers": [
+            "ValidationException"
+          ]
+        },
+        {
+          "source": "Laravel\\Fortify\\Contracts\\CreatesNewUsers",
+          "specifiers": [
+            "CreatesNewUsers"
+          ]
+        }
+      ],
+      "exports": [
+        "CreateNewUser"
+      ],
+      "totalLines": 44,
+      "hasStructuralAnalysis": true
+    },
+    "app/Actions/Fortify/PasswordValidationRules.php": {
+      "filePath": "app/Actions/Fortify/PasswordValidationRules.php",
+      "contentHash": "450741d2c541a83be1688a5a4df19d1b6ed6e905c36452cba73c22d0d3c96341",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Contracts\\Validation\\Rule",
+          "specifiers": [
+            "Rule"
+          ]
+        },
+        {
+          "source": "Illuminate\\Validation\\Rules\\Password",
+          "specifiers": [
+            "Password"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "app/Actions/Fortify/ResetUserPassword.php": {
+      "filePath": "app/Actions/Fortify/ResetUserPassword.php",
+      "contentHash": "fb4e481c7bcececcf37a645c0f91b3e474774662384b3a08dc74233d7076b781",
+      "functions": [
+        {
+          "name": "reset",
+          "params": [
+            "$user",
+            "$input"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 10
+        }
+      ],
+      "classes": [
+        {
+          "name": "ResetUserPassword",
+          "methods": [
+            "reset"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 22
+        }
+      ],
+      "imports": [
+        {
+          "source": "App\\Models\\User",
+          "specifiers": [
+            "User"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Hash",
+          "specifiers": [
+            "Hash"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Validator",
+          "specifiers": [
+            "Validator"
+          ]
+        },
+        {
+          "source": "Illuminate\\Validation\\ValidationException",
+          "specifiers": [
+            "ValidationException"
+          ]
+        },
+        {
+          "source": "Laravel\\Fortify\\Contracts\\ResetsUserPasswords",
+          "specifiers": [
+            "ResetsUserPasswords"
+          ]
+        }
+      ],
+      "exports": [
+        "ResetUserPassword"
+      ],
+      "totalLines": 33,
+      "hasStructuralAnalysis": true
+    },
+    "app/Actions/Fortify/UpdateUserPassword.php": {
+      "filePath": "app/Actions/Fortify/UpdateUserPassword.php",
+      "contentHash": "b1d6c48a50db690f8759b5214fc1e93fbbfc260eab6dc895e7840f6996d0f096",
+      "functions": [
+        {
+          "name": "update",
+          "params": [
+            "$user",
+            "$input"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 13
+        }
+      ],
+      "classes": [
+        {
+          "name": "UpdateUserPassword",
+          "methods": [
+            "update"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 25
+        }
+      ],
+      "imports": [
+        {
+          "source": "App\\Models\\User",
+          "specifiers": [
+            "User"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Hash",
+          "specifiers": [
+            "Hash"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Validator",
+          "specifiers": [
+            "Validator"
+          ]
+        },
+        {
+          "source": "Illuminate\\Validation\\ValidationException",
+          "specifiers": [
+            "ValidationException"
+          ]
+        },
+        {
+          "source": "Laravel\\Fortify\\Contracts\\UpdatesUserPasswords",
+          "specifiers": [
+            "UpdatesUserPasswords"
+          ]
+        }
+      ],
+      "exports": [
+        "UpdateUserPassword"
+      ],
+      "totalLines": 36,
+      "hasStructuralAnalysis": true
+    },
+    "app/Actions/Fortify/UpdateUserProfileInformation.php": {
+      "filePath": "app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "contentHash": "5c713bf8a389099f8ece58b16fa7d39be95bf46b159519631e60a8d79e1ff6bc",
+      "functions": [
+        {
+          "name": "update",
+          "params": [
+            "$user",
+            "$input"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 24
+        },
+        {
+          "name": "updateVerifiedUser",
+          "params": [
+            "$user",
+            "$input"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 10
+        }
+      ],
+      "classes": [
+        {
+          "name": "UpdateUserProfileInformation",
+          "methods": [
+            "update",
+            "updateVerifiedUser"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 50
+        }
+      ],
+      "imports": [
+        {
+          "source": "App\\Models\\User",
+          "specifiers": [
+            "User"
+          ]
+        },
+        {
+          "source": "Illuminate\\Contracts\\Auth\\MustVerifyEmail",
+          "specifiers": [
+            "MustVerifyEmail"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Validator",
+          "specifiers": [
+            "Validator"
+          ]
+        },
+        {
+          "source": "Illuminate\\Validation\\Rule",
+          "specifiers": [
+            "Rule"
+          ]
+        },
+        {
+          "source": "Illuminate\\Validation\\ValidationException",
+          "specifiers": [
+            "ValidationException"
+          ]
+        },
+        {
+          "source": "Laravel\\Fortify\\Contracts\\UpdatesUserProfileInformation",
+          "specifiers": [
+            "UpdatesUserProfileInformation"
+          ]
+        }
+      ],
+      "exports": [
+        "UpdateUserProfileInformation"
+      ],
+      "totalLines": 62,
+      "hasStructuralAnalysis": true
+    },
+    "app/Http/Controllers/Controller.php": {
+      "filePath": "app/Http/Controllers/Controller.php",
+      "contentHash": "25d1c1ef8e6cc8a376553faacfba2b07d9dfaee9bdbb84f14f77517580e9deb1",
+      "functions": [],
+      "classes": [
+        {
+          "name": "Controller",
+          "methods": [],
+          "properties": [],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "imports": [],
+      "exports": [
+        "Controller"
+      ],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "app/Http/Middleware/EnsureTokenIsValid.php": {
+      "filePath": "app/Http/Middleware/EnsureTokenIsValid.php",
+      "contentHash": "9bd45e6078578a1ead74c8bc0a10effe88638aa6121b23990f86a57688391413",
+      "functions": [
+        {
+          "name": "handle",
+          "params": [
+            "$request",
+            "$next"
+          ],
+          "returnType": "Response",
+          "exported": false,
+          "lineCount": 26
+        }
+      ],
+      "classes": [
+        {
+          "name": "EnsureTokenIsValid",
+          "methods": [
+            "handle"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 34
+        }
+      ],
+      "imports": [
+        {
+          "source": "Closure",
+          "specifiers": [
+            "Closure"
+          ]
+        },
+        {
+          "source": "Illuminate\\Http\\Request",
+          "specifiers": [
+            "Request"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\DB",
+          "specifiers": [
+            "DB"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Hash",
+          "specifiers": [
+            "Hash"
+          ]
+        },
+        {
+          "source": "Symfony\\Component\\HttpFoundation\\Response",
+          "specifiers": [
+            "Response"
+          ]
+        }
+      ],
+      "exports": [
+        "EnsureTokenIsValid"
+      ],
+      "totalLines": 45,
+      "hasStructuralAnalysis": true
+    },
+    "app/Http/Responses/CustomPasswordResetLinkResponse.php": {
+      "filePath": "app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "contentHash": "bd582a308c64d42d773f58cb1cc6d2128b828718c4b0368ab665ffdabdc77755",
+      "functions": [
+        {
+          "name": "toResponse",
+          "params": [
+            "$request"
+          ],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "CustomPasswordResetLinkResponse",
+          "methods": [
+            "toResponse"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "imports": [
+        {
+          "source": "Laravel\\Fortify\\Contracts\\SuccessfulPasswordResetLinkRequestResponse",
+          "specifiers": [
+            "SuccessfulPasswordResetLinkRequestResponse"
+          ]
+        }
+      ],
+      "exports": [
+        "CustomPasswordResetLinkResponse"
+      ],
+      "totalLines": 14,
+      "hasStructuralAnalysis": true
+    },
+    "app/Http/Responses/CustomPasswordResetResponse.php": {
+      "filePath": "app/Http/Responses/CustomPasswordResetResponse.php",
+      "contentHash": "12e3673503a23f996dbc24e4eb3f946764e9385cfa4ba647f38a333fc939ec89",
+      "functions": [
+        {
+          "name": "toResponse",
+          "params": [
+            "$request"
+          ],
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "CustomPasswordResetResponse",
+          "methods": [
+            "toResponse"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "imports": [
+        {
+          "source": "Laravel\\Fortify\\Contracts\\PasswordResetResponse",
+          "specifiers": [
+            "PasswordResetResponse"
+          ]
+        }
+      ],
+      "exports": [
+        "CustomPasswordResetResponse"
+      ],
+      "totalLines": 14,
+      "hasStructuralAnalysis": true
+    },
+    "app/Http/Responses/CustomVerifyEmailViewResponse.php": {
+      "filePath": "app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "contentHash": "adc9a83e03b2edada0f6596d86947538d6a7a73c18a632b171dc2a2ea15dccde",
+      "functions": [
+        {
+          "name": "toResponse",
+          "params": [
+            "$request"
+          ],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "CustomVerifyEmailViewResponse",
+          "methods": [
+            "toResponse"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "imports": [
+        {
+          "source": "Laravel\\Fortify\\Contracts\\VerifyEmailViewResponse",
+          "specifiers": [
+            "VerifyEmailViewResponse"
+          ]
+        }
+      ],
+      "exports": [
+        "CustomVerifyEmailViewResponse"
+      ],
+      "totalLines": 13,
+      "hasStructuralAnalysis": true
+    },
+    "app/Models/User.php": {
+      "filePath": "app/Models/User.php",
+      "contentHash": "d81fbd3ec80e0741be4d5fe442a91c586cdc69441904e9b40d1c97ae431dabfb",
+      "functions": [
+        {
+          "name": "casts",
+          "params": [],
+          "returnType": "array",
+          "exported": false,
+          "lineCount": 7
+        }
+      ],
+      "classes": [
+        {
+          "name": "User",
+          "methods": [
+            "casts"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 20
+        }
+      ],
+      "imports": [
+        {
+          "source": "Database\\Factories\\UserFactory",
+          "specifiers": [
+            "UserFactory"
+          ]
+        },
+        {
+          "source": "Illuminate\\Auth\\Passwords\\CanResetPassword",
+          "specifiers": [
+            "CanResetPassword"
+          ]
+        },
+        {
+          "source": "Illuminate\\Contracts\\Auth\\MustVerifyEmail",
+          "specifiers": [
+            "MustVerifyEmail"
+          ]
+        },
+        {
+          "source": "Illuminate\\Database\\Eloquent\\Attributes\\Fillable",
+          "specifiers": [
+            "Fillable"
+          ]
+        },
+        {
+          "source": "Illuminate\\Database\\Eloquent\\Attributes\\Hidden",
+          "specifiers": [
+            "Hidden"
+          ]
+        },
+        {
+          "source": "Illuminate\\Database\\Eloquent\\Factories\\HasFactory",
+          "specifiers": [
+            "HasFactory"
+          ]
+        },
+        {
+          "source": "Illuminate\\Foundation\\Auth\\User",
+          "specifiers": [
+            "User"
+          ]
+        },
+        {
+          "source": "Illuminate\\Notifications\\Notifiable",
+          "specifiers": [
+            "Notifiable"
+          ]
+        }
+      ],
+      "exports": [
+        "User"
+      ],
+      "totalLines": 34,
+      "hasStructuralAnalysis": true
+    },
+    "app/Providers/AppServiceProvider.php": {
+      "filePath": "app/Providers/AppServiceProvider.php",
+      "contentHash": "33ba5a14df0299da9f28b3a193a2eff6552ab78e31b6cbe8f40a24ebea2fe5b5",
+      "functions": [
+        {
+          "name": "register",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "boot",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "AppServiceProvider",
+          "methods": [
+            "register",
+            "boot"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 20
+        }
+      ],
+      "imports": [
+        {
+          "source": "App\\Http\\Responses\\CustomVerifyEmailViewResponse",
+          "specifiers": [
+            "CustomVerifyEmailViewResponse"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\ServiceProvider",
+          "specifiers": [
+            "ServiceProvider"
+          ]
+        },
+        {
+          "source": "Laravel\\Fortify\\Contracts\\VerifyEmailViewResponse",
+          "specifiers": [
+            "VerifyEmailViewResponse"
+          ]
+        }
+      ],
+      "exports": [
+        "AppServiceProvider"
+      ],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "app/Providers/FortifyServiceProvider.php": {
+      "filePath": "app/Providers/FortifyServiceProvider.php",
+      "contentHash": "d3a82871906b23a72e7c7168976be6cfd5174efd28e06f16993bd8510838378e",
+      "functions": [
+        {
+          "name": "register",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "boot",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 61
+        }
+      ],
+      "classes": [
+        {
+          "name": "FortifyServiceProvider",
+          "methods": [
+            "register",
+            "boot"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 75
+        }
+      ],
+      "imports": [
+        {
+          "source": "App\\Actions\\Fortify\\CreateNewUser",
+          "specifiers": [
+            "CreateNewUser"
+          ]
+        },
+        {
+          "source": "App\\Actions\\Fortify\\ResetUserPassword",
+          "specifiers": [
+            "ResetUserPassword"
+          ]
+        },
+        {
+          "source": "App\\Actions\\Fortify\\UpdateUserPassword",
+          "specifiers": [
+            "UpdateUserPassword"
+          ]
+        },
+        {
+          "source": "App\\Actions\\Fortify\\UpdateUserProfileInformation",
+          "specifiers": [
+            "UpdateUserProfileInformation"
+          ]
+        },
+        {
+          "source": "App\\Http\\Responses\\CustomPasswordResetLinkResponse",
+          "specifiers": [
+            "CustomPasswordResetLinkResponse"
+          ]
+        },
+        {
+          "source": "App\\Http\\Responses\\CustomPasswordResetResponse",
+          "specifiers": [
+            "CustomPasswordResetResponse"
+          ]
+        },
+        {
+          "source": "Illuminate\\Auth\\Notifications\\ResetPassword",
+          "specifiers": [
+            "ResetPassword"
+          ]
+        },
+        {
+          "source": "Illuminate\\Cache\\RateLimiting\\Limit",
+          "specifiers": [
+            "Limit"
+          ]
+        },
+        {
+          "source": "Illuminate\\Http\\Request",
+          "specifiers": [
+            "Request"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\RateLimiter",
+          "specifiers": [
+            "RateLimiter"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\ServiceProvider",
+          "specifiers": [
+            "ServiceProvider"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Str",
+          "specifiers": [
+            "Str"
+          ]
+        },
+        {
+          "source": "Laravel\\Fortify\\Actions\\RedirectIfTwoFactorAuthenticatable",
+          "specifiers": [
+            "RedirectIfTwoFactorAuthenticatable"
+          ]
+        },
+        {
+          "source": "Laravel\\Fortify\\Fortify",
+          "specifiers": [
+            "Fortify"
+          ]
+        },
+        {
+          "source": "Laravel\\Fortify\\Http\\Responses\\PasswordResetResponse",
+          "specifiers": [
+            "PasswordResetResponse"
+          ]
+        },
+        {
+          "source": "Laravel\\Fortify\\Contracts\\SuccessfulPasswordResetLinkRequestResponse",
+          "specifiers": [
+            "SuccessfulPasswordResetLinkRequestResponse"
+          ]
+        }
+      ],
+      "exports": [
+        "FortifyServiceProvider"
+      ],
+      "totalLines": 97,
+      "hasStructuralAnalysis": true
+    },
+    "artisan": {
+      "filePath": "artisan",
+      "contentHash": "f91a517c0c5d3a904c3f390933964a5e08ec1fc68146882730daac4aca4ffcec",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 19,
+      "hasStructuralAnalysis": false
+    },
+    "bootstrap/app.php": {
+      "filePath": "bootstrap/app.php",
+      "contentHash": "75b4b9ffab2f26cc796548020402d0c217930f4494fcb8c8700b8a1aa0070ff6",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Foundation\\Application",
+          "specifiers": [
+            "Application"
+          ]
+        },
+        {
+          "source": "Illuminate\\Foundation\\Configuration\\Exceptions",
+          "specifiers": [
+            "Exceptions"
+          ]
+        },
+        {
+          "source": "Illuminate\\Foundation\\Configuration\\Middleware",
+          "specifiers": [
+            "Middleware"
+          ]
+        },
+        {
+          "source": "Illuminate\\Http\\Request",
+          "specifiers": [
+            "Request"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 22,
+      "hasStructuralAnalysis": true
+    },
+    "bootstrap/providers.php": {
+      "filePath": "bootstrap/providers.php",
+      "contentHash": "04da9cac72439df9b7731a1236d0c4ccb2b5338f4a22d493965ba9e5b4231075",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 7,
+      "hasStructuralAnalysis": true
+    },
+    "commitlint.config.js": {
+      "filePath": "commitlint.config.js",
+      "contentHash": "f02f0e0b92058428c7c365f31799a2bea5deaa5dcb6d2882918d5fa077d5b2f8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": true
+    },
+    "config/app.php": {
+      "filePath": "config/app.php",
+      "contentHash": "78dcd36b226fd7b24057cb95f567cb6e96561c2406653892d8aef6dcea8461e4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 127,
+      "hasStructuralAnalysis": true
+    },
+    "config/auth.php": {
+      "filePath": "config/auth.php",
+      "contentHash": "c7e204e9785c9f596d66fb884b493f658f2327f157646bdb4088efd6b3a7773f",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "App\\Models\\User",
+          "specifiers": [
+            "User"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 118,
+      "hasStructuralAnalysis": true
+    },
+    "config/cache.php": {
+      "filePath": "config/cache.php",
+      "contentHash": "ee4ad2bba1edfcff52e9599f37371f2370d0b167cc226ce72d46cdf6edf2dc55",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Support\\Str",
+          "specifiers": [
+            "Str"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 137,
+      "hasStructuralAnalysis": true
+    },
+    "config/database.php": {
+      "filePath": "config/database.php",
+      "contentHash": "02cd62f589b43d33f9ceac740705dac1dec9740eb2bb9e6e202d4b66a15244cf",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Support\\Str",
+          "specifiers": [
+            "Str"
+          ]
+        },
+        {
+          "source": "Pdo\\Mysql",
+          "specifiers": [
+            "Mysql"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 185,
+      "hasStructuralAnalysis": true
+    },
+    "config/filesystems.php": {
+      "filePath": "config/filesystems.php",
+      "contentHash": "ba7060d7a23e490c3ce830656f6d24ad3ccf5b868e3293f2a12e411959dc5635",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 81,
+      "hasStructuralAnalysis": true
+    },
+    "config/fortify.php": {
+      "filePath": "config/fortify.php",
+      "contentHash": "406b5cd5d89ee92215419184d0a1b4f88d6d77fa2b63e1dd7f3a564bc6edae01",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Laravel\\Fortify\\Features",
+          "specifiers": [
+            "Features"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 181,
+      "hasStructuralAnalysis": true
+    },
+    "config/logging.php": {
+      "filePath": "config/logging.php",
+      "contentHash": "299ec1ba5b5a803c8e20f666ae7628e442e856cc2ff7ac9e2adb17b97e8ad63b",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Monolog\\Handler\\NullHandler",
+          "specifiers": [
+            "NullHandler"
+          ]
+        },
+        {
+          "source": "Monolog\\Handler\\StreamHandler",
+          "specifiers": [
+            "StreamHandler"
+          ]
+        },
+        {
+          "source": "Monolog\\Handler\\SyslogUdpHandler",
+          "specifiers": [
+            "SyslogUdpHandler"
+          ]
+        },
+        {
+          "source": "Monolog\\Processor\\PsrLogMessageProcessor",
+          "specifiers": [
+            "PsrLogMessageProcessor"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 133,
+      "hasStructuralAnalysis": true
+    },
+    "config/mail.php": {
+      "filePath": "config/mail.php",
+      "contentHash": "c43ff49a31c5f32ce21eb7159f2a4b3cd2f4074eaed5838d265646dbfedd3474",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 119,
+      "hasStructuralAnalysis": true
+    },
+    "config/queue.php": {
+      "filePath": "config/queue.php",
+      "contentHash": "6101774da7c8b79af46d0028f2b8b31a484c3f7eda10b76e5b27b6093ad364a4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 130,
+      "hasStructuralAnalysis": true
+    },
+    "config/services.php": {
+      "filePath": "config/services.php",
+      "contentHash": "8258c4487eb1d73a97e569eb0e411e3f25368044812df4cba807860432be1d92",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 39,
+      "hasStructuralAnalysis": true
+    },
+    "config/session.php": {
+      "filePath": "config/session.php",
+      "contentHash": "64272cfbef6f47c65bf857f1c5b1e853700c0d0278de46b86663fd83ef4aeed8",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Support\\Str",
+          "specifiers": [
+            "Str"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 234,
+      "hasStructuralAnalysis": true
+    },
+    "database/factories/UserFactory.php": {
+      "filePath": "database/factories/UserFactory.php",
+      "contentHash": "50bdc543f1b09d1a57260be55ad0e1a68aee4b34f63e1109dc94d9bcd3080526",
+      "functions": [
+        {
+          "name": "definition",
+          "params": [],
+          "returnType": "array",
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "unverified",
+          "params": [],
+          "returnType": "static",
+          "exported": false,
+          "lineCount": 6
+        }
+      ],
+      "classes": [
+        {
+          "name": "UserFactory",
+          "methods": [
+            "definition",
+            "unverified"
+          ],
+          "properties": [
+            "password"
+          ],
+          "exported": true,
+          "lineCount": 33
+        }
+      ],
+      "imports": [
+        {
+          "source": "App\\Models\\User",
+          "specifiers": [
+            "User"
+          ]
+        },
+        {
+          "source": "Illuminate\\Database\\Eloquent\\Factories\\Factory",
+          "specifiers": [
+            "Factory"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Hash",
+          "specifiers": [
+            "Hash"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Str",
+          "specifiers": [
+            "Str"
+          ]
+        }
+      ],
+      "exports": [
+        "UserFactory"
+      ],
+      "totalLines": 46,
+      "hasStructuralAnalysis": true
+    },
+    "database/migrations/0001_01_01_000000_create_users_table.php": {
+      "filePath": "database/migrations/0001_01_01_000000_create_users_table.php",
+      "contentHash": "10d79883bc08ce46510f9ad8b1830b4d06d586dc56ae2c8bac3b3e491f69a90f",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Database\\Migrations\\Migration",
+          "specifiers": [
+            "Migration"
+          ]
+        },
+        {
+          "source": "Illuminate\\Database\\Schema\\Blueprint",
+          "specifiers": [
+            "Blueprint"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Schema",
+          "specifiers": [
+            "Schema"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 50,
+      "hasStructuralAnalysis": true
+    },
+    "database/migrations/0001_01_01_000001_create_cache_table.php": {
+      "filePath": "database/migrations/0001_01_01_000001_create_cache_table.php",
+      "contentHash": "fbb4665e5a977e71df4e74ec75b3c06ca4f17ad0de7138fe9786639189978e77",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Database\\Migrations\\Migration",
+          "specifiers": [
+            "Migration"
+          ]
+        },
+        {
+          "source": "Illuminate\\Database\\Schema\\Blueprint",
+          "specifiers": [
+            "Blueprint"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Schema",
+          "specifiers": [
+            "Schema"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 36,
+      "hasStructuralAnalysis": true
+    },
+    "database/migrations/0001_01_01_000002_create_jobs_table.php": {
+      "filePath": "database/migrations/0001_01_01_000002_create_jobs_table.php",
+      "contentHash": "df4910687180313a14a3f96a8bddd808ae145ed1b107cd772caf865c0dc2b746",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Database\\Migrations\\Migration",
+          "specifiers": [
+            "Migration"
+          ]
+        },
+        {
+          "source": "Illuminate\\Database\\Schema\\Blueprint",
+          "specifiers": [
+            "Blueprint"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Schema",
+          "specifiers": [
+            "Schema"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 60,
+      "hasStructuralAnalysis": true
+    },
+    "database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php": {
+      "filePath": "database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+      "contentHash": "f599186f5b168d4eafb9cdc19a28a3c0d68f2ddc29c77fc34faf54df52ebb0bc",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Database\\Migrations\\Migration",
+          "specifiers": [
+            "Migration"
+          ]
+        },
+        {
+          "source": "Illuminate\\Database\\Schema\\Blueprint",
+          "specifiers": [
+            "Blueprint"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Schema",
+          "specifiers": [
+            "Schema"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 43,
+      "hasStructuralAnalysis": true
+    },
+    "database/migrations/2026_06_13_081623_create_passkeys_table.php": {
+      "filePath": "database/migrations/2026_06_13_081623_create_passkeys_table.php",
+      "contentHash": "7f0fc4cabc5a8f28e53e21403171e8aff2ac910d4a4845b7c98f5a333fa272db",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Database\\Migrations\\Migration",
+          "specifiers": [
+            "Migration"
+          ]
+        },
+        {
+          "source": "Illuminate\\Database\\Schema\\Blueprint",
+          "specifiers": [
+            "Blueprint"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Schema",
+          "specifiers": [
+            "Schema"
+          ]
+        },
+        {
+          "source": "Laravel\\Passkeys\\Passkeys",
+          "specifiers": [
+            "Passkeys"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 36,
+      "hasStructuralAnalysis": true
+    },
+    "database/seeders/DatabaseSeeder.php": {
+      "filePath": "database/seeders/DatabaseSeeder.php",
+      "contentHash": "cf8e4b6e48360218bb5534f66419c955288f78338eb8a3dba9d8ac3394ec3dbc",
+      "functions": [
+        {
+          "name": "run",
+          "params": [],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 9
+        }
+      ],
+      "classes": [
+        {
+          "name": "DatabaseSeeder",
+          "methods": [
+            "run"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 17
+        }
+      ],
+      "imports": [
+        {
+          "source": "App\\Models\\User",
+          "specifiers": [
+            "User"
+          ]
+        },
+        {
+          "source": "Illuminate\\Database\\Console\\Seeds\\WithoutModelEvents",
+          "specifiers": [
+            "WithoutModelEvents"
+          ]
+        },
+        {
+          "source": "Illuminate\\Database\\Seeder",
+          "specifiers": [
+            "Seeder"
+          ]
+        }
+      ],
+      "exports": [
+        "DatabaseSeeder"
+      ],
+      "totalLines": 26,
+      "hasStructuralAnalysis": true
+    },
+    "public/.htaccess": {
+      "filePath": "public/.htaccess",
+      "contentHash": "b7e379c77639fd56144947dbae84c84eb466d9c686ea81f2f013ae85421da923",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 26,
+      "hasStructuralAnalysis": false
+    },
+    "public/index.php": {
+      "filePath": "public/index.php",
+      "contentHash": "eba77cba39695b6bd091fe5211d481f7ebb2ce2d8d26230b5a609465d0a4aff9",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Foundation\\Application",
+          "specifiers": [
+            "Application"
+          ]
+        },
+        {
+          "source": "Illuminate\\Http\\Request",
+          "specifiers": [
+            "Request"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 21,
+      "hasStructuralAnalysis": true
+    },
+    "resources/js/app.js": {
+      "filePath": "resources/js/app.js",
+      "contentHash": "101ead936a2281d53dcc064b7e2a2ab0d53b92ef3ef7b34b668673007895c860",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "resources/views/auth/forgot-password.blade.php": {
+      "filePath": "resources/views/auth/forgot-password.blade.php",
+      "contentHash": "3738d0b74145635c88394955b2bf82b8f40668d7b16b590ffcf653071121f9af",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 107,
+      "hasStructuralAnalysis": true
+    },
+    "resources/views/auth/login.blade.php": {
+      "filePath": "resources/views/auth/login.blade.php",
+      "contentHash": "9a444986c677bd5076ee97a0bc47570130b89288d7ee9d2536594dc2b8675c26",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 131,
+      "hasStructuralAnalysis": true
+    },
+    "resources/views/auth/master.blade.php": {
+      "filePath": "resources/views/auth/master.blade.php",
+      "contentHash": "bc98eb85045f0fe54ae3d7aa0dee842a5030bb1be5b8e83bf06ebd699d75f58f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 32,
+      "hasStructuralAnalysis": true
+    },
+    "resources/views/auth/register.blade.php": {
+      "filePath": "resources/views/auth/register.blade.php",
+      "contentHash": "0e6eb1aa10542c9fc835e4f31d79ca559862459453ef2523a54ea88ee0a952af",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 179,
+      "hasStructuralAnalysis": true
+    },
+    "resources/views/auth/reset-password.blade.php": {
+      "filePath": "resources/views/auth/reset-password.blade.php",
+      "contentHash": "3bb820fa4e5a86c56c92a939a2724e14396eb60e27999d5b862bd30411d1791a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 191,
+      "hasStructuralAnalysis": true
+    },
+    "resources/views/auth/success-and-error-alert.blade.php": {
+      "filePath": "resources/views/auth/success-and-error-alert.blade.php",
+      "contentHash": "87acf6d31eaa22040d20bbb5b9b171adeedff282caac0f6a4409a6f4f6da00f2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 41,
+      "hasStructuralAnalysis": true
+    },
+    "resources/views/auth/verify-email.blade.php": {
+      "filePath": "resources/views/auth/verify-email.blade.php",
+      "contentHash": "e6971e5ec9f94be73e151c88e4380f874a279e4abb06436046382b424215fb17",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 50,
+      "hasStructuralAnalysis": true
+    },
+    "resources/views/dashboard.blade.php": {
+      "filePath": "resources/views/dashboard.blade.php",
+      "contentHash": "cc579b25e05fdf5af086881eefc1a3446688e62750c198f01bffefd66e013a47",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 101,
+      "hasStructuralAnalysis": true
+    },
+    "resources/views/landing-page.blade.php": {
+      "filePath": "resources/views/landing-page.blade.php",
+      "contentHash": "d0ea2eee97f2df71af333e3d9f5cbeba99d7d1ad6b92b2d66f959a703d055ddb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 90,
+      "hasStructuralAnalysis": true
+    },
+    "resources/views/master.blade.php": {
+      "filePath": "resources/views/master.blade.php",
+      "contentHash": "ec860470b66e1a41ed8b9f62047dca18ad673a49993d56e8789fe5b12cf4e0df",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 123,
+      "hasStructuralAnalysis": true
+    },
+    "routes/console.php": {
+      "filePath": "routes/console.php",
+      "contentHash": "9adccc33e7dd400683e434774077c7fdb2f299c5712cedf16a43fdf56f2850fa",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Foundation\\Inspiring",
+          "specifiers": [
+            "Inspiring"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Artisan",
+          "specifiers": [
+            "Artisan"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "routes/web.php": {
+      "filePath": "routes/web.php",
+      "contentHash": "c6f114668c324e4630486804bddb4559d6f916fcc3b4bc6f363db5610835d5ff",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "App\\Http\\Middleware\\EnsureTokenIsValid",
+          "specifiers": [
+            "EnsureTokenIsValid"
+          ]
+        },
+        {
+          "source": "App\\Models\\User",
+          "specifiers": [
+            "User"
+          ]
+        },
+        {
+          "source": "Illuminate\\Auth\\Notifications\\ResetPassword",
+          "specifiers": [
+            "ResetPassword"
+          ]
+        },
+        {
+          "source": "Illuminate\\Auth\\Notifications\\VerifyEmail",
+          "specifiers": [
+            "VerifyEmail"
+          ]
+        },
+        {
+          "source": "Illuminate\\Http\\Request",
+          "specifiers": [
+            "Request"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Password",
+          "specifiers": [
+            "Password"
+          ]
+        },
+        {
+          "source": "Illuminate\\Support\\Facades\\Route",
+          "specifiers": [
+            "Route"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 66,
+      "hasStructuralAnalysis": true
+    },
+    "tests/Feature/ExampleTest.php": {
+      "filePath": "tests/Feature/ExampleTest.php",
+      "contentHash": "9c8432a460e2d7e60a480c3e2199d0b25fb2ad5cef51a0b5e61ede384041a4b1",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "tests/Pest.php": {
+      "filePath": "tests/Pest.php",
+      "contentHash": "e05d274ebb3f515c5ef23fae192545d30cc8ba6205580ff3c1829cdff508ff69",
+      "functions": [
+        {
+          "name": "something",
+          "params": [],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Illuminate\\Foundation\\Testing\\RefreshDatabase",
+          "specifiers": [
+            "RefreshDatabase"
+          ]
+        },
+        {
+          "source": "Tests\\TestCase",
+          "specifiers": [
+            "TestCase"
+          ]
+        }
+      ],
+      "exports": [
+        "something"
+      ],
+      "totalLines": 51,
+      "hasStructuralAnalysis": true
+    },
+    "tests/TestCase.php": {
+      "filePath": "tests/TestCase.php",
+      "contentHash": "c7c209f5579c42647c1f7b2a79ac828e8b54ac62a98442045a6e94fa2c0d0ebc",
+      "functions": [],
+      "classes": [
+        {
+          "name": "TestCase",
+          "methods": [],
+          "properties": [],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "imports": [
+        {
+          "source": "Illuminate\\Foundation\\Testing\\TestCase",
+          "specifiers": [
+            "TestCase"
+          ]
+        }
+      ],
+      "exports": [
+        "TestCase"
+      ],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "tests/Unit/ExampleTest.php": {
+      "filePath": "tests/Unit/ExampleTest.php",
+      "contentHash": "d86e67e8dbb5e66fa3f63b8eaaf98529bf11786e3345e76dc2e1e1635e20ea56",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "vite.config.js": {
+      "filePath": "vite.config.js",
+      "contentHash": "f413e14379e2db8b200c63a6326b925f6d47cc0df458c77bfe188cfc23e8081f",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "vite",
+          "specifiers": [
+            "defineConfig"
+          ]
+        },
+        {
+          "source": "laravel-vite-plugin",
+          "specifiers": [
+            "laravel"
+          ]
+        },
+        {
+          "source": "laravel-vite-plugin/fonts",
+          "specifiers": [
+            "bunny"
+          ]
+        },
+        {
+          "source": "@tailwindcss/vite",
+          "specifiers": [
+            "tailwindcss"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 25,
+      "hasStructuralAnalysis": true
+    }
+  }
+}

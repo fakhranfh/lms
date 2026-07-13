@@ -1,0 +1,758 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 8,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": ".env.example",
+      "language": "config",
+      "fileCategory": "config",
+      "totalLines": 65,
+      "nonEmptyLines": 51,
+      "definitions": [
+        {
+          "name": "APP_NAME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 1,
+          "endLine": 1
+        },
+        {
+          "name": "APP_ENV",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 2,
+          "endLine": 2
+        },
+        {
+          "name": "APP_KEY",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 3,
+          "endLine": 3
+        },
+        {
+          "name": "APP_DEBUG",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 4,
+          "endLine": 4
+        },
+        {
+          "name": "APP_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 5,
+          "endLine": 5
+        },
+        {
+          "name": "APP_LOCALE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 7,
+          "endLine": 7
+        },
+        {
+          "name": "APP_FALLBACK_LOCALE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 8,
+          "endLine": 8
+        },
+        {
+          "name": "APP_FAKER_LOCALE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 9,
+          "endLine": 9
+        },
+        {
+          "name": "APP_MAINTENANCE_DRIVER",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 11,
+          "endLine": 11
+        },
+        {
+          "name": "BCRYPT_ROUNDS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 16,
+          "endLine": 16
+        },
+        {
+          "name": "LOG_CHANNEL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 18,
+          "endLine": 18
+        },
+        {
+          "name": "LOG_STACK",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 19,
+          "endLine": 19
+        },
+        {
+          "name": "LOG_DEPRECATIONS_CHANNEL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 20,
+          "endLine": 20
+        },
+        {
+          "name": "LOG_LEVEL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 21,
+          "endLine": 21
+        },
+        {
+          "name": "DB_CONNECTION",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 23,
+          "endLine": 23
+        },
+        {
+          "name": "DB_HOST",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 24,
+          "endLine": 24
+        },
+        {
+          "name": "DB_PORT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 25,
+          "endLine": 25
+        },
+        {
+          "name": "DB_DATABASE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 26,
+          "endLine": 26
+        },
+        {
+          "name": "DB_USERNAME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 27,
+          "endLine": 27
+        },
+        {
+          "name": "DB_PASSWORD",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 28,
+          "endLine": 28
+        },
+        {
+          "name": "SESSION_DRIVER",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 30,
+          "endLine": 30
+        },
+        {
+          "name": "SESSION_LIFETIME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 31,
+          "endLine": 31
+        },
+        {
+          "name": "SESSION_ENCRYPT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 32,
+          "endLine": 32
+        },
+        {
+          "name": "SESSION_PATH",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 33,
+          "endLine": 33
+        },
+        {
+          "name": "SESSION_DOMAIN",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 34,
+          "endLine": 34
+        },
+        {
+          "name": "BROADCAST_CONNECTION",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 36,
+          "endLine": 36
+        },
+        {
+          "name": "FILESYSTEM_DISK",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 37,
+          "endLine": 37
+        },
+        {
+          "name": "QUEUE_CONNECTION",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 38,
+          "endLine": 38
+        },
+        {
+          "name": "CACHE_STORE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 40,
+          "endLine": 40
+        },
+        {
+          "name": "MEMCACHED_HOST",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 43,
+          "endLine": 43
+        },
+        {
+          "name": "REDIS_CLIENT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 45,
+          "endLine": 45
+        },
+        {
+          "name": "REDIS_HOST",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 46,
+          "endLine": 46
+        },
+        {
+          "name": "REDIS_PASSWORD",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 47,
+          "endLine": 47
+        },
+        {
+          "name": "REDIS_PORT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 48,
+          "endLine": 48
+        },
+        {
+          "name": "MAIL_MAILER",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 50,
+          "endLine": 50
+        },
+        {
+          "name": "MAIL_SCHEME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 51,
+          "endLine": 51
+        },
+        {
+          "name": "MAIL_HOST",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 52,
+          "endLine": 52
+        },
+        {
+          "name": "MAIL_PORT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 53,
+          "endLine": 53
+        },
+        {
+          "name": "MAIL_USERNAME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 54,
+          "endLine": 54
+        },
+        {
+          "name": "MAIL_PASSWORD",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 55,
+          "endLine": 55
+        },
+        {
+          "name": "MAIL_FROM_ADDRESS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 56,
+          "endLine": 56
+        },
+        {
+          "name": "MAIL_FROM_NAME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 57,
+          "endLine": 57
+        },
+        {
+          "name": "AWS_ACCESS_KEY_ID",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 59,
+          "endLine": 59
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 60,
+          "endLine": 60
+        },
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 61,
+          "endLine": 61
+        },
+        {
+          "name": "AWS_BUCKET",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 62,
+          "endLine": 62
+        },
+        {
+          "name": "AWS_USE_PATH_STYLE_ENDPOINT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 63,
+          "endLine": 63
+        },
+        {
+          "name": "VITE_APP_NAME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 65,
+          "endLine": 65
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 48
+      }
+    },
+    {
+      "path": "AGENTS.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 156,
+      "nonEmptyLines": 99,
+      "sections": [
+        {
+          "heading": "Laravel Boost Guidelines",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "Foundational Context",
+          "level": 2,
+          "line": 8
+        },
+        {
+          "heading": "Skills Activation",
+          "level": 2,
+          "line": 24
+        },
+        {
+          "heading": "Conventions",
+          "level": 2,
+          "line": 28
+        },
+        {
+          "heading": "Verification Scripts",
+          "level": 2,
+          "line": 34
+        },
+        {
+          "heading": "Application Structure & Architecture",
+          "level": 2,
+          "line": 38
+        },
+        {
+          "heading": "Frontend Bundling",
+          "level": 2,
+          "line": 43
+        },
+        {
+          "heading": "Documentation Files",
+          "level": 2,
+          "line": 47
+        },
+        {
+          "heading": "Replies",
+          "level": 2,
+          "line": 51
+        },
+        {
+          "heading": "Laravel Boost",
+          "level": 1,
+          "line": 57
+        },
+        {
+          "heading": "Tools",
+          "level": 2,
+          "line": 59
+        },
+        {
+          "heading": "Searching Documentation (IMPORTANT)",
+          "level": 2,
+          "line": 67
+        },
+        {
+          "heading": "Search Syntax",
+          "level": 3,
+          "line": 74
+        },
+        {
+          "heading": "Artisan",
+          "level": 2,
+          "line": 81
+        },
+        {
+          "heading": "Tinker",
+          "level": 2,
+          "line": 87
+        },
+        {
+          "heading": "PHP",
+          "level": 1,
+          "line": 95
+        },
+        {
+          "heading": "Deployment",
+          "level": 1,
+          "line": 106
+        },
+        {
+          "heading": "Do Things the Laravel Way",
+          "level": 1,
+          "line": 112
+        },
+        {
+          "heading": "Model Creation",
+          "level": 3,
+          "line": 118
+        },
+        {
+          "heading": "APIs & Eloquent Resources",
+          "level": 2,
+          "line": 122
+        },
+        {
+          "heading": "URL Generation",
+          "level": 2,
+          "line": 126
+        },
+        {
+          "heading": "Testing",
+          "level": 2,
+          "line": 130
+        },
+        {
+          "heading": "Vite Error",
+          "level": 2,
+          "line": 136
+        },
+        {
+          "heading": "Laravel Pint Code Formatter",
+          "level": 1,
+          "line": 142
+        },
+        {
+          "heading": "Pest",
+          "level": 2,
+          "line": 149
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 25
+      }
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 28,
+      "nonEmptyLines": 19,
+      "sections": [
+        {
+          "heading": "Laravel 13 Boilerplate",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Key Features",
+          "level": 2,
+          "line": 5
+        },
+        {
+          "heading": "Tech Stack",
+          "level": 2,
+          "line": 12
+        },
+        {
+          "heading": "How It Works",
+          "level": 2,
+          "line": 18
+        },
+        {
+          "heading": "Installation",
+          "level": 2,
+          "line": 24
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 5
+      }
+    },
+    {
+      "path": "boost.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 16,
+      "nonEmptyLines": 16,
+      "sections": [
+        {
+          "heading": "agents",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "cloud",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "guidelines",
+          "level": 1,
+          "line": 6
+        },
+        {
+          "heading": "mcp",
+          "level": 1,
+          "line": 7
+        },
+        {
+          "heading": "nightwatch",
+          "level": 1,
+          "line": 8
+        },
+        {
+          "heading": "sail",
+          "level": 1,
+          "line": 9
+        },
+        {
+          "heading": "skills",
+          "level": 1,
+          "line": 10
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 7
+      }
+    },
+    {
+      "path": "composer.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 93,
+      "nonEmptyLines": 93,
+      "sections": [
+        {
+          "heading": "$schema",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "name",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "type",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "description",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "keywords",
+          "level": 1,
+          "line": 6
+        },
+        {
+          "heading": "license",
+          "level": 1,
+          "line": 10
+        },
+        {
+          "heading": "require",
+          "level": 1,
+          "line": 11
+        },
+        {
+          "heading": "require-dev",
+          "level": 1,
+          "line": 17
+        },
+        {
+          "heading": "autoload",
+          "level": 1,
+          "line": 28
+        },
+        {
+          "heading": "autoload-dev",
+          "level": 1,
+          "line": 35
+        },
+        {
+          "heading": "scripts",
+          "level": 1,
+          "line": 40
+        },
+        {
+          "heading": "extra",
+          "level": 1,
+          "line": 77
+        },
+        {
+          "heading": "config",
+          "level": 1,
+          "line": 82
+        },
+        {
+          "heading": "minimum-stability",
+          "level": 1,
+          "line": 91
+        },
+        {
+          "heading": "prefer-stable",
+          "level": 1,
+          "line": 92
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 15
+      }
+    },
+    {
+      "path": "opencode.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 14,
+      "nonEmptyLines": 14,
+      "sections": [
+        {
+          "heading": "$schema",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "mcp",
+          "level": 1,
+          "line": 3
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 2
+      }
+    },
+    {
+      "path": "package.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 20,
+      "nonEmptyLines": 20,
+      "sections": [
+        {
+          "heading": "$schema",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "private",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "type",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "scripts",
+          "level": 1,
+          "line": 5
+        },
+        {
+          "heading": "devDependencies",
+          "level": 1,
+          "line": 10
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 5
+      }
+    },
+    {
+      "path": "phpunit.xml",
+      "language": "xml",
+      "fileCategory": "config",
+      "totalLines": 36,
+      "nonEmptyLines": 36,
+      "metrics": {}
+    }
+  ]
+}

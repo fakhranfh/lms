@@ -1,0 +1,17 @@
+{
+  "nodes": [
+    {
+      "id": "file:vite.config.js",
+      "type": "file",
+      "name": "vite.config.js",
+      "filePath": "vite.config.js",
+      "summary": "Vite build configuration with Laravel and Tailwind CSS plugins.",
+      "tags": [
+        "build-tool",
+        "vite"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": []
+}

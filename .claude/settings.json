@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Start-Sleep -Seconds 3)",
+      "mcp__laravel-boost__browser-logs"
+    ]
+  }
+}

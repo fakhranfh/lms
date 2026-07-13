@@ -1,0 +1,111 @@
+{
+  "scriptCompleted": true,
+  "stats": {
+    "filesScanned": 73,
+    "filesWithImports": 11,
+    "totalEdges": 17
+  },
+  "importMap": {
+    ".env.example": [],
+    ".gitattributes": [],
+    ".husky/commit-msg": [],
+    ".npmrc": [],
+    ".understand-anything/.understandignore": [],
+    ".understand-anything/intermediate/scan-result.json": [],
+    ".understand-anything/tmp/ua-import-map-input.json": [],
+    ".understand-anything/tmp/ua-import-map-output.json": [],
+    ".understand-anything/tmp/ua-scan-files.json": [],
+    "AGENTS.md": [],
+    "app/Actions/Fortify/CreateNewUser.php": [
+      "app/Models/User.php"
+    ],
+    "app/Actions/Fortify/PasswordValidationRules.php": [],
+    "app/Actions/Fortify/ResetUserPassword.php": [
+      "app/Models/User.php"
+    ],
+    "app/Actions/Fortify/UpdateUserPassword.php": [
+      "app/Models/User.php"
+    ],
+    "app/Actions/Fortify/UpdateUserProfileInformation.php": [
+      "app/Models/User.php"
+    ],
+    "app/Http/Controllers/Controller.php": [],
+    "app/Http/Middleware/EnsureTokenIsValid.php": [],
+    "app/Http/Responses/CustomPasswordResetLinkResponse.php": [],
+    "app/Http/Responses/CustomPasswordResetResponse.php": [],
+    "app/Http/Responses/CustomVerifyEmailViewResponse.php": [],
+    "app/Models/User.php": [
+      "database/factories/UserFactory.php"
+    ],
+    "app/Providers/AppServiceProvider.php": [
+      "app/Http/Responses/CustomVerifyEmailViewResponse.php"
+    ],
+    "app/Providers/FortifyServiceProvider.php": [
+      "app/Actions/Fortify/CreateNewUser.php",
+      "app/Actions/Fortify/ResetUserPassword.php",
+      "app/Actions/Fortify/UpdateUserPassword.php",
+      "app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "app/Http/Responses/CustomPasswordResetResponse.php"
+    ],
+    "artisan": [],
+    "boost.json": [],
+    "bootstrap/app.php": [],
+    "bootstrap/providers.php": [],
+    "commitlint.config.js": [],
+    "composer.json": [],
+    "config/app.php": [],
+    "config/auth.php": [
+      "app/Models/User.php"
+    ],
+    "config/cache.php": [],
+    "config/database.php": [],
+    "config/filesystems.php": [],
+    "config/fortify.php": [],
+    "config/logging.php": [],
+    "config/mail.php": [],
+    "config/queue.php": [],
+    "config/services.php": [],
+    "config/session.php": [],
+    "database/factories/UserFactory.php": [
+      "app/Models/User.php"
+    ],
+    "database/migrations/0001_01_01_000000_create_users_table.php": [],
+    "database/migrations/0001_01_01_000001_create_cache_table.php": [],
+    "database/migrations/0001_01_01_000002_create_jobs_table.php": [],
+    "database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php": [],
+    "database/migrations/2026_06_13_081623_create_passkeys_table.php": [],
+    "database/seeders/DatabaseSeeder.php": [
+      "app/Models/User.php"
+    ],
+    "opencode.json": [],
+    "package.json": [],
+    "phpunit.xml": [],
+    "public/.htaccess": [],
+    "public/index.php": [],
+    "public/robots.txt": [],
+    "README.md": [],
+    "resources/css/app.css": [],
+    "resources/js/app.js": [],
+    "resources/views/auth/forgot-password.blade.php": [],
+    "resources/views/auth/login.blade.php": [],
+    "resources/views/auth/master.blade.php": [],
+    "resources/views/auth/register.blade.php": [],
+    "resources/views/auth/reset-password.blade.php": [],
+    "resources/views/auth/success-and-error-alert.blade.php": [],
+    "resources/views/auth/verify-email.blade.php": [],
+    "resources/views/dashboard.blade.php": [],
+    "resources/views/landing-page.blade.php": [],
+    "resources/views/master.blade.php": [],
+    "routes/console.php": [],
+    "routes/web.php": [
+      "app/Http/Middleware/EnsureTokenIsValid.php",
+      "app/Models/User.php"
+    ],
+    "tests/Feature/ExampleTest.php": [],
+    "tests/Pest.php": [],
+    "tests/TestCase.php": [],
+    "tests/Unit/ExampleTest.php": [],
+    "vite.config.js": []
+  }
+}

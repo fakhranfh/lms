@@ -1,0 +1,134 @@
+[
+  {
+    "order": 1,
+    "title": "Project Overview",
+    "description": "Start with the README to understand Laravel 13 Boilerplate — a WhatsApp-based personal finance tracker built on Laravel. The AGENTS.md file provides coding guidelines and conventions.",
+    "nodeIds": [
+      "document:README.md",
+      "document:AGENTS.md"
+    ]
+  },
+  {
+    "order": 2,
+    "title": "Application Entry Point",
+    "description": "The public/index.php is the HTTP entry point that bootstraps the Laravel kernel. bootstrap/app.php configures routing, middleware, and exception handling.",
+    "nodeIds": [
+      "file:public/index.php",
+      "file:bootstrap/app.php",
+      "file:bootstrap/providers.php"
+    ]
+  },
+  {
+    "order": 3,
+    "title": "Routing & Middleware",
+    "description": "routes/web.php defines all web routes including Fortify auth routes and the dashboard. The EnsureTokenIsValid middleware protects API endpoints.",
+    "nodeIds": [
+      "file:routes/web.php",
+      "file:routes/console.php",
+      "file:app/Http/Middleware/EnsureTokenIsValid.php"
+    ]
+  },
+  {
+    "order": 4,
+    "title": "Fortify Authentication Actions",
+    "description": "Fortify action classes in app/Actions/Fortify/ handle user registration, password updates, password resets, and profile information changes. These are the core auth business logic.",
+    "nodeIds": [
+      "file:app/Actions/Fortify/CreateNewUser.php",
+      "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "file:app/Actions/Fortify/ResetUserPassword.php",
+      "file:app/Actions/Fortify/PasswordValidationRules.php"
+    ]
+  },
+  {
+    "order": 5,
+    "title": "Custom Fortify Responses",
+    "description": "Custom response classes override default Fortify behavior for password reset links, password reset confirmations, and email verification views.",
+    "nodeIds": [
+      "file:app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "file:app/Http/Responses/CustomPasswordResetResponse.php",
+      "file:app/Http/Responses/CustomVerifyEmailViewResponse.php"
+    ]
+  },
+  {
+    "order": 6,
+    "title": "User Model & Authentication Config",
+    "description": "The User model supports two-factor authentication and passkeys (WebAuthn). config/fortify.php and config/auth.php configure all authentication features.",
+    "nodeIds": [
+      "file:app/Models/User.php",
+      "file:config/fortify.php",
+      "file:config/auth.php"
+    ]
+  },
+  {
+    "order": 7,
+    "title": "Service Providers",
+    "description": "FortifyServiceProvider binds Fortify actions and custom responses. AppServiceProvider handles general application bootstrapping.",
+    "nodeIds": [
+      "file:app/Providers/FortifyServiceProvider.php",
+      "file:app/Providers/AppServiceProvider.php"
+    ]
+  },
+  {
+    "order": 8,
+    "title": "Database Layer",
+    "description": "Migrations create users, cache, jobs, passkeys tables with two-factor columns. UserFactory generates test data. DatabaseSeeder coordinates seeding.",
+    "nodeIds": [
+      "file:database/migrations/0001_01_01_000000_create_users_table.php",
+      "file:database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+      "file:database/migrations/2026_06_13_081623_create_passkeys_table.php",
+      "file:database/factories/UserFactory.php",
+      "file:database/seeders/DatabaseSeeder.php"
+    ]
+  },
+  {
+    "order": 9,
+    "title": "Blade Views & UI",
+    "description": "Authentication views (login, register, forgot/reset password, verify email) use a shared auth layout. master.blade.php is the main app layout with Vite assets.",
+    "nodeIds": [
+      "file:resources/views/auth/login.blade.php",
+      "file:resources/views/auth/register.blade.php",
+      "file:resources/views/auth/forgot-password.blade.php",
+      "file:resources/views/auth/reset-password.blade.php",
+      "file:resources/views/auth/verify-email.blade.php",
+      "file:resources/views/master.blade.php"
+    ]
+  },
+  {
+    "order": 10,
+    "title": "Frontend Build Pipeline",
+    "description": "Vite bundles CSS (Tailwind v4) and JavaScript. vite.config.js configures the Laravel Vite plugin. resources/css/app.css is the Tailwind entry point.",
+    "nodeIds": [
+      "file:vite.config.js",
+      "file:resources/css/app.css",
+      "file:resources/js/app.js"
+    ]
+  },
+  {
+    "order": 11,
+    "title": "Configuration Files",
+    "description": "Core Laravel config files for app, database, cache, session, queue, mail, filesystems, logging, and services. Each controls a subsystem of the application.",
+    "nodeIds": [
+      "file:config/app.php",
+      "file:config/database.php",
+      "file:config/cache.php",
+      "file:config/session.php",
+      "file:config/queue.php",
+      "file:config/mail.php",
+      "file:config/filesystems.php",
+      "file:config/logging.php",
+      "file:config/services.php"
+    ]
+  },
+  {
+    "order": 12,
+    "title": "Testing with Pest",
+    "description": "Pest PHP test suite with feature and unit tests. Tests/Pest.php contains global configuration. TestCase.php provides the base test class.",
+    "nodeIds": [
+      "file:tests/Pest.php",
+      "file:tests/TestCase.php",
+      "file:tests/Feature/ExampleTest.php",
+      "file:tests/Unit/ExampleTest.php"
+    ]
+  }
+]

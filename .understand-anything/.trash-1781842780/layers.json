@@ -1,0 +1,176 @@
+[
+  {
+    "id": "layer:entry-point",
+    "name": "Entry Point & Bootstrap",
+    "description": "Application entry point and bootstrap files.",
+    "nodeIds": [
+      "file:.gitattributes",
+      "file:.husky/commit-msg",
+      "file:.understand-anything/.understandignore",
+      "file:artisan",
+      "file:bootstrap/app.php",
+      "file:bootstrap/providers.php",
+      "file:public/.htaccess",
+      "file:public/index.php"
+    ]
+  },
+  {
+    "id": "layer:routing",
+    "name": "Routing",
+    "description": "Route definitions mapping URLs to controllers and middleware.",
+    "nodeIds": [
+      "file:routes/console.php",
+      "file:routes/web.php"
+    ]
+  },
+  {
+    "id": "layer:middleware",
+    "name": "HTTP Middleware",
+    "description": "Request middleware filtering HTTP requests.",
+    "nodeIds": [
+      "file:app/Http/Middleware/EnsureTokenIsValid.php"
+    ]
+  },
+  {
+    "id": "layer:controllers",
+    "name": "Controllers",
+    "description": "HTTP controllers handling requests and responses.",
+    "nodeIds": [
+      "file:app/Http/Controllers/Controller.php"
+    ]
+  },
+  {
+    "id": "layer:actions",
+    "name": "Fortify Actions",
+    "description": "Fortify action classes: registration, password, profile.",
+    "nodeIds": [
+      "file:app/Actions/Fortify/CreateNewUser.php",
+      "file:app/Actions/Fortify/ResetUserPassword.php",
+      "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "file:app/Actions/Fortify/PasswordValidationRules.php"
+    ]
+  },
+  {
+    "id": "layer:models",
+    "name": "Models & Entities",
+    "description": "Eloquent ORM models and relationships.",
+    "nodeIds": [
+      "file:app/Models/User.php"
+    ]
+  },
+  {
+    "id": "layer:providers",
+    "name": "Service Providers",
+    "description": "Service providers registering bindings and bootstrapping.",
+    "nodeIds": [
+      "file:app/Providers/FortifyServiceProvider.php",
+      "file:app/Providers/AppServiceProvider.php"
+    ]
+  },
+  {
+    "id": "layer:responses",
+    "name": "Custom Responses",
+    "description": "Custom Fortify response contracts.",
+    "nodeIds": [
+      "file:app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "file:app/Http/Responses/CustomPasswordResetResponse.php",
+      "file:app/Http/Responses/CustomVerifyEmailViewResponse.php"
+    ]
+  },
+  {
+    "id": "layer:configuration",
+    "name": "Configuration",
+    "description": "Application and package configuration files.",
+    "nodeIds": [
+      "file:config/auth.php",
+      "config:.env.example",
+      "config:boost.json",
+      "config:opencode.json",
+      "file:.npmrc",
+      "file:config/app.php",
+      "file:config/cache.php",
+      "file:config/database.php",
+      "file:config/filesystems.php",
+      "file:config/fortify.php",
+      "file:config/logging.php",
+      "file:config/mail.php",
+      "file:config/queue.php",
+      "file:config/services.php",
+      "file:config/session.php"
+    ]
+  },
+  {
+    "id": "layer:views",
+    "name": "Blade Views",
+    "description": "Blade templates for authentication and pages.",
+    "nodeIds": [
+      "file:resources/views/auth/forgot-password.blade.php",
+      "file:resources/views/auth/login.blade.php",
+      "file:resources/views/auth/master.blade.php",
+      "file:resources/views/auth/register.blade.php",
+      "file:resources/views/auth/reset-password.blade.php",
+      "file:resources/views/auth/success-and-error-alert.blade.php",
+      "file:resources/views/auth/verify-email.blade.php",
+      "file:resources/views/dashboard.blade.php",
+      "file:resources/views/landing-page.blade.php",
+      "file:resources/views/master.blade.php"
+    ]
+  },
+  {
+    "id": "layer:assets",
+    "name": "Frontend Assets",
+    "description": "CSS, JavaScript, and build tool configuration.",
+    "nodeIds": [
+      "file:commitlint.config.js",
+      "file:resources/css/app.css",
+      "file:resources/js/app.js",
+      "file:vite.config.js"
+    ]
+  },
+  {
+    "id": "layer:database",
+    "name": "Database Layer",
+    "description": "Migrations, factories, and seeders.",
+    "nodeIds": [
+      "file:database/factories/UserFactory.php",
+      "file:database/seeders/DatabaseSeeder.php",
+      "file:database/migrations/0001_01_01_000000_create_users_table.php",
+      "file:database/migrations/0001_01_01_000001_create_cache_table.php",
+      "file:database/migrations/0001_01_01_000002_create_jobs_table.php",
+      "file:database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+      "file:database/migrations/2026_06_13_081623_create_passkeys_table.php"
+    ]
+  },
+  {
+    "id": "layer:testing",
+    "name": "Testing",
+    "description": "Pest test suite with feature and unit tests.",
+    "nodeIds": [
+      "file:tests/Feature/ExampleTest.php",
+      "file:tests/Pest.php",
+      "file:tests/TestCase.php",
+      "file:tests/Unit/ExampleTest.php"
+    ]
+  },
+  {
+    "id": "layer:documentation",
+    "name": "Documentation",
+    "description": "Project documentation and guidelines.",
+    "nodeIds": [
+      "document:AGENTS.md",
+      "document:README.md",
+      "document:public/robots.txt"
+    ]
+  },
+  {
+    "id": "layer:manifests",
+    "name": "Package Manifests",
+    "description": "Dependency manifests and build configuration.",
+    "nodeIds": [
+      "config:composer.json",
+      "config:package.json",
+      "config:phpunit.xml"
+    ]
+  }
+]

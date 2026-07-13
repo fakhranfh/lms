@@ -1,0 +1,437 @@
+{
+  "nodes": [
+    {
+      "id": "file:.gitattributes",
+      "type": "file",
+      "name": ".gitattributes",
+      "filePath": ".gitattributes",
+      "summary": "PHP source file (11 lines).",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:.husky/commit-msg",
+      "type": "file",
+      "name": "commit-msg",
+      "filePath": ".husky/commit-msg",
+      "summary": "PHP source file (0 lines).",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:.npmrc",
+      "type": "file",
+      "name": ".npmrc",
+      "filePath": ".npmrc",
+      "summary": "PHP source file (2 lines).",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:.understand-anything/.understandignore",
+      "type": "file",
+      "name": ".understandignore",
+      "filePath": ".understand-anything/.understandignore",
+      "summary": "PHP source file (65 lines).",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:.understand-anything/intermediate/scan-result.json",
+      "type": "config",
+      "name": "scan-result.json",
+      "filePath": ".understand-anything/intermediate/scan-result.json",
+      "summary": "config file (882 lines).",
+      "tags": [],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:app/Actions/Fortify/PasswordValidationRules.php",
+      "type": "file",
+      "name": "PasswordValidationRules.php",
+      "filePath": "app/Actions/Fortify/PasswordValidationRules.php",
+      "summary": "Provides default Laravel password validation rules.",
+      "tags": [
+        "action",
+        "fortify",
+        "authentication",
+        "password"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Http/Controllers/Controller.php",
+      "type": "file",
+      "name": "Controller.php",
+      "filePath": "app/Http/Controllers/Controller.php",
+      "summary": "Base controller class extended by all application controllers.",
+      "tags": [
+        "controller"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Http/Middleware/EnsureTokenIsValid.php",
+      "type": "file",
+      "name": "EnsureTokenIsValid.php",
+      "filePath": "app/Http/Middleware/EnsureTokenIsValid.php",
+      "summary": "Middleware that validates API tokens for route protection.",
+      "tags": [
+        "middleware"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "type": "file",
+      "name": "CustomVerifyEmailViewResponse.php",
+      "filePath": "app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "summary": "Custom Fortify response for email verification view handling.",
+      "tags": [
+        "response"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Providers/AppServiceProvider.php",
+      "type": "file",
+      "name": "AppServiceProvider.php",
+      "filePath": "app/Providers/AppServiceProvider.php",
+      "summary": "Application service provider bootstrapping app-level services.",
+      "tags": [
+        "service-provider"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:artisan",
+      "type": "file",
+      "name": "artisan",
+      "filePath": "artisan",
+      "summary": "PHP source file (18 lines).",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:bootstrap/app.php",
+      "type": "file",
+      "name": "app.php",
+      "filePath": "bootstrap/app.php",
+      "summary": "Laravel application bootstrap configuring routing, middleware, and exceptions.",
+      "tags": [
+        "bootstrap",
+        "entry-point"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:bootstrap/providers.php",
+      "type": "file",
+      "name": "providers.php",
+      "filePath": "bootstrap/providers.php",
+      "summary": "Service provider manifest for optimized provider loading.",
+      "tags": [
+        "bootstrap",
+        "entry-point"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:commitlint.config.js",
+      "type": "file",
+      "name": "commitlint.config.js",
+      "filePath": "commitlint.config.js",
+      "summary": "PHP source file (2 lines).",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:config/app.php",
+      "type": "file",
+      "name": "app.php",
+      "filePath": "config/app.php",
+      "summary": "Core application configuration: name, env, providers, and aliases.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/cache.php",
+      "type": "file",
+      "name": "cache.php",
+      "filePath": "config/cache.php",
+      "summary": "Cache store configuration with Redis and file driver settings.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/database.php",
+      "type": "file",
+      "name": "database.php",
+      "filePath": "config/database.php",
+      "summary": "Database connection configuration for multiple environments.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/filesystems.php",
+      "type": "file",
+      "name": "filesystems.php",
+      "filePath": "config/filesystems.php",
+      "summary": "Filesystem disk configuration for local, S3, and other storage drivers.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/fortify.php",
+      "type": "file",
+      "name": "fortify.php",
+      "filePath": "config/fortify.php",
+      "summary": "Laravel Fortify configuration: auth features, password rules, and verification settings.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/logging.php",
+      "type": "file",
+      "name": "logging.php",
+      "filePath": "config/logging.php",
+      "summary": "Logging channel configuration with stack and daily driver settings.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/mail.php",
+      "type": "file",
+      "name": "mail.php",
+      "filePath": "config/mail.php",
+      "summary": "Mail driver configuration for SMTP, Mailgun, and other transports.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/queue.php",
+      "type": "file",
+      "name": "queue.php",
+      "filePath": "config/queue.php",
+      "summary": "Queue connection configuration for database, Redis, and SQS drivers.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:config/services.php",
+      "type": "file",
+      "name": "services.php",
+      "filePath": "config/services.php",
+      "summary": "Third-party service integrations configuration.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:config/session.php",
+      "type": "file",
+      "name": "session.php",
+      "filePath": "config/session.php",
+      "summary": "Session driver and lifetime configuration.",
+      "tags": [
+        "configuration"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:database/migrations/0001_01_01_000000_create_users_table.php",
+      "type": "file",
+      "name": "0001_01_01_000000_create_users_table.php",
+      "filePath": "database/migrations/0001_01_01_000000_create_users_table.php",
+      "summary": "Creates the users table with name, email, and password columns.",
+      "tags": [
+        "migration",
+        "database"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:app/Http/Controllers/Controller.php:Controller",
+      "type": "class",
+      "name": "Controller",
+      "filePath": "app/Http/Controllers/Controller.php",
+      "summary": "Controller class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:app/Http/Middleware/EnsureTokenIsValid.php:handle",
+      "type": "function",
+      "name": "handle",
+      "filePath": "app/Http/Middleware/EnsureTokenIsValid.php",
+      "summary": "handle method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Http/Middleware/EnsureTokenIsValid.php:EnsureTokenIsValid",
+      "type": "class",
+      "name": "EnsureTokenIsValid",
+      "filePath": "app/Http/Middleware/EnsureTokenIsValid.php",
+      "summary": "EnsureTokenIsValid class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Http/Responses/CustomVerifyEmailViewResponse.php:CustomVerifyEmailViewResponse",
+      "type": "class",
+      "name": "CustomVerifyEmailViewResponse",
+      "filePath": "app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "summary": "CustomVerifyEmailViewResponse class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Providers/AppServiceProvider.php:AppServiceProvider",
+      "type": "class",
+      "name": "AppServiceProvider",
+      "filePath": "app/Providers/AppServiceProvider.php",
+      "summary": "AppServiceProvider class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:app/Http/Controllers/Controller.php",
+      "target": "class:app/Http/Controllers/Controller.php:Controller",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Http/Middleware/EnsureTokenIsValid.php",
+      "target": "function:app/Http/Middleware/EnsureTokenIsValid.php:handle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Http/Middleware/EnsureTokenIsValid.php",
+      "target": "class:app/Http/Middleware/EnsureTokenIsValid.php:EnsureTokenIsValid",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "target": "class:app/Http/Responses/CustomVerifyEmailViewResponse.php:CustomVerifyEmailViewResponse",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Providers/AppServiceProvider.php",
+      "target": "class:app/Providers/AppServiceProvider.php:AppServiceProvider",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Providers/AppServiceProvider.php",
+      "target": "file:app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Actions/Fortify/CreateNewUser.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Actions/Fortify/PasswordValidationRules.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Actions/Fortify/ResetUserPassword.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Http/Responses/CustomPasswordResetResponse.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:config/fortify.php",
+      "target": "file:app/Http/Responses/CustomVerifyEmailViewResponse.php",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:database/migrations/0001_01_01_000000_create_users_table.php",
+      "target": "file:app/Models/User.php",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

@@ -1,0 +1,385 @@
+{
+  "nodes": [
+    {
+      "id": "file:database/migrations/0001_01_01_000001_create_cache_table.php",
+      "type": "file",
+      "name": "0001_01_01_000001_create_cache_table.php",
+      "filePath": "database/migrations/0001_01_01_000001_create_cache_table.php",
+      "summary": "Creates the cache table for database cache driver.",
+      "tags": [
+        "migration",
+        "database"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:database/migrations/0001_01_01_000002_create_jobs_table.php",
+      "type": "file",
+      "name": "0001_01_01_000002_create_jobs_table.php",
+      "filePath": "database/migrations/0001_01_01_000002_create_jobs_table.php",
+      "summary": "Creates the jobs table for database queue driver.",
+      "tags": [
+        "migration",
+        "database"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+      "type": "file",
+      "name": "2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+      "filePath": "database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+      "summary": "Adds two-factor authentication columns to users table.",
+      "tags": [
+        "migration",
+        "database",
+        "authentication",
+        "2fa"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:database/migrations/2026_06_13_081623_create_passkeys_table.php",
+      "type": "file",
+      "name": "2026_06_13_081623_create_passkeys_table.php",
+      "filePath": "database/migrations/2026_06_13_081623_create_passkeys_table.php",
+      "summary": "Creates the passkeys table for WebAuthn passkey authentication.",
+      "tags": [
+        "migration",
+        "database",
+        "authentication",
+        "passkey"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:public/.htaccess",
+      "type": "file",
+      "name": ".htaccess",
+      "filePath": "public/.htaccess",
+      "summary": "PHP source file (25 lines).",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:public/index.php",
+      "type": "file",
+      "name": "index.php",
+      "filePath": "public/index.php",
+      "summary": "Laravel application entry point that bootstraps the HTTP kernel.",
+      "tags": [
+        "entry-point"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:public/robots.txt",
+      "type": "document",
+      "name": "robots.txt",
+      "filePath": "public/robots.txt",
+      "summary": "docs file (2 lines).",
+      "tags": [
+        "documentation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:resources/css/app.css",
+      "type": "file",
+      "name": "app.css",
+      "filePath": "resources/css/app.css",
+      "summary": "Application Tailwind CSS entry point.",
+      "tags": [
+        "stylesheet",
+        "tailwind"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:resources/js/app.js",
+      "type": "file",
+      "name": "app.js",
+      "filePath": "resources/js/app.js",
+      "summary": "Application JavaScript entry point with Vite imports.",
+      "tags": [
+        "javascript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:resources/views/auth/forgot-password.blade.php",
+      "type": "file",
+      "name": "forgot-password.blade.php",
+      "filePath": "resources/views/auth/forgot-password.blade.php",
+      "summary": "Password reset request form for email-based recovery.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:resources/views/auth/login.blade.php",
+      "type": "file",
+      "name": "login.blade.php",
+      "filePath": "resources/views/auth/login.blade.php",
+      "summary": "Login page with email/password form and forgot-password link.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:resources/views/auth/master.blade.php",
+      "type": "file",
+      "name": "master.blade.php",
+      "filePath": "resources/views/auth/master.blade.php",
+      "summary": "Auth layout master template with head, body, and guest layout structure.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:resources/views/auth/register.blade.php",
+      "type": "file",
+      "name": "register.blade.php",
+      "filePath": "resources/views/auth/register.blade.php",
+      "summary": "Registration page with name, email, password, and confirmation fields.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:resources/views/auth/reset-password.blade.php",
+      "type": "file",
+      "name": "reset-password.blade.php",
+      "filePath": "resources/views/auth/reset-password.blade.php",
+      "summary": "New password form shown after clicking reset link from email.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:resources/views/auth/success-and-error-alert.blade.php",
+      "type": "file",
+      "name": "success-and-error-alert.blade.php",
+      "filePath": "resources/views/auth/success-and-error-alert.blade.php",
+      "summary": "Reusable alert component for auth form success and error feedback.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:resources/views/auth/verify-email.blade.php",
+      "type": "file",
+      "name": "verify-email.blade.php",
+      "filePath": "resources/views/auth/verify-email.blade.php",
+      "summary": "Email verification prompt with resend link.",
+      "tags": [
+        "authentication",
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:resources/views/dashboard.blade.php",
+      "type": "file",
+      "name": "dashboard.blade.php",
+      "filePath": "resources/views/dashboard.blade.php",
+      "summary": "Authenticated user dashboard displaying user information.",
+      "tags": [
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:resources/views/landing-page.blade.php",
+      "type": "file",
+      "name": "landing-page.blade.php",
+      "filePath": "resources/views/landing-page.blade.php",
+      "summary": "Public landing page shown to unauthenticated visitors.",
+      "tags": [
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:resources/views/master.blade.php",
+      "type": "file",
+      "name": "master.blade.php",
+      "filePath": "resources/views/master.blade.php",
+      "summary": "Main application layout with HTML structure, meta tags, and Vite assets.",
+      "tags": [
+        "blade",
+        "view",
+        "template"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:routes/console.php",
+      "type": "file",
+      "name": "console.php",
+      "filePath": "routes/console.php",
+      "summary": "Console route definitions for Artisan closure commands.",
+      "tags": [
+        "routing"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:routes/web.php",
+      "type": "file",
+      "name": "web.php",
+      "filePath": "routes/web.php",
+      "summary": "Web route definitions with Fortify auth routes and dashboard.",
+      "tags": [
+        "routing"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/Feature/ExampleTest.php",
+      "type": "file",
+      "name": "ExampleTest.php",
+      "filePath": "tests/Feature/ExampleTest.php",
+      "summary": "Example feature test verifying application returns successful response.",
+      "tags": [
+        "test",
+        "pest"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/Pest.php",
+      "type": "file",
+      "name": "Pest.php",
+      "filePath": "tests/Pest.php",
+      "summary": "Pest test configuration with global setup and helper functions.",
+      "tags": [
+        "test",
+        "pest"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/TestCase.php",
+      "type": "file",
+      "name": "TestCase.php",
+      "filePath": "tests/TestCase.php",
+      "summary": "Base test case class extending Laravel testing utilities.",
+      "tags": [
+        "test",
+        "pest"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:tests/Unit/ExampleTest.php",
+      "type": "file",
+      "name": "ExampleTest.php",
+      "filePath": "tests/Unit/ExampleTest.php",
+      "summary": "Example unit test placeholder.",
+      "tags": [
+        "test",
+        "pest"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/Pest.php:something",
+      "type": "function",
+      "name": "something",
+      "filePath": "tests/Pest.php",
+      "summary": "something method",
+      "tags": [
+        "method",
+        "public"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:tests/TestCase.php:TestCase",
+      "type": "class",
+      "name": "TestCase",
+      "filePath": "tests/TestCase.php",
+      "summary": "TestCase class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:tests/Pest.php",
+      "target": "function:tests/Pest.php:something",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:tests/TestCase.php",
+      "target": "class:tests/TestCase.php:TestCase",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:routes/web.php",
+      "target": "file:app/Http/Middleware/EnsureTokenIsValid.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:routes/web.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:database/migrations/2026_06_13_081622_add_two_factor_columns_to_users_table.php",
+      "target": "file:app/Models/User.php",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:database/migrations/2026_06_13_081623_create_passkeys_table.php",
+      "target": "file:app/Models/User.php",
+      "type": "migrates",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

@@ -1,0 +1,352 @@
+{
+  "nodes": [
+    {
+      "id": "file:app/Actions/Fortify/CreateNewUser.php",
+      "type": "file",
+      "name": "CreateNewUser.php",
+      "filePath": "app/Actions/Fortify/CreateNewUser.php",
+      "summary": "Handles new user registration with validation and creation logic.",
+      "tags": [
+        "action",
+        "fortify",
+        "authentication"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Actions/Fortify/ResetUserPassword.php",
+      "type": "file",
+      "name": "ResetUserPassword.php",
+      "filePath": "app/Actions/Fortify/ResetUserPassword.php",
+      "summary": "Resets a user password using Fortify password reset flow.",
+      "tags": [
+        "action",
+        "fortify",
+        "authentication",
+        "password"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "type": "file",
+      "name": "UpdateUserProfileInformation.php",
+      "filePath": "app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "summary": "Updates authenticated user profile information with unique email validation.",
+      "tags": [
+        "action",
+        "fortify",
+        "authentication"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "type": "file",
+      "name": "CustomPasswordResetLinkResponse.php",
+      "filePath": "app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "summary": "Custom Fortify response for password reset link requests.",
+      "tags": [
+        "response",
+        "authentication",
+        "password"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Http/Responses/CustomPasswordResetResponse.php",
+      "type": "file",
+      "name": "CustomPasswordResetResponse.php",
+      "filePath": "app/Http/Responses/CustomPasswordResetResponse.php",
+      "summary": "Custom Fortify response after successful password reset.",
+      "tags": [
+        "response",
+        "authentication",
+        "password"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:app/Providers/FortifyServiceProvider.php",
+      "type": "file",
+      "name": "FortifyServiceProvider.php",
+      "filePath": "app/Providers/FortifyServiceProvider.php",
+      "summary": "Registers Fortify authentication actions and custom response bindings.",
+      "tags": [
+        "service-provider",
+        "fortify",
+        "authentication"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:app/Actions/Fortify/CreateNewUser.php:create",
+      "type": "function",
+      "name": "create",
+      "filePath": "app/Actions/Fortify/CreateNewUser.php",
+      "summary": "create method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Actions/Fortify/CreateNewUser.php:CreateNewUser",
+      "type": "class",
+      "name": "CreateNewUser",
+      "filePath": "app/Actions/Fortify/CreateNewUser.php",
+      "summary": "CreateNewUser class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:app/Actions/Fortify/ResetUserPassword.php:reset",
+      "type": "function",
+      "name": "reset",
+      "filePath": "app/Actions/Fortify/ResetUserPassword.php",
+      "summary": "reset method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:app/Actions/Fortify/ResetUserPassword.php:ResetUserPassword",
+      "type": "class",
+      "name": "ResetUserPassword",
+      "filePath": "app/Actions/Fortify/ResetUserPassword.php",
+      "summary": "ResetUserPassword class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:app/Actions/Fortify/UpdateUserProfileInformation.php:update",
+      "type": "function",
+      "name": "update",
+      "filePath": "app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "summary": "update method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:app/Actions/Fortify/UpdateUserProfileInformation.php:updateVerifiedUser",
+      "type": "function",
+      "name": "updateVerifiedUser",
+      "filePath": "app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "summary": "updateVerifiedUser method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:app/Actions/Fortify/UpdateUserProfileInformation.php:UpdateUserProfileInformation",
+      "type": "class",
+      "name": "UpdateUserProfileInformation",
+      "filePath": "app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "summary": "UpdateUserProfileInformation class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Http/Responses/CustomPasswordResetLinkResponse.php:CustomPasswordResetLinkResponse",
+      "type": "class",
+      "name": "CustomPasswordResetLinkResponse",
+      "filePath": "app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "summary": "CustomPasswordResetLinkResponse class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Http/Responses/CustomPasswordResetResponse.php:CustomPasswordResetResponse",
+      "type": "class",
+      "name": "CustomPasswordResetResponse",
+      "filePath": "app/Http/Responses/CustomPasswordResetResponse.php",
+      "summary": "CustomPasswordResetResponse class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:app/Providers/FortifyServiceProvider.php:boot",
+      "type": "function",
+      "name": "boot",
+      "filePath": "app/Providers/FortifyServiceProvider.php",
+      "summary": "boot method",
+      "tags": [
+        "method"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:app/Providers/FortifyServiceProvider.php:FortifyServiceProvider",
+      "type": "class",
+      "name": "FortifyServiceProvider",
+      "filePath": "app/Providers/FortifyServiceProvider.php",
+      "summary": "FortifyServiceProvider class",
+      "tags": [
+        "class",
+        "exported"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:app/Actions/Fortify/CreateNewUser.php",
+      "target": "function:app/Actions/Fortify/CreateNewUser.php:create",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/CreateNewUser.php",
+      "target": "class:app/Actions/Fortify/CreateNewUser.php:CreateNewUser",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/ResetUserPassword.php",
+      "target": "function:app/Actions/Fortify/ResetUserPassword.php:reset",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/ResetUserPassword.php",
+      "target": "class:app/Actions/Fortify/ResetUserPassword.php:ResetUserPassword",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "target": "function:app/Actions/Fortify/UpdateUserProfileInformation.php:update",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "target": "function:app/Actions/Fortify/UpdateUserProfileInformation.php:updateVerifiedUser",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "target": "class:app/Actions/Fortify/UpdateUserProfileInformation.php:UpdateUserProfileInformation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "target": "class:app/Http/Responses/CustomPasswordResetLinkResponse.php:CustomPasswordResetLinkResponse",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Http/Responses/CustomPasswordResetResponse.php",
+      "target": "class:app/Http/Responses/CustomPasswordResetResponse.php:CustomPasswordResetResponse",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "function:app/Providers/FortifyServiceProvider.php:boot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "class:app/Providers/FortifyServiceProvider.php:FortifyServiceProvider",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:app/Actions/Fortify/CreateNewUser.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Actions/Fortify/ResetUserPassword.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "target": "file:app/Models/User.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "file:app/Actions/Fortify/CreateNewUser.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "file:app/Actions/Fortify/ResetUserPassword.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "file:app/Actions/Fortify/UpdateUserPassword.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "file:app/Actions/Fortify/UpdateUserProfileInformation.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "file:app/Http/Responses/CustomPasswordResetLinkResponse.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:app/Providers/FortifyServiceProvider.php",
+      "target": "file:app/Http/Responses/CustomPasswordResetResponse.php",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

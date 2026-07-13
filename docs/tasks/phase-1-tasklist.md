@@ -60,22 +60,36 @@ Reference: [PRD.md](PRD.md) — Section 18 (Roadmap, Phase 1), Section 3 (Techni
   - [ ] Return `Tenant` object or null.
 - [ ] Register `ResolveTenantFromDomain` in `app/Http/Kernel.php` → `$middleware` array (runs on every request).
 
-### 4c. School Registration & Landing Page
+### 4c. School Registration & Landing Page (lms.local)
 - [ ] Create `StoreTenantRequest` form request with validation:
   - [ ] `name`: required, string, max 255.
   - [ ] `domain`: required, unique on `tenants` table, valid hostname format (no spaces, no protocol, no path).
-- [ ] Create `TenantController@store` action:
+- [ ] Create `TenantController@store` action (on lms.local routes):
   - [ ] Accept validated form data from `StoreTenantRequest`.
-  - [ ] Create Tenant record in database.
-  - [ ] Redirect to the new school's subdomain with success message.
-- [ ] Create public landing page route (works on any invalid subdomain):
-  - [ ] Display: school info if domain is valid, or registration form if invalid.
-  - [ ] Form posts to `TenantController@store` on `admin.lms.local` domain.
-  - [ ] After registration, prompt user to navigate to `school-domain/register` to create account.
+  - [ ] Create Tenant record in database with provided domain.
+  - [ ] Redirect to the new school's subdomain (`schoolN.lms.local/register`) with success flash.
+- [ ] Create public landing/registration page (lms.local/register-school):
+  - [ ] Public route (no authentication required).
+  - [ ] Display form: "Register your school" with fields: name, domain.
+  - [ ] Form posts to `TenantController@store` (POST /register-school, routed on lms.local).
+  - [ ] After successful registration, show message: "School registered! Go to [schoolN.lms.local/register](schoolN.lms.local/register) to create your account."
 
-### 4d. Refactor Registration Flow
-- [ ] Refactor `CreateNewUser` to use `CurrentTenant::getTenantId()` instead of creating tenant.
-- [ ] Ensure `CreateNewUser` throws error or handles gracefully if `CurrentTenant` is not set (should not happen if middleware is working).
+### 4d. Admin Panel Routes
+- [ ] Create admin-only route group on `admin.lms.local`:
+  - [ ] Routes require `middleware(['auth:web', 'role:admin'])`.
+  - [ ] Middleware must verify: authenticated, role='admin', tenant_id=null (opsi C state).
+  - [ ] Example routes: `/admin/dashboard`, `/admin/settings`, `/admin/logs`.
+- [ ] Create admin login page (admin.lms.local/login):
+  - [ ] Standard login form (email + password).
+  - [ ] On auth: check if user.role='admin' && user.tenant_id=null, else deny.
+  - [ ] Redirect to admin.lms.local/dashboard on success.
+- [ ] Prevent non-admin users from accessing admin.lms.local:
+  - [ ] Middleware check in `ResolveTenantFromDomain`: if admin.lms.local && !role('admin') → 403 Forbidden.
+
+### 4e. Refactor Registration Flow
+- [ ] Refactor `CreateNewUser` to use `CurrentTenant::getTenantId()` instead of creating tenant (remove `Tenant::create()` call).
+- [ ] Ensure `CreateNewUser` throws error if `CurrentTenant::getTenantId()` is null when creating a regular user (guards against unscoped signup on lms.local).
+- [ ] Admin account creation: only via seeding in initial migration (no self-service signup for admin).
 
 - [ ] Write tests proving:
 
@@ -94,49 +108,66 @@ Reference: [PRD.md](PRD.md) — Section 18 (Roadmap, Phase 1), Section 3 (Techni
 **Decision:** Extract tenant from request subdomain/domain via middleware, store in singleton, apply to all contexts.
 
 **Architecture:**
-- Tenant domains are stored in `tenants.domain` (e.g., `school1.lms.local`, `school2.lms.local`).
-- Each school accesses the app via its own subdomain: `https://school1.lms.local/`.
-- Admin panel accessed via reserved subdomain (e.g., `admin.lms.local`) or root domain.
+Three-tier domain routing:
+1. **lms.local** (root/landing) — Public area (no tenant). School registration form, landing page.
+2. **admin.lms.local** — Admin panel only (CurrentTenant=null, role='admin', tenant_id=null). Strictly admin-exclusive.
+3. **schoolN.lms.local** (school subdomains) — School app (CurrentTenant=schoolN_tenant_id). School users login/register here.
+
+Admin state constraint (invariant):
+- **Admin = role('admin') AND tenant_id IS NULL** (opsi C: invalid state forbidden).
+- Cannot: have role='admin' with tenant_id != NULL (data corruption error).
+- Non-admin accessing admin.lms.local → 403 Forbidden.
+- Admin-only routes: require role('admin') && middleware verified tenant_id=null.
 
 **Implementation:**
 - [ ] Create `CurrentTenant` class (e.g., `app/Support/CurrentTenant.php`) holding resolved `tenant_id` as a singleton.
-- [ ] Create `ResolveTenantFromDomain` middleware that:
-  - [ ] Extracts subdomain/domain from the current request (e.g., `school1` from `school1.lms.local`).
-  - [ ] Queries `tenants` table to find matching `domain` record.
-  - [ ] Sets resolved tenant on `CurrentTenant` singleton.
-  - [ ] If domain not found: throw 404 (design decision: strict domain matching).
+- [ ] Create `ResolveTenantFromDomain` middleware with three-tier logic:
+  - [ ] Extracts subdomain from request (e.g., `school1` from `school1.lms.local`, root domain → `null` subdomain).
+  - [ ] **Case 1: admin.lms.local** → `CurrentTenant::setTenantId(null)`. Check middleware: if authenticated && !role('admin') → throw 403.
+  - [ ] **Case 2: lms.local (root)** → `CurrentTenant::setTenantId(null)`. Public area (no tenant required).
+  - [ ] **Case 3: schoolN.lms.local** → Query `tenants` by domain. If found: `CurrentTenant::setTenantId(tenant.id)`. If not found: throw 404.
+  - [ ] Data corruption check: if authenticated user has role('admin') && tenant_id != null → throw error (invalid state, opsi C).
   - [ ] Register in app middleware group so it runs on every request (before all route handling).
-  - [ ] Ensure `CurrentTenant::getTenantId()` is available to all subsequent layers (controller, model scope, jobs, etc.).
+  - [ ] Ensure `CurrentTenant::getTenantId()` is available to all subsequent layers.
 - [ ] `TenantScope` and `BelongsToTenant` read from `CurrentTenant` so behavior is identical across HTTP, console, and queue contexts.
 - [ ] Refactor `CreateNewUser` to use `CurrentTenant::getTenantId()` — user auto-joins the tenant resolved from the subdomain they're registering on (remove the `Tenant::create()` call added in Section 3).
 - [ ] Queue jobs must serialize `tenant_id` explicitly and set it on `CurrentTenant` at start of `handle()`, before touching any tenant-scoped model.
 - [ ] Console commands and Super Admin cross-tenant actions bypass scoping via `Model::withoutGlobalScope(TenantScope::class)` — never by leaving `CurrentTenant` unset.
 - [ ] Write a test proving a queued job correctly scopes queries to the tenant_id passed in its payload.
 
-**Domain Management & School Registration:**
+**Domain Management & School Registration (lms.local):**
 - [ ] Add unique constraint on `tenants.domain` field.
-- [ ] Seed a "Default Tenant" with domain `admin.lms.local` for admin panel access.
+- [ ] Seed a "Default Tenant" with domain `admin.lms.local` (for admin panel routing; no users assigned).
 - [ ] Create `StoreTenantRequest` form request with domain validation (unique, valid hostname format).
-- [ ] Create `TenantController@store` action to handle school self-registration:
-  - [ ] Accept `name` and `domain` from form.
-  - [ ] Validate and create Tenant in database.
-  - [ ] Redirect to school subdomain landing page or login.
-- [ ] Create landing page (public route on any subdomain) with school registration form:
-  - [ ] If subdomain is valid (exists in `tenants.domain`), show login/app UI.
-  - [ ] If subdomain is invalid, show "Register your school" form.
-  - [ ] After successful registration, prompt user to create account on that school's subdomain.
+- [ ] Create `TenantController` with:
+  - [ ] `@store` (POST /register-school) — Create new school tenant from form.
+  - [ ] Redirect to schoolN.lms.local/register after creation.
+- [ ] Create routes on lms.local (root domain):
+  - [ ] `GET /register-school` → Show registration form.
+  - [ ] `POST /register-school` → TenantController@store.
+- [ ] Seed admin user in initial migration:
+  - [ ] Email: admin@lms.local or similar.
+  - [ ] Role: 'admin' (Spatie).
+  - [ ] tenant_id: NULL (invariant: admin must have null tenant).
+  - [ ] Can login on admin.lms.local/login.
 
 **Development Environment Setup:**
 - [ ] Document `/etc/hosts` configuration for local testing:
   ```
+  127.0.0.1 lms.local
   127.0.0.1 admin.lms.local
   127.0.0.1 school1.lms.local
   127.0.0.1 school2.lms.local
   ```
-- [ ] Seed test tenants in `.env.testing` seeder:
-  - `admin.lms.local` → Default Tenant (admin panel)
-  - `test-school.lms.local` → Test Tenant (for feature tests)
+- [ ] Seed tenants in DatabaseSeeder:
+  - `admin.lms.local` → Default Tenant (admin panel access; no regular users).
+  - `test-school.lms.local` → Test Tenant (for feature tests).
+- [ ] Seed admin user:
+  - Email: `admin@lms.local`, password: `password` (docs).
+  - Role: 'admin', tenant_id: NULL.
+  - Can login at admin.lms.local/login.
 - [ ] Update `.env` / `.env.example` with `APP_DOMAIN=lms.local` for reference.
+- [ ] Add note in docs: "For local development, add hosts entries in `/etc/hosts`. Admin panel: admin.lms.local. School apps: schoolN.lms.local. Landing/registration: lms.local."
 
 ### Tenant domain validation
 **Decision:** Enforce valid hostname format for `tenants.domain` since it's now critical for subdomain resolution (not just a future feature).

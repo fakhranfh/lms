@@ -52,6 +52,33 @@ Reference: [PRD.md](PRD.md) — Section 18 (Roadmap, Phase 1), Section 3 (Techni
   - [ ] Creating a record without explicitly setting `tenant_id` still assigns the correct tenant automatically.
   - [ ] Super Admin / unauthenticated console context (e.g., queue workers, `php artisan tinker`) can still bypass the scope deliberately via `Model::withoutGlobalScope(TenantScope::class)` when required (e.g., cross-tenant admin operations) — document the escape hatch.
 
+### 4b. Middleware & Domain Resolution
+- [ ] Create `ResolveTenantFromDomain` middleware (see Resolved Decisions above).
+- [ ] Create `app/Support/TenantDomainResolver.php` utility class:
+  - [ ] Extract subdomain from request (e.g., `"school1"` from `"school1.lms.local"`).
+  - [ ] Query `tenants` table by `domain` field.
+  - [ ] Return `Tenant` object or null.
+- [ ] Register `ResolveTenantFromDomain` in `app/Http/Kernel.php` → `$middleware` array (runs on every request).
+
+### 4c. School Registration & Landing Page
+- [ ] Create `StoreTenantRequest` form request with validation:
+  - [ ] `name`: required, string, max 255.
+  - [ ] `domain`: required, unique on `tenants` table, valid hostname format (no spaces, no protocol, no path).
+- [ ] Create `TenantController@store` action:
+  - [ ] Accept validated form data from `StoreTenantRequest`.
+  - [ ] Create Tenant record in database.
+  - [ ] Redirect to the new school's subdomain with success message.
+- [ ] Create public landing page route (works on any invalid subdomain):
+  - [ ] Display: school info if domain is valid, or registration form if invalid.
+  - [ ] Form posts to `TenantController@store` on `admin.lms.local` domain.
+  - [ ] After registration, prompt user to navigate to `school-domain/register` to create account.
+
+### 4d. Refactor Registration Flow
+- [ ] Refactor `CreateNewUser` to use `CurrentTenant::getTenantId()` instead of creating tenant.
+- [ ] Ensure `CreateNewUser` throws error or handles gracefully if `CurrentTenant` is not set (should not happen if middleware is working).
+
+- [ ] Write tests proving:
+
 ## 5. Verification & Wrap-Up
 
 - [ ] Run `php artisan migrate:fresh --no-interaction` locally and confirm schema matches [ERD.md](ERD.md) Section 1 exactly (`database-schema` Boost tool).
@@ -74,21 +101,42 @@ Reference: [PRD.md](PRD.md) — Section 18 (Roadmap, Phase 1), Section 3 (Techni
 **Implementation:**
 - [ ] Create `CurrentTenant` class (e.g., `app/Support/CurrentTenant.php`) holding resolved `tenant_id` as a singleton.
 - [ ] Create `ResolveTenantFromDomain` middleware that:
-  - [ ] Extracts subdomain/domain from the current request.
+  - [ ] Extracts subdomain/domain from the current request (e.g., `school1` from `school1.lms.local`).
   - [ ] Queries `tenants` table to find matching `domain` record.
   - [ ] Sets resolved tenant on `CurrentTenant` singleton.
-  - [ ] Redirects to admin panel or throws 404 if domain not found.
-  - [ ] Register in app middleware group so it runs on every request.
+  - [ ] If domain not found: throw 404 (design decision: strict domain matching).
+  - [ ] Register in app middleware group so it runs on every request (before all route handling).
+  - [ ] Ensure `CurrentTenant::getTenantId()` is available to all subsequent layers (controller, model scope, jobs, etc.).
 - [ ] `TenantScope` and `BelongsToTenant` read from `CurrentTenant` so behavior is identical across HTTP, console, and queue contexts.
-- [ ] Refactor `CreateNewUser` to use `CurrentTenant::getTenantId()` — user auto-joins the tenant resolved from the subdomain they're registering on.
+- [ ] Refactor `CreateNewUser` to use `CurrentTenant::getTenantId()` — user auto-joins the tenant resolved from the subdomain they're registering on (remove the `Tenant::create()` call added in Section 3).
 - [ ] Queue jobs must serialize `tenant_id` explicitly and set it on `CurrentTenant` at start of `handle()`, before touching any tenant-scoped model.
 - [ ] Console commands and Super Admin cross-tenant actions bypass scoping via `Model::withoutGlobalScope(TenantScope::class)` — never by leaving `CurrentTenant` unset.
 - [ ] Write a test proving a queued job correctly scopes queries to the tenant_id passed in its payload.
 
-**Domain Management:**
+**Domain Management & School Registration:**
 - [ ] Add unique constraint on `tenants.domain` field.
-- [ ] Seed a "Default Tenant" with domain (e.g., `admin.lms.local` or `localhost`).
-- [ ] Create admin panel command/controller to register new schools with their subdomain (deferred to later phase, but scaffold the migration/model field now).
+- [ ] Seed a "Default Tenant" with domain `admin.lms.local` for admin panel access.
+- [ ] Create `StoreTenantRequest` form request with domain validation (unique, valid hostname format).
+- [ ] Create `TenantController@store` action to handle school self-registration:
+  - [ ] Accept `name` and `domain` from form.
+  - [ ] Validate and create Tenant in database.
+  - [ ] Redirect to school subdomain landing page or login.
+- [ ] Create landing page (public route on any subdomain) with school registration form:
+  - [ ] If subdomain is valid (exists in `tenants.domain`), show login/app UI.
+  - [ ] If subdomain is invalid, show "Register your school" form.
+  - [ ] After successful registration, prompt user to create account on that school's subdomain.
+
+**Development Environment Setup:**
+- [ ] Document `/etc/hosts` configuration for local testing:
+  ```
+  127.0.0.1 admin.lms.local
+  127.0.0.1 school1.lms.local
+  127.0.0.1 school2.lms.local
+  ```
+- [ ] Seed test tenants in `.env.testing` seeder:
+  - `admin.lms.local` → Default Tenant (admin panel)
+  - `test-school.lms.local` → Test Tenant (for feature tests)
+- [ ] Update `.env` / `.env.example` with `APP_DOMAIN=lms.local` for reference.
 
 ### Tenant domain validation
 **Decision:** Enforce valid hostname format for `tenants.domain` since it's now critical for subdomain resolution (not just a future feature).

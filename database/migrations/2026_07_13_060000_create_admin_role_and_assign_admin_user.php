@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Hash;
@@ -54,10 +53,8 @@ return new class extends Migration
         $adminUser = User::query()->oldest('id')->first();
 
         if (! $adminUser) {
-            $tenant = Tenant::firstOrCreate(['name' => 'Default Tenant']);
-
             $adminUser = User::create([
-                'tenant_id' => $tenant->id,
+                'tenant_id' => null,
                 'name' => 'Admin',
                 'email' => 'admin@example.com',
                 'password' => Hash::make('password'),

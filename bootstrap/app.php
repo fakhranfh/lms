@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\PreservePasswordUpdateErrors;
+use App\Http\Middleware\ResolveTenantFromDomain;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->append(PreservePasswordUpdateErrors::class);
         $middleware->append(SecurityHeaders::class);
+        $middleware->web(prepend: [ResolveTenantFromDomain::class]);
 
         $middleware->alias([
             'role' => RoleMiddleware::class,

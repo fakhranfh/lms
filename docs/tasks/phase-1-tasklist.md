@@ -40,58 +40,56 @@ Reference: [PRD.md](PRD.md) — Section 18 (Roadmap, Phase 1), Section 3 (Techni
 
 ## 4. Global Tenant Scope
 
-- [ ] Create `app/Models/Scopes/TenantScope.php` implementing `Illuminate\Database\Eloquent\Scope`:
-  - [ ] Applies a `where('tenant_id', ...)` constraint using the currently authenticated user's `tenant_id` (or resolved tenant context — see Resolved Decisions: Subdomain-based Tenant Resolution).
-- [ ] Create a `BelongsToTenant` trait that:
-  - [ ] Registers `TenantScope` in the model's `booted()` method.
-  - [ ] Auto-fills `tenant_id` on `creating` from the current tenant context (`CurrentTenant` singleton).
-- [ ] Apply `BelongsToTenant` to every tenant-scoped model introduced in this phase (`User`; later phases will apply it to `Course`, `Role`, etc.).
-- [ ] Refactor `CreateNewUser` action to use `CurrentTenant` singleton instead of auto-creating a tenant. User will auto-join the tenant resolved from their request subdomain via `ResolveTenantFromDomain` middleware.
-- [ ] Write tests proving:
-  - [ ] A query for tenant-scoped models run as User A never returns rows belonging to Tenant B.
-  - [ ] Creating a record without explicitly setting `tenant_id` still assigns the correct tenant automatically.
-  - [ ] Super Admin / unauthenticated console context (e.g., queue workers, `php artisan tinker`) can still bypass the scope deliberately via `Model::withoutGlobalScope(TenantScope::class)` when required (e.g., cross-tenant admin operations) — document the escape hatch.
+- [x] Create `app/Models/Scopes/TenantScope.php` implementing `Illuminate\Database\Eloquent\Scope`:
+  - [x] Applies a `where('tenant_id', ...)` constraint using the currently authenticated user's `tenant_id` (or resolved tenant context — see Resolved Decisions: Subdomain-based Tenant Resolution).
+- [x] Create a `BelongsToTenant` trait that:
+  - [x] Registers `TenantScope` in the model's `booted()` method.
+  - [x] Auto-fills `tenant_id` on `creating` from the current tenant context (`CurrentTenant` singleton).
+- [x] Apply `BelongsToTenant` to every tenant-scoped model introduced in this phase (`User`; later phases will apply it to `Course`, `Role`, etc.).
+- [x] Refactor `CreateNewUser` action to use `CurrentTenant` singleton instead of auto-creating a tenant. User will auto-join the tenant resolved from their request subdomain via `ResolveTenantFromDomain` middleware.
+- [x] Write tests proving:
+  - [x] A query for tenant-scoped models run as User A never returns rows belonging to Tenant B.
+  - [x] Creating a record without explicitly setting `tenant_id` still assigns the correct tenant automatically.
+  - [x] Super Admin / unauthenticated console context (e.g., queue workers, `php artisan tinker`) can still bypass the scope deliberately via `Model::withoutGlobalScope(TenantScope::class)` when required (e.g., cross-tenant admin operations) — document the escape hatch.
 
 ### 4b. Middleware & Domain Resolution
-- [ ] Create `ResolveTenantFromDomain` middleware (see Resolved Decisions above).
-- [ ] Create `app/Support/TenantDomainResolver.php` utility class:
-  - [ ] Extract subdomain from request (e.g., `"school1"` from `"school1.lms.local"`).
-  - [ ] Query `tenants` table by `domain` field.
-  - [ ] Return `Tenant` object or null.
-- [ ] Register `ResolveTenantFromDomain` in `app/Http/Kernel.php` → `$middleware` array (runs on every request).
+- [x] Create `ResolveTenantFromDomain` middleware (see Resolved Decisions above).
+- [x] Create `app/Support/TenantDomainResolver.php` utility class:
+  - [x] Extract subdomain from request (e.g., `"school1"` from `"school1.lms.local"`).
+  - [x] Query `tenants` table by `domain` field.
+  - [x] Return `Tenant` object or null.
+- [x] Register `ResolveTenantFromDomain` globally (Laravel 13 has no `app/Http/Kernel.php`; registered via `bootstrap/app.php`'s `$middleware->web(prepend: ...)`, runs on every web request).
 
 ### 4c. School Registration & Landing Page (lms.local)
-- [ ] Create `StoreTenantRequest` form request with validation:
-  - [ ] `name`: required, string, max 255.
-  - [ ] `domain`: required, unique on `tenants` table, valid hostname format (no spaces, no protocol, no path).
-- [ ] Create `TenantController@store` action (on lms.local routes):
-  - [ ] Accept validated form data from `StoreTenantRequest`.
-  - [ ] Create Tenant record in database with provided domain.
-  - [ ] Redirect to the new school's subdomain (`schoolN.lms.local/register`) with success flash.
-- [ ] Create public landing/registration page (lms.local/register-school):
-  - [ ] Public route (no authentication required).
-  - [ ] Display form: "Register your school" with fields: name, domain.
-  - [ ] Form posts to `TenantController@store` (POST /register-school, routed on lms.local).
-  - [ ] After successful registration, show message: "School registered! Go to [schoolN.lms.local/register](schoolN.lms.local/register) to create your account."
+- [x] Create `StoreTenantRequest` form request with validation:
+  - [x] `name`: required, string, max 255.
+  - [x] `domain`: required, unique on `tenants` table, valid hostname format (no spaces, no protocol, no path).
+- [x] Create `TenantController@store` action (on lms.local routes):
+  - [x] Accept validated form data from `StoreTenantRequest`.
+  - [x] Create Tenant record in database with provided domain.
+  - [x] Redirect to the new school's subdomain (`schoolN.lms.local/register`) with success flash.
+- [x] Create public landing/registration page (lms.local/register-school):
+  - [x] Public route (no authentication required).
+  - [x] Display form: "Register your school" with fields: name, domain.
+  - [x] Form posts to `TenantController@store` (POST /register-school, routed on lms.local).
+  - [x] After successful registration, show message: "School registered! Go to [schoolN.lms.local/register](schoolN.lms.local/register) to create your account."
 
 ### 4d. Admin Panel Routes
-- [ ] Create admin-only route group on `admin.lms.local`:
-  - [ ] Routes require `middleware(['auth:web', 'role:admin'])`.
-  - [ ] Middleware must verify: authenticated, role='admin', tenant_id=null (opsi C state).
-  - [ ] Example routes: `/admin/dashboard`, `/admin/settings`, `/admin/logs`.
-- [ ] Create admin login page (admin.lms.local/login):
-  - [ ] Standard login form (email + password).
-  - [ ] On auth: check if user.role='admin' && user.tenant_id=null, else deny.
-  - [ ] Redirect to admin.lms.local/dashboard on success.
-- [ ] Prevent non-admin users from accessing admin.lms.local:
-  - [ ] Middleware check in `ResolveTenantFromDomain`: if admin.lms.local && !role('admin') → 403 Forbidden.
+- [x] Create admin-only route group on `admin.lms.local`:
+  - [x] Routes require `middleware(['auth', 'role:admin'])`.
+  - [x] Middleware must verify: authenticated, role='admin', tenant_id=null (opsi C state).
+  - [x] Example routes: `/admin/dashboard`, `/admin/settings`, `/admin/logs`.
+- [x] Admin login: reuses the existing login form/route (already domain-agnostic), guarded post-auth by `ResolveTenantFromDomain`.
+  - [x] On auth: check if user.role='admin' && user.tenant_id=null, else deny.
+- [x] Prevent non-admin users from accessing admin.lms.local:
+  - [x] Middleware check in `ResolveTenantFromDomain`: if admin.lms.local && !role('admin') → 403 Forbidden.
 
 ### 4e. Refactor Registration Flow
-- [ ] Refactor `CreateNewUser` to use `CurrentTenant::getTenantId()` instead of creating tenant (remove `Tenant::create()` call).
-- [ ] Ensure `CreateNewUser` throws error if `CurrentTenant::getTenantId()` is null when creating a regular user (guards against unscoped signup on lms.local).
-- [ ] Admin account creation: only via seeding in initial migration (no self-service signup for admin).
+- [x] Refactor `CreateNewUser` to use `CurrentTenant::getTenantId()` instead of creating tenant (remove `Tenant::create()` call).
+- [x] Ensure `CreateNewUser` throws error if `CurrentTenant::getTenantId()` is null when creating a regular user (guards against unscoped signup on lms.local).
+- [x] Admin account creation: only via seeding in initial migration (no self-service signup for admin).
 
-- [ ] Write tests proving:
+- [x] Write tests proving:
 
 ## 5. Verification & Wrap-Up
 

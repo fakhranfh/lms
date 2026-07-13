@@ -56,6 +56,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Root Tenant Domain
+    |--------------------------------------------------------------------------
+    |
+    | The root domain used for subdomain-based tenant resolution. School
+    | tenants are addressed at "{tenant}.{domain}", the admin panel lives
+    | at "admin.{domain}", and this root domain hosts the public landing
+    | and school registration pages.
+    |
+    */
+
+    'domain' => env('APP_DOMAIN', 'lms.local'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

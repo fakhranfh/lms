@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TenantController;
 use App\Livewire\ChangePassword;
 use App\Livewire\Dashboard;
 use App\Livewire\EditProfile;
@@ -20,6 +21,30 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::view('/', 'landing-page');
+
+// Root domain (lms.local): public landing + school registration.
+Route::domain(config('app.domain'))->group(function () {
+    Route::get('/register-school', function () {
+        return view('tenants.register');
+    })->name('tenants.register');
+
+    Route::post('/register-school', [TenantController::class, 'store'])->name('tenants.store');
+});
+
+// Admin panel (admin.lms.local): admin-only, tenant_id must be null.
+Route::domain('admin.'.config('app.domain'))->middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/admin/dashboard', function () {
+        return view('admin.dashboard');
+    })->name('admin.dashboard');
+
+    Route::get('/admin/settings', function () {
+        return view('admin.settings');
+    })->name('admin.settings');
+
+    Route::get('/admin/logs', function () {
+        return view('admin.logs');
+    })->name('admin.logs');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/edit-profile', EditProfile::class)->name('edit-profile');

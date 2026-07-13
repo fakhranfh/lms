@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\UserFactory;
@@ -20,7 +21,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use CanResetPassword, HasFactory, HasRoles, HasUuid, HasViewerTimezoneDates, Notifiable;
+    use BelongsToTenant, CanResetPassword, HasFactory, HasRoles, HasUuid, HasViewerTimezoneDates, Notifiable;
 
     /**
      * Get the attributes that should be cast.

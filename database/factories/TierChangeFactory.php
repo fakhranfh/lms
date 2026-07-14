@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\TierChangeType;
 use App\Models\PricingTier;
 use App\Models\SchoolTier;
 use App\Models\TierChange;
@@ -23,7 +24,7 @@ class TierChangeFactory extends Factory
             'school_tier_id' => SchoolTier::factory(),
             'from_tier_id' => null,
             'to_tier_id' => PricingTier::factory(),
-            'change_type' => 'initial',
+            'change_type' => TierChangeType::Initial,
             'reason' => null,
             'changed_at' => $this->faker->dateTime(),
         ];

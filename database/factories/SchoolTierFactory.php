@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SubscriptionStatus;
 use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\SchoolTier;
@@ -25,7 +26,7 @@ class SchoolTierFactory extends Factory
         return [
             'school_id' => School::factory(),
             'tier_id' => PricingTier::factory(),
-            'status' => 'active',
+            'status' => SubscriptionStatus::Active,
             'started_at' => $startedAt,
             'expires_at' => $expiresAt,
             'renewal_date' => null,

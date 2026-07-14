@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SubscriptionStatus;
 use App\Models\Concerns\BelongsToSchool;
 use App\Traits\HasUuid;
 use Database\Factories\SchoolTierFactory;
@@ -21,6 +22,7 @@ class SchoolTier extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'status' => SubscriptionStatus::class,
         'started_at' => 'datetime',
         'expires_at' => 'datetime',
         'renewal_date' => 'datetime',

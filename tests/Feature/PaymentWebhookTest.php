@@ -1,6 +1,7 @@
 <?php
 
 use App\Contracts\PaymentGateway;
+use App\Enums\PaymentStatus;
 use App\Jobs\ProcessPaymentWebhook;
 use App\Models\PaymentGatewayType;
 use App\Models\PaymentTransaction;
@@ -236,7 +237,7 @@ test('webhook processing job updates transaction status', function () {
     $job->handle(app(SubscriptionPaymentService::class));
 
     $transaction->refresh();
-    expect($transaction->status)->toBe('completed');
+    expect($transaction->status)->toBe(PaymentStatus::Completed);
 });
 
 test('webhook processing job skips if already processed', function () {

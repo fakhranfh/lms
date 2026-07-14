@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PaymentStatus;
 use App\Models\PaymentTransaction;
 use App\Models\School;
 use App\Models\SchoolPaymentGateway;
@@ -27,7 +28,7 @@ class PaymentTransactionFactory extends Factory
             'transaction_id' => $this->faker->unique()->sha256(),
             'amount' => $this->faker->numberBetween(100000, 500000),
             'currency' => 'IDR',
-            'status' => 'pending',
+            'status' => PaymentStatus::Pending,
             'metadata' => [],
         ];
     }

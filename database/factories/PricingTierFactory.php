@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\BillingPeriod;
 use App\Models\PricingTier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -23,7 +24,7 @@ class PricingTierFactory extends Factory
             'description' => $this->faker->sentence(),
             'price' => $this->faker->numberBetween(100000, 500000),
             'currency' => 'IDR',
-            'billing_period' => 'monthly',
+            'billing_period' => BillingPeriod::Monthly,
             'is_active' => true,
         ];
     }

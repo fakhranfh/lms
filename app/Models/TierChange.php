@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TierChangeType;
 use App\Traits\HasUuid;
 use Database\Factories\TierChangeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -19,6 +20,7 @@ class TierChange extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'change_type' => TierChangeType::class,
         'changed_at' => 'datetime',
     ];
 

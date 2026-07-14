@@ -1,6 +1,7 @@
 <?php
 
 use App\Contracts\PaymentGateway;
+use App\Enums\SubscriptionStatus;
 use App\Models\PaymentGatewayType;
 use App\Models\PaymentTransaction;
 use App\Models\PricingTier;
@@ -51,5 +52,5 @@ it('handles failed payments by expiring subscription', function () {
     $service->handleFailedPayment($transaction);
 
     $subscription->refresh();
-    expect($subscription->status)->toBe('expired');
+    expect($subscription->status)->toBe(SubscriptionStatus::Expired);
 });

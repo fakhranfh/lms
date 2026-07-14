@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\BillingPeriod;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -64,7 +65,7 @@ return new class extends Migration
             'description' => 'Free tier for getting started',
             'price' => 0,
             'currency' => 'IDR',
-            'billing_period' => 'monthly',
+            'billing_period' => BillingPeriod::Monthly->value,
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
@@ -82,7 +83,7 @@ return new class extends Migration
             'description' => 'Enhanced learning tools for growing schools',
             'price' => 299000,
             'currency' => 'IDR',
-            'billing_period' => 'monthly',
+            'billing_period' => BillingPeriod::Monthly->value,
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
@@ -105,7 +106,7 @@ return new class extends Migration
             'description' => 'Professional features for scaling institutions',
             'price' => 799000,
             'currency' => 'IDR',
-            'billing_period' => 'monthly',
+            'billing_period' => BillingPeriod::Monthly->value,
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
@@ -130,7 +131,7 @@ return new class extends Migration
             'description' => 'Enterprise features with unlimited capabilities',
             'price' => 1999000,
             'currency' => 'IDR',
-            'billing_period' => 'monthly',
+            'billing_period' => BillingPeriod::Monthly->value,
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\PaymentStatus;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentWebhook;
 use App\Services\SubscriptionPaymentService;
@@ -34,9 +35,9 @@ class ProcessPaymentWebhook implements ShouldQueue
                         'metadata' => $payload,
                     ]);
 
-                    if ($transaction->status === 'completed') {
+                    if ($transaction->status === PaymentStatus::Completed) {
                         $paymentService->completeSubscription($transaction);
-                    } elseif ($transaction->status === 'failed') {
+                    } elseif ($transaction->status === PaymentStatus::Failed) {
                         $paymentService->handleFailedPayment($transaction);
                     }
                 }
@@ -53,29 +54,29 @@ class ProcessPaymentWebhook implements ShouldQueue
         return $payload['transaction_id'] ?? $payload['id'] ?? null;
     }
 
-    private function extractTransactionStatus(array $payload): string
+    private function extractTransactionStatus(array $payload): PaymentStatus
     {
         if (isset($payload['transaction_status'])) {
             return match (strtolower($payload['transaction_status'])) {
-                'capture' => 'completed',
-                'settlement' => 'completed',
-                'pending' => 'pending',
-                'deny' => 'failed',
-                'cancel' => 'failed',
-                'expire' => 'failed',
-                default => 'pending',
+                'capture' => PaymentStatus::Completed,
+                'settlement' => PaymentStatus::Completed,
+                'pending' => PaymentStatus::Pending,
+                'deny' => PaymentStatus::Failed,
+                'cancel' => PaymentStatus::Failed,
+                'expire' => PaymentStatus::Failed,
+                default => PaymentStatus::Pending,
             };
         }
 
         if (isset($payload['status'])) {
             return match (strtolower($payload['status'])) {
-                'paid' => 'completed',
-                'pending' => 'pending',
-                'expired' => 'failed',
-                default => 'pending',
+                'paid' => PaymentStatus::Completed,
+                'pending' => PaymentStatus::Pending,
+                'expired' => PaymentStatus::Failed,
+                default => PaymentStatus::Pending,
             };
         }
 
-        return 'pending';
+        return PaymentStatus::Pending;
     }
 }

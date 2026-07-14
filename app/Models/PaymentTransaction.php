@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PaymentStatus;
 use App\Models\Concerns\BelongsToSchool;
 use App\Traits\HasUuid;
 use Database\Factories\PaymentTransactionFactory;
@@ -21,6 +22,7 @@ class PaymentTransaction extends Model
      */
     protected $casts = [
         'amount' => 'decimal:2',
+        'status' => PaymentStatus::class,
         'metadata' => 'array',
     ];
 

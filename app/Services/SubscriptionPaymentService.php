@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\PaymentStatus;
+use App\Enums\SubscriptionStatus;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentWebhook;
 use App\Models\SchoolPaymentGateway;
@@ -51,7 +53,7 @@ class SubscriptionPaymentService
     {
         if ($transaction->subscription) {
             $transaction->subscription->update([
-                'status' => 'active',
+                'status' => SubscriptionStatus::Active,
                 'started_at' => now(),
                 'expires_at' => now()->addMonth(),
             ]);
@@ -61,7 +63,7 @@ class SubscriptionPaymentService
     public function handleFailedPayment(PaymentTransaction $transaction): void
     {
         if ($transaction->subscription) {
-            $transaction->subscription->update(['status' => 'expired']);
+            $transaction->subscription->update(['status' => SubscriptionStatus::Expired]);
         }
     }
 
@@ -75,7 +77,7 @@ class SubscriptionPaymentService
 
         $refundAmount = $amount ?? $transaction->amount;
         if ($gatewayInstance->refund($transaction->transaction_id, $refundAmount)) {
-            $transaction->update(['status' => 'refunded']);
+            $transaction->update(['status' => PaymentStatus::Refunded]);
 
             return true;
         }

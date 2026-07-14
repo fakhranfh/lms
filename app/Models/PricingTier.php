@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BillingPeriod;
 use Database\Factories\PricingTierFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,6 +20,7 @@ class PricingTier extends Model
      */
     protected $casts = [
         'price' => 'decimal:2',
+        'billing_period' => BillingPeriod::class,
         'is_active' => 'boolean',
     ];
 

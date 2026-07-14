@@ -1,19 +1,12 @@
 <?php
 
-namespace Database\Seeders;
-
 use App\Models\PaymentGatewayType;
-use Illuminate\Database\Seeder;
+use Illuminate\Database\Migrations\Migration;
 
-class PaymentGatewayTypeSeeder extends Seeder
+return new class extends Migration
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public function up(): void
     {
-        PaymentGatewayType::query()->delete();
-
         PaymentGatewayType::create([
             'name' => 'midtrans',
             'label' => 'Midtrans',
@@ -28,4 +21,9 @@ class PaymentGatewayTypeSeeder extends Seeder
             'is_active' => true,
         ]);
     }
-}
+
+    public function down(): void
+    {
+        PaymentGatewayType::whereIn('name', ['midtrans', 'xendit'])->delete();
+    }
+};

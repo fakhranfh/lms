@@ -121,7 +121,7 @@ class PricingTierEdit extends Component
         return view('livewire.pricing-tiers.pricing-tier-edit', [
             'billingPeriods' => BillingPeriod::cases(),
         ])
-            ->extends('master')
-            ->section('content');
+            ->extends('layouts.admin')
+            ->section('admin-content');
     }
 }

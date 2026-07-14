@@ -1,9 +1,7 @@
-@extends('master')
+@extends('layouts.admin')
 
 @section('title', 'Admin Dashboard')
 
-@section('content')
-    <div class="p-gutter">
-        <h1 class="font-headline-md text-headline-md text-on-surface">Admin Dashboard</h1>
-    </div>
+@section('admin-content')
+    <h1 class="font-headline-md text-headline-md text-on-surface">Admin Dashboard</h1>
 @endsection

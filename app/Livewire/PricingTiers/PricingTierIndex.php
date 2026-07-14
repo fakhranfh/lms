@@ -37,7 +37,7 @@ class PricingTierIndex extends Component
         return view('livewire.pricing-tiers.pricing-tier-index', [
             'tiers' => $tierService->get([], ['features', 'limits']),
         ])
-            ->extends('master')
-            ->section('content');
+            ->extends('layouts.admin')
+            ->section('admin-content');
     }
 }

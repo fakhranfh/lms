@@ -1,9 +1,9 @@
-@extends('master')
+@extends('layouts.admin')
 
 @section('title', 'Edit Payment Gateway')
 
-@section('content')
-    <div class="p-gutter max-w-2xl">
+@section('admin-content')
+    <div class="max-w-2xl">
         <h1 class="font-headline-md text-headline-md text-on-surface mb-8">Edit Payment Gateway</h1>
 
         @if ($errors->any())

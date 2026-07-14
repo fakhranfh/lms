@@ -1,8 +1,8 @@
-@extends('master')
+@extends('layouts.admin')
 
 @section('title', 'Payment Gateways')
 
-@section('content')
+@section('admin-content')
     <div class="p-gutter">
         <div class="flex items-center justify-between mb-8">
             <div>

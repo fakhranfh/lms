@@ -20,6 +20,16 @@ class SchoolPaymentGateway extends Model
     protected $table = 'school_payment_gateways';
 
     /**
+     * Get the school.
+     *
+     * @return BelongsTo<School, $this>
+     */
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(School::class);
+    }
+
+    /**
      * Get the payment gateway type.
      *
      * @return BelongsTo<PaymentGatewayType, $this>

@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\GatewayConfigController;
 use App\Http\Controllers\AdminLoginController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SchoolController;
@@ -50,6 +52,9 @@ Route::domain('admin.'.config('app.domain'))->group(function () {
             return view('admin.logs');
         })->name('admin.logs');
 
+        Route::resource('gateways', GatewayConfigController::class);
+        Route::post('gateways/{gateway}/test-connection', [GatewayConfigController::class, 'testConnection'])->name('gateways.test-connection');
+
         Route::post('/logout', function (Request $request) {
             Auth::logout();
             $request->session()->invalidate();
@@ -83,3 +88,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+
+// Webhook routes - publicly accessible with rate limiting
+Route::middleware(['throttle:100,1', 'throttle:1000,60'])->group(function () {
+    Route::post('/webhooks/midtrans', [PaymentWebhookController::class, 'handleMidtrans'])->name('webhooks.midtrans');
+    Route::post('/webhooks/xendit', [PaymentWebhookController::class, 'handleXendit'])->name('webhooks.xendit');
+});

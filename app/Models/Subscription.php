@@ -28,6 +28,16 @@ class Subscription extends Model
     ];
 
     /**
+     * Get the school.
+     *
+     * @return BelongsTo<School, $this>
+     */
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(School::class);
+    }
+
+    /**
      * Get the subscription tier.
      *
      * @return BelongsTo<SubscriptionTier, $this>

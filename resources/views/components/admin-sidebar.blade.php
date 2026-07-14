@@ -1,5 +1,5 @@
 <!-- Admin Sidebar Navigation -->
-<aside id="admin-sidebar" class="fixed left-0 top-16 h-[calc(100vh-64px)] bg-surface border-r border-outline-variant z-20 flex flex-col w-64 shadow-[1px_0_3px_rgba(0,0,0,0.08)] max-sm:hidden transition-all duration-300 overflow-hidden" style="width: 256px;">
+<aside id="admin-sidebar" class="w-64 bg-surface border-r border-outline-variant flex flex-col shadow-[1px_0_3px_rgba(0,0,0,0.08)] max-sm:hidden transition-all duration-300 overflow-hidden" style="width: 256px;">
     <!-- Navigation Menu -->
     <nav class="flex-1 overflow-y-auto py-space-md px-space-md">
         <ul class="space-y-space-xs">
@@ -16,5 +16,3 @@
     </nav>
 </aside>
 
-<!-- Admin Sidebar Spacer for Main Content (hides on mobile) -->
-<div id="admin-sidebar-spacer" class="hidden sm:block transition-all duration-300 overflow-hidden" style="width: 256px;"></div>

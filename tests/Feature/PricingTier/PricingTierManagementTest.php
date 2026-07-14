@@ -26,7 +26,7 @@ class PricingTierManagementTest extends TestCase
         $adminUser->assignRole('admin');
 
         $response = $this->actingAs($adminUser)->get(
-            'http://admin.lms.local/admin/pricing-tiers'
+            'http://admin.lms.local/pricing-tiers'
         );
 
         $response->assertStatus(200);
@@ -37,7 +37,7 @@ class PricingTierManagementTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->get(
-            'http://admin.lms.local/admin/pricing-tiers'
+            'http://admin.lms.local/pricing-tiers'
         );
 
         $response->assertStatus(403);
@@ -49,7 +49,7 @@ class PricingTierManagementTest extends TestCase
         $adminUser->assignRole('admin');
 
         $response = $this->actingAs($adminUser)->get(
-            'http://admin.lms.local/admin/pricing-tiers/create'
+            'http://admin.lms.local/pricing-tiers/create'
         );
 
         $response->assertStatus(200);
@@ -89,7 +89,7 @@ class PricingTierManagementTest extends TestCase
         ]);
 
         $response = $this->actingAs($adminUser)->get(
-            "http://admin.lms.local/admin/pricing-tiers/{$tier->id}/edit"
+            "http://admin.lms.local/pricing-tiers/{$tier->id}/edit"
         );
 
         $response->assertStatus(200);
@@ -104,7 +104,7 @@ class PricingTierManagementTest extends TestCase
         $tier = PricingTier::factory()->create();
         SchoolTier::factory()->create(['tier_id' => $tier->id]);
 
-        $this->actingAs($adminUser)->call('DELETE', "http://admin.lms.local/admin/pricing-tiers/{$tier->id}");
+        $this->actingAs($adminUser)->call('DELETE', "http://admin.lms.local/pricing-tiers/{$tier->id}");
 
         $this->assertDatabaseHas('pricing_tiers', ['id' => $tier->id]);
     }

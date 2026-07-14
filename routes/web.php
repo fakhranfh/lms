@@ -10,6 +10,9 @@ use App\Http\Controllers\SchoolController;
 use App\Livewire\ChangePassword;
 use App\Livewire\Dashboard;
 use App\Livewire\EditProfile;
+use App\Livewire\PricingTiers\PricingTierCreate;
+use App\Livewire\PricingTiers\PricingTierEdit;
+use App\Livewire\PricingTiers\PricingTierIndex;
 use App\Livewire\Roles\RoleCreate;
 use App\Livewire\Roles\RoleEdit;
 use App\Livewire\Roles\RoleIndex;
@@ -54,6 +57,10 @@ Route::domain('admin.'.config('app.domain'))->group(function () {
 
         Route::resource('gateways', GatewayConfigController::class);
         Route::post('gateways/{gateway}/test-connection', [GatewayConfigController::class, 'testConnection'])->name('gateways.test-connection');
+
+        Route::get('/pricing-tiers', PricingTierIndex::class)->name('admin.pricing-tiers.index');
+        Route::get('/pricing-tiers/create', PricingTierCreate::class)->name('admin.pricing-tiers.create');
+        Route::get('/pricing-tiers/{tier}/edit', PricingTierEdit::class)->name('admin.pricing-tiers.edit');
 
         Route::post('/logout', function (Request $request) {
             Auth::logout();

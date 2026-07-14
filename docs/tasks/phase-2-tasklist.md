@@ -1,51 +1,52 @@
 # Phase 2: Subscription Schema & Pricing + Payment Gateway
 
-**Status:** ⏳ In Progress  
+**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete)
 **Date Started:** 2026-07-14  
 **Prerequisites:** Phase 1 ✅ Complete
+**Phase 2.0A Completed:** 2026-07-14
 
 ---
 
-## 📋 Phase 2.0A: Database & Models
+## 📋 Phase 2.0A: Database & Models ✅ COMPLETE
 
 ### Payment Gateway Types Table
-- [ ] Create migration: `CreatePaymentGatewayTypesTable`
+- [x] Create migration: `CreatePaymentGatewayTypesTable`
   - `id` (BIGINT, PK)
   - `name` (VARCHAR, unique) - e.g., `midtrans`, `xendit`, `stripe`
   - `label` (VARCHAR) - Display name
   - `description` (TEXT, nullable)
   - `is_active` (BOOLEAN, default true)
   - `created_at`, `updated_at`
-- [ ] Create model: `app/Models/PaymentGatewayType.php`
-- [ ] Create seeder: `database/seeders/PaymentGatewayTypeSeeder.php` (Midtrans, Xendit)
+- [x] Create model: `app/Models/PaymentGatewayType.php`
+- [x] Create seeder: `database/seeders/PaymentGatewayTypeSeeder.php` (Midtrans, Xendit)
 
 ### School Payment Gateways Table
-- [ ] Create migration: `CreateSchoolPaymentGatewaysTable`
+- [x] Create migration: `CreateSchoolPaymentGatewaysTable` (table: `tenant_payment_gateways`)
   - `id` (UUID, PK)
-  - `school_id` (UUID, FK→schools.id, CASCADE)
+  - `tenant_id` (UUID, FK→tenants.id, CASCADE)
   - `gateway_type_id` (BIGINT, FK→payment_gateway_types.id)
   - `is_enabled` (BOOLEAN, default false)
   - `is_sandbox_mode` (BOOLEAN, default true)
   - `webhook_secret` (VARCHAR, nullable)
   - `created_at`, `updated_at`
-- [ ] Create model: `app/Models/SchoolPaymentGateway.php`
-- [ ] Add relationship to `School` model
+- [x] Create model: `app/Models/SchoolPaymentGateway.php`
+- [x] Add relationship to `Tenant` model (`paymentGateways()`)
 
 ### Payment Gateway Credentials Table
-- [ ] Create migration: `CreatePaymentGatewayCredentialsTable`
+- [x] Create migration: `CreatePaymentGatewayCredentialsTable`
   - `id` (UUID, PK)
   - `school_payment_gateway_id` (UUID, FK, CASCADE)
   - `credential_key` (VARCHAR) - e.g., `server_key`, `api_key`, `client_id`
-  - `credential_value` (TEXT, encrypted)
+  - `credential_value` (TEXT, encrypted with Laravel's `encrypted` cast)
   - `is_sensitive` (BOOLEAN, default true)
   - `created_at`, `updated_at`
-- [ ] Create model: `app/Models/PaymentGatewayCredential.php`
-- [ ] Add relationship to `SchoolPaymentGateway`
+- [x] Create model: `app/Models/PaymentGatewayCredential.php`
+- [x] Add relationship to `SchoolPaymentGateway` (`credentials()`)
 
 ### Payment Transactions Table
-- [ ] Create migration: `CreatePaymentTransactionsTable`
+- [x] Create migration: `CreatePaymentTransactionsTable`
   - `id` (UUID, PK)
-  - `school_id` (UUID, FK, CASCADE)
+  - `tenant_id` (UUID, FK, CASCADE)
   - `subscription_id` (UUID, FK→subscriptions.id, nullable)
   - `school_payment_gateway_id` (UUID, FK)
   - `transaction_id` (VARCHAR, unique) - External gateway transaction ID
@@ -54,22 +55,22 @@
   - `status` (VARCHAR) - pending, completed, failed, refunded
   - `metadata` (JSON, nullable)
   - `created_at`, `updated_at`
-- [ ] Create model: `app/Models/PaymentTransaction.php`
-- [ ] Add relationships to `School`, `Subscription`, `SchoolPaymentGateway`
+- [x] Create model: `app/Models/PaymentTransaction.php`
+- [x] Add relationships to `Tenant`, `Subscription`, `SchoolPaymentGateway`
 
 ### Payment Webhooks Table
-- [ ] Create migration: `CreatePaymentWebhooksTable`
+- [x] Create migration: `CreatePaymentWebhooksTable`
   - `id` (UUID, PK)
   - `school_payment_gateway_id` (UUID, FK)
   - `event_type` (VARCHAR) - e.g., `transaction.success`, `transaction.failed`
-  - `payload` (TEXT, encrypted)
+  - `payload` (TEXT, encrypted with Laravel's `encrypted` cast)
   - `processed` (BOOLEAN, default false)
   - `processed_at` (TIMESTAMP, nullable)
-  - `created_at`
-- [ ] Create model: `app/Models/PaymentWebhook.php`
+  - `created_at` (TIMESTAMP only, no updated_at)
+- [x] Create model: `app/Models/PaymentWebhook.php`
 
 ### Subscription Tiers Table
-- [ ] Create migration: `CreateSubscriptionTiersTable`
+- [x] Create migration: `CreateSubscriptionTiersTable`
   - `id` (BIGINT, PK)
   - `name` (VARCHAR) - Starter, Professional, Enterprise
   - `slug` (VARCHAR, unique) - starter, professional, enterprise
@@ -82,16 +83,16 @@
   - `storage_gb` (INT, nullable) - NULL = unlimited
   - `is_active` (BOOLEAN, default true)
   - `created_at`, `updated_at`
-- [ ] Create model: `app/Models/SubscriptionTier.php`
-- [ ] Create seeder: `database/seeders/SubscriptionTierSeeder.php`
+- [x] Create model: `app/Models/SubscriptionTier.php`
+- [x] Create seeder: `database/seeders/SubscriptionTierSeeder.php`
   - Starter: IDR 199,000/month, max 100 users, 5GB
   - Professional: IDR 499,000/month, max 500 users, 50GB
   - Enterprise: Custom pricing, unlimited
 
 ### Subscriptions Table
-- [ ] Create migration: `CreateSubscriptionsTable`
+- [x] Create migration: `CreateSubscriptionsTable`
   - `id` (UUID, PK)
-  - `school_id` (UUID, FK→schools.id, CASCADE)
+  - `tenant_id` (UUID, FK→tenants.id, CASCADE)
   - `tier_id` (BIGINT, FK→subscription_tiers.id)
   - `status` (VARCHAR) - trial, active, expired, cancelled, suspended
   - `started_at` (TIMESTAMP)
@@ -100,20 +101,28 @@
   - `auto_renew` (BOOLEAN, default true)
   - `payment_method` (VARCHAR, nullable) - gateway name used
   - `created_at`, `updated_at`
-- [ ] Create model: `app/Models/Subscription.php`
-- [ ] Add relationships to `School`, `SubscriptionTier`, `PaymentTransaction`
+- [x] Create model: `app/Models/Subscription.php`
+- [x] Add relationships to `Tenant`, `SubscriptionTier`, `PaymentTransaction`
 
 ### Demo LMS Access Table
-- [ ] Create migration: `CreateDemoLmsAccessTable`
+- [x] Create migration: `CreateDemoLmsAccessTable`
   - `id` (UUID, PK)
-  - `school_id` (UUID, FK→schools.id, CASCADE)
+  - `tenant_id` (UUID, FK→tenants.id, CASCADE)
   - `user_id` (UUID, FK→users.id, CASCADE)
   - `access_token` (VARCHAR, unique)
   - `expires_at` (TIMESTAMP)
   - `accessed_at` (TIMESTAMP, nullable)
-  - `created_at`
-- [ ] Create model: `app/Models/DemoLmsAccess.php`
-- [ ] Add relationships to `School`, `User`
+  - `created_at` (TIMESTAMP only, no updated_at)
+- [x] Create model: `app/Models/DemoLmsAccess.php`
+- [x] Add relationships to `Tenant`, `User`
+
+### Additional Notes
+- All models use `HasUuid` trait for UUID primary keys (except PaymentGatewayType and SubscriptionTier which use bigint auto-increment)
+- All tenant-scoped models use `BelongsToTenant` trait for automatic tenant isolation
+- Encrypted columns use Laravel's built-in `encrypted` cast (AES-256-CBC)
+- All 8 factories created for test data generation
+- Migrations verified to run cleanly; seeders tested and populate initial data
+- Code formatted with Laravel Pint
 
 ---
 

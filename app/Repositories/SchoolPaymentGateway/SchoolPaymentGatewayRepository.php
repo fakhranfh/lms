@@ -1,0 +1,66 @@
+<?php
+
+namespace App\Repositories\SchoolPaymentGateway;
+
+use App\Models\SchoolPaymentGateway;
+
+class SchoolPaymentGatewayRepository implements SchoolPaymentGatewayRepositoryInterface
+{
+    public function query(array $filters = [])
+    {
+        $query = SchoolPaymentGateway::query();
+
+        foreach ($filters as $key => $value) {
+            if (is_null($value) || $value === '') {
+                continue;
+            }
+
+            $query->where($key, $value);
+        }
+
+        return $query;
+    }
+
+    public function get(array $filters = [], array $with = [])
+    {
+        $query = $this->query($filters);
+
+        return $query->with($with)->get();
+    }
+
+    public function getAll()
+    {
+        return SchoolPaymentGateway::all();
+    }
+
+    public function find($id)
+    {
+        return SchoolPaymentGateway::find($id);
+    }
+
+    public function create(array $data)
+    {
+        return SchoolPaymentGateway::create($data);
+    }
+
+    public function update($id, array $data)
+    {
+        $model = SchoolPaymentGateway::findOrFail($id);
+        $model->update($data);
+
+        return $model;
+    }
+
+    public function delete($id)
+    {
+        return SchoolPaymentGateway::destroy($id);
+    }
+
+    public function findBySchoolAndGatewayType(string $schoolId, int $gatewayTypeId)
+    {
+        return $this->query()
+            ->where('school_id', $schoolId)
+            ->where('gateway_type_id', $gatewayTypeId)
+            ->first();
+    }
+}

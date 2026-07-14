@@ -15,11 +15,15 @@ use App\Repositories\Role\RoleRepository;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Repositories\School\SchoolRepository;
 use App\Repositories\School\SchoolRepositoryInterface;
+use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepository;
+use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepositoryInterface;
 use App\Repositories\User\UserRepository;
 use App\Repositories\User\UserRepositoryInterface;
 use App\Services\CredentialEncryption;
+use App\Services\PaymentGatewayConfigService;
 use App\Services\PaymentGatewayFactory;
 use App\Services\PaymentGatewayRegistry;
+use App\Services\PaymentWebhookService;
 use App\Services\SubscriptionPaymentService;
 use App\Support\CurrentSchool;
 use Illuminate\Auth\Events\Login;
@@ -49,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(RoleRepositoryInterface::class, RoleRepository::class);
         $this->app->bind(PermissionRepositoryInterface::class, PermissionRepository::class);
         $this->app->bind(SchoolRepositoryInterface::class, SchoolRepository::class);
+        $this->app->bind(SchoolPaymentGatewayRepositoryInterface::class, SchoolPaymentGatewayRepository::class);
 
         $this->app->singleton(CurrentSchool::class);
 
@@ -56,6 +61,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PaymentGatewayRegistry::class);
         $this->app->singleton(PaymentGatewayFactory::class);
         $this->app->singleton(SubscriptionPaymentService::class);
+        $this->app->singleton(PaymentGatewayConfigService::class);
+        $this->app->singleton(PaymentWebhookService::class);
     }
 
     /**

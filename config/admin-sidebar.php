@@ -30,9 +30,9 @@ return [
     ],
     [
         'label' => 'Payment Gateways',
-        'route' => 'gateways.index',
+        'route' => 'admin.gateways.index',
         'icon' => 'payment',
-        'active_pattern' => 'gateways.*',
+        'active_pattern' => 'admin.gateways.*',
     ],
     [
         'label' => 'Pricing Tiers',

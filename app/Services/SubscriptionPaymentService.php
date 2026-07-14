@@ -22,7 +22,7 @@ class SubscriptionPaymentService
 
         return $gatewayInstance->createInvoice([
             'subscription_id' => $subscription->id,
-            'tenant_id' => $subscription->tenant_id,
+            'school_id' => $subscription->school_id,
             'amount' => $subscription->tier->price,
             'currency' => $subscription->tier->currency,
             'description' => "Subscription: {$subscription->tier->name}",

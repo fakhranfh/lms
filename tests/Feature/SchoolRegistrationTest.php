@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Tenant;
+use App\Models\School;
 
 test('a school can register with a valid name and domain', function () {
     $rootDomain = config('app.domain');
@@ -13,14 +13,14 @@ test('a school can register with a valid name and domain', function () {
 
     $response->assertRedirect("http://{$schoolDomain}/register");
 
-    expect(Tenant::query()->where('domain', $schoolDomain)->exists())->toBeTrue();
+    expect(School::query()->where('domain', $schoolDomain)->exists())->toBeTrue();
 });
 
 test('registration is rejected when the domain is already taken', function () {
     $rootDomain = config('app.domain');
     $schoolDomain = "myschool.{$rootDomain}";
 
-    Tenant::factory()->create(['domain' => $schoolDomain]);
+    School::factory()->create(['domain' => $schoolDomain]);
 
     $response = $this->post("http://{$rootDomain}/register-school", [
         'name' => 'My School',

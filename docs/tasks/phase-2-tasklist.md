@@ -31,7 +31,7 @@
   - `webhook_secret` (VARCHAR, nullable)
   - `created_at`, `updated_at`
 - [x] Create model: `app/Models/SchoolPaymentGateway.php`
-- [x] Add relationship to `Tenant` model (`paymentGateways()`)
+- [x] Add relationship to `School` model (`paymentGateways()`)
 
 ### Payment Gateway Credentials Table
 - [x] Create migration: `CreatePaymentGatewayCredentialsTable`
@@ -57,7 +57,7 @@
   - `metadata` (JSON, nullable)
   - `created_at`, `updated_at`
 - [x] Create model: `app/Models/PaymentTransaction.php`
-- [x] Add relationships to `Tenant`, `Subscription`, `SchoolPaymentGateway`
+- [x] Add relationships to `School`, `Subscription`, `SchoolPaymentGateway`
 
 ### Payment Webhooks Table
 - [x] Create migration: `CreatePaymentWebhooksTable`
@@ -103,7 +103,7 @@
   - `payment_method` (VARCHAR, nullable) - gateway name used
   - `created_at`, `updated_at`
 - [x] Create model: `app/Models/Subscription.php`
-- [x] Add relationships to `Tenant`, `SubscriptionTier`, `PaymentTransaction`
+- [x] Add relationships to `School`, `SubscriptionTier`, `PaymentTransaction`
 
 ### Demo LMS Access Table
 - [x] Create migration: `CreateDemoLmsAccessTable`
@@ -115,11 +115,11 @@
   - `accessed_at` (TIMESTAMP, nullable)
   - `created_at` (TIMESTAMP only, no updated_at)
 - [x] Create model: `app/Models/DemoLmsAccess.php`
-- [x] Add relationships to `Tenant`, `User`
+- [x] Add relationships to `School`, `User`
 
 ### Additional Notes
 - All models use `HasUuid` trait for UUID primary keys (except PaymentGatewayType and SubscriptionTier which use bigint auto-increment)
-- All tenant-scoped models use `BelongsToTenant` trait for automatic tenant isolation
+- All school-scoped models use `BelongsToTenant` trait for automatic school isolation
 - Encrypted columns use Laravel's built-in `encrypted` cast (AES-256-CBC)
 - All 8 factories created for test data generation
 - Migrations verified to run cleanly; seeders tested and populate initial data
@@ -148,7 +148,7 @@
   - Load available gateways from `payment_gateway_types` table
   - Cache gateway types for performance (1 hour TTL)
   - Provide method: `getGatewayTypes(): Collection`
-  - Provide method: `getSchoolGateways(Tenant $school): Collection`
+  - Provide method: `getSchoolGateways(School $school): Collection`
   - Provide method: `clearCache(): void`
 
 ### Payment Gateway Factory

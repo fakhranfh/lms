@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\DemoLmsAccess;
-use App\Models\Tenant;
+use App\Models\School;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -21,7 +21,7 @@ class DemoLmsAccessFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => Tenant::factory(),
+            'school_id' => School::factory(),
             'user_id' => User::factory(),
             'access_token' => Str::random(32),
             'expires_at' => $this->faker->dateTimeBetween('+1 day', '+30 days'),

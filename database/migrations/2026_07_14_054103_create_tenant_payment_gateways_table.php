@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tenant_payment_gateways', function (Blueprint $table) {
+        Schema::create('school_payment_gateways', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('school_id')->constrained('schools')->cascadeOnDelete();
             $table->foreignId('gateway_type_id')->constrained('payment_gateway_types');
             $table->boolean('is_enabled')->default(false);
             $table->boolean('is_sandbox_mode')->default(true);
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tenant_payment_gateways');
+        Schema::dropIfExists('school_payment_gateways');
     }
 };

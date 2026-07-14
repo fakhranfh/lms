@@ -54,7 +54,7 @@ return new class extends Migration
 
         if (! $adminUser) {
             $adminUser = User::create([
-                'tenant_id' => null,
+                'school_id' => null,
                 'name' => 'Admin',
                 'email' => 'admin@example.com',
                 'password' => Hash::make('password'),

@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Tenant;
+use App\Models\School;
 use App\Models\User;
-use App\Support\CurrentTenant;
+use App\Support\CurrentSchool;
 use Illuminate\Support\Facades\Http;
 
 // Prevent actual HTTP requests to the Pwned Passwords API during tests
@@ -11,13 +11,13 @@ beforeEach(function () {
         'api.pwnedpasswords.com/*' => Http::response('', 200),
     ]);
 
-    $this->tenant = Tenant::factory()->create();
-    $this->schoolUrl = 'http://'.$this->tenant->domain;
-    app(CurrentTenant::class)->setTenantId($this->tenant->id);
+    $this->school = School::factory()->create();
+    $this->schoolUrl = 'http://'.$this->school->domain;
+    app(CurrentSchool::class)->setSchoolId($this->school->id);
 });
 
 afterEach(function () {
-    app(CurrentTenant::class)->setTenantId(null);
+    app(CurrentSchool::class)->setSchoolId(null);
 });
 
 test('registration page can be rendered', function () {
@@ -124,14 +124,14 @@ test('registration fails when password confirmation does not match', function ()
     ])->assertSessionHasErrors('password');
 });
 
-test('registration fails when tenant_id is passed in request', function () {
-    $other = Tenant::factory()->create();
+test('registration fails when school_id is passed in request', function () {
+    $other = School::factory()->create();
 
     $this->post("{$this->schoolUrl}/register", [
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'password' => 'Secret!Pass123#Secure',
         'password_confirmation' => 'Secret!Pass123#Secure',
-        'tenant_id' => $other->id,
-    ])->assertSessionHasErrors('tenant_id');
+        'school_id' => $other->id,
+    ])->assertSessionHasErrors('school_id');
 });

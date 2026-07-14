@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Tenant;
+use App\Models\School;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -25,8 +25,15 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        // Create school directly to avoid factory trait closure issues
+        $school = School::create([
+            'id' => Str::uuid(),
+            'name' => fake()->company(),
+            'domain' => fake()->unique()->domainName(),
+        ]);
+
         return [
-            'tenant_id' => Tenant::factory(),
+            'school_id' => $school->id,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),

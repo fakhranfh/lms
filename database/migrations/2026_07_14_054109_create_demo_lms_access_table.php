@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('demo_lms_access', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('school_id')->constrained('schools')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('access_token')->unique();
             $table->timestamp('expires_at');

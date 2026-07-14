@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\PaymentGatewayType;
+use App\Models\School;
 use App\Models\SchoolPaymentGateway;
-use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,7 +20,7 @@ class SchoolPaymentGatewayFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => Tenant::factory(),
+            'school_id' => School::factory(),
             'gateway_type_id' => PaymentGatewayType::factory(),
             'is_enabled' => false,
             'is_sandbox_mode' => true,

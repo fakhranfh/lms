@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToSchool;
 use App\Traits\HasUuid;
 use Database\Factories\SchoolPaymentGatewayFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -11,13 +11,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['tenant_id', 'gateway_type_id', 'is_enabled', 'is_sandbox_mode', 'webhook_secret'])]
+#[Fillable(['school_id', 'gateway_type_id', 'is_enabled', 'is_sandbox_mode', 'webhook_secret'])]
 class SchoolPaymentGateway extends Model
 {
     /** @use HasFactory<SchoolPaymentGatewayFactory> */
-    use BelongsToTenant, HasFactory, HasUuid;
+    use BelongsToSchool, HasFactory, HasUuid;
 
-    protected $table = 'tenant_payment_gateways';
+    protected $table = 'school_payment_gateways';
 
     /**
      * Get the payment gateway type.

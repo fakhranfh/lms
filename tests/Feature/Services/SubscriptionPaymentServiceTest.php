@@ -3,20 +3,20 @@
 use App\Contracts\PaymentGateway;
 use App\Models\PaymentGatewayType;
 use App\Models\PaymentTransaction;
+use App\Models\School;
 use App\Models\SchoolPaymentGateway;
 use App\Models\Subscription;
 use App\Models\SubscriptionTier;
-use App\Models\Tenant;
 use App\Services\PaymentGatewayFactory;
 use App\Services\SubscriptionPaymentService;
 
 it('creates a payment invoice for subscription', function () {
-    $tenant = Tenant::factory()->create();
+    $school = School::factory()->create();
     $tier = SubscriptionTier::factory()->create(['price' => 199000]);
-    $subscription = Subscription::factory()->create(['tenant_id' => $tenant->id, 'tier_id' => $tier->id]);
+    $subscription = Subscription::factory()->create(['school_id' => $school->id, 'tier_id' => $tier->id]);
 
     $gatewayType = PaymentGatewayType::factory()->create(['name' => 'test_gateway']);
-    $gateway = SchoolPaymentGateway::factory()->create(['tenant_id' => $tenant->id, 'gateway_type_id' => $gatewayType->id]);
+    $gateway = SchoolPaymentGateway::factory()->create(['school_id' => $school->id, 'gateway_type_id' => $gatewayType->id]);
 
     $mockGateway = Mockery::mock(PaymentGateway::class);
     $mockGateway->shouldReceive('createInvoice')->andReturn(['invoice_id' => 'inv_123']);
@@ -31,15 +31,15 @@ it('creates a payment invoice for subscription', function () {
 });
 
 it('handles failed payments by expiring subscription', function () {
-    $tenant = Tenant::factory()->create();
+    $school = School::factory()->create();
     $tier = SubscriptionTier::factory()->create();
-    $subscription = Subscription::factory()->create(['tenant_id' => $tenant->id, 'tier_id' => $tier->id, 'status' => 'active']);
+    $subscription = Subscription::factory()->create(['school_id' => $school->id, 'tier_id' => $tier->id, 'status' => 'active']);
 
     $gatewayType = PaymentGatewayType::factory()->create();
-    $gateway = SchoolPaymentGateway::factory()->create(['tenant_id' => $tenant->id, 'gateway_type_id' => $gatewayType->id]);
+    $gateway = SchoolPaymentGateway::factory()->create(['school_id' => $school->id, 'gateway_type_id' => $gatewayType->id]);
 
     $transaction = PaymentTransaction::factory()->create([
-        'tenant_id' => $tenant->id,
+        'school_id' => $school->id,
         'subscription_id' => $subscription->id,
         'school_payment_gateway_id' => $gateway->id,
         'status' => 'failed',

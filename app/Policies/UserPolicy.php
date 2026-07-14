@@ -19,7 +19,7 @@ class UserPolicy
      */
     public function view(User $user, User $model): bool
     {
-        return $user->tenant_id === $model->tenant_id;
+        return $user->school_id === $model->school_id;
     }
 
     /**
@@ -36,7 +36,7 @@ class UserPolicy
     public function update(User $user, User $model): bool
     {
         return $user->hasRole('admin')
-            && $user->tenant_id === $model->tenant_id;
+            && $user->school_id === $model->school_id;
     }
 
     /**
@@ -45,7 +45,7 @@ class UserPolicy
     public function delete(User $user, User $model): bool
     {
         return $user->hasRole('admin')
-            && $user->tenant_id === $model->tenant_id;
+            && $user->school_id === $model->school_id;
     }
 
     /**
@@ -54,7 +54,7 @@ class UserPolicy
     public function restore(User $user, User $model): bool
     {
         return $user->hasRole('admin')
-            && $user->tenant_id === $model->tenant_id;
+            && $user->school_id === $model->school_id;
     }
 
     /**
@@ -63,6 +63,6 @@ class UserPolicy
     public function forceDelete(User $user, User $model): bool
     {
         return $user->hasRole('admin')
-            && $user->tenant_id === $model->tenant_id;
+            && $user->school_id === $model->school_id;
     }
 }

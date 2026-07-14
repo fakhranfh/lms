@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToSchool;
 use App\Traits\HasUuid;
 use Database\Factories\DemoLmsAccessFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -10,11 +10,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'user_id', 'access_token', 'expires_at', 'accessed_at'])]
+#[Fillable(['school_id', 'user_id', 'access_token', 'expires_at', 'accessed_at'])]
 class DemoLmsAccess extends Model
 {
     /** @use HasFactory<DemoLmsAccessFactory> */
-    use BelongsToTenant, HasFactory, HasUuid;
+    use BelongsToSchool, HasFactory, HasUuid;
 
     public $timestamps = false;
 

@@ -3,7 +3,7 @@
 **Project Name:** AI-Powered Learning Management System (SaaS)
 **Document Status:** Approved for Development
 **Primary Stack:** Laravel 13, Livewire, PostgreSQL 16, Redis, Anthropic API
-**Target Architecture:** Multi-Tenant, Event-Driven, High Concurrency
+**Target Architecture:** Multi-School, Event-Driven, High Concurrency
 
 ---
 
@@ -12,13 +12,13 @@
 **Feature / Project Name:** AI-Powered LMS (SaaS)
 
 **Problem Statement:**
-Educational institutions spend significant instructor time manually grading student essays, which is slow, inconsistent, and hard to scale across classes or institutions. Institutions also need strict data isolation when sharing a single platform (multi-tenant), along with flexible access control that doesn't depend on a developer to change roles/permissions.
+Educational institutions spend significant instructor time manually grading student essays, which is slow, inconsistent, and hard to scale across classes or institutions. Institutions also need strict data isolation when sharing a single platform (multi-school), along with flexible access control that doesn't depend on a developer to change roles/permissions.
 
 **Proposed Solution:**
-A multi-tenant LMS platform that combines tiered learning material management with automated LLM-based essay grading (Anthropic API), processed asynchronously to stay responsive under high load.
+A multi-school LMS platform that combines tiered learning material management with automated LLM-based essay grading (Anthropic API), processed asynchronously to stay responsive under high load.
 
 **AI Build Summary:**
-> Build a multi-tenant Laravel 13 + Livewire + PostgreSQL 16 + Redis SaaS LMS. The UI is server-rendered via Livewire components (no separate SPA/API frontend) — Blade + Livewire handles forms, tables, and reactive state such as submission status updates. Core loop: instructors build Course > Module > Lesson hierarchies and JSON rubrics; students consume lessons and submit essay answers; a Redis-queued worker sends submissions to the Anthropic API and writes back `ai_score`/`ai_feedback` asynchronously, and the Livewire submission component polls/refreshes to reflect the new status without a full page reload. All primary keys are UUIDv4. Tenant isolation is enforced via `tenant_id` + global scopes. RBAC (roles/permissions) is dynamic and tenant-configurable, not hardcoded. Every mutation is captured in a polymorphic audit log (`old_values`/`new_values` JSONB). No synchronous LLM calls — submission endpoint must respond in <500ms and hand off to a background worker.
+> Build a multi-school Laravel 13 + Livewire + PostgreSQL 16 + Redis SaaS LMS. The UI is server-rendered via Livewire components (no separate SPA/API frontend) — Blade + Livewire handles forms, tables, and reactive state such as submission status updates. Core loop: instructors build Course > Module > Lesson hierarchies and JSON rubrics; students consume lessons and submit essay answers; a Redis-queued worker sends submissions to the Anthropic API and writes back `ai_score`/`ai_feedback` asynchronously, and the Livewire submission component polls/refreshes to reflect the new status without a full page reload. All primary keys are UUIDv4. School isolation is enforced via `tenant_id` + global scopes. RBAC (roles/permissions) is dynamic and school-configurable, not hardcoded. Every mutation is captured in a polymorphic audit log (`old_values`/`new_values` JSONB). No synchronous LLM calls — submission endpoint must respond in <500ms and hand off to a background worker.
 
 ---
 
@@ -28,7 +28,7 @@ A multi-tenant LMS platform that combines tiered learning material management wi
 
 **Success Metrics:**
 - Submission endpoint response time stays under 500ms (p95), even under concurrent load.
-- AI grading pipeline completes (pending → graded) with a bounded retry policy on `failed` states, with no cross-tenant data leakage.
+- AI grading pipeline completes (pending → graded) with a bounded retry policy on `failed` states, with no cross-school data leakage.
 - 100% of data mutations produce a corresponding audit log entry.
 
 **Anti-goals:**
@@ -41,8 +41,8 @@ A multi-tenant LMS platform that combines tiered learning material management wi
 ## 3. Scope & Constraints
 
 **In scope:**
-- Multi-tenant organization management (Super Admin, Tenant Admin).
-- Dynamic RBAC (custom roles/permissions per tenant).
+- Multi-school organization management (Super Admin, School Admin).
+- Dynamic RBAC (custom roles/permissions per school).
 - Course > Module > Lesson content hierarchy with forced ordering and progress tracking.
 - Assignment creation with dynamic JSON rubrics.
 - Asynchronous AI-graded essay submissions with manual instructor override.
@@ -52,15 +52,15 @@ A multi-tenant LMS platform that combines tiered learning material management wi
 **Out of scope:**
 - Custom domain routing (schema field reserved, not implemented).
 - Non-essay assessment types (quizzes, multiple choice) — not covered by this PRD.
-- Payments/billing for tenant subscriptions.
+- Payments/billing for school subscriptions.
 
 **Technical constraints:**
 - Platform: Web only.
-- Auth: Laravel Fortify-based session auth, tenant-scoped.
+- Auth: Laravel Fortify-based session auth, school-scoped.
 - All Primary Keys must be UUIDv4 (prevents IDOR/enumeration attacks).
 - LLM calls to Anthropic API must never block the request/response cycle — must run in Redis-backed background workers.
 - Submission endpoint rate-limited to 3 requests/minute per IP/user.
-- Data isolation: every tenant-scoped query must be filtered by `tenant_id`, enforced via global scopes — no manual filtering allowed to leak across tenants.
+- Data isolation: every school-scoped query must be filtered by `tenant_id`, enforced via global scopes — no manual filtering allowed to leak across tenants.
 - Compliance: polymorphic audit trail (`old_values`/`new_values` in JSONB) required on all mutating actions.
 
 ---
@@ -71,7 +71,7 @@ A multi-tenant LMS platform that combines tiered learning material management wi
 |----------|---------------|
 | 1 | When a student submits an essay answer, I want it evaluated automatically and consistently, so I can get fast, fair feedback without waiting on an instructor's queue. |
 | 2 | When an instructor designs an assignment, I want to define a custom grading rubric, so I can ensure the AI evaluates against my specific criteria instead of a generic standard. |
-| 3 | When a tenant admin onboards their institution, I want to define custom roles and permissions, so I can match the platform to our existing organizational structure without code changes. |
+| 3 | When a school admin onboards their institution, I want to define custom roles and permissions, so I can match the platform to our existing organizational structure without code changes. |
 | 4 | When a Super Admin operates the platform, I want real-time visibility into queue load and system health, so I can catch grading pipeline failures before they affect multiple tenants. |
 | 5 | When an instructor disagrees with an AI-generated score, I want to override it manually, so the final grade reflects human judgment as the source of truth. |
 
@@ -86,8 +86,8 @@ A multi-tenant LMS platform that combines tiered learning material management wi
 | US3 | Instructor | define a JSON-based grading rubric per assignment | control exactly how the AI evaluates submissions | J2 |
 | US4 | Instructor | override an AI-generated score | ensure the final grade reflects my professional judgment | J5 |
 | US5 | Instructor | build a Course > Module > Lesson hierarchy with forced ordering | structure learning material the way I intend students to consume it | J1 |
-| US6 | Tenant Admin | create custom roles and assign permissions | tailor access control to our institution without engineering support | J3 |
-| US7 | Tenant Admin | view analytics across my institution | understand engagement and outcomes at the school level | J3 |
+| US6 | School Admin | create custom roles and assign permissions | tailor access control to our institution without engineering support | J3 |
+| US7 | School Admin | view analytics across my institution | understand engagement and outcomes at the school level | J3 |
 | US8 | Super Admin | register new tenants | onboard new institutions onto the platform | J3 |
 | US9 | Super Admin | monitor system load and queue health via Pulse/Horizon | detect and respond to grading pipeline issues before they escalate | J4 |
 | US10 | Compliance/Security stakeholder | review an immutable audit trail of data changes | investigate incidents and satisfy audit requirements | — |
@@ -97,7 +97,7 @@ A multi-tenant LMS platform that combines tiered learning material management wi
 ## 6. Proposed Experience
 
 **Design Direction:**
-Two mental models coexist: a **content-authoring workspace** (Instructor building Course > Module > Lesson trees, similar to a document/outline editor) and a **consumption + feedback flow** (Student progressing through lessons and getting essay feedback that reads like a written review, not just a number). Admin surfaces (Tenant Admin, Super Admin) are dashboard-first — tables, filters, and status indicators over decorative UI. The AI grading result should feel like "waiting on a person," not a blocking spinner — asynchronous status with a visible progression (pending → processing → graded).
+Two mental models coexist: a **content-authoring workspace** (Instructor building Course > Module > Lesson trees, similar to a document/outline editor) and a **consumption + feedback flow** (Student progressing through lessons and getting essay feedback that reads like a written review, not just a number). Admin surfaces (School Admin, Super Admin) are dashboard-first — tables, filters, and status indicators over decorative UI. The AI grading result should feel like "waiting on a person," not a blocking spinner — asynchronous status with a visible progression (pending → processing → graded).
 
 **Key Screens / States:**
 - **Course Builder** (Instructor): tree/outline view of Course > Module > Lesson with drag-to-reorder (writes `order`), inline rubric editor (structured JSON form, not raw textarea) per Assignment.
@@ -105,8 +105,8 @@ Two mental models coexist: a **content-authoring workspace** (Instructor buildin
 - **Assignment Submission** (Student): essay textarea, submit button, and a status chip that updates pending → processing → graded without a page reload.
 - **Submission Result** (Student): AI score, structured feedback (rendered from `ai_feedback` JSONB, not raw JSON), and an "instructor override" badge when `ai_score` has been manually changed.
 - **Grading Queue** (Instructor): list of submissions filterable by status (pending/processing/graded/failed), with an override action inline.
-- **Role & Permission Manager** (Tenant Admin): role list, permission matrix (checkbox grid), create-role flow.
-- **Tenant Registry** (Super Admin): tenant list, create-tenant form, link out to Pulse/Horizon.
+- **Role & Permission Manager** (School Admin): role list, permission matrix (checkbox grid), create-role flow.
+- **School Registry** (Super Admin): school list, create-school form, link out to Pulse/Horizon.
 - **Pulse/Horizon Dashboards** (Super Admin): embedded/linked, not rebuilt — use Laravel's native dashboards.
 - **Empty state:** new Course with no Modules shows a prompt to add the first Module, not a blank table. New Student dashboard with no enrolled courses shows a "browse courses" prompt.
 - **Error state:** failed submission (`status: failed`) shows a plain-language message ("Grading failed, retrying automatically") rather than exposing the raw API error; instructor grading queue surfaces failed items distinctly so they aren't mistaken for still-pending.
@@ -116,7 +116,7 @@ Two mental models coexist: a **content-authoring workspace** (Instructor buildin
 1. Student opens Lesson Viewer → reads/watches content → marks complete → progress updates immediately (optimistic UI, reconciled against `lesson_user.completed_at`).
 2. Student opens Assignment → writes essay → submits via a Livewire component → sees `pending` chip immediately (HTTP 200 in <500ms) → the component uses `wire:poll` to refresh status to `processing` → `graded` without a full page reload or hand-written JS.
 3. Instructor reviews graded submissions in the Grading Queue → optionally overrides a score → override is logged to `audit_logs`.
-4. Tenant Admin creates a Role → assigns Permissions via matrix → assigns Role to Users.
+4. School Admin creates a Role → assigns Permissions via matrix → assigns Role to Users.
 - No destructive undo is required for MVP; overrides are corrections, not deletions, and are preserved in the audit trail rather than reversed in place.
 
 **Accessibility Notes:**
@@ -144,9 +144,9 @@ Two mental models coexist: a **content-authoring workspace** (Instructor buildin
 | SubmissionResultPanel | Display | Renders `ai_score` + structured `ai_feedback` | US1 |
 | OverrideScoreModal | Modal | Instructor form to manually set a submission's score | US4 |
 | GradingQueueTable | Display | Filterable table of submissions by status | US4 |
-| RoleManagerTable | Display | List of tenant-scoped roles | US6 |
+| RoleManagerTable | Display | List of school-scoped roles | US6 |
 | PermissionMatrix | Form | Checkbox grid mapping roles to permissions | US6 |
-| CreateRoleModal | Modal | Form to create a new tenant-scoped role | US6 |
+| CreateRoleModal | Modal | Form to create a new school-scoped role | US6 |
 | TenantAnalyticsDashboard | Display | Institution-level engagement/outcome charts | US7 |
 | TenantRegistryTable | Display | Super Admin list of registered tenants | US8 |
 | CreateTenantForm | Form | Super Admin form to onboard a new institution | US8 |
@@ -200,7 +200,7 @@ State machine for the asynchronous AI grading feature:
 Reflects `docs/ERD.md`. UUID v4 primary keys throughout; PostgreSQL 16 with JSONB for unstructured/audit data.
 
 ```typescript
-interface Tenant {
+interface School {
   id: string;                 // UUID
   name: string;
   domain?: string;            // reserved for future custom-domain routing
@@ -210,7 +210,7 @@ interface Tenant {
 
 interface User {
   id: string;
-  tenantId: string;           // FK -> Tenant, CASCADE
+  tenantId: string;           // FK -> School, CASCADE
   name: string;
   email: string;               // unique
   password: string;            // hashed
@@ -220,7 +220,7 @@ interface User {
 
 interface Role {
   id: string;
-  tenantId: string;            // FK -> Tenant; roles are tenant-scoped
+  tenantId: string;            // FK -> School; roles are school-scoped
   name: string;
   slug: string;
 }
@@ -288,7 +288,7 @@ interface Submission {
 
 interface AuditLog {
   id: string;
-  tenantId: string;               // isolates logs per tenant
+  tenantId: string;               // isolates logs per school
   userId: string;                  // actor
   event: 'created' | 'updated' | 'deleted';
   auditableType: string;           // polymorphic model class
@@ -313,9 +313,9 @@ interface AuditLog {
 | POST | /api/assignments | Instructor creates assignment with rubric | Yes | `Assignment` |
 | PATCH | /api/submissions/:id/override | Instructor overrides AI score | Yes | `Submission` |
 | POST | /api/lessons/:id/complete | Mark lesson as completed for progress tracking | Yes | `{ completedAt: string }` |
-| POST | /api/tenants | Super Admin registers a new tenant | Yes (Super Admin only) | `Tenant` |
-| POST | /api/roles | Tenant Admin creates a custom role | Yes (Tenant Admin) | `Role` |
-| PATCH | /api/roles/:id/permissions | Tenant Admin assigns permissions to a role | Yes (Tenant Admin) | `Role` with permissions |
+| POST | /api/tenants | Super Admin registers a new school | Yes (Super Admin only) | `School` |
+| POST | /api/roles | School Admin creates a custom role | Yes (School Admin) | `Role` |
+| PATCH | /api/roles/:id/permissions | School Admin assigns permissions to a role | Yes (School Admin) | `Role` with permissions |
 | GET | /pulse, /horizon | Real-time system/queue observability dashboards | Yes (Super Admin only, route-level restricted) | HTML dashboard |
 
 **External integrations:**
@@ -329,8 +329,8 @@ interface AuditLog {
 | State | Location | Persistence | Notes |
 |-------|----------|-------------|-------|
 | `submission.status` | Server (PostgreSQL) | Persistent | Drives the pending → processing → graded/failed state machine; source of truth polled by the Livewire component via `wire:poll` |
-| `tenant_id` scope | Auth/session context | Session | Applied via global scope on every tenant-scoped query; never trusted from client input |
-| RBAC roles/permissions | Server (PostgreSQL), cached per request | Persistent | Evaluated per-request via middleware; tenant-specific |
+| `tenant_id` scope | Auth/session context | Session | Applied via global scope on every school-scoped query; never trusted from client input |
+| RBAC roles/permissions | Server (PostgreSQL), cached per request | Persistent | Evaluated per-request via middleware; school-specific |
 | Lesson completion (`lesson_user.completed_at`) | Server (PostgreSQL) | Persistent | Written on completion event; unique per (user, lesson) |
 | Queue job state | Redis | Transient (until processed) | Monitored via Horizon; retried per policy on failure |
 
@@ -340,7 +340,7 @@ interface AuditLog {
 
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
-| Backend Framework | Laravel 13 (PHP 8.3) | Existing project stack; mature ecosystem for multi-tenant, queue-driven apps |
+| Backend Framework | Laravel 13 (PHP 8.3) | Existing project stack; mature ecosystem for multi-school, queue-driven apps |
 | Frontend | Livewire | Server-driven reactive UI (forms, tables, submission status) without a separate SPA/API layer; already a project dependency |
 | Database | PostgreSQL 16 | Native UUID + JSONB support needed for audit logs and rubric/feedback storage |
 | Queue / Async | Redis + Laravel Horizon | Required for non-blocking submission handling and job observability |
@@ -358,7 +358,7 @@ Follows existing Laravel conventions in this codebase — no new base folders.
 ```
 app/
 ├── Models/
-│   ├── Tenant.php
+│   ├── School.php
 │   ├── Role.php
 │   ├── Permission.php
 │   ├── Course.php
@@ -408,9 +408,9 @@ database/migrations/
 - [ ] Override action is captured in the audit log with old and new values.
 
 **US6 — Create custom roles**
-- [ ] Tenant Admin can create a role scoped to their tenant only.
-- [ ] Tenant Admin can assign permissions to that role without code deployment.
-- [ ] Edge case handled: roles created by one tenant are invisible to other tenants.
+- [ ] School Admin can create a role scoped to their school only.
+- [ ] School Admin can assign permissions to that role without code deployment.
+- [ ] Edge case handled: roles created by one school are invisible to other tenants.
 
 **US9 — Monitor system health**
 - [ ] /pulse and /horizon routes return 403 for any non-Super-Admin user.
@@ -426,7 +426,7 @@ database/migrations/
 
 - **Q:** What retry policy (max attempts, backoff strategy) applies to failed AI grading jobs? — *Owner: Eng*
 - **Q:** Is `domain` field on `tenants` intended for future custom-domain routing, or should it be removed until implemented? — *Owner: PM*
-- **Risk:** Anthropic API cost/rate limits at scale with many concurrent tenants submitting essays. — *Mitigation: queue throttling, per-tenant rate limits*
+- **Risk:** Anthropic API cost/rate limits at scale with many concurrent tenants submitting essays. — *Mitigation: queue throttling, per-school rate limits*
 - **Risk:** Dynamic JSON rubrics are unvalidated free-form input to the LLM prompt — potential for prompt injection via rubric or student answer. — *Mitigation: sanitize/validate rubric structure, review prompt construction*
 - **Tradeoff:** UUID primary keys over auto-increment integers — better security (no enumeration), slightly larger index size and marginally slower joins at scale.
 
@@ -440,7 +440,7 @@ database/migrations/
 
 **Development Roadmap (Strict Sequence):**
 Modules must not be built before their foundation is stable.
-1. **Phase 1 — Data Architecture Foundation:** UUID configuration, Tenant model, Global Scopes.
+1. **Phase 1 — Data Architecture Foundation:** UUID configuration, School model, Global Scopes.
 2. **Phase 2 — Advanced Security & Auth:** Dynamic RBAC system (Roles, Permissions, Middleware).
 3. **Phase 3 — Content Engine:** CRUD for Course/Module/Lesson hierarchy, progress-tracking pivot.
 4. **Phase 4 — Assessment & State Machine:** Assignment & Submission schema with JSONB fields.

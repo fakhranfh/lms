@@ -56,11 +56,11 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Root Tenant Domain
+    | Root School Domain
     |--------------------------------------------------------------------------
     |
-    | The root domain used for subdomain-based tenant resolution. School
-    | tenants are addressed at "{tenant}.{domain}", the admin panel lives
+    | The root domain used for subdomain-based school resolution. Schools
+    | are addressed at "{school}.{domain}", the admin panel lives
     | at "admin.{domain}", and this root domain hosts the public landing
     | and school registration pages.
     |

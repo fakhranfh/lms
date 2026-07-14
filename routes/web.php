@@ -4,7 +4,7 @@ use App\Http\Controllers\AdminLoginController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TenantController;
+use App\Http\Controllers\SchoolController;
 use App\Livewire\ChangePassword;
 use App\Livewire\Dashboard;
 use App\Livewire\EditProfile;
@@ -22,13 +22,13 @@ Route::domain(config('app.domain'))->group(function () {
     Route::view('/', 'landing-page')->name('home');
 
     Route::get('/register-school', function () {
-        return view('tenants.register');
-    })->name('tenants.register');
+        return view('schools.register');
+    })->name('schools.register');
 
-    Route::post('/register-school', [TenantController::class, 'store'])->name('tenants.store');
+    Route::post('/register-school', [SchoolController::class, 'store'])->name('schools.store');
 });
 
-// Admin panel (admin.lms.local): admin-only, tenant_id must be null.
+// Admin panel (admin.lms.local): admin-only, school_id must be null.
 Route::domain('admin.'.config('app.domain'))->group(function () {
     Route::middleware('guest')->group(function () {
         Route::get('/login', function () {
@@ -60,8 +60,8 @@ Route::domain('admin.'.config('app.domain'))->group(function () {
     });
 });
 
-// School subdomains (schoolN.lms.local): tenant-scoped app.
-Route::domain('{tenant}.'.config('app.domain'))->group(function () {
+// School subdomains (schoolN.lms.local): school-scoped app.
+Route::domain('{school}.'.config('app.domain'))->group(function () {
     Route::view('/', 'landing-page')->name('school.home');
 });
 

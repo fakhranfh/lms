@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('payment_transactions', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('school_id')->constrained('schools')->cascadeOnDelete();
             $table->foreignUuid('subscription_id')->nullable()->constrained('subscriptions')->cascadeOnDelete();
-            $table->foreignUuid('school_payment_gateway_id')->constrained('tenant_payment_gateways');
+            $table->foreignUuid('school_payment_gateway_id')->constrained('school_payment_gateways');
             $table->string('transaction_id')->unique();
             $table->decimal('amount', 15, 2);
             $table->string('currency')->default('IDR');

@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\School;
 use App\Models\Subscription;
 use App\Models\SubscriptionTier;
-use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,7 +23,7 @@ class SubscriptionFactory extends Factory
         $expiresAt = (clone $startedAt)->modify('+1 month');
 
         return [
-            'tenant_id' => Tenant::factory(),
+            'school_id' => School::factory(),
             'tier_id' => SubscriptionTier::factory(),
             'status' => 'active',
             'started_at' => $startedAt,

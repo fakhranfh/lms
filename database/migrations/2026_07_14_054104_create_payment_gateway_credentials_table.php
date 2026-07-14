@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('payment_gateway_credentials', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('school_payment_gateway_id')->constrained('tenant_payment_gateways')->cascadeOnDelete();
+            $table->foreignUuid('school_payment_gateway_id')->constrained('school_payment_gateways')->cascadeOnDelete();
             $table->string('credential_key');
             $table->text('credential_value');
             $table->boolean('is_sensitive')->default(true);

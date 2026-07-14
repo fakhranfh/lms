@@ -37,7 +37,7 @@
 | Column | Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |
 | `id` | `UUID` | Primary Key | Default: `uuid_generate_v4()` |
-| `tenant_id` | `UUID` | Foreign Key, Index | `CASCADE ON DELETE` (Roles are tenant-specific) |
+| `tenant_id` | `UUID` | Foreign Key, Index | `CASCADE ON DELETE` (Roles are school-specific) |
 | `name` | `VARCHAR(255)` | Not Null | e.g., "Head Instructor" |
 | `slug` | `VARCHAR(255)` | Not Null | e.g., "head-instructor" |
 

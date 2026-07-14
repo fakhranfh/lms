@@ -60,7 +60,7 @@ test('verification notification can be resent', function () {
 
 test('admin user can access protected routes without email verification', function () {
     $user = User::factory()->unverified()->create([
-        'tenant_id' => null,
+        'school_id' => null,
     ]);
     $user->assignRole('admin');
 

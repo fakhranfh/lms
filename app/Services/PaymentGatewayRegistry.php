@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\PaymentGatewayType;
-use App\Models\Tenant;
+use App\Models\School;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -20,7 +20,7 @@ class PaymentGatewayRegistry
         });
     }
 
-    public function getSchoolGateways(Tenant $school): Collection
+    public function getSchoolGateways(School $school): Collection
     {
         return $school->paymentGateways()
             ->where('is_enabled', true)

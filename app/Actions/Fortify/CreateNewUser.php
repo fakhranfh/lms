@@ -4,7 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Models\User;
 use App\Services\IpGeolocationService;
-use App\Support\CurrentTenant;
+use App\Support\CurrentSchool;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -17,7 +17,7 @@ class CreateNewUser implements CreatesNewUsers
 
     public function __construct(
         private IpGeolocationService $ipGeolocationService,
-        private CurrentTenant $currentTenant,
+        private CurrentSchool $currentSchool,
     ) {}
 
     /**
@@ -39,12 +39,12 @@ class CreateNewUser implements CreatesNewUsers
                 Rule::unique(User::class),
             ],
             'password' => $this->passwordRules(),
-            'tenant_id' => ['prohibited'],
+            'school_id' => ['prohibited'],
         ])->validate();
 
-        $tenantId = $this->currentTenant->getTenantId();
+        $schoolId = $this->currentSchool->getSchoolId();
 
-        if (! $tenantId) {
+        if (! $schoolId) {
             throw ValidationException::withMessages([
                 'email' => 'Unable to determine which school to register for. Please register from your school\'s subdomain.',
             ]);
@@ -53,7 +53,7 @@ class CreateNewUser implements CreatesNewUsers
         $timezone = $this->ipGeolocationService->detectTimezone(request()->ip()) ?? config('app.timezone');
 
         return User::create([
-            'tenant_id' => $tenantId,
+            'school_id' => $schoolId,
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => Hash::make($input['password']),

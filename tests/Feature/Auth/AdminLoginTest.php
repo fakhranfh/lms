@@ -10,9 +10,9 @@ test('admin login page can be rendered', function () {
 
 test('admin user can login on admin domain', function () {
     $user = User::factory()->create([
-        'email' => 'admin-' . time() . '@example.com',
+        'email' => 'admin-'.time().'@example.com',
         'password' => 'password',
-        'tenant_id' => null,
+        'school_id' => null,
     ]);
     $user->assignRole('admin');
 
@@ -28,7 +28,7 @@ test('admin user can login on admin domain', function () {
 
 test('non-admin user cannot login on admin domain', function () {
     $user = User::factory()->create([
-        'email' => 'user-' . time() . '@example.com',
+        'email' => 'user-'.time().'@example.com',
         'password' => 'password',
     ]);
 
@@ -43,9 +43,9 @@ test('non-admin user cannot login on admin domain', function () {
 
 test('admin login fails with wrong password', function () {
     $user = User::factory()->create([
-        'email' => 'admin-wrong-' . time() . '@example.com',
+        'email' => 'admin-wrong-'.time().'@example.com',
         'password' => 'password',
-        'tenant_id' => null,
+        'school_id' => null,
     ]);
     $user->assignRole('admin');
 
@@ -60,7 +60,7 @@ test('admin login fails with wrong password', function () {
 
 test('admin can access admin dashboard', function () {
     $user = User::factory()->create([
-        'tenant_id' => null,
+        'school_id' => null,
     ]);
     $user->assignRole('admin');
 
@@ -71,7 +71,7 @@ test('admin can access admin dashboard', function () {
 
 test('authenticated admin can logout from admin domain', function () {
     $user = User::factory()->create([
-        'tenant_id' => null,
+        'school_id' => null,
     ]);
     $user->assignRole('admin');
 

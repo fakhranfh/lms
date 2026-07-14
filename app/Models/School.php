@@ -3,20 +3,22 @@
 namespace App\Models;
 
 use App\Traits\HasUuid;
-use Database\Factories\TenantFactory;
+use Database\Factories\SchoolFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'domain'])]
-class Tenant extends Model
+class School extends Model
 {
-    /** @use HasFactory<TenantFactory> */
+    /** @use HasFactory<SchoolFactory> */
     use HasFactory, HasUuid;
 
+    protected $table = 'schools';
+
     /**
-     * Get the users belonging to the tenant.
+     * Get the users belonging to the school.
      *
      * @return HasMany<User, $this>
      */

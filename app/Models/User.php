@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\BelongsToSchool;
 use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\UserFactory;
@@ -16,12 +16,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'pending_email', 'password', 'profile_photo_path', 'timezone', 'tenant_id'])]
+#[Fillable(['name', 'email', 'pending_email', 'password', 'profile_photo_path', 'timezone', 'school_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use BelongsToTenant, CanResetPassword, HasFactory, HasRoles, HasUuid, HasViewerTimezoneDates, Notifiable;
+    use BelongsToSchool, CanResetPassword, HasFactory, HasRoles, HasUuid, HasViewerTimezoneDates, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -50,12 +50,12 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get the tenant the user belongs to.
+     * Get the school the user belongs to.
      *
-     * @return BelongsTo<Tenant, $this>
+     * @return BelongsTo<School, $this>
      */
-    public function tenant(): BelongsTo
+    public function school(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(School::class);
     }
 }

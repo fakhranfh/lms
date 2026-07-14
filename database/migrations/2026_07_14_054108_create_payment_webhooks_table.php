@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('payment_webhooks', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('school_payment_gateway_id')->constrained('tenant_payment_gateways');
+            $table->foreignUuid('school_payment_gateway_id')->constrained('school_payment_gateways');
             $table->string('event_type');
             $table->text('payload');
             $table->boolean('processed')->default(false);

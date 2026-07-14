@@ -16,7 +16,7 @@
             </div>
         @endif
 
-        <form class="space-y-space-md" method="POST" action="{{ route('tenants.store') }}">
+        <form class="space-y-space-md" method="POST" action="{{ route('schools.store') }}">
             @csrf
 
             <div class="space-y-space-xs">

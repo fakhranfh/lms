@@ -538,7 +538,7 @@ class PaymentWebhook extends Model {
 | **Credentials** | Config files | Encrypted DB |
 | **Update Creds** | Code + Deploy | Admin UI + Instant |
 | **Security** | Lower | Higher (AES-256) |
-| **Multi-Tenant** | No | Yes (per-school) |
+| **Multi-School** | No | Yes (per-school) |
 | **Sandbox/Prod** | Global | Per-gateway |
 | **Flexibility** | Rigid | Highly Flexible |
 
@@ -558,7 +558,7 @@ class PaymentWebhook extends Model {
 
 - ✅ **No Code Changes** to add new payment gateways
 - ✅ **Secure Encryption** (AES-256) for all credentials
-- ✅ **Per-School Configuration** (multi-tenant)
+- ✅ **Per-School Configuration** (multi-school)
 - ✅ **Sandbox & Production** modes
 - ✅ **Webhook Management** with audit trail
 - ✅ **Easy Credential Rotation**

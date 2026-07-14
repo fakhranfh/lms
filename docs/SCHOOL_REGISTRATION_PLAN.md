@@ -47,24 +47,24 @@
 
 **1.2 Tenants Migration & Model**
 - [x] Create `tenants` table migration
-- [x] Create `Tenant` model with `HasUuid`
+- [x] Create `School` model with `HasUuid`
 - [x] Define `hasMany(User)` relationship
 - [x] Create `TenantFactory`
-- [x] Feature test for tenant creation
+- [x] Feature test for school creation
 
-**1.3 Users Table Tenant Scoping**
+**1.3 Users Table School Scoping**
 - [x] Convert `users.id` to UUID PK
 - [x] Add `tenant_id` foreign key (CASCADE)
-- [x] Update `User` model with `belongsTo(Tenant)`
-- [x] Update `UserFactory` to associate Tenant
+- [x] Update `User` model with `belongsTo(School)`
+- [x] Update `UserFactory` to associate School
 - [x] Verify Fortify auth flows still work
 
-**1.4 Global Tenant Scope**
+**1.4 Global School Scope**
 - [x] Create `TenantScope.php` implementing `Illuminate\Database\Eloquent\Scope`
 - [x] Create `BelongsToTenant` trait
 - [x] Apply to `User` model
 - [x] Create `CurrentTenant` singleton class
-- [x] Tests proving tenant isolation & auto-fill
+- [x] Tests proving school isolation & auto-fill
 
 **1.5 Middleware & Domain Resolution**
 - [x] Create `ResolveTenantFromDomain` middleware
@@ -89,7 +89,7 @@
 
 **1.8 Refactor Registration Flow**
 - [x] Refactor `CreateNewUser` to use `CurrentTenant`
-- [x] Remove `Tenant::create()` call from registration
+- [x] Remove `School::create()` call from registration
 - [x] Throw error if `CurrentTenant::getTenantId()` null on regular user signup
 
 ### ⏳ PENDING/WRAP-UP ITEMS
@@ -101,8 +101,8 @@
 - [ ] Confirm no other models still use auto-incrementing PKs
 
 ### 📝 Key Commits
-- ✅ **7c84f65**: `feat(tenant): add global tenant scope and domain-based resolution`
-- ✅ **6f0232a**: `refactor(tenant): move register URL building into service`
+- ✅ **7c84f65**: `feat(school): add global school scope and domain-based resolution`
+- ✅ **6f0232a**: `refactor(school): move register URL building into service`
 - ✅ **73f7bdd**: `fix(auth): prevent tenant_id override in user registration`
 - ✅ **1122835**: `feat(auth): add admin-only login on admin subdomain`
 - ✅ **b9fe060**: `fix(auth): allow admin users to bypass email verification`
@@ -113,7 +113,7 @@
 Three-Tier Domain Routing:
 
 lms.local (root/landing)
-├─ Public area (no tenant)
+├─ Public area (no school)
 ├─ School registration form
 └─ Landing page
 
@@ -128,7 +128,7 @@ schoolN.lms.local (school apps)
 └─ School dashboard
 ```
 
-**Tenant Resolution Flow:**
+**School Resolution Flow:**
 ```
 Request → ResolveTenantFromDomain Middleware
   ↓
@@ -154,7 +154,7 @@ TenantScope filters all queries by tenant_id
 id (UUID), name (VARCHAR), domain (VARCHAR, unique, nullable), 
 created_at, updated_at
 ```
-- Domain-based tenant resolution via `ResolveTenantFromDomain` middleware
+- Domain-based school resolution via `ResolveTenantFromDomain` middleware
 - Supports: `admin.lms.local`, `lms.local`, `schoolN.lms.local`
 
 #### `users` Table ✅
@@ -202,7 +202,7 @@ access_token, expires_at, accessed_at, created_at
 ```
 
 ### 1.3 Models to Create
-- [ ] `School` - with relationships: tenant, admins, subscription, users
+- [ ] `School` - with relationships: school, admins, subscription, users
 - [ ] `SchoolAdmin` - pivot model
 - [ ] `Subscription` - with school & tier relationships
 - [ ] `SubscriptionTier` - pricing tiers
@@ -733,7 +733,7 @@ git commit -m "phase-1: finalize multi-tenancy foundation"
 2. `CreateSchoolAdminsTable` migration
 3. `CreateDemoLmsAccessTable` migration
 4. `School`, `SchoolAdmin`, `DemoLmsAccess` models
-5. Add relationships to `Tenant` & `Subscription`
+5. Add relationships to `School` & `Subscription`
 
 ### STEP 4: Build Registration Form (Phase 4-8)
 **Order:**

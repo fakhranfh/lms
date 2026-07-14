@@ -2,17 +2,17 @@
 
 namespace App\Http\Middleware;
 
-use App\Support\CurrentTenant;
-use App\Support\TenantDomainResolver;
+use App\Support\CurrentSchool;
+use App\Support\SchoolDomainResolver;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class ResolveTenantFromDomain
+class ResolveSchoolFromDomain
 {
     public function __construct(
-        private CurrentTenant $currentTenant,
-        private TenantDomainResolver $tenantDomainResolver,
+        private CurrentSchool $currentSchool,
+        private SchoolDomainResolver $schoolDomainResolver,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -21,12 +21,12 @@ class ResolveTenantFromDomain
         $rootDomain = config('app.domain');
         $adminDomain = "admin.{$rootDomain}";
 
-        if ($request->user() && $request->user()->hasRole('admin') && $request->user()->tenant_id !== null) {
-            abort(500, 'Invalid state: admin user must not belong to a tenant.');
+        if ($request->user() && $request->user()->hasRole('admin') && $request->user()->school_id !== null) {
+            abort(500, 'Invalid state: admin user must not belong to a school.');
         }
 
         if ($host === $adminDomain) {
-            $this->currentTenant->setTenantId(null);
+            $this->currentSchool->setSchoolId(null);
 
             if ($request->user() && ! $request->user()->hasRole('admin')) {
                 abort(403);
@@ -36,18 +36,18 @@ class ResolveTenantFromDomain
         }
 
         if ($host === $rootDomain) {
-            $this->currentTenant->setTenantId(null);
+            $this->currentSchool->setSchoolId(null);
 
             return $next($request);
         }
 
-        $tenant = $this->tenantDomainResolver->resolve($request);
+        $school = $this->schoolDomainResolver->resolve($request);
 
-        if (! $tenant) {
+        if (! $school) {
             abort(404);
         }
 
-        $this->currentTenant->setTenantId($tenant->id);
+        $this->currentSchool->setSchoolId($school->id);
 
         return $next($request);
     }

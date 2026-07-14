@@ -67,28 +67,6 @@ class PricingTierEdit extends Component
         return (new UpdatePricingTierRequest)->rules();
     }
 
-    public function addFeature(): void
-    {
-        $this->features[] = ['feature_key' => '', 'is_enabled' => true];
-    }
-
-    public function removeFeature(int $index): void
-    {
-        unset($this->features[$index]);
-        $this->features = array_values($this->features);
-    }
-
-    public function addLimit(): void
-    {
-        $this->limits[] = ['limit_key' => '', 'limit_value' => ''];
-    }
-
-    public function removeLimit(int $index): void
-    {
-        unset($this->limits[$index]);
-        $this->limits = array_values($this->limits);
-    }
-
     public function update(PricingTierService $tierService)
     {
         abort_unless(auth()->user()->can('pricing-tiers.update'), 403);
@@ -104,7 +82,7 @@ class PricingTierEdit extends Component
                 'limit_key' => $limit['limit_key'],
                 'limit_value' => empty($limit['limit_value']) ? null : (int) $limit['limit_value'],
             ];
-        }, $data['limits'] ?? []));
+        }, $data['limits'] ?? []), fn ($item) => $item !== null);
 
         $tierService->update($this->tier->id, [
             ...$data,

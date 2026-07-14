@@ -1,6 +1,6 @@
 @section('title', 'Edit Pricing Tier')
 
-<div class="space-y-space-lg max-w-2xl">
+<div class="space-y-space-lg max-w-2xl" x-data="tierForm()">
     <div>
         <h1 class="font-headline-sm text-headline-sm text-on-surface">Edit Pricing Tier</h1>
         <p class="text-body-sm text-on-surface-variant mt-1">Update pricing tier configuration</p>
@@ -68,37 +68,37 @@
             <div>
                 <div class="flex items-center justify-between mb-space-md">
                     <h3 class="font-label-md text-label-md text-on-surface">Features</h3>
-                    <button type="button" wire:click="addFeature" class="text-label-md text-label-md text-primary hover:underline">Add Feature</button>
+                    <button type="button" @click="addFeature()" class="text-label-md text-label-md text-primary hover:underline">Add Feature</button>
                 </div>
 
-                <div class="space-y-space-sm">
-                    @foreach ($features as $index => $feature)
-                        <div class="flex gap-space-md">
-                            <input type="text" wire:model="features.{{ $index }}.feature_key" placeholder="Feature key" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary" />
+                <div class="space-y-space-sm" x-ref="featuresContainer">
+                    <template x-for="(feature, index) in features" :key="index">
+                        <div class="flex gap-space-md items-center">
+                            <input type="text" x-model="feature.feature_key" :name="`features[${index}][feature_key]`" placeholder="Feature key" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary" />
                             <label class="flex items-center gap-space-sm">
-                                <input type="checkbox" wire:model="features.{{ $index }}.is_enabled" class="w-4 h-4 rounded border-outline" />
+                                <input type="checkbox" x-model="feature.is_enabled" :name="`features[${index}][is_enabled]`" :value="true" class="w-4 h-4 rounded border-outline" />
                                 <span class="font-body-sm text-body-sm text-on-surface">Enabled</span>
                             </label>
-                            <button type="button" wire:click="removeFeature({{ $index }})" class="text-error hover:underline">Remove</button>
+                            <button type="button" @click="removeFeature(index)" class="text-error hover:underline">Remove</button>
                         </div>
-                    @endforeach
+                    </template>
                 </div>
             </div>
 
             <div>
                 <div class="flex items-center justify-between mb-space-md">
                     <h3 class="font-label-md text-label-md text-on-surface">Limits</h3>
-                    <button type="button" wire:click="addLimit" class="text-label-md text-label-md text-primary hover:underline">Add Limit</button>
+                    <button type="button" @click="addLimit()" class="text-label-md text-label-md text-primary hover:underline">Add Limit</button>
                 </div>
 
-                <div class="space-y-space-sm">
-                    @foreach ($limits as $index => $limit)
-                        <div class="flex gap-space-md">
-                            <input type="text" wire:model="limits.{{ $index }}.limit_key" placeholder="Limit key" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary" />
-                            <input type="number" wire:model="limits.{{ $index }}.limit_value" placeholder="Value (leave empty for unlimited)" min="0" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary" />
-                            <button type="button" wire:click="removeLimit({{ $index }})" class="text-error hover:underline">Remove</button>
+                <div class="space-y-space-sm" x-ref="limitsContainer">
+                    <template x-for="(limit, index) in limits" :key="index">
+                        <div class="flex gap-space-md items-center">
+                            <input type="text" x-model="limit.limit_key" :name="`limits[${index}][limit_key]`" placeholder="Limit key" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <input type="number" x-model="limit.limit_value" :name="`limits[${index}][limit_value]`" placeholder="Value (leave empty for unlimited)" min="0" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <button type="button" @click="removeLimit(index)" class="text-error hover:underline">Remove</button>
                         </div>
-                    @endforeach
+                    </template>
                 </div>
             </div>
         </div>
@@ -113,3 +113,28 @@
         </div>
     </form>
 </div>
+
+<script>
+    function tierForm() {
+        return {
+            features: @json($features ?? []),
+            limits: @json($limits ?? []),
+
+            addFeature() {
+                this.features.push({ feature_key: '', is_enabled: true });
+            },
+
+            removeFeature(index) {
+                this.features.splice(index, 1);
+            },
+
+            addLimit() {
+                this.limits.push({ limit_key: '', limit_value: '' });
+            },
+
+            removeLimit(index) {
+                this.limits.splice(index, 1);
+            },
+        };
+    }
+</script>

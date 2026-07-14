@@ -79,10 +79,17 @@ Reference: [PRD.md](PRD.md) — Section 18 (Roadmap, Phase 1), Section 3 (Techni
   - [x] Routes require `middleware(['auth', 'role:admin'])`.
   - [x] Middleware must verify: authenticated, role='admin', tenant_id=null (opsi C state).
   - [x] Example routes: `/admin/dashboard`, `/admin/settings`, `/admin/logs`.
-- [x] Admin login: reuses the existing login form/route (already domain-agnostic), guarded post-auth by `ResolveTenantFromDomain`.
-  - [x] On auth: check if user.role='admin' && user.tenant_id=null, else deny.
+  - [x] Admin logout redirects back to admin login, not root domain login.
+- [x] Admin login with role-based validation:
+  - [x] Create `AdminLoginController` that validates user has admin role during authentication.
+  - [x] Create custom `admin-login.blade.php` view separate from regular user login.
+  - [x] POST /login on admin.lms.local validates credentials and admin role.
+  - [x] Non-admin users are automatically logged out with error message: "Only admin accounts can access this panel."
+  - [x] Configure Fortify to only handle login routes on root domain (`config/fortify.php` domain config).
 - [x] Prevent non-admin users from accessing admin.lms.local:
-  - [x] Middleware check in `ResolveTenantFromDomain`: if admin.lms.local && !role('admin') → 403 Forbidden.
+  - [x] `ResolveTenantFromDomain` middleware: if admin.lms.local && authenticated && !role('admin') → 403 Forbidden.
+  - [x] Non-authenticated users can view login form (guest middleware).
+  - [x] Admin users can bypass email verification requirement (opsi A from User model).
 
 ### 4e. Refactor Registration Flow
 - [x] Refactor `CreateNewUser` to use `CurrentTenant::getTenantId()` instead of creating tenant (remove `Tenant::create()` call).
@@ -104,6 +111,12 @@ Reference: [PRD.md](PRD.md) — Section 18 (Roadmap, Phase 1), Section 3 (Techni
 
 ### Subdomain-based Tenant Resolution
 **Decision:** Extract tenant from request subdomain/domain via middleware, store in singleton, apply to all contexts.
+
+**Implementation Status:**
+- **Commit 7c84f65** (`feat(tenant): add global tenant scope and domain-based resolution`): Implemented `CurrentTenant`, `ResolveTenantFromDomain` middleware, `TenantScope`, `BelongsToTenant` trait, and three-tier domain routing logic (root/admin/school subdomains).
+- **Commit 6f0232a** (`refactor(tenant): move register URL building into service`): Refactored tenant registration flow.
+- **Commit 73f7bdd** (`fix(auth): prevent tenant_id override in user registration`): Fixed security issue preventing unauthorized tenant_id override.
+- **Latest commit** (`feat(auth): add admin-only login on admin subdomain`): Implemented admin-specific login with role validation, custom admin login view, and separate authentication flow. Configured Fortify domain to root domain only.
 
 **Architecture:**
 Three-tier domain routing:

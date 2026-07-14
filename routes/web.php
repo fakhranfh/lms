@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminLoginController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
@@ -12,18 +13,14 @@ use App\Livewire\Roles\RoleEdit;
 use App\Livewire\Roles\RoleIndex;
 use App\Livewire\Users\UserIndex;
 use App\Livewire\Users\UserRoles;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-
-Route::middleware('guest')->group(function () {
-    Route::get('', function () {
-        return view('auth.login');
-    })->name('login');
-});
-
-Route::view('/', 'landing-page');
 
 // Root domain (lms.local): public landing + school registration.
 Route::domain(config('app.domain'))->group(function () {
+    Route::view('/', 'landing-page')->name('home');
+
     Route::get('/register-school', function () {
         return view('tenants.register');
     })->name('tenants.register');
@@ -32,18 +29,35 @@ Route::domain(config('app.domain'))->group(function () {
 });
 
 // Admin panel (admin.lms.local): admin-only, tenant_id must be null.
-Route::domain('admin.'.config('app.domain'))->middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
+Route::domain('admin.'.config('app.domain'))->group(function () {
+    Route::middleware('guest')->group(function () {
+        Route::get('/login', function () {
+            return view('auth.admin-login');
+        })->name('admin.login');
+        Route::post('/login', [AdminLoginController::class, 'store'])->name('admin.login.store');
+    });
 
-    Route::get('/admin/settings', function () {
-        return view('admin.settings');
-    })->name('admin.settings');
+    Route::middleware(['auth', 'role:admin'])->group(function () {
+        Route::get('/dashboard', function () {
+            return view('admin.dashboard');
+        })->name('admin.dashboard');
 
-    Route::get('/admin/logs', function () {
-        return view('admin.logs');
-    })->name('admin.logs');
+        Route::get('/settings', function () {
+            return view('admin.settings');
+        })->name('admin.settings');
+
+        Route::get('/logs', function () {
+            return view('admin.logs');
+        })->name('admin.logs');
+
+        Route::post('/logout', function (Request $request) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('admin.login');
+        })->name('admin.logout');
+    });
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

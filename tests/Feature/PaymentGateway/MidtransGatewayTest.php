@@ -50,10 +50,11 @@ describe('MidtransGateway', function () {
             'customer_name' => 'Test User',
         ]);
 
-        expect($result)->toHaveKeys(['success', 'transaction_id', 'order_id', 'status', 'payment_url', 'amount']);
+        expect($result)->toHaveKeys(['success', 'transaction_id', 'order_id', 'status', 'payment_url', 'amount', 'currency']);
         expect($result['success'])->toBeTrue();
         expect($result['transaction_id'])->toBe('midtrans_tx_12345');
         expect($result['status'])->toBe('pending');
+        expect($result['currency'])->toBe('IDR');
     });
 
     test('createInvoice handles request exception gracefully', function () {
@@ -88,10 +89,11 @@ describe('MidtransGateway', function () {
 
         $result = $this->gateway->checkTransactionStatus('midtrans_tx_12345');
 
-        expect($result)->toHaveKeys(['transaction_id', 'status', 'amount', 'payment_method']);
+        expect($result)->toHaveKeys(['transaction_id', 'status', 'amount', 'currency', 'payment_method']);
         expect($result['success'])->toBeTrue();
         expect($result['status'])->toBe('settlement');
         expect($result['amount'])->toBe(199000);
+        expect($result['currency'])->toBe('IDR');
     });
 
     test('checkTransactionStatus handles request failure', function () {

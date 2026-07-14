@@ -59,11 +59,10 @@ class MidtransGateway implements PaymentGateway
                 'success' => $response['status_code'] === '201' || $response['status_code'] === 201,
                 'transaction_id' => $response['transaction_id'] ?? null,
                 'order_id' => $response['order_id'] ?? $payload['transaction_details']['order_id'],
-                'status' => $response['transaction_status'] ?? 'pending',
+                'status' => strtolower($response['transaction_status'] ?? 'pending'),
                 'payment_url' => $response['redirect_url'] ?? null,
-                'amount' => $response['gross_amount'] ?? $payload['transaction_details']['gross_amount'],
+                'amount' => (int) ($response['gross_amount'] ?? $payload['transaction_details']['gross_amount']),
                 'currency' => $response['currency'] ?? 'IDR',
-                'raw_response' => $response,
             ];
         } catch (RequestException|ConnectionException $e) {
             return [
@@ -107,11 +106,10 @@ class MidtransGateway implements PaymentGateway
             return [
                 'success' => true,
                 'transaction_id' => $response['transaction_id'] ?? $transactionId,
-                'status' => $response['transaction_status'] ?? 'unknown',
-                'settlement_status' => $response['settlement_status'] ?? null,
+                'status' => strtolower($response['transaction_status'] ?? 'unknown'),
                 'amount' => $response['gross_amount'] ?? null,
+                'currency' => $response['currency'] ?? 'IDR',
                 'payment_method' => $response['payment_type'] ?? null,
-                'raw_response' => $response,
             ];
         } catch (RequestException|ConnectionException $e) {
             return [

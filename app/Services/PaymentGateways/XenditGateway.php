@@ -63,19 +63,16 @@ class XenditGateway implements PaymentGateway
                 'success' => true,
                 'transaction_id' => $response['id'] ?? null,
                 'order_id' => $response['external_id'] ?? $payload['external_id'],
-                'status' => $response['status'] ?? 'PENDING',
+                'status' => strtolower($response['status'] ?? 'pending'),
                 'payment_url' => $response['invoice_url'] ?? null,
-                'amount' => $response['amount'] ?? $payload['amount'],
+                'amount' => (int) ($response['amount'] ?? $payload['amount']),
                 'currency' => $response['currency'] ?? 'IDR',
-                'expiry_date' => $response['expiry_date'] ?? null,
-                'raw_response' => $response,
             ];
         } catch (RequestException|ConnectionException $e) {
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
                 'status_code' => $e->response?->status(),
-                'response_body' => $e->response?->json(),
             ];
         }
     }
@@ -112,12 +109,10 @@ class XenditGateway implements PaymentGateway
             return [
                 'success' => true,
                 'transaction_id' => $response['id'] ?? $transactionId,
-                'status' => $response['status'] ?? 'PENDING',
+                'status' => strtolower($response['status'] ?? 'pending'),
                 'amount' => $response['amount'] ?? null,
-                'paid_amount' => $response['paid_amount'] ?? 0,
                 'currency' => $response['currency'] ?? 'IDR',
                 'payment_method' => $response['payment_method'] ?? null,
-                'raw_response' => $response,
             ];
         } catch (RequestException|ConnectionException $e) {
             return [

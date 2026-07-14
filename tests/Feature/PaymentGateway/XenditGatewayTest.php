@@ -51,10 +51,11 @@ describe('XenditGateway', function () {
             'description' => 'Payment for subscription',
         ]);
 
-        expect($result)->toHaveKeys(['success', 'transaction_id', 'order_id', 'status', 'payment_url', 'amount']);
+        expect($result)->toHaveKeys(['success', 'transaction_id', 'order_id', 'status', 'payment_url', 'amount', 'currency']);
         expect($result['success'])->toBeTrue();
         expect($result['transaction_id'])->toBe('inv_xendit_12345');
-        expect($result['status'])->toBe('PENDING');
+        expect($result['status'])->toBe('pending');
+        expect($result['currency'])->toBe('IDR');
     });
 
     test('createInvoice handles request exception gracefully', function () {
@@ -81,7 +82,6 @@ describe('XenditGateway', function () {
                 'id' => 'inv_xendit_12345',
                 'status' => 'PAID',
                 'amount' => 199000,
-                'paid_amount' => 199000,
                 'currency' => 'IDR',
                 'payment_method' => 'CREDIT_CARD',
             ]),
@@ -89,10 +89,10 @@ describe('XenditGateway', function () {
 
         $result = $this->gateway->checkTransactionStatus('inv_xendit_12345');
 
-        expect($result)->toHaveKeys(['transaction_id', 'status', 'amount', 'paid_amount']);
+        expect($result)->toHaveKeys(['transaction_id', 'status', 'amount', 'currency', 'payment_method']);
         expect($result['success'])->toBeTrue();
-        expect($result['status'])->toBe('PAID');
-        expect($result['paid_amount'])->toBe(199000);
+        expect($result['status'])->toBe('paid');
+        expect($result['amount'])->toBe(199000);
     });
 
     test('checkTransactionStatus handles request failure', function () {

@@ -1,12 +1,13 @@
 # Phase 2: Subscription Schema & Pricing + Payment Gateway
 
-**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete, Phase 2.0B ✅ Complete, Phase 2.0C ✅ Complete, Phase 2.0D ✅ Complete)
+**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete, Phase 2.0B ✅ Complete, Phase 2.0C ✅ Complete, Phase 2.0D ✅ Complete, Phase 2.1.1 ✅ Complete)
 **Date Started:** 2026-07-14  
 **Prerequisites:** Phase 1 ✅ Complete
 **Phase 2.0A Completed:** 2026-07-14
 **Phase 2.0B Completed:** 2026-07-14
 **Phase 2.0C Completed:** 2026-07-14
 **Phase 2.0D Completed:** 2026-07-14
+**Phase 2.1.1 Completed:** 2026-07-14
 
 ---
 
@@ -295,10 +296,11 @@
 
 ## 📋 Phase 2.1: Pricing Tiers Configuration
 
-**Status:** ⏳ In Progress  
+**Status:** ⏳ In Progress (Phase 2.1.1 ✅ Complete)  
 **Scope:** Per-school LMS pricing tier system with 4 default tiers  
 **Timeline Estimate:** 3-4 weeks  
 **Proposal Document:** `docs/phase-2-1-proposal.html`
+**Phase 2.1.1 Completed:** 2026-07-14
 
 ### Overview
 Per-school pricing tier system where the school (as customer) chooses a tier that determines features and capacity limits for all users within that school. Integration with existing payment gateway (Midtrans/Xendit from Phase 2.0C).
@@ -311,90 +313,70 @@ Per-school pricing tier system where the school (as customer) chooses a tier tha
 
 ---
 
-### Phase 2.1.1: Core Data Structure
+### Phase 2.1.1: Core Data Structure ✅ COMPLETE
 
-#### Migrations
-- [ ] Create migration: `CreatePricingTiersTable`
-  - `id` (BIGINT, PK)
-  - `slug` (VARCHAR, unique) - basic, plus, pro, max
-  - `name` (VARCHAR)
-  - `description` (TEXT, nullable)
-  - `is_active` (BOOLEAN, default true)
-  - `created_at`, `updated_at`
+#### Migrations ✅
+- [x] Create migration: `rename_subscription_tables_to_pricing`
+  - Renamed `subscription_tiers` → `pricing_tiers` (dropped `features`, `max_users`, `storage_gb`)
+  - Created `tier_features` table with unique constraint on (pricing_tier_id, feature_key)
+  - Created `tier_limits` table with unique constraint on (pricing_tier_id, limit_key)
+  - Renamed `subscriptions` → `school_tiers`
+  - Created `tier_changes` table for audit trail
+  - Seeding logic moved from seeder to migration
 
-- [ ] Create migration: `CreateTierFeaturesTable`
-  - `id` (BIGINT, PK)
-  - `tier_id` (BIGINT, FK→pricing_tiers.id, CASCADE)
-  - `feature_key` (VARCHAR) - analytics, live_session, api_access, custom_branding, etc.
-  - `is_enabled` (BOOLEAN, default true)
-  - `created_at`
+#### Eloquent Models ✅
+- [x] Create `app/Models/PricingTier.php`
+  - Relationships: `features()`, `limits()`
+  - Enum casting: `billing_period` → BillingPeriod
 
-- [ ] Create migration: `CreateTierLimitsTable`
-  - `id` (BIGINT, PK)
-  - `tier_id` (BIGINT, FK→pricing_tiers.id, CASCADE)
-  - `limit_key` (VARCHAR) - max_students_per_course, video_storage_gb, live_session_duration_minutes, etc.
-  - `limit_value` (VARCHAR) - Store as string to support "unlimited"
-  - `created_at`
-
-- [ ] Create migration: `CreateSchoolTiersTable`
-  - `id` (UUID, PK)
-  - `school_id` (UUID, FK→tenants.id, CASCADE)
-  - `tier_id` (BIGINT, FK→pricing_tiers.id)
-  - `subscription_status` (VARCHAR) - active, cancelled, expired, pending
-  - `started_at` (TIMESTAMP)
-  - `ends_at` (TIMESTAMP, nullable)
-  - `created_at`, `updated_at`
-
-- [ ] Create migration: `CreateTierChangesTable`
-  - `id` (UUID, PK)
-  - `school_id` (UUID, FK→tenants.id, CASCADE)
-  - `old_tier_id` (BIGINT, FK→pricing_tiers.id, nullable)
-  - `new_tier_id` (BIGINT, FK→pricing_tiers.id)
-  - `change_type` (VARCHAR) - upgrade, downgrade, initial
-  - `effective_at` (TIMESTAMP)
-  - `proration_amount` (DECIMAL 15,2, nullable)
-  - `created_at`
-
-#### Eloquent Models
-- [ ] Create `app/Models/PricingTier.php`
-  - Relationships: `features()`, `limits()`, `schoolSubscriptions()`
-  - Methods: `isFeatureAvailable(string $key)`, `getLimit(string $key)`
-
-- [ ] Create `app/Models/TierFeature.php`
+- [x] Create `app/Models/TierFeature.php`
   - Relationship: `tier()` (belongsTo)
 
-- [ ] Create `app/Models/TierLimit.php`
+- [x] Create `app/Models/TierLimit.php`
   - Relationship: `tier()` (belongsTo)
 
-- [ ] Create `app/Models/SchoolTier.php`
-  - Relationships: `school()` (belongsTo), `tier()` (belongsTo), `changes()`
-  - Trait: `BelongsToTenant`
+- [x] Create `app/Models/SchoolTier.php`
+  - Relationships: `school()`, `tier()`, `tierChanges()`
+  - Traits: `BelongsToSchool`, `HasUuid`
+  - Enum casting: `status` → SubscriptionStatus
 
-- [ ] Create `app/Models/TierChange.php`
-  - Relationships: `school()`, `oldTier()` (nullable), `newTier()`
-  - Trait: `BelongsToTenant`
+- [x] Create `app/Models/TierChange.php`
+  - Relationships: `schoolTier()`, `fromTier()`, `toTier()`
+  - Trait: `HasUuid`
+  - Enum casting: `change_type` → TierChangeType
 
-- [ ] Update `app/Models/School.php`
-  - Add relationship: `tier()` (hasOne SchoolTier)
+- [x] Update `app/Models/PaymentTransaction.php`
+  - Updated relation to point to `SchoolTier` (subscription_id FK)
+  - Enum casting: `status` → PaymentStatus
 
-#### Factories & Seeders
-- [ ] Create factory: `database/factories/PricingTierFactory.php`
-- [ ] Create factory: `database/factories/TierFeatureFactory.php`
-- [ ] Create factory: `database/factories/TierLimitFactory.php`
+#### Factories & Seeders ✅
+- [x] Create factory: `database/factories/PricingTierFactory.php` (with BillingPeriod enum)
+- [x] Create factory: `database/factories/SchoolTierFactory.php` (with SubscriptionStatus enum)
+- [x] Create factory: `database/factories/TierFeatureFactory.php`
+- [x] Create factory: `database/factories/TierLimitFactory.php`
+- [x] Create factory: `database/factories/TierChangeFactory.php` (with TierChangeType enum)
+- [x] Update factory: `database/factories/PaymentTransactionFactory.php` (with PaymentStatus enum)
 
-- [ ] Create seeder: `database/seeders/PricingTierSeeder.php`
-  - Seed 4 default tiers (Basic, Plus, Pro, Max)
-  - Seed features per tier
-  - Seed limits per tier
+- [x] Create seeder: `database/seeders/PricingTierSeeder.php`
+  - 4 default tiers: Basic (free), Plus (299K IDR), Pro (799K IDR), Max (1999K IDR)
+  - Features per tier: analytics, live_session, live_session_recording, api_access, etc.
+  - Limits per tier: student_capacity_per_course, video_storage_gb, live_session_duration_minutes
 
-#### Unit Tests
-- [ ] Test: Model relationships (Tier → Features, Tier → Limits)
-  - Test features can be queried by tier
-  - Test limits can be queried by tier
-  
-- [ ] Test: Feature/limit access methods
-  - Test `PricingTier::isFeatureAvailable()`
-  - Test `PricingTier::getLimit()`
+- [x] Update seeder logic moved into migration
+
+#### Enums ✅
+- [x] Create `app/Enums/SubscriptionStatus.php` (pending, active, expired)
+- [x] Create `app/Enums/PaymentStatus.php` (pending, completed, failed, refunded)
+- [x] Create `app/Enums/TierChangeType.php` (initial, upgrade, downgrade)
+- [x] Create `app/Enums/BillingPeriod.php` (monthly, yearly)
+- [x] Add enum casting to all relevant models
+- [x] Update services to use enum values
+
+#### Tests ✅
+- [x] Update `tests/Feature/PaymentWebhookTest.php` (11 tests pass)
+- [x] Update `tests/Feature/Services/SubscriptionPaymentServiceTest.php` (2 tests pass)
+- [x] Create `tests/Feature/PricingTierTest.php` (4 tests pass)
+- [x] All 167 tests passing
 
 ---
 

@@ -1,9 +1,10 @@
 # Phase 2: Subscription Schema & Pricing + Payment Gateway
 
-**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete)
+**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete, Phase 2.0B ✅ Complete)
 **Date Started:** 2026-07-14  
 **Prerequisites:** Phase 1 ✅ Complete
 **Phase 2.0A Completed:** 2026-07-14
+**Phase 2.0B Completed:** 2026-07-14
 
 ---
 
@@ -126,38 +127,40 @@
 
 ---
 
-## 📋 Phase 2.0B: Core Infrastructure
+## 📋 Phase 2.0B: Core Infrastructure ✅ COMPLETE
 
 ### Credential Encryption Service
-- [ ] Create `app/Services/CredentialEncryption.php`
+- [x] Create `app/Services/CredentialEncryption.php`
   - `encrypt(string $value): string`
   - `decrypt(string $encrypted): string`
   - Uses Laravel's `Crypt` facade (AES-256-CBC)
-- [ ] Add tests for encryption/decryption
+- [x] Add tests for encryption/decryption
 
 ### Payment Gateway Contract
-- [ ] Create `app/Contracts/PaymentGateway.php` interface
+- [x] Create `app/Contracts/PaymentGateway.php` interface
   - `createInvoice(array $data): array`
   - `handleWebhook(array $payload): bool`
   - `checkTransactionStatus(string $transactionId): array`
   - `refund(string $transactionId, float $amount): bool`
 
 ### Payment Gateway Registry
-- [ ] Create `app/Services/PaymentGatewayRegistry.php`
+- [x] Create `app/Services/PaymentGatewayRegistry.php`
   - Load available gateways from `payment_gateway_types` table
-  - Cache gateway types for performance
+  - Cache gateway types for performance (1 hour TTL)
   - Provide method: `getGatewayTypes(): Collection`
-  - Provide method: `getSchoolGateways(School $school): Collection`
+  - Provide method: `getSchoolGateways(Tenant $school): Collection`
+  - Provide method: `clearCache(): void`
 
 ### Payment Gateway Factory
-- [ ] Create `app/Services/PaymentGatewayFactory.php`
+- [x] Create `app/Services/PaymentGatewayFactory.php`
   - `make(string $gatewayName, SchoolPaymentGateway $config): PaymentGateway`
   - Dynamic instantiation based on gateway type
   - Load and decrypt credentials from DB
-  - Return appropriate gateway implementation
+  - Return appropriate gateway implementation (Midtrans, Xendit)
+  - Throws `InvalidArgumentException` for unknown gateways
 
 ### Subscription Payment Service
-- [ ] Create `app/Services/SubscriptionPaymentService.php`
+- [x] Create `app/Services/SubscriptionPaymentService.php`
   - `createPaymentInvoice(Subscription $subscription, SchoolPaymentGateway $gateway): array`
   - `processWebhook(PaymentWebhook $webhook): bool`
   - `completeSubscription(PaymentTransaction $transaction): void`
@@ -165,11 +168,29 @@
   - `refundTransaction(PaymentTransaction $transaction, ?float $amount): bool`
 
 ### Service Container Bindings
-- [ ] Register services in `app/Providers/AppServiceProvider.php`
+- [x] Register services in `app/Providers/AppServiceProvider.php`
   - Bind `CredentialEncryption` singleton
   - Bind `PaymentGatewayRegistry` singleton
   - Bind `PaymentGatewayFactory` singleton
   - Bind `SubscriptionPaymentService` singleton
+
+### Testing
+- [x] Unit tests for CredentialEncryption (2 tests)
+  - Encryption/decryption roundtrip
+  - Different ciphertexts for same value
+- [x] Unit tests for PaymentGatewayRegistry (3 tests)
+  - Load active gateway types from database
+  - Cache gateway types for performance
+  - Clear cache functionality
+- [x] Feature tests for SubscriptionPaymentService (2 tests)
+  - Create payment invoice for subscription
+  - Handle failed payments by expiring subscription
+
+### Additional Notes
+- Fixed SchoolPaymentGateway model to map to `tenant_payment_gateways` table
+- All 7 tests passing
+- Code formatted with Laravel Pint
+- Commit: `feat(payment): implement gateway registry, factory, and services`
 
 ---
 

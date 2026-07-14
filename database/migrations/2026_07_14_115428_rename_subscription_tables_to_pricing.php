@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -49,10 +50,115 @@ return new class extends Migration
             $table->timestamp('changed_at');
             $table->timestamps();
         });
+
+        $this->seedPricingTiers();
+    }
+
+    private function seedPricingTiers(): void
+    {
+        DB::table('pricing_tiers')->delete();
+
+        $basicTier = DB::table('pricing_tiers')->insertGetId([
+            'name' => 'Basic',
+            'slug' => 'basic',
+            'description' => 'Free tier for getting started',
+            'price' => 0,
+            'currency' => 'IDR',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('tier_limits')->insert([
+            ['pricing_tier_id' => $basicTier, 'limit_key' => 'student_capacity_per_course', 'limit_value' => 500, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $basicTier, 'limit_key' => 'video_storage_gb', 'limit_value' => 100, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $basicTier, 'limit_key' => 'live_session_duration_minutes', 'limit_value' => 0, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $plusTier = DB::table('pricing_tiers')->insertGetId([
+            'name' => 'Plus',
+            'slug' => 'plus',
+            'description' => 'Enhanced learning tools for growing schools',
+            'price' => 299000,
+            'currency' => 'IDR',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('tier_features')->insert([
+            ['pricing_tier_id' => $plusTier, 'feature_key' => 'analytics', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $plusTier, 'feature_key' => 'live_session', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        DB::table('tier_limits')->insert([
+            ['pricing_tier_id' => $plusTier, 'limit_key' => 'student_capacity_per_course', 'limit_value' => 1000, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $plusTier, 'limit_key' => 'video_storage_gb', 'limit_value' => 500, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $plusTier, 'limit_key' => 'live_session_duration_minutes', 'limit_value' => 120, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $proTier = DB::table('pricing_tiers')->insertGetId([
+            'name' => 'Pro',
+            'slug' => 'pro',
+            'description' => 'Professional features for scaling institutions',
+            'price' => 799000,
+            'currency' => 'IDR',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('tier_features')->insert([
+            ['pricing_tier_id' => $proTier, 'feature_key' => 'analytics', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $proTier, 'feature_key' => 'live_session', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $proTier, 'feature_key' => 'live_session_recording', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $proTier, 'feature_key' => 'api_access', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        DB::table('tier_limits')->insert([
+            ['pricing_tier_id' => $proTier, 'limit_key' => 'student_capacity_per_course', 'limit_value' => 5000, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $proTier, 'limit_key' => 'video_storage_gb', 'limit_value' => 2000, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $proTier, 'limit_key' => 'live_session_duration_minutes', 'limit_value' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $maxTier = DB::table('pricing_tiers')->insertGetId([
+            'name' => 'Max',
+            'slug' => 'max',
+            'description' => 'Enterprise features with unlimited capabilities',
+            'price' => 1999000,
+            'currency' => 'IDR',
+            'billing_period' => 'monthly',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('tier_features')->insert([
+            ['pricing_tier_id' => $maxTier, 'feature_key' => 'analytics', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $maxTier, 'feature_key' => 'live_session', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $maxTier, 'feature_key' => 'live_session_recording', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $maxTier, 'feature_key' => 'api_access', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $maxTier, 'feature_key' => 'custom_branding', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $maxTier, 'feature_key' => 'sso', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $maxTier, 'feature_key' => 'priority_support', 'is_enabled' => true, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        DB::table('tier_limits')->insert([
+            ['pricing_tier_id' => $maxTier, 'limit_key' => 'student_capacity_per_course', 'limit_value' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $maxTier, 'limit_key' => 'video_storage_gb', 'limit_value' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['pricing_tier_id' => $maxTier, 'limit_key' => 'live_session_duration_minutes', 'limit_value' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
     }
 
     public function down(): void
     {
+        DB::table('tier_limits')->delete();
+        DB::table('tier_features')->delete();
+        DB::table('pricing_tiers')->delete();
+
         Schema::dropIfExists('tier_changes');
         Schema::dropIfExists('tier_limits');
         Schema::dropIfExists('tier_features');

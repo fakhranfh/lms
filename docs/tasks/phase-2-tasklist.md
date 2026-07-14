@@ -384,13 +384,13 @@ Per-school pricing tier system where the school (as customer) chooses a tier tha
 
 #### Controller & Routes
 - [ ] Create `app/Http/Controllers/Admin/PricingTierController.php`
-  - `index()` - List all tiers
-  - `show()` - Show tier details
+  - `index()` - List all tiers (via PricingTierService)
+  - `show()` - Show tier details (via PricingTierService)
   - `create()` - Show create form
-  - `store()` - Store new tier
+  - `store()` - Store new tier (via PricingTierService)
   - `edit()` - Show edit form
-  - `update()` - Update tier
-  - `destroy()` - Delete tier
+  - `update()` - Update tier (via PricingTierService)
+  - `destroy()` - Delete tier (via PricingTierService)
 
 - [ ] Add routes in `routes/admin.php` (or appropriate admin routes)
   - `GET  /admin/tiers` - List tiers
@@ -401,26 +401,59 @@ Per-school pricing tier system where the school (as customer) chooses a tier tha
   - `PUT  /admin/tiers/{tier}` - Update
   - `DELETE /admin/tiers/{tier}` - Delete
 
-#### Views
-- [ ] Create `resources/views/admin/pricing-tiers/index.blade.php`
-  - Table listing all tiers with status, features, limits
-  - Buttons: View, Edit, Delete
+#### Views & Livewire Components
+- [ ] Create Livewire component: `app/Livewire/Admin/PricingTiers/ListTiers.php`
+  - Fetch and display all pricing tiers in table
+  - Handle delete action (with confirmation)
+  - Pagination support
+  - Search/filter functionality
+  - View: `resources/views/livewire/admin/pricing-tiers/list-tiers.blade.php`
 
-- [ ] Create `resources/views/admin/pricing-tiers/show.blade.php`
-  - Tier details with full feature/limit breakdown
+- [ ] Create Livewire component: `app/Livewire/Admin/PricingTiers/TierForm.php`
+  - Form to create/edit pricing tier
+  - Feature toggles (checkboxes for each feature)
+  - Limit inputs (form fields for each limit)
+  - Real-time validation
+  - View: `resources/views/livewire/admin/pricing-tiers/tier-form.blade.php`
 
-- [ ] Create `resources/views/admin/pricing-tiers/create.blade.php`
-  - Form to create new tier with feature toggles and limit inputs
+- [ ] Create Livewire component: `app/Livewire/Admin/PricingTiers/TierDetails.php`
+  - Display tier details with full feature/limit breakdown
+  - Show related school tiers count
+  - Edit/Delete buttons
+  - View: `resources/views/livewire/admin/pricing-tiers/tier-details.blade.php`
 
-- [ ] Create `resources/views/admin/pricing-tiers/edit.blade.php`
-  - Form to edit existing tier
+- [ ] Create Blade layout page: `resources/views/admin/pricing-tiers/index.blade.php`
+  - Embed ListTiers Livewire component
 
-#### Services
-- [ ] Create `app/Services/TierService.php`
+- [ ] Create Blade layout page: `resources/views/admin/pricing-tiers/create.blade.php`
+  - Embed TierForm Livewire component (create mode)
+
+- [ ] Create Blade layout page: `resources/views/admin/pricing-tiers/edit.blade.php`
+  - Embed TierForm Livewire component (edit mode)
+
+- [ ] Create Blade layout page: `resources/views/admin/pricing-tiers/show.blade.php`
+  - Embed TierDetails Livewire component
+
+#### Services & Repository
+- [ ] Create `app/Services/PricingTierService.php`
+  - `listAllTiers()` - Get all pricing tiers via repository
+  - `getTierById($id)` - Get tier by ID via repository
+  - `createTier(array $data)` - Create new tier with features and limits via repository
+  - `updateTier($id, array $data)` - Update tier with features and limits via repository
+  - `deleteTier($id)` - Delete tier via repository
+  - `getTierBySlug(string $slug)` - Get tier by slug via repository
   - `isFeatureAvailable(School $school, string $feature): bool`
   - `getLimit(School $school, string $limitKey): ?int`
   - `getDefaultTier(): PricingTier`
   - `assignTierToSchool(School $school, PricingTier $tier): SchoolTier`
+
+- [ ] Create `app/Repositories/PricingTierRepository.php`
+  - `all()` - Get all pricing tiers
+  - `find($id)` - Get tier by ID
+  - `create(array $data)` - Create new tier with features and limits
+  - `update($id, array $data)` - Update tier with features and limits
+  - `delete($id)` - Delete tier
+  - `findBySlug($slug)` - Get tier by slug
 
 #### Permissions
 - [ ] Add permission: `manage_pricing_tiers` (admin only)

@@ -295,40 +295,345 @@
 
 ## 📋 Phase 2.1: Pricing Tiers Configuration
 
-### Tier Features Setup
-- [ ] Define feature flags/keys in config or constant
-  ```
-  - class_management
-  - assignment_submission
-  - basic_grading
-  - email_notifications
-  - basic_reporting
-  - advanced_analytics
-  - custom_branding
-  - api_access
-  - lti_integration
-  - video_hosting_25hrs
-  - unlimited_video
-  - custom_integration
-  - sso_saml
-  - dedicated_server
-  - custom_sla
-  ```
+**Status:** ⏳ In Progress  
+**Scope:** Per-school LMS pricing tier system with 4 default tiers  
+**Timeline Estimate:** 3-4 weeks  
+**Proposal Document:** `docs/phase-2-1-proposal.html`
 
-### Tier Pricing Data
-- [ ] Seed subscription_tiers with:
-  - **Starter**: IDR 199,000/month, 100 users max, 5GB storage
-    - Features: class_management, assignment_submission, basic_grading, email_notifications, basic_reporting
-  - **Professional**: IDR 499,000/month, 500 users max, 50GB storage
-    - All Starter + advanced_analytics, custom_branding, api_access, lti_integration, video_hosting_25hrs
-  - **Enterprise**: Custom pricing, unlimited users, unlimited storage
-    - All Professional + unlimited_video, custom_integration, sso_saml, dedicated_server, custom_sla
+### Overview
+Per-school pricing tier system where the school (as customer) chooses a tier that determines features and capacity limits for all users within that school. Integration with existing payment gateway (Midtrans/Xendit from Phase 2.0C).
 
-### Annual Billing Option
-- [ ] Add annual pricing (15% discount typically)
-  - Starter Annual: IDR 2,028,000/year (vs 2,388,000)
-  - Professional Annual: IDR 5,088,000/year (vs 5,988,000)
-  - Enterprise: Custom
+**Default Tiers:**
+- **Basic** (Free) - No advanced features, 500 students/course max, 100GB storage
+- **Plus** - Analytics + Live Session, 1,000 students/course max, 500GB storage
+- **Pro** - Advanced Analytics, API Access, Recording, 5,000 students/course max, 2,000GB storage
+- **Max** - Enterprise features (Custom Branding, SSO, Priority Support), Unlimited
+
+---
+
+### Phase 2.1.1: Core Data Structure
+
+#### Migrations
+- [ ] Create migration: `CreatePricingTiersTable`
+  - `id` (BIGINT, PK)
+  - `slug` (VARCHAR, unique) - basic, plus, pro, max
+  - `name` (VARCHAR)
+  - `description` (TEXT, nullable)
+  - `is_active` (BOOLEAN, default true)
+  - `created_at`, `updated_at`
+
+- [ ] Create migration: `CreateTierFeaturesTable`
+  - `id` (BIGINT, PK)
+  - `tier_id` (BIGINT, FK→pricing_tiers.id, CASCADE)
+  - `feature_key` (VARCHAR) - analytics, live_session, api_access, custom_branding, etc.
+  - `is_enabled` (BOOLEAN, default true)
+  - `created_at`
+
+- [ ] Create migration: `CreateTierLimitsTable`
+  - `id` (BIGINT, PK)
+  - `tier_id` (BIGINT, FK→pricing_tiers.id, CASCADE)
+  - `limit_key` (VARCHAR) - max_students_per_course, video_storage_gb, live_session_duration_minutes, etc.
+  - `limit_value` (VARCHAR) - Store as string to support "unlimited"
+  - `created_at`
+
+- [ ] Create migration: `CreateSchoolTiersTable`
+  - `id` (UUID, PK)
+  - `school_id` (UUID, FK→tenants.id, CASCADE)
+  - `tier_id` (BIGINT, FK→pricing_tiers.id)
+  - `subscription_status` (VARCHAR) - active, cancelled, expired, pending
+  - `started_at` (TIMESTAMP)
+  - `ends_at` (TIMESTAMP, nullable)
+  - `created_at`, `updated_at`
+
+- [ ] Create migration: `CreateTierChangesTable`
+  - `id` (UUID, PK)
+  - `school_id` (UUID, FK→tenants.id, CASCADE)
+  - `old_tier_id` (BIGINT, FK→pricing_tiers.id, nullable)
+  - `new_tier_id` (BIGINT, FK→pricing_tiers.id)
+  - `change_type` (VARCHAR) - upgrade, downgrade, initial
+  - `effective_at` (TIMESTAMP)
+  - `proration_amount` (DECIMAL 15,2, nullable)
+  - `created_at`
+
+#### Eloquent Models
+- [ ] Create `app/Models/PricingTier.php`
+  - Relationships: `features()`, `limits()`, `schoolSubscriptions()`
+  - Methods: `isFeatureAvailable(string $key)`, `getLimit(string $key)`
+
+- [ ] Create `app/Models/TierFeature.php`
+  - Relationship: `tier()` (belongsTo)
+
+- [ ] Create `app/Models/TierLimit.php`
+  - Relationship: `tier()` (belongsTo)
+
+- [ ] Create `app/Models/SchoolTier.php`
+  - Relationships: `school()` (belongsTo), `tier()` (belongsTo), `changes()`
+  - Trait: `BelongsToTenant`
+
+- [ ] Create `app/Models/TierChange.php`
+  - Relationships: `school()`, `oldTier()` (nullable), `newTier()`
+  - Trait: `BelongsToTenant`
+
+- [ ] Update `app/Models/School.php`
+  - Add relationship: `tier()` (hasOne SchoolTier)
+
+#### Factories & Seeders
+- [ ] Create factory: `database/factories/PricingTierFactory.php`
+- [ ] Create factory: `database/factories/TierFeatureFactory.php`
+- [ ] Create factory: `database/factories/TierLimitFactory.php`
+
+- [ ] Create seeder: `database/seeders/PricingTierSeeder.php`
+  - Seed 4 default tiers (Basic, Plus, Pro, Max)
+  - Seed features per tier
+  - Seed limits per tier
+
+#### Unit Tests
+- [ ] Test: Model relationships (Tier → Features, Tier → Limits)
+  - Test features can be queried by tier
+  - Test limits can be queried by tier
+  
+- [ ] Test: Feature/limit access methods
+  - Test `PricingTier::isFeatureAvailable()`
+  - Test `PricingTier::getLimit()`
+
+---
+
+### Phase 2.1.2: Admin Panel & Configuration
+
+#### Controller & Routes
+- [ ] Create `app/Http/Controllers/Admin/PricingTierController.php`
+  - `index()` - List all tiers
+  - `show()` - Show tier details
+  - `create()` - Show create form
+  - `store()` - Store new tier
+  - `edit()` - Show edit form
+  - `update()` - Update tier
+  - `destroy()` - Delete tier
+
+- [ ] Add routes in `routes/admin.php` (or appropriate admin routes)
+  - `GET  /admin/tiers` - List tiers
+  - `GET  /admin/tiers/{tier}` - View tier
+  - `GET  /admin/tiers/create` - Create form
+  - `POST /admin/tiers` - Store
+  - `GET  /admin/tiers/{tier}/edit` - Edit form
+  - `PUT  /admin/tiers/{tier}` - Update
+  - `DELETE /admin/tiers/{tier}` - Delete
+
+#### Views
+- [ ] Create `resources/views/admin/pricing-tiers/index.blade.php`
+  - Table listing all tiers with status, features, limits
+  - Buttons: View, Edit, Delete
+
+- [ ] Create `resources/views/admin/pricing-tiers/show.blade.php`
+  - Tier details with full feature/limit breakdown
+
+- [ ] Create `resources/views/admin/pricing-tiers/create.blade.php`
+  - Form to create new tier with feature toggles and limit inputs
+
+- [ ] Create `resources/views/admin/pricing-tiers/edit.blade.php`
+  - Form to edit existing tier
+
+#### Services
+- [ ] Create `app/Services/TierService.php`
+  - `isFeatureAvailable(School $school, string $feature): bool`
+  - `getLimit(School $school, string $limitKey): ?int`
+  - `getDefaultTier(): PricingTier`
+  - `assignTierToSchool(School $school, PricingTier $tier): SchoolTier`
+
+#### Permissions
+- [ ] Add permission: `manage_pricing_tiers` (admin only)
+- [ ] Add permission: `view_tier_details` (admin only)
+- [ ] Protect routes with `authorize()` checks
+
+#### Feature Tests
+- [ ] Test: Tier CRUD operations
+  - Test list tiers
+  - Test create tier
+  - Test update tier
+  - Test delete tier
+
+- [ ] Test: Feature & limit management
+  - Test enable/disable features
+  - Test set tier limits
+
+---
+
+### Phase 2.1.3: School Tier Assignment
+
+#### Migrations
+- [ ] Add `tier_id` column to `schools` table (migration)
+  - FK to `pricing_tiers.id`
+  - Default to Basic tier ID
+
+#### Model Updates
+- [ ] Update `app/Models/School.php`
+  - Add relationship: `tier()` (belongs_to PricingTier)
+  - Add method: `getCurrentTierLimit(string $key): ?int`
+  - Add method: `isFeatureEnabled(string $feature): bool`
+
+#### Seeding & Defaults
+- [ ] Update school creation to assign default tier
+  - When school is created, automatically create `SchoolTier` record with Basic tier
+
+- [ ] Create migration to assign tier to existing schools (if any)
+  - Default all existing schools to Basic tier
+
+#### UI Integration
+- [ ] Update school creation form to show tier selection
+- [ ] Update school edit form to show current tier and change option
+- [ ] Create school tier change history view (shows all tier_changes)
+
+#### Tests
+- [ ] Test: Default tier assignment on school creation
+- [ ] Test: School can query current tier
+- [ ] Test: School tier relationships work correctly
+
+---
+
+### Phase 2.1.4: Feature Gating
+
+#### Service Methods
+- [ ] Create/update `app/Services/TierService.php` with:
+  - `isFeatureAvailable(School $school, string $feature): bool`
+  - `getLimit(School $school, string $limitKey): ?int`
+  - `canAccessAnalytics(School $school): bool`
+  - `canAccessLiveSession(School $school): bool`
+  - `canAccessApi(School $school): bool`
+  - `getStudentCapacityPerCourse(School $school): int`
+  - `getStorageLimitGb(School $school): int`
+
+#### Feature Gates in Controllers
+- [ ] Implement analytics feature check
+  - Before showing analytics page/data
+  - Throw `FeatureNotAvailableException` if not available
+
+- [ ] Implement live session feature check
+  - Before creating/accessing live sessions
+  - Show UI indicator if not available
+
+- [ ] Implement API access feature check
+  - Check before issuing API tokens
+  - Rate limit by tier (Pro/Max have higher limits)
+
+#### Limit Enforcement
+- [ ] Enforce student capacity per course
+  - Before enrolling student, check: `enrolled_count + 1 <= tier_limit`
+  - Show error/upgrade prompt if limit reached
+
+- [ ] Enforce video storage limit
+  - Before uploading video, check: `used_storage + file_size <= tier_limit`
+  - Show error/upgrade prompt if limit reached
+
+- [ ] Enforce live session duration (if applicable)
+  - Warn when approaching session time limit
+
+#### UI Indicators
+- [ ] Show "Premium Feature" badges for unavailable features
+- [ ] Show "Upgrade to [Tier] to unlock" messages
+- [ ] Disable/gray out buttons for unavailable features
+
+#### Tests
+- [ ] Test: Basic tier cannot access analytics
+- [ ] Test: Plus+ tier can access analytics
+- [ ] Test: Feature availability checks return correct results
+- [ ] Test: Student enrollment respects capacity limits
+- [ ] Test: Video upload respects storage limits
+- [ ] Test: UI correctly indicates unavailable features
+
+---
+
+### Phase 2.1.5: Payment & Upgrade Flow
+
+#### Services
+- [ ] Create `app/Services/TierChangeService.php`
+  - `canUpgrade(School $school, PricingTier $newTier): bool`
+  - `canDowngrade(School $school, PricingTier $newTier): bool`
+  - `calculateProration(School $school, PricingTier $newTier): float`
+  - `initiateTierChange(School $school, PricingTier $newTier, string $gatewayName): ?array`
+
+#### Tier Change Flow UI
+- [ ] Create tier selection/comparison view
+  - Show current tier and available upgrade/downgrade options
+  - Display pricing and proration calculations
+
+- [ ] Create tier change confirmation view
+  - Show prorated amount
+  - Show payment method selection (if multiple gateways enabled)
+
+#### Proration Logic
+- [ ] Implement proration calculation
+  - Calculate remaining days in current subscription
+  - Calculate credit/charge for tier change
+  - Handle same-month changes
+
+#### Payment Integration
+- [ ] Integrate tier changes with payment gateway
+  - On tier upgrade: create payment invoice via gateway
+  - On tier downgrade: process refund via gateway
+  - Use existing `SubscriptionPaymentService` (Phase 2.0B)
+
+- [ ] Webhook handling for tier payment
+  - When payment succeeds: update SchoolTier status to active
+  - When payment fails: keep current tier, show error
+
+- [ ] Create `TierChangeJob` for async processing
+  - Process tier change after payment confirmed
+
+#### Audit Trail
+- [ ] Create `TierChange` record on successful upgrade/downgrade
+  - Track old_tier, new_tier, change_type, proration_amount
+  - Create `tier_changes` audit log
+
+#### Controllers
+- [ ] Create/Update `app/Http/Controllers/TierChangeController.php`
+  - `show()` - Show current tier & upgrade/downgrade options
+  - `initiate(Request $request)` - Initiate tier change with payment
+  - `cancel(Request $request)` - Cancel pending tier change
+
+#### Routes
+- [ ] Add routes:
+  - `GET  /tier-management` - Show tier options & history
+  - `POST /tier-management/change` - Initiate tier change
+  - `POST /tier-management/cancel` - Cancel pending change
+
+#### Tests
+- [ ] Test: Upgrade tier flow (success & failure)
+- [ ] Test: Downgrade tier flow with proration
+- [ ] Test: Proration calculation accuracy
+- [ ] Test: Payment webhook handles tier changes
+- [ ] Test: Tier change audit trail created
+- [ ] Test: Cannot change tier while payment pending
+- [ ] Test: Concurrent tier changes prevented
+
+---
+
+### Phase 2.1.6: Testing & Finalization
+
+#### Test Coverage
+- [ ] Run full test suite: `php artisan test --compact`
+- [ ] Verify 95%+ code coverage for tier-related code
+- [ ] Check: Unit tests for services
+- [ ] Check: Feature tests for controllers
+- [ ] Check: Integration tests with payment gateway
+
+#### Code Quality
+- [ ] Run `vendor/bin/pint --dirty --format agent`
+- [ ] Fix any code style issues
+- [ ] Review type hints on all methods
+- [ ] Verify no secrets in code/logs
+
+#### Documentation
+- [ ] Add PHPDoc comments to all public methods
+- [ ] Document tier feature keys in config or constant
+- [ ] Document tier limit keys
+- [ ] Add usage examples for TierService
+
+#### Git Commits
+- [ ] Commit Phase 2.1.1: `feat(pricing): add tier database schema and models`
+- [ ] Commit Phase 2.1.2: `feat(pricing): implement tier admin panel and configuration`
+- [ ] Commit Phase 2.1.3: `feat(pricing): add school tier assignment and defaults`
+- [ ] Commit Phase 2.1.4: `feat(pricing): implement feature gating and limit enforcement`
+- [ ] Commit Phase 2.1.5: `feat(pricing): add tier upgrade/downgrade with payment integration`
 
 ---
 

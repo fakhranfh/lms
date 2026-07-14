@@ -1,11 +1,12 @@
 # Phase 2: Subscription Schema & Pricing + Payment Gateway
 
-**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete, Phase 2.0B ✅ Complete, Phase 2.0C ✅ Complete)
+**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete, Phase 2.0B ✅ Complete, Phase 2.0C ✅ Complete, Phase 2.0D ✅ Complete)
 **Date Started:** 2026-07-14  
 **Prerequisites:** Phase 1 ✅ Complete
 **Phase 2.0A Completed:** 2026-07-14
 **Phase 2.0B Completed:** 2026-07-14
 **Phase 2.0C Completed:** 2026-07-14
+**Phase 2.0D Completed:** 2026-07-14
 
 ---
 
@@ -243,51 +244,52 @@
 
 ---
 
-## 📋 Phase 2.0D: Webhooks & Controllers
+## 📋 Phase 2.0D: Webhooks & Controllers ✅ COMPLETE
 
-### Payment Webhook Controller
-- [ ] Create `app/Http/Controllers/PaymentWebhookController.php`
-  - `handleMidtrans(Request $request): Response` - Route `/webhooks/midtrans`
-  - `handleXendit(Request $request): Response` - Route `/webhooks/xendit`
-  - Verify webhook signature per gateway
-  - Store payload in `payment_webhooks` table (encrypted)
-  - Dispatch job to process webhook asynchronously
+### Payment Webhook Controller ✅
+- [x] Create `app/Http/Controllers/PaymentWebhookController.php`
+  - [x] `handleMidtrans(Request $request): Response` - Route `/webhooks/midtrans`
+  - [x] `handleXendit(Request $request): Response` - Route `/webhooks/xendit`
+  - [x] Verify webhook signature per gateway
+  - [x] Store payload in `payment_webhooks` table (encrypted)
+  - [x] Dispatch job to process webhook asynchronously
 
-### Webhook Processing Job
-- [ ] Create `app/Jobs/ProcessPaymentWebhook.php`
-  - Load webhook from DB
-  - Verify signature authenticity
-  - Call `SubscriptionPaymentService::processWebhook()`
-  - Update transaction & subscription status
-  - Mark webhook as processed
+### Webhook Processing Job ✅
+- [x] Create `app/Jobs/ProcessPaymentWebhook.php`
+  - [x] Load webhook from DB
+  - [x] Verify signature authenticity
+  - [x] Call `SubscriptionPaymentService::processWebhook()`
+  - [x] Update transaction & subscription status
+  - [x] Mark webhook as processed
 
-### Webhook Routes
-- [ ] Add routes in `routes/web.php` or dedicated webhook route file
-  - `POST /webhooks/midtrans`
-  - `POST /webhooks/xendit`
-  - Add rate limiting (burst: 100, throttle: 1000/min)
+### Webhook Routes ✅
+- [x] Add routes in `routes/web.php` or dedicated webhook route file
+  - [x] `POST /webhooks/midtrans`
+  - [x] `POST /webhooks/xendit`
+  - [x] Add rate limiting (burst: 100, throttle: 1000/min)
 
-### Admin Gateway Management Controller
-- [ ] Create `app/Http/Controllers/Admin/GatewayConfigController.php`
-  - `index()` - List configured gateways for school
-  - `create()` - Show form to add new gateway
-  - `store()` - Save gateway configuration with encrypted credentials
-  - `edit()` - Show form to edit gateway
-  - `update()` - Update gateway config
-  - `destroy()` - Remove gateway configuration
-  - `testConnection()` - Test gateway credentials (POST)
+### Admin Gateway Management Controller ✅
+- [x] Create `app/Http/Controllers/Admin/GatewayConfigController.php`
+  - [x] `index()` - List configured gateways for school
+  - [x] `create()` - Show form to add new gateway
+  - [x] `store()` - Save gateway configuration with encrypted credentials
+  - [x] `edit()` - Show form to edit gateway
+  - [x] `update()` - Update gateway config
+  - [x] `destroy()` - Remove gateway configuration
+  - [x] `testConnection()` - Test gateway credentials (POST)
 
-### Admin Gateway Management Views
-- [ ] Create `resources/views/admin/gateways/index.blade.php` - List gateways
-- [ ] Create `resources/views/admin/gateways/create.blade.php` - Add gateway form
-- [ ] Create `resources/views/admin/gateways/edit.blade.php` - Edit gateway form
+### Admin Gateway Management Views ✅
+- [x] Create `resources/views/admin/gateways/index.blade.php` - List gateways
+- [x] Create `resources/views/admin/gateways/create.blade.php` - Add gateway form
+- [x] Create `resources/views/admin/gateways/edit.blade.php` - Edit gateway form
 
-### Form Requests
-- [ ] Create `app/Http/Requests/StoreGatewayConfigRequest.php`
-  - Validate gateway_type_id exists
-  - Validate credential keys match expected format
-  - Validate required credentials for each gateway type
-  - Unique constraint: one gateway type per school (initially)
+### Form Requests ✅
+- [x] Create `app/Http/Requests/StoreGatewayConfigRequest.php`
+  - [x] Validate gateway_type_id exists
+  - [x] Validate credential keys match expected format
+  - [x] Validate required credentials for each gateway type
+  - [x] Unique constraint: one gateway type per school (initially)
+- [x] Create `app/Http/Requests/UpdateGatewayConfigRequest.php`
 
 ---
 

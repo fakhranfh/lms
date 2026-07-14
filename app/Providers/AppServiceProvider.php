@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Http\Responses\CustomAuthenticatedSessionResponse;
 use App\Http\Responses\CustomVerifyEmailViewResponse;
 use App\Listeners\UpdateUserTimezoneOnLogin;
+use App\Models\User;
+use App\Policies\UserPolicy;
 use App\Repositories\Auth\AuthRepository;
 use App\Repositories\Auth\AuthRepositoryInterface;
 use App\Repositories\Permission\PermissionRepository;
@@ -18,6 +20,7 @@ use App\Repositories\User\UserRepositoryInterface;
 use App\Support\CurrentTenant;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Fortify\Contracts\LoginResponse;
 use Laravel\Fortify\Contracts\VerifyEmailViewResponse;
@@ -51,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(User::class, UserPolicy::class);
         Event::listen(Login::class, UpdateUserTimezoneOnLogin::class);
     }
 }

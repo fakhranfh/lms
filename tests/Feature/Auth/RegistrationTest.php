@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Tenant;
 use App\Models\User;
+use App\Support\CurrentTenant;
 use Illuminate\Support\Facades\Http;
 
 // Prevent actual HTTP requests to the Pwned Passwords API during tests
@@ -8,6 +10,13 @@ beforeEach(function () {
     Http::fake([
         'api.pwnedpasswords.com/*' => Http::response('', 200),
     ]);
+
+    $tenant = Tenant::factory()->create();
+    app(CurrentTenant::class)->setTenantId($tenant->id);
+});
+
+afterEach(function () {
+    app(CurrentTenant::class)->setTenantId(null);
 });
 
 test('registration page can be rendered', function () {
@@ -112,4 +121,16 @@ test('registration fails when password confirmation does not match', function ()
         'password' => 'Secret!Pass123#Secure',
         'password_confirmation' => 'Different!Pass123#Secure',
     ])->assertSessionHasErrors('password');
+});
+
+test('registration fails when tenant_id is passed in request', function () {
+    $other = Tenant::factory()->create();
+
+    $this->post('/register', [
+        'name' => 'John Doe',
+        'email' => 'john@example.com',
+        'password' => 'Secret!Pass123#Secure',
+        'password_confirmation' => 'Secret!Pass123#Secure',
+        'tenant_id' => $other->id,
+    ])->assertSessionHasErrors('tenant_id');
 });

@@ -39,6 +39,7 @@ class CreateNewUser implements CreatesNewUsers
                 Rule::unique(User::class),
             ],
             'password' => $this->passwordRules(),
+            'tenant_id' => ['prohibited'],
         ])->validate();
 
         $tenantId = $this->currentTenant->getTenantId();

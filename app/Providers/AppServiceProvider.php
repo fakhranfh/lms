@@ -11,6 +11,8 @@ use App\Repositories\Permission\PermissionRepository;
 use App\Repositories\Permission\PermissionRepositoryInterface;
 use App\Repositories\Role\RoleRepository;
 use App\Repositories\Role\RoleRepositoryInterface;
+use App\Repositories\Tenant\TenantRepository;
+use App\Repositories\Tenant\TenantRepositoryInterface;
 use App\Repositories\User\UserRepository;
 use App\Repositories\User\UserRepositoryInterface;
 use App\Support\CurrentTenant;
@@ -39,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(RoleRepositoryInterface::class, RoleRepository::class);
         $this->app->bind(PermissionRepositoryInterface::class, PermissionRepository::class);
+        $this->app->bind(TenantRepositoryInterface::class, TenantRepository::class);
 
         $this->app->singleton(CurrentTenant::class);
     }

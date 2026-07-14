@@ -8,6 +8,27 @@ return [
         'active_pattern' => 'admin.dashboard',
     ],
     [
+        'label' => 'Users',
+        'route' => 'admin.users.index',
+        'icon' => 'group',
+        'active_pattern' => 'admin.users.*',
+        'requires_permission' => 'users.view',
+    ],
+    [
+        'label' => 'Roles',
+        'route' => 'admin.roles.index',
+        'icon' => 'shield',
+        'active_pattern' => 'admin.roles.*',
+        'requires_permission' => 'roles.view',
+    ],
+    [
+        'label' => 'Permissions',
+        'route' => 'admin.permissions.index',
+        'icon' => 'key',
+        'active_pattern' => 'admin.permissions.*',
+        'requires_permission' => 'permissions.view',
+    ],
+    [
         'label' => 'Payment Gateways',
         'route' => 'gateways.index',
         'icon' => 'payment',

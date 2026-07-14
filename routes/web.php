@@ -62,6 +62,12 @@ Route::domain('admin.'.config('app.domain'))->group(function () {
         Route::get('/pricing-tiers/create', PricingTierCreate::class)->name('admin.pricing-tiers.create');
         Route::get('/pricing-tiers/{tier}/edit', PricingTierEdit::class)->name('admin.pricing-tiers.edit');
 
+        Route::get('/users', UserIndex::class)->name('admin.users.index');
+        Route::get('/roles', RoleIndex::class)->name('admin.roles.index');
+        Route::get('/roles/create', RoleCreate::class)->name('admin.roles.create');
+        Route::get('/roles/{role}/edit', RoleEdit::class)->name('admin.roles.edit');
+        Route::get('/permissions', [PermissionController::class, 'index'])->name('admin.permissions.index');
+
         Route::post('/logout', function (Request $request) {
             Auth::logout();
             $request->session()->invalidate();

@@ -15,7 +15,7 @@ class UserRoles extends Component
     /** @var array<int, int> */
     public array $roles = [];
 
-    public function mount(int $id, UserService $userService): void
+    public function mount(string $id, UserService $userService): void
     {
         $this->user = $userService->find($id);
         $this->roles = $this->user->roles->pluck('id')->all();

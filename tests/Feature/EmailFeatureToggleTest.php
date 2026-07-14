@@ -19,11 +19,15 @@ test('login page shows the forgot password link by default', function () {
 describe('when FEATURE_EMAIL_ENABLED is false', function () {
     beforeEach(function () {
         putenv('FEATURE_EMAIL_ENABLED=false');
+        $_ENV['FEATURE_EMAIL_ENABLED'] = 'false';
+        $_SERVER['FEATURE_EMAIL_ENABLED'] = 'false';
         $this->refreshApplication();
     });
 
     afterEach(function () {
         putenv('FEATURE_EMAIL_ENABLED=true');
+        $_ENV['FEATURE_EMAIL_ENABLED'] = 'true';
+        $_SERVER['FEATURE_EMAIL_ENABLED'] = 'true';
     });
 
     test('forgot password route is not registered', function () {

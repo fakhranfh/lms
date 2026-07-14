@@ -20,7 +20,7 @@ interface UserRepositoryInterface
 
     public function getAll(array $with = []): Collection;
 
-    public function find(int $id): ?User;
+    public function find(string $id): ?User;
 
     public function syncRoles(User $user, array $roleIds): void;
 }

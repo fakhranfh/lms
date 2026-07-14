@@ -100,10 +100,10 @@ Reference: [PRD.md](PRD.md) — Section 18 (Roadmap, Phase 1), Section 3 (Techni
 
 ## 5. Verification & Wrap-Up
 
-- [ ] Run `php artisan migrate:fresh --no-interaction` locally and confirm schema matches [ERD.md](ERD.md) Section 1 exactly (`database-schema` Boost tool).
-- [ ] Run the full test suite: `php artisan test --compact`.
-- [ ] Run `vendor/bin/pint --dirty --format agent` and fix any style issues.
-- [ ] Confirm no other model/table in the codebase still uses auto-incrementing integer PKs where UUID is required by PRD Section 3.
+- [x] Run `php artisan migrate:fresh --no-interaction` locally and confirm schema matches [ERD.md](ERD.md) Section 1 exactly (`database-schema` Boost tool).
+- [x] Run the full test suite: `php artisan test --compact`.
+- [x] Run `vendor/bin/pint --dirty --format agent` and fix any style issues.
+- [x] Confirm no other model/table in the codebase still uses auto-incrementing integer PKs where UUID is required by PRD Section 3.
 
 ---
 

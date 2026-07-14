@@ -51,7 +51,7 @@ class UserRepository implements UserRepositoryInterface
         return User::with($with)->get();
     }
 
-    public function find(int $id): ?User
+    public function find(string $id): ?User
     {
         return User::find($id);
     }

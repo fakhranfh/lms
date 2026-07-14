@@ -37,7 +37,7 @@ Route::domain('admin.'.config('app.domain'))->group(function () {
         Route::post('/login', [AdminLoginController::class, 'store'])->name('admin.login.store');
     });
 
-    Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         Route::get('/dashboard', function () {
             return view('admin.dashboard');
         })->name('admin.dashboard');
@@ -58,6 +58,11 @@ Route::domain('admin.'.config('app.domain'))->group(function () {
             return redirect()->route('admin.login');
         })->name('admin.logout');
     });
+});
+
+// School subdomains (schoolN.lms.local): tenant-scoped app.
+Route::domain('{tenant}.'.config('app.domain'))->group(function () {
+    Route::view('/', 'landing-page')->name('school.home');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

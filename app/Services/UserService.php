@@ -60,7 +60,7 @@ class UserService
         return $this->userRepository->getAll(['roles']);
     }
 
-    public function find(int $id): ?User
+    public function find(string $id): ?User
     {
         return $this->userRepository->find($id);
     }

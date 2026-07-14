@@ -14,9 +14,9 @@ test('email verification notice page can be rendered', function () {
 });
 
 test('user can verify email with valid signed url', function () {
-    Event::fake();
-
     $user = User::factory()->unverified()->create();
+
+    Event::fake();
 
     $verificationUrl = URL::temporarySignedRoute(
         'verification.verify',

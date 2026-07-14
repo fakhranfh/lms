@@ -1,0 +1,34 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\PaymentTransaction;
+use App\Models\SchoolPaymentGateway;
+use App\Models\Subscription;
+use App\Models\Tenant;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends Factory<PaymentTransaction>
+ */
+class PaymentTransactionFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'tenant_id' => Tenant::factory(),
+            'subscription_id' => Subscription::factory(),
+            'school_payment_gateway_id' => SchoolPaymentGateway::factory(),
+            'transaction_id' => $this->faker->unique()->sha256(),
+            'amount' => $this->faker->numberBetween(100000, 500000),
+            'currency' => 'IDR',
+            'status' => 'pending',
+            'metadata' => [],
+        ];
+    }
+}

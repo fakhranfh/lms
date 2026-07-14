@@ -24,4 +24,14 @@ class Tenant extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    /**
+     * Get the payment gateways.
+     *
+     * @return HasMany<SchoolPaymentGateway, $this>
+     */
+    public function paymentGateways(): HasMany
+    {
+        return $this->hasMany(SchoolPaymentGateway::class);
+    }
 }

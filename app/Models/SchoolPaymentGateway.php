@@ -17,6 +17,8 @@ class SchoolPaymentGateway extends Model
     /** @use HasFactory<SchoolPaymentGatewayFactory> */
     use BelongsToTenant, HasFactory, HasUuid;
 
+    protected $table = 'tenant_payment_gateways';
+
     /**
      * Get the payment gateway type.
      *

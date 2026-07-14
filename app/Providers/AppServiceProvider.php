@@ -17,6 +17,10 @@ use App\Repositories\Tenant\TenantRepository;
 use App\Repositories\Tenant\TenantRepositoryInterface;
 use App\Repositories\User\UserRepository;
 use App\Repositories\User\UserRepositoryInterface;
+use App\Services\CredentialEncryption;
+use App\Services\PaymentGatewayFactory;
+use App\Services\PaymentGatewayRegistry;
+use App\Services\SubscriptionPaymentService;
 use App\Support\CurrentTenant;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
@@ -32,11 +36,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(VerifyEmailViewResponse::class, function ($app) {
+        $this->app->singleton(VerifyEmailViewResponse::class, function () {
             return new CustomVerifyEmailViewResponse;
         });
 
-        $this->app->singleton(LoginResponse::class, function ($app) {
+        $this->app->singleton(LoginResponse::class, function () {
             return new CustomAuthenticatedSessionResponse;
         });
 
@@ -47,6 +51,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TenantRepositoryInterface::class, TenantRepository::class);
 
         $this->app->singleton(CurrentTenant::class);
+
+        $this->app->singleton(CredentialEncryption::class);
+        $this->app->singleton(PaymentGatewayRegistry::class);
+        $this->app->singleton(PaymentGatewayFactory::class);
+        $this->app->singleton(SubscriptionPaymentService::class);
     }
 
     /**

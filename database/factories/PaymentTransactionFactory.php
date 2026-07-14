@@ -5,7 +5,7 @@ namespace Database\Factories;
 use App\Models\PaymentTransaction;
 use App\Models\School;
 use App\Models\SchoolPaymentGateway;
-use App\Models\Subscription;
+use App\Models\SchoolTier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,7 +22,7 @@ class PaymentTransactionFactory extends Factory
     {
         return [
             'school_id' => School::factory(),
-            'subscription_id' => Subscription::factory(),
+            'subscription_id' => SchoolTier::factory(),
             'school_payment_gateway_id' => SchoolPaymentGateway::factory(),
             'transaction_id' => $this->faker->unique()->sha256(),
             'amount' => $this->faker->numberBetween(100000, 500000),

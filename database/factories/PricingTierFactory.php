@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\SubscriptionTier;
+use App\Models\PricingTier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<SubscriptionTier>
+ * @extends Factory<PricingTier>
  */
-class SubscriptionTierFactory extends Factory
+class PricingTierFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -24,9 +24,6 @@ class SubscriptionTierFactory extends Factory
             'price' => $this->faker->numberBetween(100000, 500000),
             'currency' => 'IDR',
             'billing_period' => 'monthly',
-            'features' => [],
-            'max_users' => $this->faker->numberBetween(10, 1000),
-            'storage_gb' => $this->faker->numberBetween(1, 100),
             'is_active' => true,
         ];
     }

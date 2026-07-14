@@ -35,13 +35,13 @@ class PaymentTransaction extends Model
     }
 
     /**
-     * Get the subscription.
+     * Get the school tier.
      *
-     * @return BelongsTo<Subscription, $this>
+     * @return BelongsTo<SchoolTier, $this>
      */
     public function subscription(): BelongsTo
     {
-        return $this->belongsTo(Subscription::class);
+        return $this->belongsTo(SchoolTier::class, 'subscription_id');
     }
 
     /**

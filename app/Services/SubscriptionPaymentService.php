@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentWebhook;
 use App\Models\SchoolPaymentGateway;
-use App\Models\Subscription;
+use App\Models\SchoolTier;
 
 class SubscriptionPaymentService
 {
@@ -13,7 +13,7 @@ class SubscriptionPaymentService
         private readonly PaymentGatewayFactory $factory
     ) {}
 
-    public function createPaymentInvoice(Subscription $subscription, SchoolPaymentGateway $gateway): array
+    public function createPaymentInvoice(SchoolTier $subscription, SchoolPaymentGateway $gateway): array
     {
         $gatewayInstance = $this->factory->make(
             $gateway->paymentGatewayType->name,

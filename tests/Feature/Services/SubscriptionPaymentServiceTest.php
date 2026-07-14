@@ -3,17 +3,17 @@
 use App\Contracts\PaymentGateway;
 use App\Models\PaymentGatewayType;
 use App\Models\PaymentTransaction;
+use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\SchoolPaymentGateway;
-use App\Models\Subscription;
-use App\Models\SubscriptionTier;
+use App\Models\SchoolTier;
 use App\Services\PaymentGatewayFactory;
 use App\Services\SubscriptionPaymentService;
 
 it('creates a payment invoice for subscription', function () {
     $school = School::factory()->create();
-    $tier = SubscriptionTier::factory()->create(['price' => 199000]);
-    $subscription = Subscription::factory()->create(['school_id' => $school->id, 'tier_id' => $tier->id]);
+    $tier = PricingTier::factory()->create(['price' => 199000]);
+    $subscription = SchoolTier::factory()->create(['school_id' => $school->id, 'tier_id' => $tier->id]);
 
     $gatewayType = PaymentGatewayType::factory()->create(['name' => 'test_gateway']);
     $gateway = SchoolPaymentGateway::factory()->create(['school_id' => $school->id, 'gateway_type_id' => $gatewayType->id]);
@@ -32,8 +32,8 @@ it('creates a payment invoice for subscription', function () {
 
 it('handles failed payments by expiring subscription', function () {
     $school = School::factory()->create();
-    $tier = SubscriptionTier::factory()->create();
-    $subscription = Subscription::factory()->create(['school_id' => $school->id, 'tier_id' => $tier->id, 'status' => 'active']);
+    $tier = PricingTier::factory()->create();
+    $subscription = SchoolTier::factory()->create(['school_id' => $school->id, 'tier_id' => $tier->id, 'status' => 'active']);
 
     $gatewayType = PaymentGatewayType::factory()->create();
     $gateway = SchoolPaymentGateway::factory()->create(['school_id' => $school->id, 'gateway_type_id' => $gatewayType->id]);

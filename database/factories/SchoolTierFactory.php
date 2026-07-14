@@ -2,15 +2,15 @@
 
 namespace Database\Factories;
 
+use App\Models\PricingTier;
 use App\Models\School;
-use App\Models\Subscription;
-use App\Models\SubscriptionTier;
+use App\Models\SchoolTier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Subscription>
+ * @extends Factory<SchoolTier>
  */
-class SubscriptionFactory extends Factory
+class SchoolTierFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -24,7 +24,7 @@ class SubscriptionFactory extends Factory
 
         return [
             'school_id' => School::factory(),
-            'tier_id' => SubscriptionTier::factory(),
+            'tier_id' => PricingTier::factory(),
             'status' => 'active',
             'started_at' => $startedAt,
             'expires_at' => $expiresAt,

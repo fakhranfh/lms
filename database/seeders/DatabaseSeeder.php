@@ -38,6 +38,6 @@ class DatabaseSeeder extends Seeder
 
         // $this->call(ProductSeeder::class);
         $this->call(PaymentGatewayTypeSeeder::class);
-        $this->call(SubscriptionTierSeeder::class);
+        $this->call(PricingTierSeeder::class);
     }
 }

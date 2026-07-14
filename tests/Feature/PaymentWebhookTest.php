@@ -5,10 +5,10 @@ use App\Jobs\ProcessPaymentWebhook;
 use App\Models\PaymentGatewayType;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentWebhook;
+use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\SchoolPaymentGateway;
-use App\Models\Subscription;
-use App\Models\SubscriptionTier;
+use App\Models\SchoolTier;
 use App\Services\PaymentGatewayFactory;
 use App\Services\SubscriptionPaymentService;
 use Illuminate\Support\Facades\Bus;
@@ -19,8 +19,8 @@ test('webhook controller stores midtrans webhook', function () {
     Bus::fake();
 
     $school = School::factory()->create();
-    $tier = SubscriptionTier::factory()->create();
-    $subscription = Subscription::factory()
+    $tier = PricingTier::factory()->create();
+    $subscription = SchoolTier::factory()
         ->for($school, 'school')
         ->create(['tier_id' => $tier->id]);
 
@@ -110,8 +110,8 @@ test('webhook stores encrypted payload', function () {
     Bus::fake();
 
     $school = School::factory()->create();
-    $tier = SubscriptionTier::factory()->create();
-    $subscription = Subscription::factory()
+    $tier = PricingTier::factory()->create();
+    $subscription = SchoolTier::factory()
         ->for($school, 'school')
         ->create(['tier_id' => $tier->id]);
 
@@ -144,8 +144,8 @@ test('webhook controller dispatches processing job', function () {
     Bus::fake();
 
     $school = School::factory()->create();
-    $tier = SubscriptionTier::factory()->create();
-    $subscription = Subscription::factory()
+    $tier = PricingTier::factory()->create();
+    $subscription = SchoolTier::factory()
         ->for($school, 'school')
         ->create(['tier_id' => $tier->id]);
 

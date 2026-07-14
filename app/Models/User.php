@@ -42,6 +42,10 @@ class User extends Authenticatable implements MustVerifyEmail
             return true;
         }
 
+        if ($this->hasRole('admin')) {
+            return true;
+        }
+
         return parent::hasVerifiedEmail();
     }
 

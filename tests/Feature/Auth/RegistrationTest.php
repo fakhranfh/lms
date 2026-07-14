@@ -11,8 +11,9 @@ beforeEach(function () {
         'api.pwnedpasswords.com/*' => Http::response('', 200),
     ]);
 
-    $tenant = Tenant::factory()->create();
-    app(CurrentTenant::class)->setTenantId($tenant->id);
+    $this->tenant = Tenant::factory()->create();
+    $this->schoolUrl = 'http://'.$this->tenant->domain;
+    app(CurrentTenant::class)->setTenantId($this->tenant->id);
 });
 
 afterEach(function () {
@@ -20,11 +21,11 @@ afterEach(function () {
 });
 
 test('registration page can be rendered', function () {
-    $this->get('/register')->assertSuccessful();
+    $this->get("{$this->schoolUrl}/register")->assertSuccessful();
 });
 
 test('user can register with valid data', function () {
-    $response = $this->post('/register', [
+    $response = $this->post("{$this->schoolUrl}/register", [
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'password' => 'Secret!Pass123#Secure',
@@ -41,7 +42,7 @@ test('user can register with valid data', function () {
 });
 
 test('registration fails when name is empty', function () {
-    $this->post('/register', [
+    $this->post("{$this->schoolUrl}/register", [
         'name' => '',
         'email' => 'john@example.com',
         'password' => 'Secret!Pass123#Secure',
@@ -50,7 +51,7 @@ test('registration fails when name is empty', function () {
 });
 
 test('registration fails when email is empty', function () {
-    $this->post('/register', [
+    $this->post("{$this->schoolUrl}/register", [
         'name' => 'John Doe',
         'email' => '',
         'password' => 'Secret!Pass123#Secure',
@@ -59,7 +60,7 @@ test('registration fails when email is empty', function () {
 });
 
 test('registration fails when email format is invalid', function () {
-    $this->post('/register', [
+    $this->post("{$this->schoolUrl}/register", [
         'name' => 'John Doe',
         'email' => 'not-an-email',
         'password' => 'Secret!Pass123#Secure',
@@ -70,7 +71,7 @@ test('registration fails when email format is invalid', function () {
 test('registration fails when email is already taken', function () {
     User::factory()->create(['email' => 'john@example.com']);
 
-    $this->post('/register', [
+    $this->post("{$this->schoolUrl}/register", [
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'password' => 'Secret!Pass123#Secure',
@@ -79,7 +80,7 @@ test('registration fails when email is already taken', function () {
 });
 
 test('registration fails when password is less than 8 characters', function () {
-    $this->post('/register', [
+    $this->post("{$this->schoolUrl}/register", [
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'password' => 'Sh0rt!',
@@ -88,7 +89,7 @@ test('registration fails when password is less than 8 characters', function () {
 });
 
 test('registration fails when password has no mixed case', function () {
-    $this->post('/register', [
+    $this->post("{$this->schoolUrl}/register", [
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'password' => 'password123#!',
@@ -97,7 +98,7 @@ test('registration fails when password has no mixed case', function () {
 });
 
 test('registration fails when password has no numbers', function () {
-    $this->post('/register', [
+    $this->post("{$this->schoolUrl}/register", [
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'password' => 'Password#!Secure',
@@ -106,7 +107,7 @@ test('registration fails when password has no numbers', function () {
 });
 
 test('registration fails when password has no symbols', function () {
-    $this->post('/register', [
+    $this->post("{$this->schoolUrl}/register", [
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'password' => 'Password123Secure',
@@ -115,7 +116,7 @@ test('registration fails when password has no symbols', function () {
 });
 
 test('registration fails when password confirmation does not match', function () {
-    $this->post('/register', [
+    $this->post("{$this->schoolUrl}/register", [
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'password' => 'Secret!Pass123#Secure',
@@ -126,7 +127,7 @@ test('registration fails when password confirmation does not match', function ()
 test('registration fails when tenant_id is passed in request', function () {
     $other = Tenant::factory()->create();
 
-    $this->post('/register', [
+    $this->post("{$this->schoolUrl}/register", [
         'name' => 'John Doe',
         'email' => 'john@example.com',
         'password' => 'Secret!Pass123#Secure',

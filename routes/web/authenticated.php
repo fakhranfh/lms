@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TierChangeController;
 use App\Livewire\ChangePassword;
 use App\Livewire\Dashboard;
 use App\Livewire\EditProfile;
@@ -27,4 +28,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/users', UserIndex::class)->middleware('permission:users.view')->name('users.index');
     Route::get('/users/{id}/roles', UserRoles::class)->middleware('permission:users.assign-roles')->name('users.roles.edit');
+
+    Route::get('/tier-management', [TierChangeController::class, 'show'])->name('tier-management.show');
+    Route::post('/tier-management/change', [TierChangeController::class, 'initiate'])->name('tier-management.change');
+    Route::post('/tier-management/cancel', [TierChangeController::class, 'cancel'])->name('tier-management.cancel');
 });

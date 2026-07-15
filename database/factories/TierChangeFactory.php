@@ -26,6 +26,7 @@ class TierChangeFactory extends Factory
             'to_tier_id' => PricingTier::factory(),
             'change_type' => TierChangeType::Initial,
             'reason' => null,
+            'proration_amount' => null,
             'changed_at' => $this->faker->dateTime(),
         ];
     }

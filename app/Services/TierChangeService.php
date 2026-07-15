@@ -1,0 +1,262 @@
+<?php
+
+namespace App\Services;
+
+use App\Enums\SubscriptionStatus;
+use App\Enums\TierChangeType;
+use App\Exceptions\TierChangeInProgressException;
+use App\Models\PaymentTransaction;
+use App\Models\PricingTier;
+use App\Models\School;
+use App\Models\SchoolPaymentGateway;
+use App\Models\SchoolTier;
+use App\Models\TierChange;
+use Carbon\Carbon;
+
+class TierChangeService
+{
+    public function __construct(
+        private readonly SubscriptionPaymentService $paymentService
+    ) {}
+
+    public function canUpgrade(School $school, PricingTier $newTier): bool
+    {
+        return $newTier->is_active && $newTier->price > $school->tier->price;
+    }
+
+    public function canDowngrade(School $school, PricingTier $newTier): bool
+    {
+        return $newTier->is_active && $newTier->price < $school->tier->price;
+    }
+
+    public function calculateProration(School $school, PricingTier $newTier): float
+    {
+        $currentTier = $school->tier;
+        if (! $currentTier || ! $school->getCurrentSchoolTier()) {
+            return 0.0;
+        }
+
+        $currentSubscription = $school->getCurrentSchoolTier();
+        if (! $currentSubscription->expires_at) {
+            return 0.0;
+        }
+
+        $remainingDays = Carbon::now()->diffInDays($currentSubscription->expires_at, false);
+        if ($remainingDays <= 0) {
+            return 0.0;
+        }
+
+        $billingPeriod = $currentTier->billing_period;
+        $daysInPeriod = $billingPeriod->value === 'monthly' ? 30 : 365;
+
+        $oldDailyRate = $currentTier->price / $daysInPeriod;
+        $newDailyRate = $newTier->price / $daysInPeriod;
+
+        return ($newDailyRate - $oldDailyRate) * $remainingDays;
+    }
+
+    public function initiateTierChange(
+        School $school,
+        PricingTier $newTier,
+        ?string $gatewayName = null
+    ): ?array {
+        // Check if a tier change is already in progress
+        if ($school->schoolTiers()->where('status', SubscriptionStatus::Pending)->exists()) {
+            throw new TierChangeInProgressException;
+        }
+
+        $currentTier = $school->tier;
+        $oldTierId = $currentTier->id;
+        $proration = $this->calculateProration($school, $newTier);
+        $isUpgrade = $newTier->price > $currentTier->price;
+        $isPaid = $newTier->price > 0;
+
+        // Immediate application for downgrades or free tiers
+        if (! $isUpgrade || ! $isPaid) {
+            return $this->applyImmediateChange($school, $newTier, $oldTierId, $proration);
+        }
+
+        // Payment-gated upgrade
+        $gateway = $this->resolveGateway($school, $gatewayName);
+
+        $schoolTier = SchoolTier::create([
+            'school_id' => $school->id,
+            'tier_id' => $newTier->id,
+            'status' => SubscriptionStatus::Pending,
+            'started_at' => now(),
+            'expires_at' => null,
+            'renewal_date' => null,
+            'auto_renew' => true,
+            'payment_method' => $gateway->paymentGatewayType->name,
+        ]);
+
+        $amount = max(0, $proration);
+
+        $transaction = PaymentTransaction::create([
+            'school_id' => $school->id,
+            'subscription_id' => $schoolTier->id,
+            'school_payment_gateway_id' => $gateway->id,
+            'transaction_id' => 'temp-'.uniqid(),
+            'amount' => $amount,
+            'currency' => $newTier->currency,
+            'status' => 'pending',
+            'metadata' => [
+                'from_tier_id' => $oldTierId,
+                'change_type' => TierChangeType::Upgrade->value,
+                'proration_amount' => $proration,
+            ],
+        ]);
+
+        $invoice = $this->paymentService->createPaymentInvoice(
+            $schoolTier,
+            $gateway,
+            $amount > 0 ? $amount : null
+        );
+
+        return $invoice;
+    }
+
+    public function cancelTierChange(School $school): bool
+    {
+        $pendingTier = $school->schoolTiers()
+            ->where('status', SubscriptionStatus::Pending)
+            ->first();
+
+        if (! $pendingTier) {
+            return false;
+        }
+
+        $pendingTier->update(['status' => SubscriptionStatus::Expired]);
+
+        $transaction = PaymentTransaction::where('subscription_id', $pendingTier->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($transaction) {
+            $transaction->update(['status' => 'failed']);
+        }
+
+        return true;
+    }
+
+    public function finalizeTierChange(PaymentTransaction $transaction): void
+    {
+        $schoolTier = $transaction->subscription;
+        if (! $schoolTier) {
+            return;
+        }
+
+        $school = $schoolTier->school;
+        $oldTierId = $school->tier_id;
+        $newTierId = $schoolTier->tier_id;
+
+        // Update school tier
+        $school->update(['tier_id' => $newTierId]);
+
+        // Update SchoolTier status
+        $schoolTier->update(['status' => SubscriptionStatus::Active]);
+
+        // Extract proration from metadata
+        $proration = $transaction->metadata['proration_amount'] ?? 0;
+        $changeType = match ($transaction->metadata['change_type'] ?? null) {
+            TierChangeType::Upgrade->value => TierChangeType::Upgrade,
+            TierChangeType::Downgrade->value => TierChangeType::Downgrade,
+            default => TierChangeType::Upgrade,
+        };
+
+        // Create audit trail
+        TierChange::create([
+            'school_tier_id' => $schoolTier->id,
+            'from_tier_id' => $oldTierId,
+            'to_tier_id' => $newTierId,
+            'change_type' => $changeType->value,
+            'proration_amount' => $proration,
+            'changed_at' => now(),
+        ]);
+    }
+
+    private function applyImmediateChange(
+        School $school,
+        PricingTier $newTier,
+        int $oldTierId,
+        float $proration
+    ): ?array {
+        $oldTier = PricingTier::find($oldTierId);
+
+        $newPrice = (float) $newTier->price;
+        $oldPrice = (float) $oldTier->price;
+
+        $changeType = ($newPrice < $oldPrice)
+            ? TierChangeType::Downgrade
+            : TierChangeType::Initial;
+
+        // Update school tier
+        $school->update(['tier_id' => $newTier->id]);
+
+        // Create SchoolTier record
+        $schoolTier = SchoolTier::create([
+            'school_id' => $school->id,
+            'tier_id' => $newTier->id,
+            'status' => SubscriptionStatus::Active,
+            'started_at' => now(),
+            'expires_at' => $newTier->price > 0 ? now()->addMonth() : null,
+            'renewal_date' => null,
+            'auto_renew' => true,
+            'payment_method' => null,
+        ]);
+
+        // Create audit trail
+        TierChange::create([
+            'school_tier_id' => $schoolTier->id,
+            'from_tier_id' => $oldTierId,
+            'to_tier_id' => $newTier->id,
+            'change_type' => $changeType->value,
+            'proration_amount' => $proration,
+            'changed_at' => now(),
+        ]);
+
+        // Best-effort refund for downgrade
+        if ($changeType === TierChangeType::Downgrade && $proration < 0) {
+            $this->attemptRefund($school, abs($proration));
+        }
+
+        return null;
+    }
+
+    private function resolveGateway(School $school, ?string $gatewayName): SchoolPaymentGateway
+    {
+        if ($gatewayName) {
+            $gateway = $school->paymentGateways()
+                ->where('is_enabled', true)
+                ->whereHas('paymentGatewayType', fn ($q) => $q->where('name', $gatewayName))
+                ->first();
+
+            if ($gateway) {
+                return $gateway;
+            }
+        }
+
+        // Fall back to first enabled gateway
+        $gateway = $school->paymentGateways()
+            ->where('is_enabled', true)
+            ->first();
+
+        if (! $gateway) {
+            throw new \RuntimeException('No payment gateway configured for school.');
+        }
+
+        return $gateway;
+    }
+
+    private function attemptRefund(School $school, float $amount): void
+    {
+        $lastTransaction = PaymentTransaction::where('school_id', $school->id)
+            ->where('status', 'completed')
+            ->latest('created_at')
+            ->first();
+
+        if ($lastTransaction) {
+            $this->paymentService->refundTransaction($lastTransaction, $amount);
+        }
+    }
+}

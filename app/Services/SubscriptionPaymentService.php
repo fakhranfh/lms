@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\PaymentStatus;
 use App\Enums\SubscriptionStatus;
+use App\Jobs\TierChangeJob;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentWebhook;
 use App\Models\SchoolPaymentGateway;
@@ -15,17 +16,19 @@ class SubscriptionPaymentService
         private readonly PaymentGatewayFactory $factory
     ) {}
 
-    public function createPaymentInvoice(SchoolTier $subscription, SchoolPaymentGateway $gateway): array
+    public function createPaymentInvoice(SchoolTier $subscription, SchoolPaymentGateway $gateway, ?float $amountOverride = null): array
     {
         $gatewayInstance = $this->factory->make(
             $gateway->paymentGatewayType->name,
             $gateway
         );
 
+        $amount = $amountOverride ?? $subscription->tier->price;
+
         return $gatewayInstance->createInvoice([
             'subscription_id' => $subscription->id,
             'school_id' => $subscription->school_id,
-            'amount' => $subscription->tier->price,
+            'amount' => $amount,
             'currency' => $subscription->tier->currency,
             'description' => "Subscription: {$subscription->tier->name}",
         ]);
@@ -52,11 +55,24 @@ class SubscriptionPaymentService
     public function completeSubscription(PaymentTransaction $transaction): void
     {
         if ($transaction->subscription) {
-            $transaction->subscription->update([
+            $subscription = $transaction->subscription;
+            $billingPeriod = $subscription->tier->billing_period;
+            $expiresAt = match ($billingPeriod->value) {
+                'monthly' => now()->addMonth(),
+                'yearly' => now()->addYear(),
+                default => now()->addMonth(),
+            };
+
+            $subscription->update([
                 'status' => SubscriptionStatus::Active,
                 'started_at' => now(),
-                'expires_at' => now()->addMonth(),
+                'expires_at' => $expiresAt,
             ]);
+
+            // Dispatch TierChangeJob if this is a tier change
+            if (isset($transaction->metadata['change_type'])) {
+                TierChangeJob::dispatch($transaction);
+            }
         }
     }
 

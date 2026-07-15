@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['school_tier_id', 'from_tier_id', 'to_tier_id', 'change_type', 'reason', 'changed_at'])]
+#[Fillable(['school_tier_id', 'from_tier_id', 'to_tier_id', 'change_type', 'reason', 'proration_amount', 'changed_at'])]
 class TierChange extends Model
 {
     /** @use HasFactory<TierChangeFactory> */
@@ -21,6 +21,7 @@ class TierChange extends Model
      */
     protected $casts = [
         'change_type' => TierChangeType::class,
+        'proration_amount' => 'decimal:2',
         'changed_at' => 'datetime',
     ];
 

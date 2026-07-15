@@ -30,6 +30,7 @@ use App\Services\PaymentGatewayRegistry;
 use App\Services\PaymentWebhookService;
 use App\Services\PricingTierService;
 use App\Services\SubscriptionPaymentService;
+use App\Services\TierChangeService;
 use App\Support\CurrentSchool;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
@@ -69,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PaymentGatewayFactory::class);
         $this->app->singleton(PricingTierService::class);
         $this->app->singleton(SubscriptionPaymentService::class);
+        $this->app->singleton(TierChangeService::class);
         $this->app->singleton(PaymentGatewayConfigService::class);
         $this->app->singleton(PaymentWebhookService::class);
     }

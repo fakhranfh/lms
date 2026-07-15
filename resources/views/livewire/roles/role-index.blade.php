@@ -59,6 +59,7 @@
     <!-- Delete Modal -->
     <div
         x-show="showModal"
+        x-cloak
         class="fixed inset-0 z-50"
     >
         <!-- Overlay -->

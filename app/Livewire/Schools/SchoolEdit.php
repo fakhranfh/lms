@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Schools;
 
+use App\Models\SchoolTier;
 use App\Services\PricingTierService;
 use App\Services\SchoolService;
 use App\Services\TierChangeService;

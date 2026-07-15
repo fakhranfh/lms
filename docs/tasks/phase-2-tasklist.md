@@ -638,6 +638,12 @@ Per-school pricing tier system where the school (as customer) chooses a tier tha
 
 ### Phase 2.1.6: Testing & Finalization
 
+#### UI/Polish Fixes
+- [ ] Fix white bar appearing behind tier change confirmation modal
+  - [ ] Add `backdrop-blur` or adjust modal z-index and overlay styling
+  - [ ] Ensure modal overlay covers entire viewport without gaps
+  - [ ] Test on different screen sizes
+
 #### Test Coverage
 - [ ] Run full test suite: `php artisan test --compact`
 - [ ] Verify 95%+ code coverage for tier-related code

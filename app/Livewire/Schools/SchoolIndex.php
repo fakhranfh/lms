@@ -23,7 +23,6 @@ class SchoolIndex extends Component
         abort_unless(auth()->user()->can('manage_schools') || auth()->user()->hasRole('admin'), 403);
     }
 
-    #[Computed(cache: true)]
     public function schools(): LengthAwarePaginator
     {
         $query = School::with('tier');

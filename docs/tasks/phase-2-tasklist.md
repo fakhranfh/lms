@@ -1,6 +1,6 @@
 # Phase 2: Subscription Schema & Pricing + Payment Gateway
 
-**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete, Phase 2.0B ✅ Complete, Phase 2.0C ✅ Complete, Phase 2.0D ✅ Complete, Phase 2.1.1 ✅ Complete, Phase 2.1.2 ✅ Complete, Phase 2.1.3 ✅ Complete, Phase 2.1.4 ✅ Complete)
+**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete, Phase 2.0B ✅ Complete, Phase 2.0C ✅ Complete, Phase 2.0D ✅ Complete, Phase 2.1.1 ✅ Complete, Phase 2.1.2 ✅ Complete, Phase 2.1.3 ✅ Complete, Phase 2.1.4 ✅ Complete, Phase 2.1.5 ✅ Complete)
 **Date Started:** 2026-07-14  
 **Prerequisites:** Phase 1 ✅ Complete
 **Phase 2.0A Completed:** 2026-07-14
@@ -11,6 +11,7 @@
 **Phase 2.1.2 Completed:** 2026-07-15
 **Phase 2.1.3 Completed:** 2026-07-15
 **Phase 2.1.4 Completed:** 2026-07-15
+**Phase 2.1.5 Completed:** 2026-07-15
 
 ---
 
@@ -572,66 +573,66 @@ Per-school pricing tier system where the school (as customer) chooses a tier tha
 
 ### Phase 2.1.5: Payment & Upgrade Flow
 
-#### Services
-- [ ] Create `app/Services/TierChangeService.php`
-  - `canUpgrade(School $school, PricingTier $newTier): bool`
-  - `canDowngrade(School $school, PricingTier $newTier): bool`
-  - `calculateProration(School $school, PricingTier $newTier): float`
-  - `initiateTierChange(School $school, PricingTier $newTier, string $gatewayName): ?array`
+#### Services ✅
+- [x] Create `app/Services/TierChangeService.php`
+  - [x] `canUpgrade(School $school, PricingTier $newTier): bool`
+  - [x] `canDowngrade(School $school, PricingTier $newTier): bool`
+  - [x] `calculateProration(School $school, PricingTier $newTier): float`
+  - [x] `initiateTierChange(School $school, PricingTier $newTier, string $gatewayName): ?array`
 
-#### Tier Change Flow UI
-- [ ] Create tier selection/comparison view
-  - Show current tier and available upgrade/downgrade options
-  - Display pricing and proration calculations
+#### Tier Change Flow UI ✅
+- [x] Create tier selection/comparison view
+  - [x] Show current tier and available upgrade/downgrade options
+  - [x] Display pricing and proration calculations
 
-- [ ] Create tier change confirmation view
-  - Show prorated amount
-  - Show payment method selection (if multiple gateways enabled)
+- [x] Create tier change confirmation view
+  - [x] Show prorated amount
+  - [x] Show payment method selection (if multiple gateways enabled)
 
-#### Proration Logic
-- [ ] Implement proration calculation
-  - Calculate remaining days in current subscription
-  - Calculate credit/charge for tier change
-  - Handle same-month changes
+#### Proration Logic ✅
+- [x] Implement proration calculation
+  - [x] Calculate remaining days in current subscription
+  - [x] Calculate credit/charge for tier change
+  - [x] Handle same-month changes
 
-#### Payment Integration
-- [ ] Integrate tier changes with payment gateway
-  - On tier upgrade: create payment invoice via gateway
-  - On tier downgrade: process refund via gateway
-  - Use existing `SubscriptionPaymentService` (Phase 2.0B)
+#### Payment Integration ✅
+- [x] Integrate tier changes with payment gateway
+  - [x] On tier upgrade: create payment invoice via gateway
+  - [x] On tier downgrade: process refund via gateway
+  - [x] Use existing `SubscriptionPaymentService` (Phase 2.0B)
 
-- [ ] Webhook handling for tier payment
-  - When payment succeeds: update SchoolTier status to active
-  - When payment fails: keep current tier, show error
+- [x] Webhook handling for tier payment
+  - [x] When payment succeeds: update SchoolTier status to active
+  - [x] When payment fails: keep current tier, show error
 
-- [ ] Create `TierChangeJob` for async processing
-  - Process tier change after payment confirmed
+- [x] Create `TierChangeJob` for async processing
+  - [x] Process tier change after payment confirmed
 
-#### Audit Trail
-- [ ] Create `TierChange` record on successful upgrade/downgrade
-  - Track old_tier, new_tier, change_type, proration_amount
-  - Create `tier_changes` audit log
+#### Audit Trail ✅
+- [x] Create `TierChange` record on successful upgrade/downgrade
+  - [x] Track old_tier, new_tier, change_type, proration_amount
+  - [x] Create `tier_changes` audit log
 
-#### Controllers
-- [ ] Create/Update `app/Http/Controllers/TierChangeController.php`
-  - `show()` - Show current tier & upgrade/downgrade options
-  - `initiate(Request $request)` - Initiate tier change with payment
-  - `cancel(Request $request)` - Cancel pending tier change
+#### Controllers ✅
+- [x] Create/Update `app/Http/Controllers/TierChangeController.php`
+  - [x] `show()` - Show current tier & upgrade/downgrade options
+  - [x] `initiate(Request $request)` - Initiate tier change with payment
+  - [x] `cancel(Request $request)` - Cancel pending tier change
 
-#### Routes
-- [ ] Add routes:
-  - `GET  /tier-management` - Show tier options & history
-  - `POST /tier-management/change` - Initiate tier change
-  - `POST /tier-management/cancel` - Cancel pending change
+#### Routes ✅
+- [x] Add routes:
+  - [x] `GET  /tier-management` - Show tier options & history
+  - [x] `POST /tier-management/change` - Initiate tier change
+  - [x] `POST /tier-management/cancel` - Cancel pending change
 
-#### Tests
-- [ ] Test: Upgrade tier flow (success & failure)
-- [ ] Test: Downgrade tier flow with proration
-- [ ] Test: Proration calculation accuracy
-- [ ] Test: Payment webhook handles tier changes
-- [ ] Test: Tier change audit trail created
-- [ ] Test: Cannot change tier while payment pending
-- [ ] Test: Concurrent tier changes prevented
+#### Tests ✅
+- [x] Test: Upgrade tier flow (success & failure)
+- [x] Test: Downgrade tier flow with proration
+- [x] Test: Proration calculation accuracy
+- [x] Test: Payment webhook handles tier changes
+- [x] Test: Tier change audit trail created
+- [x] Test: Cannot change tier while payment pending
+- [x] Test: Concurrent tier changes prevented
 
 ---
 

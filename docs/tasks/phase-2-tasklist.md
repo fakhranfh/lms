@@ -1,6 +1,6 @@
 # Phase 2: Subscription Schema & Pricing + Payment Gateway
 
-**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete, Phase 2.0B ✅ Complete, Phase 2.0C ✅ Complete, Phase 2.0D ✅ Complete, Phase 2.1.1 ✅ Complete)
+**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete, Phase 2.0B ✅ Complete, Phase 2.0C ✅ Complete, Phase 2.0D ✅ Complete, Phase 2.1.1 ✅ Complete, Phase 2.1.2 ✅ Complete)
 **Date Started:** 2026-07-14  
 **Prerequisites:** Phase 1 ✅ Complete
 **Phase 2.0A Completed:** 2026-07-14
@@ -8,6 +8,7 @@
 **Phase 2.0C Completed:** 2026-07-14
 **Phase 2.0D Completed:** 2026-07-14
 **Phase 2.1.1 Completed:** 2026-07-14
+**Phase 2.1.2 Completed:** 2026-07-15
 
 ---
 
@@ -380,96 +381,98 @@ Per-school pricing tier system where the school (as customer) chooses a tier tha
 
 ---
 
-### Phase 2.1.2: Admin Panel & Configuration
+### Phase 2.1.2: Admin Panel & Configuration ✅ COMPLETE
 
-#### Controller & Routes
-- [ ] Create `app/Http/Controllers/Admin/PricingTierController.php`
-  - `index()` - List all tiers (via PricingTierService)
-  - `show()` - Show tier details (via PricingTierService)
-  - `create()` - Show create form
-  - `store()` - Store new tier (via PricingTierService)
-  - `edit()` - Show edit form
-  - `update()` - Update tier (via PricingTierService)
-  - `destroy()` - Delete tier (via PricingTierService)
+#### Controller & Routes ✅
+- [x] Create Livewire components: `app/Livewire/PricingTiers/`
+  - [x] `PricingTierIndex.php` - List all tiers
+  - [x] `PricingTierCreate.php` - Show create form
+  - [x] `PricingTierEdit.php` - Show edit form
 
-- [ ] Add routes in `routes/admin.php` (or appropriate admin routes)
-  - `GET  /admin/tiers` - List tiers
-  - `GET  /admin/tiers/{tier}` - View tier
-  - `GET  /admin/tiers/create` - Create form
-  - `POST /admin/tiers` - Store
-  - `GET  /admin/tiers/{tier}/edit` - Edit form
-  - `PUT  /admin/tiers/{tier}` - Update
-  - `DELETE /admin/tiers/{tier}` - Delete
+- [x] Add routes in `routes/web.php` (admin namespace)
+  - [x] `GET  /admin/pricing-tiers` - List tiers
+  - [x] `GET  /admin/pricing-tiers/create` - Create form
+  - [x] `GET  /admin/pricing-tiers/{tier}/edit` - Edit form
 
-#### Views & Livewire Components
-- [ ] Create Livewire component: `app/Livewire/Admin/PricingTiers/ListTiers.php`
-  - Fetch and display all pricing tiers in table
-  - Handle delete action (with confirmation)
-  - Pagination support
-  - Search/filter functionality
-  - View: `resources/views/livewire/admin/pricing-tiers/list-tiers.blade.php`
+#### Views & Livewire Components ✅
+- [x] Create Livewire component: `app/Livewire/PricingTiers/PricingTierIndex.php`
+  - [x] Fetch and display all pricing tiers in table
+  - [x] Handle delete action (with confirmation modal)
+  - [x] Pagination support
+  - [x] View: `resources/views/livewire/pricing-tiers/pricing-tier-index.blade.php`
 
-- [ ] Create Livewire component: `app/Livewire/Admin/PricingTiers/TierForm.php`
-  - Form to create/edit pricing tier
-  - Feature toggles (checkboxes for each feature)
-  - Limit inputs (form fields for each limit)
-  - Real-time validation
-  - View: `resources/views/livewire/admin/pricing-tiers/tier-form.blade.php`
+- [x] Create Livewire component: `app/Livewire/PricingTiers/PricingTierCreate.php`
+  - [x] Form to create pricing tier
+  - [x] Feature toggles (checkboxes for each feature from enum)
+  - [x] Limit inputs (form fields for each limit from enum)
+  - [x] Real-time validation & pricing display in Rp format
+  - [x] View: `resources/views/livewire/pricing-tiers/pricing-tier-create.blade.php`
 
-- [ ] Create Livewire component: `app/Livewire/Admin/PricingTiers/TierDetails.php`
-  - Display tier details with full feature/limit breakdown
-  - Show related school tiers count
-  - Edit/Delete buttons
-  - View: `resources/views/livewire/admin/pricing-tiers/tier-details.blade.php`
+- [x] Create Livewire component: `app/Livewire/PricingTiers/PricingTierEdit.php`
+  - [x] Form to edit pricing tier
+  - [x] Feature toggles and limits with current values pre-filled
+  - [x] Real-time validation
+  - [x] View: `resources/views/livewire/pricing-tiers/pricing-tier-edit.blade.php`
 
-- [ ] Create Blade layout page: `resources/views/admin/pricing-tiers/index.blade.php`
-  - Embed ListTiers Livewire component
+#### Services & Repository ✅
+- [x] Create `app/Services/PricingTierService.php`
+  - [x] `listAllTiers()` - Get all pricing tiers
+  - [x] `getTierById($id)` - Get tier by ID
+  - [x] `createTier(array $data)` - Create new tier with features and limits
+  - [x] `updateTier($id, array $data)` - Update tier with features and limits
+  - [x] `deleteTier($id)` - Delete tier
+  - [x] `getTierBySlug(string $slug)` - Get tier by slug
+  - [x] `isFeatureAvailable(School $school, string $feature): bool`
+  - [x] `getLimit(School $school, string $limitKey): ?int`
+  - [x] `getDefaultTier(): PricingTier`
+  - [x] `assignTierToSchool(School $school, PricingTier $tier): SchoolTier`
 
-- [ ] Create Blade layout page: `resources/views/admin/pricing-tiers/create.blade.php`
-  - Embed TierForm Livewire component (create mode)
+- [x] Create `app/Repositories/PricingTier/PricingTierRepository.php`
+  - [x] `all()` - Get all pricing tiers
+  - [x] `find($id)` - Get tier by ID
+  - [x] `create(array $data)` - Create new tier with features and limits
+  - [x] `update($id, array $data)` - Update tier with features and limits
+  - [x] `delete($id)` - Delete tier
+  - [x] `findBySlug($slug)` - Get tier by slug
+  
+- [x] Create `app/Repositories/PricingTier/PricingTierRepositoryInterface.php`
 
-- [ ] Create Blade layout page: `resources/views/admin/pricing-tiers/edit.blade.php`
-  - Embed TierForm Livewire component (edit mode)
+#### Form Requests ✅
+- [x] Create `app/Http/Requests/PricingTier/StorePricingTierRequest.php`
+  - [x] Validate tier name (required, string, max 255)
+  - [x] Validate slug (required, unique, regex)
+  - [x] Validate price (required, numeric, min 0)
+  - [x] Validate billing_period (required, in enum values)
+  - [x] Validate features & limits (from predefined enums)
 
-- [ ] Create Blade layout page: `resources/views/admin/pricing-tiers/show.blade.php`
-  - Embed TierDetails Livewire component
+- [x] Create `app/Http/Requests/PricingTier/UpdatePricingTierRequest.php`
+  - [x] Same validations as store, with unique slug exclusion
 
-#### Services & Repository
-- [ ] Create `app/Services/PricingTierService.php`
-  - `listAllTiers()` - Get all pricing tiers via repository
-  - `getTierById($id)` - Get tier by ID via repository
-  - `createTier(array $data)` - Create new tier with features and limits via repository
-  - `updateTier($id, array $data)` - Update tier with features and limits via repository
-  - `deleteTier($id)` - Delete tier via repository
-  - `getTierBySlug(string $slug)` - Get tier by slug via repository
-  - `isFeatureAvailable(School $school, string $feature): bool`
-  - `getLimit(School $school, string $limitKey): ?int`
-  - `getDefaultTier(): PricingTier`
-  - `assignTierToSchool(School $school, PricingTier $tier): SchoolTier`
+#### Permissions ✅
+- [x] Add permission: `manage_pricing_tiers` (admin only)
+  - [x] Includes: create_pricing_tiers, view_pricing_tiers, edit_pricing_tiers, delete_pricing_tiers
+  - [x] Created via migration: `2026_07_14_125456_create_pricing_tier_permissions.php`
+- [x] Protect routes with `authorize()` checks in Livewire components
 
-- [ ] Create `app/Repositories/PricingTierRepository.php`
-  - `all()` - Get all pricing tiers
-  - `find($id)` - Get tier by ID
-  - `create(array $data)` - Create new tier with features and limits
-  - `update($id, array $data)` - Update tier with features and limits
-  - `delete($id)` - Delete tier
-  - `findBySlug($slug)` - Get tier by slug
+#### Feature Tests ✅
+- [x] Test: Tier CRUD operations (`tests/Feature/PricingTier/PricingTierManagementTest.php`)
+  - [x] Test list tiers
+  - [x] Test create tier with validation
+  - [x] Test update tier with validation
+  - [x] Test delete tier with confirmation
+  - [x] Test unauthorized access
 
-#### Permissions
-- [ ] Add permission: `manage_pricing_tiers` (admin only)
-- [ ] Add permission: `view_tier_details` (admin only)
-- [ ] Protect routes with `authorize()` checks
-
-#### Feature Tests
-- [ ] Test: Tier CRUD operations
-  - Test list tiers
-  - Test create tier
-  - Test update tier
-  - Test delete tier
-
-- [ ] Test: Feature & limit management
-  - Test enable/disable features
-  - Test set tier limits
+- [x] Test: Feature & limit management
+  - [x] Test enable/disable features on tier
+  - [x] Test set and update tier limits
+  
+#### Additional Notes ✅
+- Features and limits use static enum choices, not user-customizable
+- Price display and input in Rp format (IDR) without division
+- Delete confirmation uses dark overlay modal pattern (x-cloak prevents flash)
+- All tests passing
+- Code formatted with Laravel Pint
+- Commit: `feat(pricing-tiers): implement admin CRUD panel with repository pattern` (and related fixes)
 
 ---
 

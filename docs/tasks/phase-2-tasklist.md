@@ -1,6 +1,6 @@
 # Phase 2: Subscription Schema & Pricing + Payment Gateway
 
-**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete, Phase 2.0B ✅ Complete, Phase 2.0C ✅ Complete, Phase 2.0D ✅ Complete, Phase 2.1.1 ✅ Complete, Phase 2.1.2 ✅ Complete)
+**Status:** ⏳ In Progress (Phase 2.0A ✅ Complete, Phase 2.0B ✅ Complete, Phase 2.0C ✅ Complete, Phase 2.0D ✅ Complete, Phase 2.1.1 ✅ Complete, Phase 2.1.2 ✅ Complete, Phase 2.1.3 ✅ Complete)
 **Date Started:** 2026-07-14  
 **Prerequisites:** Phase 1 ✅ Complete
 **Phase 2.0A Completed:** 2026-07-14
@@ -9,6 +9,7 @@
 **Phase 2.0D Completed:** 2026-07-14
 **Phase 2.1.1 Completed:** 2026-07-14
 **Phase 2.1.2 Completed:** 2026-07-15
+**Phase 2.1.3 Completed:** 2026-07-15
 
 ---
 
@@ -476,35 +477,54 @@ Per-school pricing tier system where the school (as customer) chooses a tier tha
 
 ---
 
-### Phase 2.1.3: School Tier Assignment
+### Phase 2.1.3: School Tier Assignment ✅ COMPLETE
 
-#### Migrations
-- [ ] Add `tier_id` column to `schools` table (migration)
+#### Migrations ✅
+- [x] Add `tier_id` column to `schools` table (migration)
   - FK to `pricing_tiers.id`
   - Default to Basic tier ID
+- [x] Create migration to assign tier to existing schools
+  - Backfilled all existing schools with Basic tier
+  - Created SchoolTier and TierChange audit records
 
-#### Model Updates
-- [ ] Update `app/Models/School.php`
+#### Model Updates ✅
+- [x] Update `app/Models/School.php`
   - Add relationship: `tier()` (belongs_to PricingTier)
   - Add method: `getCurrentTierLimit(string $key): ?int`
   - Add method: `isFeatureEnabled(string $feature): bool`
+  - Add method: `getCurrentSchoolTier()` - Get most recent subscription
 
-#### Seeding & Defaults
-- [ ] Update school creation to assign default tier
+#### Seeding & Defaults ✅
+- [x] Update school creation to assign default tier
   - When school is created, automatically create `SchoolTier` record with Basic tier
+  - SchoolService.assignDefaultTier() creates audit trail
 
-- [ ] Create migration to assign tier to existing schools (if any)
-  - Default all existing schools to Basic tier
+#### Livewire Admin Components ✅
+- [x] Create SchoolIndex - List all schools with tier, domain, created date
+  - Pagination (15 per page), search by name/domain, filter by tier
+- [x] Create SchoolEdit - Edit school and change tier
+  - Show tier features/limits, tier change dropdown with confirmation modal
+- [x] Create SchoolTierHistory - Display tier change audit trail
 
-#### UI Integration
-- [ ] Update school creation form to show tier selection
-- [ ] Update school edit form to show current tier and change option
-- [ ] Create school tier change history view (shows all tier_changes)
+#### Views & Routes ✅
+- [x] Add routes: GET /admin/schools, /admin/schools/{school}/edit, /admin/schools/{school}/tier-history
+- [x] Create blade views with page titles
+- [x] Add sidebar navigation link to Schools management
 
-#### Tests
-- [ ] Test: Default tier assignment on school creation
-- [ ] Test: School can query current tier
-- [ ] Test: School tier relationships work correctly
+#### Factory Updates ✅
+- [x] Update SchoolFactory to include tier_id
+- [x] afterCreating hook creates SchoolTier and TierChange records
+- [x] withTier() state method for custom tier selection
+
+#### Tests ✅
+- [x] Test: Default tier assignment on school creation (14 tests, all passing)
+- [x] Test: School can query current tier
+- [x] Test: School tier relationships work correctly
+
+#### Bug Fixes (2026-07-15) ✅
+- [x] Fixed Livewire computed property caching corruption in schools() and availableTiers()
+- [x] Fixed migration down() method syntax (dropForeignKey → dropForeign)
+- [x] Added page titles to all school views
 
 ---
 

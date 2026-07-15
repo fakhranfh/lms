@@ -64,10 +64,14 @@ jobs:
       env:
         DB_CONNECTION: sqlite
         DB_DATABASE: database/database.sqlite
+        APP_URL: http://lms.local
+        APP_DOMAIN: lms.local
       run: php artisan migrate --force
 
     - name: Execute tests (Unit and Feature tests) via Pest
       env:
         DB_CONNECTION: sqlite
         DB_DATABASE: database/database.sqlite
+        APP_URL: http://lms.local
+        APP_DOMAIN: lms.local
       run: php artisan test --compact

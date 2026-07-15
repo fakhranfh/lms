@@ -32,6 +32,16 @@ describe('when FEATURE_EMAIL_ENABLED is false', function () {
     });
 
     test('forgot password route is not registered', function () {
+        fwrite(STDERR, "\nDEBUG env(FEATURE_EMAIL_ENABLED)=".var_export(env('FEATURE_EMAIL_ENABLED'), true)
+            ."\nDEBUG getenv(FEATURE_EMAIL_ENABLED)=".var_export(getenv('FEATURE_EMAIL_ENABLED'), true)
+            ."\nDEBUG \$_ENV=".var_export($_ENV['FEATURE_EMAIL_ENABLED'] ?? null, true)
+            ."\nDEBUG \$_SERVER=".var_export($_SERVER['FEATURE_EMAIL_ENABLED'] ?? null, true)
+            ."\nDEBUG config(features.email_enabled)=".var_export(config('features.email_enabled'), true)
+            ."\nDEBUG config(fortify.features)=".var_export(config('fortify.features'), true)
+            ."\nDEBUG app config cached=".var_export(app()->configurationIsCached(), true)
+            ."\nDEBUG app routes cached=".var_export(app()->routesAreCached(), true)
+            ."\n");
+
         expect(Route::has('password.request'))->toBeFalse();
 
         $this->get('/forgot-password')->assertNotFound();

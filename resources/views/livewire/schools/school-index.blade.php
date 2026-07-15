@@ -1,3 +1,5 @@
+@section('title', 'Schools')
+
 <div class="space-y-space-lg">
     <div class="flex items-center justify-between">
         <h1 class="text-headline-lg font-headline-lg">Schools Management</h1>

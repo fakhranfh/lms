@@ -1,3 +1,5 @@
+@section('title', 'Tier Change History - ' . $this->school->name)
+
 <div class="space-y-space-lg">
     <div class="flex items-center justify-between">
         <h1 class="text-headline-lg font-headline-lg">Tier Change History</h1>

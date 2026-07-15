@@ -40,7 +40,7 @@ class SchoolIndex extends Component
         return $query->paginate(15);
     }
 
-    #[Computed(cache: true)]
+    #[Computed]
     public function availableTiers(): Collection
     {
         return PricingTier::where('is_active', true)->get();

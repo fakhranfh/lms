@@ -57,9 +57,9 @@ class SchoolIndex extends Component
     }
 
     #[Computed]
-    public function schools(SchoolService $schoolService): LengthAwarePaginator
+    public function schools(): LengthAwarePaginator
     {
-        return $schoolService->paginate(
+        return resolve(SchoolService::class)->paginate(
             filters: [
                 'search' => $this->search,
                 'tier_id' => $this->filterTier,

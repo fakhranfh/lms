@@ -33,15 +33,15 @@ class SchoolEdit extends Component
     }
 
     #[Computed]
-    public function school(SchoolService $schoolService)
+    public function school()
     {
-        return $schoolService->findWith($this->schoolId, ['tier', 'schoolTiers']);
+        return resolve(SchoolService::class)->findWith($this->schoolId, ['tier', 'schoolTiers']);
     }
 
     #[Computed]
-    public function availableTiers(PricingTierService $pricingTierService): BaseCollection
+    public function availableTiers(): BaseCollection
     {
-        return $pricingTierService->get(['is_active' => true]);
+        return resolve(PricingTierService::class)->get(['is_active' => true]);
     }
 
     #[Computed]

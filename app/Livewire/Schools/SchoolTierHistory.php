@@ -12,21 +12,21 @@ class SchoolTierHistory extends Component
 {
     public string $schoolId;
 
-    public function mount(string $schoolId, SchoolService $schoolService): void
+    public function mount(string $school, SchoolService $schoolService): void
     {
-        $this->schoolId = $schoolId;
+        $this->schoolId = $school;
 
         abort_unless(auth()->user()->can('manage_schools') || auth()->user()->hasRole('admin'), 403);
 
-        if (! $schoolService->find($schoolId)) {
+        if (! $schoolService->find($school)) {
             abort(404, 'School not found');
         }
     }
 
     #[Computed]
-    public function school(SchoolService $schoolService)
+    public function school()
     {
-        return $schoolService->find($this->schoolId);
+        return resolve(SchoolService::class)->find($this->schoolId);
     }
 
     #[Computed]

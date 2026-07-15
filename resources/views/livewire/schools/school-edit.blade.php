@@ -114,7 +114,7 @@
                         </select>
                     </div>
 
-                    <button wire:click="initiateChange" class="w-full h-[44px] mt-space-lg bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-on-primary-fixed-variant active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed" {{ !$newTierId ? 'disabled' : '' }}>
+                    <button wire:click="initiateChange" :disabled="!$wire.newTierId" class="w-full h-[44px] mt-space-lg bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-on-primary-fixed-variant active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                         Change Tier
                     </button>
                 </div>

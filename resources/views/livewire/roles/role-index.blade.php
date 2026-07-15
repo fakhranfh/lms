@@ -1,6 +1,6 @@
 @section('title', 'Roles')
 
-<div class="space-y-space-lg">
+<div class="space-y-space-lg" x-data="{ deleteId: null }" @confirm-delete.window="deleteId && Livewire.dispatch('action', { method: 'destroy', id: deleteId }); deleteId = null">
     @if ($successMessage)
         <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
             <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
@@ -42,7 +42,7 @@
                             <td class="px-space-lg py-space-md text-right space-x-space-sm whitespace-nowrap">
                                 <a href="{{ route('roles.edit', $role) }}" class="font-label-md text-label-md text-primary hover:underline">Edit</a>
                                 @unless ($role->name === 'admin')
-                                    <button type="button" wire:click="destroy({{ $role->id }})" wire:confirm="Delete this role?" class="font-label-md text-label-md text-error hover:underline">Delete</button>
+                                    <button type="button" @click="deleteId = {{ $role->id }}; window.dispatchEvent(new CustomEvent('delete-modal-open'))" class="font-label-md text-label-md text-error hover:underline">Delete</button>
                                 @endunless
                             </td>
                         </tr>
@@ -55,4 +55,19 @@
             </table>
         </div>
     </div>
+
+    <x-delete-modal
+        title="Delete Role"
+        message="Are you sure you want to delete this role? This action cannot be undone."
+        resourceName="role"
+    />
 </div>
+
+<script>
+document.addEventListener('confirm-delete', function() {
+    const deleteId = document.querySelector('[x-data]')?.__x?.deleteId;
+    if (deleteId) {
+        @this.call('destroy', deleteId);
+    }
+});
+</script>

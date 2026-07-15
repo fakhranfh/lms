@@ -22,13 +22,13 @@ class SchoolEdit extends Component
 
     public ?string $errorMessage = null;
 
-    public function mount(string $schoolId): void
+    public function mount(string $school): void
     {
-        $this->schoolId = $schoolId;
+        $this->schoolId = $school;
 
         abort_unless(auth()->user()->can('manage_schools') || auth()->user()->hasRole('admin'), 403);
 
-        if (! School::find($schoolId)) {
+        if (! School::find($school)) {
             abort(404, 'School not found');
         }
     }
@@ -56,13 +56,13 @@ class SchoolEdit extends Component
     #[Computed]
     public function tierFeatures(): BaseCollection
     {
-        return $this->school->tier?->features() ?? collect();
+        return $this->school->tier?->features()->get() ?? collect();
     }
 
     #[Computed]
     public function tierLimits(): BaseCollection
     {
-        return $this->school->tier?->limits() ?? collect();
+        return $this->school->tier?->limits()->get() ?? collect();
     }
 
     public function initiateChange(): void

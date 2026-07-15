@@ -46,6 +46,16 @@ class SchoolIndex extends Component
         $this->perPage = $perPage;
     }
 
+    public function sortBy(string $field): void
+    {
+        if ($this->sort === $field) {
+            $this->direction = $this->direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sort = $field;
+            $this->direction = 'asc';
+        }
+    }
+
     #[Computed]
     public function schools(): LengthAwarePaginator
     {

@@ -20,7 +20,24 @@
 
 <!-- Table -->
 <div class="bg-surface rounded-lg border border-outline-variant overflow-hidden">
-    <div class="overflow-x-auto">
+    <!-- Skeleton (shown while loading) -->
+    <div wire:loading.block wire:target="search,filterTier,sortBy,perPage">
+        <div class="grid border-b border-outline-variant bg-surface-container" style="grid-template-columns: repeat(5, minmax(0, 1fr));">
+            @for ($i = 0; $i < 5; $i++)
+                <div class="px-space-lg py-space-md"><div class="h-4 w-24 rounded bg-outline-variant/60 animate-pulse"></div></div>
+            @endfor
+        </div>
+        @for ($row = 0; $row < 5; $row++)
+            <div class="grid border-b border-outline-variant last:border-0" style="grid-template-columns: repeat(5, minmax(0, 1fr));">
+                @for ($i = 0; $i < 5; $i++)
+                    <div class="px-space-lg py-space-md"><div class="h-4 w-full max-w-32 rounded bg-outline-variant/40 animate-pulse"></div></div>
+                @endfor
+            </div>
+        @endfor
+    </div>
+
+    <!-- Table (hidden while loading) -->
+    <div wire:loading.remove wire:target="search,filterTier,sortBy,perPage" class="overflow-x-auto">
         <table class="w-full">
             <thead class="bg-surface-container border-b border-outline-variant">
                 <tr>
@@ -60,7 +77,7 @@
             </thead>
             <tbody class="divide-y divide-outline-variant">
                 @forelse($schools as $school)
-                    <tr class="hover:bg-surface-container-lowest transition-colors">
+                    <tr wire:key="school-{{ $school->id }}" class="hover:bg-surface-container-lowest transition-colors">
                         <td class="px-space-lg py-space-md text-body-md text-on-surface">
                             <a href="{{ route('admin.schools.edit', $school) }}" class="text-primary hover:underline">
                                 {{ $school->name }}

@@ -41,4 +41,10 @@ return [
         'active_pattern' => 'admin.pricing-tiers.*',
         'requires_permission' => 'pricing-tiers.view',
     ],
+    [
+        'label' => 'Schools',
+        'route' => 'admin.schools.index',
+        'icon' => 'school',
+        'active_pattern' => 'admin.schools.*',
+    ],
 ];

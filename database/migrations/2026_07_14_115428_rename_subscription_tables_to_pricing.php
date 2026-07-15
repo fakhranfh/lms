@@ -36,10 +36,12 @@ return new class extends Migration
         });
 
         Schema::rename('subscriptions', 'school_tiers');
-        Schema::table('school_tiers', function (Blueprint $table) {
-            $table->dropForeign('subscriptions_tier_id_foreign');
-            $table->foreign('tier_id')->references('id')->on('pricing_tiers');
-        });
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            Schema::table('school_tiers', function (Blueprint $table) {
+                $table->dropForeign('subscriptions_tier_id_foreign');
+                $table->foreign('tier_id')->references('id')->on('pricing_tiers');
+            });
+        }
 
         Schema::create('tier_changes', function (Blueprint $table) {
             $table->uuid('id')->primary();
@@ -164,10 +166,12 @@ return new class extends Migration
         Schema::dropIfExists('tier_limits');
         Schema::dropIfExists('tier_features');
 
-        Schema::table('school_tiers', function (Blueprint $table) {
-            $table->dropForeign('school_tiers_tier_id_foreign');
-            $table->foreign('tier_id')->references('id')->on('subscription_tiers');
-        });
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            Schema::table('school_tiers', function (Blueprint $table) {
+                $table->dropForeign('school_tiers_tier_id_foreign');
+                $table->foreign('tier_id')->references('id')->on('subscription_tiers');
+            });
+        }
         Schema::rename('school_tiers', 'subscriptions');
 
         Schema::table('pricing_tiers', function (Blueprint $table) {

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -25,11 +26,26 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        // Get or create the basic tier
+        $basicTier = PricingTier::where('slug', 'basic')->first();
+        if (!$basicTier) {
+            $basicTier = PricingTier::create([
+                'name' => 'Basic',
+                'slug' => 'basic',
+                'description' => 'Free tier for getting started',
+                'price' => 0,
+                'currency' => 'IDR',
+                'billing_period' => \App\Enums\BillingPeriod::Monthly->value,
+                'is_active' => true,
+            ]);
+        }
+
         // Create school directly to avoid factory trait closure issues
         $school = School::create([
             'id' => Str::uuid(),
             'name' => fake()->company(),
             'domain' => fake()->unique()->domainName(),
+            'tier_id' => $basicTier->id,
         ]);
 
         return [

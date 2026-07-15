@@ -21,13 +21,24 @@ class SchoolFactory extends Factory
      */
     public function definition(): array
     {
-        // Get the basic tier ID; default to 1 if not found (will be set correctly after seeding)
-        $basicTierId = PricingTier::where('slug', 'basic')->value('id') ?? 1;
+        // Get or create the basic tier
+        $basicTier = PricingTier::where('slug', 'basic')->first();
+        if (!$basicTier) {
+            $basicTier = PricingTier::create([
+                'name' => 'Basic',
+                'slug' => 'basic',
+                'description' => 'Free tier for getting started',
+                'price' => 0,
+                'currency' => 'IDR',
+                'billing_period' => \App\Enums\BillingPeriod::Monthly->value,
+                'is_active' => true,
+            ]);
+        }
 
         return [
             'name' => fake()->company(),
             'domain' => fake()->unique()->domainName(),
-            'tier_id' => $basicTierId,
+            'tier_id' => $basicTier->id,
         ];
     }
 

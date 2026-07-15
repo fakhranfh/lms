@@ -76,7 +76,19 @@ class PricingTierEdit extends Component
      */
     protected function rules(): array
     {
-        return (new UpdatePricingTierRequest)->rules();
+        return [
+            'name' => ['required', 'string', 'max:255', 'unique:pricing_tiers,name,'.$this->tier->id],
+            'description' => ['required', 'string'],
+            'price' => ['required', 'integer', 'min:0'],
+            'billing_period' => ['required', 'in:monthly,yearly'],
+            'is_active' => ['boolean'],
+            'features' => ['array'],
+            'features.*.feature_key' => ['required', 'string'],
+            'features.*.is_enabled' => ['boolean'],
+            'limits' => ['array'],
+            'limits.*.limit_key' => ['required', 'string'],
+            'limits.*.limit_value' => ['nullable', 'integer', 'min:0'],
+        ];
     }
 
     public function update(PricingTierService $tierService)

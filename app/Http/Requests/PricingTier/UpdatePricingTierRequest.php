@@ -18,8 +18,10 @@ class UpdatePricingTierRequest extends FormRequest
      */
     public function rules(): array
     {
+        $tierId = $this->route('tier')?->id ?? $this->input('tier_id');
+
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('pricing_tiers', 'name')->ignore($this->route('tier'))],
+            'name' => ['required', 'string', 'max:255', Rule::unique('pricing_tiers', 'name')->ignore($tierId)],
             'description' => ['required', 'string'],
             'price' => ['required', 'integer', 'min:0'],
             'billing_period' => ['required', Rule::enum(BillingPeriod::class)],

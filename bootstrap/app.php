@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckFeatureAccess;
 use App\Http\Middleware\PreservePasswordUpdateErrors;
 use App\Http\Middleware\ResolveSchoolFromDomain;
 use App\Http\Middleware\SecurityHeaders;
@@ -27,8 +28,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(prepend: [ResolveSchoolFromDomain::class]);
 
         $middleware->alias([
-            'role' => RoleMiddleware::class,
+            'feature' => CheckFeatureAccess::class,
             'permission' => PermissionMiddleware::class,
+            'role' => RoleMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
     })

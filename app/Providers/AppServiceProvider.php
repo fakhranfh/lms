@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Enums\TierFeature;
 use App\Http\Responses\CustomAuthenticatedSessionResponse;
 use App\Http\Responses\CustomVerifyEmailViewResponse;
 use App\Listeners\UpdateUserTimezoneOnLogin;
@@ -22,6 +23,7 @@ use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepositoryInterfac
 use App\Repositories\User\UserRepository;
 use App\Repositories\User\UserRepositoryInterface;
 use App\Services\CredentialEncryption;
+use App\Services\FeatureGateService;
 use App\Services\PaymentGatewayConfigService;
 use App\Services\PaymentGatewayFactory;
 use App\Services\PaymentGatewayRegistry;
@@ -62,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(CurrentSchool::class);
 
         $this->app->singleton(CredentialEncryption::class);
+        $this->app->singleton(FeatureGateService::class);
         $this->app->singleton(PaymentGatewayRegistry::class);
         $this->app->singleton(PaymentGatewayFactory::class);
         $this->app->singleton(PricingTierService::class);
@@ -76,6 +79,20 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(User::class, UserPolicy::class);
+
+        $this->registerFeatureGates();
+
         Event::listen(Login::class, UpdateUserTimezoneOnLogin::class);
+    }
+
+    private function registerFeatureGates(): void
+    {
+        $featureGate = $this->app->make(FeatureGateService::class);
+
+        foreach (TierFeature::cases() as $feature) {
+            Gate::define("use-{$feature->value}", function (User $user) use ($featureGate, $feature) {
+                return $featureGate->can($user, $feature);
+            });
+        }
     }
 }

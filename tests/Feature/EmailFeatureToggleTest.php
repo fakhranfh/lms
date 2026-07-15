@@ -2,6 +2,7 @@
 
 use App\Livewire\EditProfile;
 use App\Models\User;
+use Illuminate\Support\Env;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
@@ -21,6 +22,15 @@ describe('when FEATURE_EMAIL_ENABLED is false', function () {
         putenv('FEATURE_EMAIL_ENABLED=false');
         $_ENV['FEATURE_EMAIL_ENABLED'] = 'false';
         $_SERVER['FEATURE_EMAIL_ENABLED'] = 'false';
+
+        // Illuminate\Support\Env caches its Dotenv repository as a process-wide
+        // static. That repository's immutable writer remembers which keys it
+        // already loaded from .env, so a later refreshApplication() reboot
+        // re-loads .env and silently overwrites our override back to its
+        // original value. Force a fresh repository so the override sticks.
+        Env::disablePutenv();
+        Env::enablePutenv();
+
         $this->refreshApplication();
         $this->beginDatabaseTransaction();
     });
@@ -29,19 +39,11 @@ describe('when FEATURE_EMAIL_ENABLED is false', function () {
         putenv('FEATURE_EMAIL_ENABLED=true');
         $_ENV['FEATURE_EMAIL_ENABLED'] = 'true';
         $_SERVER['FEATURE_EMAIL_ENABLED'] = 'true';
+        Env::disablePutenv();
+        Env::enablePutenv();
     });
 
     test('forgot password route is not registered', function () {
-        fwrite(STDERR, "\nDEBUG env(FEATURE_EMAIL_ENABLED)=".var_export(env('FEATURE_EMAIL_ENABLED'), true)
-            ."\nDEBUG getenv(FEATURE_EMAIL_ENABLED)=".var_export(getenv('FEATURE_EMAIL_ENABLED'), true)
-            ."\nDEBUG \$_ENV=".var_export($_ENV['FEATURE_EMAIL_ENABLED'] ?? null, true)
-            ."\nDEBUG \$_SERVER=".var_export($_SERVER['FEATURE_EMAIL_ENABLED'] ?? null, true)
-            ."\nDEBUG config(features.email_enabled)=".var_export(config('features.email_enabled'), true)
-            ."\nDEBUG config(fortify.features)=".var_export(config('fortify.features'), true)
-            ."\nDEBUG app config cached=".var_export(app()->configurationIsCached(), true)
-            ."\nDEBUG app routes cached=".var_export(app()->routesAreCached(), true)
-            ."\n");
-
         expect(Route::has('password.request'))->toBeFalse();
 
         $this->get('/forgot-password')->assertNotFound();

@@ -22,15 +22,14 @@ class StorePricingTierRequest extends FormRequest
             'name' => ['required', 'string', 'max:255', 'unique:pricing_tiers,name'],
             'slug' => ['required', 'string', 'max:255', 'unique:pricing_tiers,slug'],
             'description' => ['required', 'string'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'currency' => ['required', 'string', 'max:3'],
+            'price' => ['required', 'integer', 'min:0'],
             'billing_period' => ['required', Rule::enum(BillingPeriod::class)],
             'is_active' => ['boolean'],
             'features' => ['array'],
-            'features.*.feature_key' => ['required', 'string', 'max:255'],
+            'features.*.feature_key' => ['required', 'string'],
             'features.*.is_enabled' => ['boolean'],
             'limits' => ['array'],
-            'limits.*.limit_key' => ['required', 'string', 'max:255'],
+            'limits.*.limit_key' => ['required', 'string'],
             'limits.*.limit_value' => ['nullable', 'integer', 'min:0'],
         ];
     }

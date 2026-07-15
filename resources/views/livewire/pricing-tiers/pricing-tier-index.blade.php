@@ -53,7 +53,7 @@
                                     <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">{{ $tier->slug }}</p>
                                 </td>
                                 <td class="px-space-lg py-space-md font-body-md text-body-md text-on-surface">
-                                    {{ number_format($tier->price / 100, 2) }} {{ $tier->currency }}
+                                    Rp {{ number_format($tier->price, 0, '.', '.') }}
                                 </td>
                                 <td class="px-space-lg py-space-md font-body-sm text-body-sm text-secondary">
                                     {{ $tier->features->count() }} feature{{ $tier->features->count() !== 1 ? 's' : '' }}

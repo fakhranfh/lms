@@ -3,6 +3,8 @@
 namespace App\Livewire\PricingTiers;
 
 use App\Enums\BillingPeriod;
+use App\Enums\TierFeature;
+use App\Enums\TierLimit;
 use App\Http\Requests\PricingTier\UpdatePricingTierRequest;
 use App\Models\PricingTier;
 use App\Services\PricingTierService;
@@ -48,15 +50,25 @@ class PricingTierEdit extends Component
         $this->billing_period = $this->tier->billing_period->value;
         $this->is_active = $this->tier->is_active;
 
-        $this->features = $this->tier->features->map(fn ($feature) => [
-            'feature_key' => $feature->feature_key,
-            'is_enabled' => $feature->is_enabled,
-        ])->toArray();
+        $tierFeaturesMap = $this->tier->features->keyBy('feature_key')->toArray();
 
-        $this->limits = $this->tier->limits->map(fn ($limit) => [
-            'limit_key' => $limit->limit_key,
-            'limit_value' => $limit->limit_value ? (string) $limit->limit_value : '',
-        ])->toArray();
+        $this->features = collect(TierFeature::cases())
+            ->map(fn ($feature) => [
+                'feature_key' => $feature->value,
+                'is_enabled' => $tierFeaturesMap[$feature->value]['is_enabled'] ?? false,
+            ])
+            ->toArray();
+
+        $tierLimitsMap = $this->tier->limits->keyBy('limit_key')->toArray();
+
+        $this->limits = collect(TierLimit::cases())
+            ->map(fn ($limit) => [
+                'limit_key' => $limit->value,
+                'limit_value' => isset($tierLimitsMap[$limit->value]) && $tierLimitsMap[$limit->value]['limit_value']
+                    ? (string) $tierLimitsMap[$limit->value]['limit_value']
+                    : '',
+            ])
+            ->toArray();
     }
 
     /**
@@ -73,19 +85,18 @@ class PricingTierEdit extends Component
 
         $data = $this->validate();
 
-        $limitsToStore = array_filter(array_map(function ($limit) {
-            if (empty($limit['limit_key'])) {
-                return null;
-            }
-
-            return [
+        $featuresToStore = array_filter($data['features'] ?? [], fn ($feature) => $feature['is_enabled']);
+        $limitsToStore = array_filter(
+            array_map(fn ($limit) => [
                 'limit_key' => $limit['limit_key'],
                 'limit_value' => empty($limit['limit_value']) ? null : (int) $limit['limit_value'],
-            ];
-        }, $data['limits'] ?? []), fn ($item) => $item !== null);
+            ], $data['limits'] ?? []),
+            fn ($limit) => ! empty($limit['limit_key'])
+        );
 
         $tierService->update($this->tier->id, [
             ...$data,
+            'features' => array_values($featuresToStore),
             'limits' => array_values($limitsToStore),
         ]);
 
@@ -98,6 +109,8 @@ class PricingTierEdit extends Component
     {
         return view('livewire.pricing-tiers.pricing-tier-edit', [
             'billingPeriods' => BillingPeriod::cases(),
+            'availableFeatures' => TierFeature::cases(),
+            'availableLimits' => TierLimit::cases(),
         ])
             ->extends('layouts.admin')
             ->section('admin-content');

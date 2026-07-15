@@ -149,7 +149,7 @@
             <div class="bg-surface rounded-lg p-space-xl max-w-[420px] shadow-lg">
                 <h3 class="text-title-md font-title-md text-on-surface mb-space-md">Confirm Tier Change</h3>
                 <p class="text-body-md text-on-surface-variant mb-space-lg">
-                    Are you sure you want to change the tier from <strong>{{ $this->school->tier->name }}</strong> to <strong>{{ $this->availableTiers->find('id', $this->newTierId)?->name }}</strong>?
+                    Are you sure you want to change the tier from <strong>{{ $this->school->tier->name }}</strong> to <strong>{{ $this->availableTiers->firstWhere('id', $this->newTierId)?->name }}</strong>?
                 </p>
                 <div class="flex gap-space-md">
                     <button wire:click="cancelChange" class="flex-1 h-[44px] rounded-lg border border-outline-variant text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors">

@@ -7,20 +7,43 @@ use App\Models\School;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
-use Livewire\WithPagination;
 
 class SchoolIndex extends Component
 {
-    use WithPagination;
-
     public ?string $search = null;
 
     public ?string $filterTier = null;
 
+    public string $sort = 'name';
+
+    public string $direction = 'asc';
+
+    public int $perPage = 15;
+
     public function mount(): void
     {
         abort_unless(auth()->user()->can('manage_schools') || auth()->user()->hasRole('admin'), 403);
+    }
+
+    public function updating(string $property): void
+    {
+        if ($property !== 'sort' && $property !== 'direction') {
+            if (in_array($property, ['search', 'filterTier'])) {
+                // Reset sort and direction when filters change
+                $this->sort = 'name';
+                $this->direction = 'asc';
+            }
+        }
+    }
+
+    #[On('sortChanged')]
+    public function updateSort(string $sort, string $direction, int $perPage): void
+    {
+        $this->sort = $sort;
+        $this->direction = $direction;
+        $this->perPage = $perPage;
     }
 
     #[Computed]
@@ -37,7 +60,7 @@ class SchoolIndex extends Component
             $query->where('tier_id', $this->filterTier);
         }
 
-        return $query->paginate(15);
+        return $query->orderBy($this->sort, $this->direction)->paginate($this->perPage);
     }
 
     #[Computed]

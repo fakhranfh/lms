@@ -3,7 +3,7 @@
 namespace App\Livewire\Schools;
 
 use App\Models\PricingTier;
-use App\Models\School;
+use App\Services\SchoolService;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
@@ -57,20 +57,18 @@ class SchoolIndex extends Component
     }
 
     #[Computed]
-    public function schools(): LengthAwarePaginator
+    public function schools(SchoolService $schoolService): LengthAwarePaginator
     {
-        $query = School::with('tier');
-
-        if ($this->search) {
-            $query->where('name', 'like', "%{$this->search}%")
-                ->orWhere('domain', 'like', "%{$this->search}%");
-        }
-
-        if ($this->filterTier) {
-            $query->where('tier_id', $this->filterTier);
-        }
-
-        return $query->orderBy($this->sort, $this->direction)->paginate($this->perPage);
+        return $schoolService->paginate(
+            filters: [
+                'search' => $this->search,
+                'tier_id' => $this->filterTier,
+                'sort' => $this->sort,
+                'direction' => $this->direction,
+            ],
+            with: ['tier'],
+            perPage: $this->perPage,
+        );
     }
 
     #[Computed]

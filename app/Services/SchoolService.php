@@ -2,58 +2,48 @@
 
 namespace App\Services;
 
-use App\Enums\SubscriptionStatus;
-use App\Models\School;
-use App\Models\SchoolTier;
-use App\Models\TierChange;
 use App\Repositories\School\SchoolRepositoryInterface;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class SchoolService
 {
-    public function __construct(private SchoolRepositoryInterface $schoolRepository) {}
+    public function __construct(protected SchoolRepositoryInterface $schoolRepository) {}
 
-    public function create(array $data): School
+    /**
+     * Get paginated schools with filters.
+     *
+     * @param  array<string, mixed>  $filters
+     * @param  array<string>  $with
+     */
+    public function paginate(array $filters = [], array $with = [], int $perPage = 15): LengthAwarePaginator
     {
-        $school = $this->schoolRepository->create($data);
-
-        // Assign default tier to the school
-        $this->assignDefaultTier($school);
-
-        return $school;
+        return $this->schoolRepository->paginate($filters, $with, $perPage);
     }
 
     /**
-     * Assign the default tier to a school and create audit trail.
+     * Get all schools.
      */
-    private function assignDefaultTier(School $school): SchoolTier
+    public function getAll(): Collection
     {
-        $schoolTier = SchoolTier::create([
-            'school_id' => $school->id,
-            'tier_id' => $school->tier_id,
-            'status' => SubscriptionStatus::Active,
-            'started_at' => now(),
-            'expires_at' => null,
-            'renewal_date' => null,
-            'auto_renew' => true,
-            'payment_method' => null,
-        ]);
-
-        // Create initial tier change record for audit trail
-        TierChange::create([
-            'school_tier_id' => $schoolTier->id,
-            'from_tier_id' => null,
-            'to_tier_id' => $school->tier_id,
-            'change_type' => 'initial',
-            'changed_at' => now(),
-        ]);
-
-        return $schoolTier;
+        return $this->schoolRepository->getAll();
     }
 
-    public function buildRegisterUrl(School $school, string $scheme, int $port): string
+    /**
+     * Find a school by ID.
+     */
+    public function find(string $id)
     {
-        $portSuffix = in_array($port, [80, 443], true) ? '' : ":{$port}";
+        return $this->schoolRepository->find($id);
+    }
 
-        return "{$scheme}://{$school->domain}{$portSuffix}/register";
+    /**
+     * Find a school by ID with eager-loaded relationships.
+     *
+     * @param  array<string>  $with
+     */
+    public function findWith(string $id, array $with = [])
+    {
+        return $this->schoolRepository->findWith($id, $with);
     }
 }

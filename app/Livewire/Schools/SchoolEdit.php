@@ -2,10 +2,9 @@
 
 namespace App\Livewire\Schools;
 
-use App\Models\PricingTier;
-use App\Models\School;
-use App\Models\SchoolTier;
-use App\Models\TierChange;
+use App\Services\PricingTierService;
+use App\Services\SchoolService;
+use App\Services\TierChangeService;
 use Illuminate\Support\Collection as BaseCollection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -22,27 +21,27 @@ class SchoolEdit extends Component
 
     public ?string $errorMessage = null;
 
-    public function mount(string $school): void
+    public function mount(string $school, SchoolService $schoolService): void
     {
         $this->schoolId = $school;
 
         abort_unless(auth()->user()->can('manage_schools') || auth()->user()->hasRole('admin'), 403);
 
-        if (! School::find($school)) {
+        if (! $schoolService->find($school)) {
             abort(404, 'School not found');
         }
     }
 
     #[Computed]
-    public function school(): School
+    public function school(SchoolService $schoolService)
     {
-        return School::with(['tier', 'schoolTiers'])->findOrFail($this->schoolId);
+        return $schoolService->findWith($this->schoolId, ['tier', 'schoolTiers']);
     }
 
     #[Computed]
-    public function availableTiers(): BaseCollection
+    public function availableTiers(PricingTierService $pricingTierService): BaseCollection
     {
-        return PricingTier::where('is_active', true)->get();
+        return $pricingTierService->get(['is_active' => true]);
     }
 
     #[Computed]
@@ -85,38 +84,23 @@ class SchoolEdit extends Component
         $this->showChangeConfirmation = true;
     }
 
-    public function confirmChange(): void
+    public function confirmChange(SchoolService $schoolService, PricingTierService $pricingTierService, TierChangeService $tierChangeService): void
     {
         $this->successMessage = null;
         $this->errorMessage = null;
 
         try {
-            $oldTierId = $this->school->tier_id;
-            $newTier = PricingTier::findOrFail($this->newTierId);
+            $school = $schoolService->findWith($this->schoolId, ['tier']);
+            $newTier = $pricingTierService->find($this->newTierId);
 
-            // Update school tier
-            $this->school->update(['tier_id' => $this->newTierId]);
+            if (! $newTier) {
+                $this->errorMessage = 'Selected tier not found.';
 
-            // Create SchoolTier record
-            $schoolTier = SchoolTier::create([
-                'school_id' => $this->school->id,
-                'tier_id' => $this->newTierId,
-                'status' => 'active',
-                'started_at' => now(),
-                'expires_at' => null,
-                'renewal_date' => null,
-                'auto_renew' => true,
-                'payment_method' => null,
-            ]);
+                return;
+            }
 
-            // Create tier change record
-            TierChange::create([
-                'school_tier_id' => $schoolTier->id,
-                'from_tier_id' => $oldTierId,
-                'to_tier_id' => $this->newTierId,
-                'change_type' => $this->newTierId > $oldTierId ? 'upgrade' : 'downgrade',
-                'changed_at' => now(),
-            ]);
+            // Use TierChangeService to handle tier change
+            $tierChangeService->initiateTierChange($school, $newTier);
 
             $this->showChangeConfirmation = false;
             $this->newTierId = null;

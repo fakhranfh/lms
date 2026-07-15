@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Schools;
 
-use App\Models\School;
 use App\Models\TierChange;
+use App\Services\SchoolService;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -12,21 +12,21 @@ class SchoolTierHistory extends Component
 {
     public string $schoolId;
 
-    public function mount(string $schoolId): void
+    public function mount(string $schoolId, SchoolService $schoolService): void
     {
         $this->schoolId = $schoolId;
 
         abort_unless(auth()->user()->can('manage_schools') || auth()->user()->hasRole('admin'), 403);
 
-        if (! School::find($schoolId)) {
+        if (! $schoolService->find($schoolId)) {
             abort(404, 'School not found');
         }
     }
 
     #[Computed]
-    public function school(): School
+    public function school(SchoolService $schoolService)
     {
-        return School::findOrFail($this->schoolId);
+        return $schoolService->find($this->schoolId);
     }
 
     #[Computed]

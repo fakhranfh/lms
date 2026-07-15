@@ -2,32 +2,85 @@
 
 namespace App\Repositories\School;
 
-use App\Models\PricingTier;
 use App\Models\School;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class SchoolRepository implements SchoolRepositoryInterface
 {
-    public function create(array $data): School
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    public function query(array $filters = [])
     {
-        $tierId = $data['tier_id'] ?? $this->getDefaultTierId();
+        $query = School::with($filters['with'] ?? []);
 
-        return School::create([
-            'name' => $data['name'],
-            'domain' => $data['domain'],
-            'tier_id' => $tierId,
-        ]);
+        if (isset($filters['search']) && $filters['search']) {
+            $query->whereRaw('name ILIKE ?', ["%{$filters['search']}%"])
+                ->orWhereRaw('domain ILIKE ?', ["%{$filters['search']}%"]);
+        }
+
+        if (isset($filters['tier_id']) && $filters['tier_id']) {
+            $query->where('tier_id', $filters['tier_id']);
+        }
+
+        if (isset($filters['sort']) && isset($filters['direction'])) {
+            $query->orderBy($filters['sort'], $filters['direction']);
+        }
+
+        return $query;
     }
 
     /**
-     * Get the default tier ID (Basic tier).
+     * @param  array<string, mixed>  $filters
+     * @param  array<string>  $with
      */
-    private function getDefaultTierId(): int
+    public function paginate(array $filters = [], array $with = [], int $perPage = 15): LengthAwarePaginator
     {
-        return Cache::remember(
-            'default_pricing_tier_id',
-            3600,
-            fn () => PricingTier::where('slug', 'basic')->value('id') ?? 1
-        );
+        $filters['with'] = $with;
+
+        return $this->query($filters)->paginate($perPage);
+    }
+
+    public function getAll(): Collection
+    {
+        return School::all();
+    }
+
+    public function find(string $id): ?School
+    {
+        return School::find($id);
+    }
+
+    /**
+     * @param  array<string>  $with
+     */
+    public function findWith(string $id, array $with = []): ?School
+    {
+        return School::with($with)->find($id);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function create(array $data): School
+    {
+        return School::create($data);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function update(string $id, array $data): School
+    {
+        $school = School::findOrFail($id);
+        $school->update($data);
+
+        return $school;
+    }
+
+    public function delete(string $id): int
+    {
+        return School::destroy($id);
     }
 }

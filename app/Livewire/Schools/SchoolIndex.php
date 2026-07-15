@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Schools;
 
+use App\Models\PricingTier;
 use App\Models\School;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -36,6 +38,12 @@ class SchoolIndex extends Component
         }
 
         return $query->paginate(15);
+    }
+
+    #[Computed(cache: true)]
+    public function availableTiers(): Collection
+    {
+        return PricingTier::where('is_active', true)->get();
     }
 
     public function render()

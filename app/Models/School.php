@@ -7,9 +7,10 @@ use Database\Factories\SchoolFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'domain'])]
+#[Fillable(['name', 'domain', 'tier_id'])]
 class School extends Model
 {
     /** @use HasFactory<SchoolFactory> */
@@ -35,5 +36,56 @@ class School extends Model
     public function paymentGateways(): HasMany
     {
         return $this->hasMany(SchoolPaymentGateway::class);
+    }
+
+    /**
+     * Get the pricing tier for this school.
+     *
+     * @return BelongsTo<PricingTier, $this>
+     */
+    public function tier(): BelongsTo
+    {
+        return $this->belongsTo(PricingTier::class, 'tier_id');
+    }
+
+    /**
+     * Get the school tier subscriptions.
+     *
+     * @return HasMany<SchoolTier, $this>
+     */
+    public function schoolTiers(): HasMany
+    {
+        return $this->hasMany(SchoolTier::class);
+    }
+
+    /**
+     * Get the current tier limit value for a specific limit key.
+     */
+    public function getCurrentTierLimit(string $limitKey): ?int
+    {
+        return $this->tier?->limits()
+            ->where('limit_key', $limitKey)
+            ->value('limit_value');
+    }
+
+    /**
+     * Check if a feature is enabled for this school's current tier.
+     */
+    public function isFeatureEnabled(string $featureKey): bool
+    {
+        return $this->tier?->features()
+            ->where('feature_key', $featureKey)
+            ->where('is_enabled', true)
+            ->exists() ?? false;
+    }
+
+    /**
+     * Get the most recent active school tier subscription.
+     */
+    public function getCurrentSchoolTier(): ?SchoolTier
+    {
+        return $this->schoolTiers()
+            ->latest('started_at')
+            ->first();
     }
 }

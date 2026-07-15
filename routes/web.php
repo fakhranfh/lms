@@ -16,6 +16,9 @@ use App\Livewire\PricingTiers\PricingTierIndex;
 use App\Livewire\Roles\RoleCreate;
 use App\Livewire\Roles\RoleEdit;
 use App\Livewire\Roles\RoleIndex;
+use App\Livewire\Schools\SchoolEdit;
+use App\Livewire\Schools\SchoolIndex;
+use App\Livewire\Schools\SchoolTierHistory;
 use App\Livewire\Users\UserIndex;
 use App\Livewire\Users\UserRoles;
 use Illuminate\Http\Request;
@@ -61,6 +64,10 @@ Route::domain('admin.'.config('app.domain'))->group(function () {
         Route::get('/pricing-tiers', PricingTierIndex::class)->name('admin.pricing-tiers.index');
         Route::get('/pricing-tiers/create', PricingTierCreate::class)->name('admin.pricing-tiers.create');
         Route::get('/pricing-tiers/{tier}/edit', PricingTierEdit::class)->name('admin.pricing-tiers.edit');
+
+        Route::get('/schools', SchoolIndex::class)->name('admin.schools.index');
+        Route::get('/schools/{school}/edit', SchoolEdit::class)->name('admin.schools.edit');
+        Route::get('/schools/{school}/tier-history', SchoolTierHistory::class)->name('admin.schools.tier-history');
 
         Route::get('/users', UserIndex::class)->name('admin.users.index');
         Route::get('/roles', RoleIndex::class)->name('admin.roles.index');

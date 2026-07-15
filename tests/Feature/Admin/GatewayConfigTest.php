@@ -4,6 +4,10 @@ use App\Models\PaymentGatewayCredential;
 use App\Models\PaymentGatewayType;
 use App\Models\SchoolPaymentGateway;
 
+beforeEach(function () {
+    PaymentGatewayType::query()->delete();
+});
+
 test('gateway type exists in database', function () {
     $midtrans = PaymentGatewayType::factory()->create(['name' => 'midtrans', 'label' => 'Midtrans']);
 

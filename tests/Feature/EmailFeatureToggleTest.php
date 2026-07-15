@@ -22,6 +22,7 @@ describe('when FEATURE_EMAIL_ENABLED is false', function () {
         $_ENV['FEATURE_EMAIL_ENABLED'] = 'false';
         $_SERVER['FEATURE_EMAIL_ENABLED'] = 'false';
         $this->refreshApplication();
+        $this->beginDatabaseTransaction();
     });
 
     afterEach(function () {

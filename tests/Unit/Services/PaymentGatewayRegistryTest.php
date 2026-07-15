@@ -2,13 +2,11 @@
 
 use App\Models\PaymentGatewayType;
 use App\Services\PaymentGatewayRegistry;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Cache::clear();
+    PaymentGatewayType::query()->delete();
 });
 
 it('loads active gateway types from database', function () {

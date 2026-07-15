@@ -15,6 +15,10 @@ use App\Services\SubscriptionPaymentService;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Queue;
 
+beforeEach(function () {
+    PaymentGatewayType::query()->delete();
+});
+
 test('webhook controller stores midtrans webhook', function () {
     Queue::fake();
     Bus::fake();

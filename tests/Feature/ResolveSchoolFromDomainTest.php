@@ -29,7 +29,7 @@ test('a non-admin user is forbidden from the admin domain', function () {
     $user = User::factory()->for($school, 'school')->create();
 
     $this->actingAs($user)
-        ->get('http://admin.'.config('app.domain').'/admin/dashboard')
+        ->get('http://admin.'.config('app.domain').'/dashboard')
         ->assertForbidden();
 });
 
@@ -41,6 +41,6 @@ test('an admin user with school_id null can access the admin domain', function (
     $admin->assignRole('admin');
 
     $this->actingAs($admin)
-        ->get('http://admin.'.config('app.domain').'/admin/dashboard')
+        ->get('http://admin.'.config('app.domain').'/dashboard')
         ->assertOk();
 });

@@ -3,6 +3,7 @@
 namespace App\Repositories\SchoolPaymentGateway;
 
 use App\Models\SchoolPaymentGateway;
+use Illuminate\Support\Str;
 
 class SchoolPaymentGatewayRepository implements SchoolPaymentGatewayRepositoryInterface
 {
@@ -58,6 +59,10 @@ class SchoolPaymentGatewayRepository implements SchoolPaymentGatewayRepositoryIn
 
     public function findBySchoolAndGatewayType(string $schoolId, int $gatewayTypeId)
     {
+        if (! Str::isUuid($schoolId)) {
+            return null;
+        }
+
         return $this->query()
             ->where('school_id', $schoolId)
             ->where('gateway_type_id', $gatewayTypeId)

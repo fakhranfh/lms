@@ -32,8 +32,10 @@ return new class extends Migration
             $schools = DB::table('schools')->get();
 
             foreach ($schools as $school) {
-                $schoolTier = DB::table('school_tiers')->insertGetId([
-                    'id' => Str::uuid(),
+                $schoolTierId = Str::uuid();
+
+                DB::table('school_tiers')->insert([
+                    'id' => $schoolTierId,
                     'school_id' => $school->id,
                     'tier_id' => $basicTierId,
                     'status' => 'active',
@@ -49,7 +51,7 @@ return new class extends Migration
                 // Create initial TierChange record
                 DB::table('tier_changes')->insert([
                     'id' => Str::uuid(),
-                    'school_tier_id' => $schoolTier,
+                    'school_tier_id' => $schoolTierId,
                     'from_tier_id' => null,
                     'to_tier_id' => $basicTierId,
                     'change_type' => 'initial',
@@ -66,7 +68,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('schools', function (Blueprint $table) {
-            $table->dropForeignKey(['tier_id']);
+            $table->dropForeign(['tier_id']);
             $table->dropColumn('tier_id');
         });
     }

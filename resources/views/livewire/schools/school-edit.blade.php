@@ -37,7 +37,7 @@
                     </div>
                     <div>
                         <label class="block font-label-md text-label-md text-on-surface-variant mb-space-xs">Created</label>
-                        <p class="text-body-md text-on-surface">{{ $this->school->created_at->format('F d, Y h:i A') }}</p>
+                        <p class="text-body-md text-on-surface">{{ $this->school->created_at_display->format('F d, Y h:i A') }}</p>
                     </div>
                 </div>
             </div>

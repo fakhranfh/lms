@@ -46,7 +46,7 @@
                         </p>
 
                         <p class="text-body-sm text-on-surface-variant">
-                            {{ $change->changed_at->format('F d, Y h:i A') }}
+                            {{ $change->changed_at_display->format('F d, Y h:i A') }}
                         </p>
                     </div>
                 </div>

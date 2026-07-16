@@ -90,7 +90,7 @@
                             </span>
                         </td>
                         <td class="px-space-lg py-space-md text-body-sm text-on-surface-variant">
-                            {{ $school->created_at->format('M d, Y') }}
+                            {{ $school->created_at_display->format('M d, Y') }}
                         </td>
                         <td class="px-space-lg py-space-md">
                             <div class="flex gap-space-sm">

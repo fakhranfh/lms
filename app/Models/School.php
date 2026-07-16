@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\SchoolFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class School extends Model
 {
     /** @use HasFactory<SchoolFactory> */
-    use HasFactory, HasUuid;
+    use HasFactory, HasUuid, HasViewerTimezoneDates;
 
     protected $table = 'schools';
 

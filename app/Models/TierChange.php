@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TierChangeType;
+use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\TierChangeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TierChange extends Model
 {
     /** @use HasFactory<TierChangeFactory> */
-    use HasFactory, HasUuid;
+    use HasFactory, HasUuid, HasViewerTimezoneDates;
 
     /**
      * @var array<string, string>

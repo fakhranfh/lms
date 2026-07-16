@@ -8,6 +8,13 @@ return [
         'active_pattern' => 'dashboard',
     ],
     [
+        'label' => 'Courses',
+        'route' => 'courses.index',
+        'icon' => 'school',
+        'active_pattern' => 'courses.*',
+        'requires_permission' => 'courses.view',
+    ],
+    [
         'label' => 'Users',
         'route' => 'users.index',
         'icon' => 'group',
@@ -27,5 +34,17 @@ return [
         'icon' => 'key',
         'active_pattern' => 'permissions.*',
         'requires_permission' => 'permissions.view',
+    ],
+    [
+        'label' => 'Tier Management',
+        'route' => 'tier-management.show',
+        'icon' => 'layers',
+        'active_pattern' => 'tier-management.*',
+    ],
+    [
+        'label' => 'Edit Profile',
+        'route' => 'edit-profile',
+        'icon' => 'person',
+        'active_pattern' => 'edit-profile',
     ],
 ];

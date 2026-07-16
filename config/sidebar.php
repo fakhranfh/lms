@@ -41,10 +41,4 @@ return [
         'icon' => 'layers',
         'active_pattern' => 'tier-management.*',
     ],
-    [
-        'label' => 'Edit Profile',
-        'route' => 'edit-profile',
-        'icon' => 'person',
-        'active_pattern' => 'edit-profile',
-    ],
 ];

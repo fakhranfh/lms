@@ -19,7 +19,7 @@ class TierChangeController extends Controller
 
     public function show(): View
     {
-        $schoolId = $this->currentSchool->getSchoolId();
+        $schoolId = auth()->user()->school_id ?? $this->currentSchool->getSchoolId();
         $school = School::findOrFail($schoolId);
 
         $currentTier = $school->tier;
@@ -58,7 +58,7 @@ class TierChangeController extends Controller
 
     public function initiate(InitiateTierChangeRequest $request): RedirectResponse
     {
-        $schoolId = $this->currentSchool->getSchoolId();
+        $schoolId = auth()->user()->school_id ?? $this->currentSchool->getSchoolId();
         $school = School::findOrFail($schoolId);
         $newTier = PricingTier::findOrFail($request->input('tier_id'));
 
@@ -83,7 +83,7 @@ class TierChangeController extends Controller
 
     public function cancel(): RedirectResponse
     {
-        $schoolId = $this->currentSchool->getSchoolId();
+        $schoolId = auth()->user()->school_id ?? $this->currentSchool->getSchoolId();
         $school = School::findOrFail($schoolId);
 
         if ($this->tierChangeService->cancelTierChange($school)) {

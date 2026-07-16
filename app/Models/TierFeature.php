@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['pricing_tier_id', 'feature_key', 'is_enabled'])]
+#[Fillable(['pricing_tier_id', 'feature_key', 'label', 'is_enabled'])]
 class TierFeature extends Model
 {
     /** @use HasFactory<TierFeatureFactory> */

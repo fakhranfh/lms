@@ -20,7 +20,7 @@ class PricingTierSeeder extends Seeder
             'description' => 'Free tier for getting started',
             'price' => 0,
             'currency' => 'IDR',
-            'billing_period' => 'monthly',
+            'billing_period' => 'forever',
             'is_active' => true,
         ]);
 

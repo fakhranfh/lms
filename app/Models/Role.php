@@ -9,7 +9,25 @@ use Spatie\Permission\Models\Role as SpatieRole;
 
 class Role extends SpatieRole
 {
-    protected $fillable = ['name', 'guard_name', 'school_id', 'slug'];
+    protected $fillable = ['name', 'guard_name', 'school_id', 'slug', 'protected'];
+
+    public function delete(): ?bool
+    {
+        if ($this->protected) {
+            throw new \Exception("The {$this->name} role cannot be deleted.");
+        }
+
+        return parent::delete();
+    }
+
+    public function forceDelete(): ?bool
+    {
+        if ($this->protected) {
+            throw new \Exception("The {$this->name} role cannot be deleted.");
+        }
+
+        return parent::forceDelete();
+    }
 
     /**
      * Get the school this role belongs to.

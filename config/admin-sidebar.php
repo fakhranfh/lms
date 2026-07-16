@@ -53,4 +53,16 @@ return [
         'icon' => 'preview',
         'active_pattern' => 'admin.demo-credentials',
     ],
+    [
+        'label' => 'Settings',
+        'route' => 'admin.settings',
+        'icon' => 'settings',
+        'active_pattern' => 'admin.settings',
+    ],
+    [
+        'label' => 'Logs',
+        'route' => 'admin.logs',
+        'icon' => 'description',
+        'active_pattern' => 'admin.logs',
+    ],
 ];

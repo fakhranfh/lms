@@ -4,7 +4,14 @@
     <nav class="flex-1 overflow-y-auto py-space-md px-space-md">
         <ul class="space-y-space-xs">
             @forelse (config('sidebar') as $item)
-                @if(!($item['requires_permission'] ?? null) || auth()->user()->can($item['requires_permission']))
+                @php
+                    $hasPermission = !($item['requires_permission'] ?? null) || auth()->user()->can($item['requires_permission']);
+                    $hasRole = !($item['requires_role'] ?? null) || auth()->user()->hasRole($item['requires_role']);
+                    $hasSchool = !($item['requires_school'] ?? null) || auth()->user()->school_id !== null;
+                    $notExcludedRole = !($item['exclude_role'] ?? null) || !auth()->user()->hasRole($item['exclude_role']);
+                    $canAccess = $hasPermission && $hasRole && $hasSchool && $notExcludedRole;
+                @endphp
+                @if($canAccess)
                 <li>
                     <a href="{{ route($item['route']) }}" class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-black hover:bg-primary/10 transition-colors duration-150 {{ request()->routeIs($item['active_pattern']) ? 'bg-primary/20 text-primary' : 'hover:text-on-surface' }}">
                         <span class="material-symbols-outlined text-[24px]">{{ $item['icon'] }}</span>

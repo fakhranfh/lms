@@ -18,7 +18,7 @@ class AdminLoginController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
 
-            if (! $user->hasRole('admin')) {
+            if (! $user->hasRole('Admin')) {
                 Auth::logout();
                 $request->session()->invalidate();
 

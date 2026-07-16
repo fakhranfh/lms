@@ -39,16 +39,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/tier-management/change', [TierChangeController::class, 'initiate'])->name('tier-management.change');
     Route::post('/tier-management/cancel', [TierChangeController::class, 'cancel'])->name('tier-management.cancel');
 
-    Route::get('/courses', CoursesIndex::class)->middleware('permission:courses.view')->name('courses.index');
-    Route::get('/courses/create', CourseForm::class)->middleware('permission:courses.create')->name('courses.create');
-    Route::get('/courses/{course}/edit', CourseForm::class)->middleware('permission:courses.edit')->name('courses.edit');
-    Route::get('/courses/{course}', CourseBuilder::class)->middleware('permission:courses.view')->name('courses.show');
+    Route::middleware('require-school')->group(function () {
+        Route::get('/courses', CoursesIndex::class)->middleware('permission:courses.view')->name('courses.index');
+        Route::get('/courses/create', CourseForm::class)->middleware('permission:courses.create')->name('courses.create');
+        Route::get('/courses/{course}/edit', CourseForm::class)->middleware('permission:courses.edit')->name('courses.edit');
+        Route::get('/courses/{course}', CourseBuilder::class)->middleware('permission:courses.view')->name('courses.show');
 
-    Route::get('/courses/{course}/modules/create', ModuleForm::class)->middleware('permission:modules.create')->name('modules.create');
-    Route::get('/modules/{module}/edit', ModuleForm::class)->middleware('permission:modules.edit')->name('modules.edit');
+        Route::get('/courses/{course}/modules/create', ModuleForm::class)->middleware('permission:modules.create')->name('modules.create');
+        Route::get('/modules/{module}/edit', ModuleForm::class)->middleware('permission:modules.edit')->name('modules.edit');
 
-    Route::get('/modules/{module}/lessons/create', LessonForm::class)->middleware('permission:lessons.create')->name('lessons.create');
-    Route::get('/lessons/{lesson}/edit', LessonForm::class)->middleware('permission:lessons.edit')->name('lessons.edit');
+        Route::get('/modules/{module}/lessons/create', LessonForm::class)->middleware('permission:lessons.create')->name('lessons.create');
+        Route::get('/lessons/{lesson}/edit', LessonForm::class)->middleware('permission:lessons.edit')->name('lessons.edit');
+    });
 });
 
 Route::get('/demo-lms/login/{token}', [DemoLmsController::class, 'login'])->name('demo-lms.login');

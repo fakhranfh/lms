@@ -13,6 +13,8 @@ return [
         'icon' => 'school',
         'active_pattern' => 'courses.*',
         'requires_permission' => 'courses.view',
+        'requires_school' => true,
+        'exclude_role' => 'Admin',
     ],
     [
         'label' => 'Users',
@@ -40,5 +42,6 @@ return [
         'route' => 'tier-management.show',
         'icon' => 'layers',
         'active_pattern' => 'tier-management.*',
+        'requires_school' => true,
     ],
 ];

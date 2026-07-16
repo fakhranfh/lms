@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckFeatureAccess;
 use App\Http\Middleware\PreservePasswordUpdateErrors;
+use App\Http\Middleware\RequireSchool;
 use App\Http\Middleware\ResolveSchoolFromDomain;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
@@ -30,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'feature' => CheckFeatureAccess::class,
             'permission' => PermissionMiddleware::class,
+            'require-school' => RequireSchool::class,
             'role' => RoleMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);

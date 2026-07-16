@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('demo_lms_access', function (Blueprint $table) {
+        Schema::create('demo_lms_accesses', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('school_id')->constrained('schools')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('demo_lms_access');
+        Schema::dropIfExists('demo_lms_accesses');
     }
 };

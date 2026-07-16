@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DemoLmsController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TierChangeController;
@@ -33,3 +34,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/tier-management/change', [TierChangeController::class, 'initiate'])->name('tier-management.change');
     Route::post('/tier-management/cancel', [TierChangeController::class, 'cancel'])->name('tier-management.cancel');
 });
+
+Route::get('/demo-lms/login/{token}', [DemoLmsController::class, 'login'])->name('demo-lms.login');

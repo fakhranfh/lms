@@ -47,4 +47,10 @@ return [
         'icon' => 'school',
         'active_pattern' => 'admin.schools.*',
     ],
+    [
+        'label' => 'Demo Credentials',
+        'route' => 'admin.demo-credentials',
+        'icon' => 'preview',
+        'active_pattern' => 'admin.demo-credentials',
+    ],
 ];

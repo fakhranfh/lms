@@ -50,6 +50,10 @@ Route::domain('admin.'.config('app.domain'))->group(function () {
         Route::get('/schools/{school}/edit', SchoolEdit::class)->name('admin.schools.edit');
         Route::get('/schools/{school}/tier-history', SchoolTierHistory::class)->name('admin.schools.tier-history');
 
+        Route::get('/demo-credentials', function () {
+            return view('admin.demo-credentials');
+        })->name('admin.demo-credentials');
+
         Route::get('/users', UserIndex::class)->name('admin.users.index');
         Route::get('/roles', RoleIndex::class)->name('admin.roles.index');
         Route::get('/roles/create', RoleCreate::class)->name('admin.roles.create');

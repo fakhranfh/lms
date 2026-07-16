@@ -44,8 +44,7 @@ class DatabaseSeeder extends Seeder
             'timezone' => 'UTC',
         ]);
 
-        // Seed permissions and default roles
-        $this->call(PermissionSeeder::class);
+        // Seed default roles for schools (permissions are seeded via migration)
         $this->call(DefaultRoleSeeder::class);
 
         // $this->call(ProductSeeder::class);

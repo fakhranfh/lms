@@ -1,19 +1,16 @@
 <?php
 
-namespace Database\Seeders;
-
 use App\Models\Permission;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
+use Illuminate\Database\Migrations\Migration;
 
-class PermissionSeeder extends Seeder
+return new class extends Migration
 {
-    use WithoutModelEvents;
-
     /**
-     * Run the database seeds.
+     * Run the migrations.
+     * Seeds all platform permissions (global, independent of schools).
+     * Default roles per school are seeded via DefaultRoleSeeder after schools exist.
      */
-    public function run(): void
+    public function up(): void
     {
         $permissions = [
             // Course Management
@@ -74,4 +71,23 @@ class PermissionSeeder extends Seeder
             );
         }
     }
-}
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Permission::whereIn('name', [
+            'courses.create', 'courses.view', 'courses.edit', 'courses.delete',
+            'modules.create', 'modules.view', 'modules.edit', 'modules.delete',
+            'lessons.create', 'lessons.view', 'lessons.edit', 'lessons.delete',
+            'assignments.create', 'assignments.view', 'assignments.edit', 'assignments.delete',
+            'submissions.view', 'submissions.grade', 'submissions.override-grade',
+            'roles.create', 'roles.view', 'roles.edit', 'roles.delete', 'roles.assign-permissions',
+            'users.manage', 'users.assign-roles',
+            'permissions.view',
+            'analytics.view',
+            'settings.school', 'settings.billing',
+        ])->delete();
+    }
+};

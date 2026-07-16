@@ -89,4 +89,14 @@ class School extends Model
             ->latest('started_at')
             ->first();
     }
+
+    /**
+     * Get the roles for this school.
+     *
+     * @return HasMany<Role, $this>
+     */
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class);
+    }
 }

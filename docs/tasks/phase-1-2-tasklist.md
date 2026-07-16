@@ -8,6 +8,25 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 
 ---
 
+## Progress Summary
+
+| Section | Status | Notes |
+|---------|--------|-------|
+| 1. Database Schema | ✅ Complete | 4 migrations, 4 tables created (courses, modules, lessons, lesson_user) |
+| 2. Models & Relationships | ✅ Complete | Course, Module, Lesson models with full relationships & methods |
+| 3. RBAC: Permissions & Roles | ✅ Complete | 36 permissions seeded via migration, 3 roles per school via seeder |
+| 4. Factories & Seeders | 🟡 Partial | CourseFactory, ModuleFactory, LessonFactory ✅; CourseDemoSeeder ⏳ |
+| 5. Livewire Components | ⏳ Not Started | CourseBuilder, CourseForm, ModuleForm, LessonForm needed |
+| 6. Routes & Controller | ⏳ Not Started | CourseController, ModuleController, LessonController needed |
+| 7. Student-Facing Views | ⏳ Not Started | LessonViewerComponent, CourseProgressComponent needed |
+| 8. Validations & Policies | ⏳ Not Started | CoursePolicy, ModulePolicy, LessonPolicy needed |
+| 9. Testing | 🟡 Partial | Database schema tests ✅ (7/7); feature tests ⏳ |
+| 10. Documentation | ⏳ Not Started | CONTENT_ENGINE.md documentation needed |
+
+**Overall:** 3/10 sections complete, 1 partial. Next: Demo seeder → Livewire components → Routes & Controllers.
+
+---
+
 ## 1. Database Schema — Course Hierarchy
 
 - [x] Create migration: `php artisan make:migration create_courses_modules_lessons_tables --no-interaction`
@@ -89,25 +108,29 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 
 ## 3. RBAC: Permission Definitions & Seeding
 
-**From Phase 1.1 Deferred Tasks:**
+**Status:** ✅ COMPLETE  
+**Implementation:** Migration + Seeder hybrid approach
 
-- [ ] Create `PermissionSeeder` defining all platform permissions:
-  - [ ] **Course Management:** `create-course`, `view-course`, `edit-course`, `delete-course`
-  - [ ] **Module Management:** `create-module`, `view-module`, `edit-module`, `delete-module`
-  - [ ] **Lesson Management:** `create-lesson`, `view-lesson`, `edit-lesson`, `delete-lesson`
-  - [ ] **Assignment Management:** `create-assignment`, `view-assignment`, `edit-assignment`, `delete-assignment`
-  - [ ] **Submission Grading:** `view-submissions`, `grade-submissions`, `override-grade`
-  - [ ] **Role Management:** `create-role`, `edit-role`, `delete-role`, `assign-permissions`
-  - [ ] **User Management:** `manage-users`, `assign-roles`
-  - [ ] **Analytics:** `view-analytics` (future use for Phase 3)
-  - [ ] **School Settings:** `manage-school-settings`, `manage-billing`
-  - [ ] Add each permission with label, group for UI grouping
-- [ ] Create `DefaultRoleSeeder` to seed default roles per school:
-  - [ ] **Admin** (school admin): All permissions except billing
-  - [ ] **Instructor**: Course/Module/Lesson/Assignment CRUD, grade-submissions, override-grade, view-analytics
-  - [ ] **Student**: view-course, view-module, view-lesson, view-assignment (readonly), view-submissions (own only)
-  - [ ] Mark all as system roles so they cannot be deleted
-- [ ] Ensure both seeders run on `php artisan migrate:fresh --seed`
+- [x] Create permission definitions via migration (2026_07_16_075013_seed_permissions_and_default_roles.php):
+  - [x] **Course Management:** `courses.create`, `courses.view`, `courses.edit`, `courses.delete`
+  - [x] **Module Management:** `modules.create`, `modules.view`, `modules.edit`, `modules.delete`
+  - [x] **Lesson Management:** `lessons.create`, `lessons.view`, `lessons.edit`, `lessons.delete`
+  - [x] **Assignment Management:** `assignments.create`, `assignments.view`, `assignments.edit`, `assignments.delete`
+  - [x] **Submission Grading:** `submissions.view`, `submissions.grade`, `submissions.override-grade`
+  - [x] **Role Management:** `roles.create`, `roles.view`, `roles.edit`, `roles.delete`, `roles.assign-permissions`
+  - [x] **User Management:** `users.manage`, `users.assign-roles`
+  - [x] **Permissions:** `permissions.view`
+  - [x] **Analytics:** `analytics.view`
+  - [x] **School Settings:** `settings.school`, `settings.billing`
+  - [x] Each permission has slug, label, and group for UI organization (36 total permissions)
+- [x] Create `DefaultRoleSeeder` to seed default roles per school:
+  - [x] **Admin** (school admin): 35 permissions (all except `settings.billing`)
+  - [x] **Instructor**: 20 permissions (Course/Module/Lesson/Assignment CRUD + grading + analytics)
+  - [x] **Student**: 5 permissions (view-only: courses, modules, lessons, assignments, submissions)
+  - [x] Roles are school-scoped with slug: admin, instructor, student
+- [x] Ensure permissions seed via migration and roles seed via DefaultRoleSeeder on `php artisan migrate:fresh --seed`
+- [x] Fix role slug unique constraint: changed from global unique to per-school `(school_id, slug)` unique
+- [x] All tests passing (260+ tests)
 
 ## 4. Factories & Seeders (Content Engine)
 

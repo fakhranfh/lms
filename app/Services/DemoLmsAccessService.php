@@ -30,7 +30,7 @@ class DemoLmsAccessService
     {
         $email = 'demo-'.$school->id.'@demo.'.$school->domain;
 
-        return User::firstOrCreate(
+        $user = User::firstOrCreate(
             ['email' => $email],
             [
                 'name' => 'Demo Admin - '.$school->name,
@@ -39,6 +39,25 @@ class DemoLmsAccessService
                 'email_verified_at' => now(),
             ]
         );
+
+        if (! $user->roles()->exists()) {
+            $role = \App\Models\Role::where('school_id', $school->id)
+                ->where('name', 'Admin')
+                ->firstOrCreate(
+                    ['school_id' => $school->id, 'name' => 'Admin'],
+                    ['guard_name' => 'web', 'slug' => 'admin']
+                );
+
+            // Sync all permissions (except billing) to admin role
+            if (! $role->permissions()->exists()) {
+                $permissions = \App\Models\Permission::where('name', '!=', 'settings.billing')->get();
+                $role->syncPermissions($permissions);
+            }
+
+            $user->assignRole($role);
+        }
+
+        return $user;
     }
 
     /**

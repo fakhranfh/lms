@@ -198,4 +198,38 @@ class DemoLmsAccessTest extends TestCase
         $this->assertNotEquals($existingAccess->access_token, $newAccess->access_token);
         $this->assertTrue($this->demoService->isDemoAccessValid($newAccess));
     }
+
+    public function test_demo_user_has_admin_role_with_all_permissions(): void
+    {
+        $school = School::factory()->create();
+
+        $user = $this->demoService->createDemoUser($school);
+
+        $this->assertTrue($user->roles()->exists());
+        $this->assertTrue($user->hasRole('Admin'));
+
+        // Verify demo user has sidebar menu permissions
+        $this->assertTrue($user->can('users.view'));
+        $this->assertTrue($user->can('roles.view'));
+        $this->assertTrue($user->can('permissions.view'));
+        $this->assertTrue($user->can('courses.view'));
+    }
+
+    public function test_demo_user_can_access_all_sidebar_menu_items(): void
+    {
+        $school = School::factory()->create();
+        $access = $this->demoService->getOrCreateDemoAccess($school);
+        $user = $access->user;
+
+        $sidebarConfig = config('sidebar');
+
+        foreach ($sidebarConfig as $item) {
+            if (isset($item['requires_permission'])) {
+                $this->assertTrue(
+                    $user->can($item['requires_permission']),
+                    "Demo user missing permission: {$item['requires_permission']} for menu item: {$item['label']}"
+                );
+            }
+        }
+    }
 }

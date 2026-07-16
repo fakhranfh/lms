@@ -15,15 +15,15 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 | 1. Database Schema | ✅ Complete | 4 migrations, 4 tables created (courses, modules, lessons, lesson_user) |
 | 2. Models & Relationships | ✅ Complete | Course, Module, Lesson models with full relationships & methods |
 | 3. RBAC: Permissions & Roles | ✅ Complete | 36 permissions seeded via migration, 3 roles per school via seeder |
-| 4. Factories & Seeders | 🟡 Partial | CourseFactory, ModuleFactory, LessonFactory ✅; CourseDemoSeeder ⏳ |
+| 4. Factories & Seeders | ✅ Complete | CourseFactory, ModuleFactory, LessonFactory + ContentEngineSeeder (8 tests) |
 | 5. Livewire Components | ⏳ Not Started | CourseBuilder, CourseForm, ModuleForm, LessonForm needed |
 | 6. Routes & Controller | ⏳ Not Started | CourseController, ModuleController, LessonController needed |
 | 7. Student-Facing Views | ⏳ Not Started | LessonViewerComponent, CourseProgressComponent needed |
 | 8. Validations & Policies | ⏳ Not Started | CoursePolicy, ModulePolicy, LessonPolicy needed |
-| 9. Testing | 🟡 Partial | Database schema tests ✅ (7/7); feature tests ⏳ |
+| 9. Testing | 🟡 Partial | Database schema tests ✅ (7/7); Seeder tests ✅ (8/8); feature tests ⏳ |
 | 10. Documentation | ⏳ Not Started | CONTENT_ENGINE.md documentation needed |
 
-**Overall:** 3/10 sections complete, 1 partial. Next: Demo seeder → Livewire components → Routes & Controllers.
+**Overall:** 4/10 sections complete. Next: Livewire components → Routes & Controllers → Student Views.
 
 ---
 
@@ -146,11 +146,14 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
   - [x] Generate random title, content (using faker), optional video URL
   - [x] Accept module_id and order parameters
   - [x] Randomize is_published, duration_minutes (5-60)
-- [ ] Create `CourseDemoSeeder`:
-  - [ ] Seeds 2-3 demo courses per school (if first-time setup)
-  - [ ] Each course has 2-3 modules
-  - [ ] Each module has 3-5 lessons
-  - [ ] Useful for testing and demo purposes
+- [x] Create `ContentEngineSeeder`:
+  - [x] Seeds 3 demo courses per school (published/unpublished variants)
+  - [x] Each course has 2-3 modules with proper ordering
+  - [x] Each module has 1-2 lessons with proper ordering
+  - [x] Includes optional video URLs on some lessons
+  - [x] Automatic instructor assignment from school users
+  - [x] Integrated into DatabaseSeeder
+  - [x] 8 comprehensive tests with 122 assertions (all passing)
 
 ## 5. Livewire Components — Instructor Content Builder
 

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -18,11 +19,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Seed pricing tiers first (required for schools)
+        $this->call(PricingTierSeeder::class);
+
+        // Get the basic tier for the test school
+        $basicTier = PricingTier::where('slug', 'basic')->first();
+
         // Create a test school
         $school = School::create([
             'id' => Str::uuid(),
             'name' => 'Test School',
             'domain' => 'test.local',
+            'tier_id' => $basicTier->id,
         ]);
 
         // Create test user directly (avoid factory UUID generation issue)
@@ -35,6 +43,10 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('Password@123123'),
             'timezone' => 'UTC',
         ]);
+
+        // Seed permissions and default roles
+        $this->call(PermissionSeeder::class);
+        $this->call(DefaultRoleSeeder::class);
 
         // $this->call(ProductSeeder::class);
     }

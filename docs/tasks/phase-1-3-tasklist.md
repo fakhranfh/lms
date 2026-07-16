@@ -46,6 +46,8 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US1, US3, US4), Section 8 (Core Sy
 
 ## 2. Models & Relationships
 
+- [ ] Update `Lesson` model (from Phase 1.2):
+  - [ ] Add relationship: `hasMany(Assignment::class)` — assignments in this lesson
 - [ ] Generate `Assignment` model:
   - [ ] Apply `HasUuid` trait
   - [ ] Add `$fillable` (`lesson_id`, `title`, `prompt_question`, `rubric`, `max_score`, `passing_score`, `is_published`, `allow_multiple_submissions`)

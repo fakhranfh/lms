@@ -10,6 +10,12 @@ use App\Models\User;
 use App\Policies\UserPolicy;
 use App\Repositories\Auth\AuthRepository;
 use App\Repositories\Auth\AuthRepositoryInterface;
+use App\Repositories\Course\CourseRepository;
+use App\Repositories\Course\CourseRepositoryInterface;
+use App\Repositories\Lesson\LessonRepository;
+use App\Repositories\Lesson\LessonRepositoryInterface;
+use App\Repositories\Module\ModuleRepository;
+use App\Repositories\Module\ModuleRepositoryInterface;
 use App\Repositories\Permission\PermissionRepository;
 use App\Repositories\Permission\PermissionRepositoryInterface;
 use App\Repositories\PricingTier\PricingTierRepository;
@@ -22,8 +28,11 @@ use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepository;
 use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepositoryInterface;
 use App\Repositories\User\UserRepository;
 use App\Repositories\User\UserRepositoryInterface;
+use App\Services\CourseService;
 use App\Services\CredentialEncryption;
 use App\Services\FeatureGateService;
+use App\Services\LessonService;
+use App\Services\ModuleService;
 use App\Services\PaymentGatewayConfigService;
 use App\Services\PaymentGatewayFactory;
 use App\Services\PaymentGatewayRegistry;
@@ -62,6 +71,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PricingTierRepositoryInterface::class, PricingTierRepository::class);
         $this->app->bind(SchoolRepositoryInterface::class, SchoolRepository::class);
         $this->app->bind(SchoolPaymentGatewayRepositoryInterface::class, SchoolPaymentGatewayRepository::class);
+        $this->app->bind(CourseRepositoryInterface::class, CourseRepository::class);
+        $this->app->bind(ModuleRepositoryInterface::class, ModuleRepository::class);
+        $this->app->bind(LessonRepositoryInterface::class, LessonRepository::class);
 
         $this->app->singleton(CurrentSchool::class);
 
@@ -75,6 +87,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TierChangeService::class);
         $this->app->singleton(PaymentGatewayConfigService::class);
         $this->app->singleton(PaymentWebhookService::class);
+        $this->app->singleton(CourseService::class);
+        $this->app->singleton(ModuleService::class);
+        $this->app->singleton(LessonService::class);
     }
 
     /**

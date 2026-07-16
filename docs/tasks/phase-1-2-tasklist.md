@@ -87,7 +87,29 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 - [ ] Create `LessonProgress` model (optional convenience model for lesson_user pivot):
   - [ ] Alternatively, just use `User::lessons()` with pivot data
 
-## 3. Factories & Seeders
+## 3. RBAC: Permission Definitions & Seeding
+
+**From Phase 1.1 Deferred Tasks:**
+
+- [ ] Create `PermissionSeeder` defining all platform permissions:
+  - [ ] **Course Management:** `create-course`, `view-course`, `edit-course`, `delete-course`
+  - [ ] **Module Management:** `create-module`, `view-module`, `edit-module`, `delete-module`
+  - [ ] **Lesson Management:** `create-lesson`, `view-lesson`, `edit-lesson`, `delete-lesson`
+  - [ ] **Assignment Management:** `create-assignment`, `view-assignment`, `edit-assignment`, `delete-assignment`
+  - [ ] **Submission Grading:** `view-submissions`, `grade-submissions`, `override-grade`
+  - [ ] **Role Management:** `create-role`, `edit-role`, `delete-role`, `assign-permissions`
+  - [ ] **User Management:** `manage-users`, `assign-roles`
+  - [ ] **Analytics:** `view-analytics` (future use for Phase 3)
+  - [ ] **School Settings:** `manage-school-settings`, `manage-billing`
+  - [ ] Add each permission with label, group for UI grouping
+- [ ] Create `DefaultRoleSeeder` to seed default roles per school:
+  - [ ] **Admin** (school admin): All permissions except billing
+  - [ ] **Instructor**: Course/Module/Lesson/Assignment CRUD, grade-submissions, override-grade, view-analytics
+  - [ ] **Student**: view-course, view-module, view-lesson, view-assignment (readonly), view-submissions (own only)
+  - [ ] Mark all as system roles so they cannot be deleted
+- [ ] Ensure both seeders run on `php artisan migrate:fresh --seed`
+
+## 4. Factories & Seeders (Content Engine)
 
 - [ ] Create `CourseFactory`:
   - [ ] Generate random title, description, slug
@@ -107,7 +129,7 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
   - [ ] Each module has 3-5 lessons
   - [ ] Useful for testing and demo purposes
 
-## 4. Livewire Components — Instructor Content Builder
+## 5. Livewire Components — Instructor Content Builder
 
 - [ ] Create `CourseBuilder` Livewire component:
   - [ ] Display tree/outline view: Course > Modules > Lessons
@@ -146,7 +168,7 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
   - [ ] Show publish status and date published
   - [ ] Note: publishing a course does NOT auto-publish modules/lessons (instructor must publish individually)
 
-## 5. Routes & Controller
+## 6. Routes & Controller
 
 - [ ] Create `CourseController` with CRUD actions:
   - [ ] `index()` — list courses for authenticated school (GET /courses)
@@ -170,7 +192,7 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
   - [ ] `publish($lesson)` — toggle publish status (POST /lessons/{id}/publish)
 - [ ] Ensure all CRUD operations respect `BelongsToSchool` scope
 
-## 6. Student-Facing Views — Lesson Viewer
+## 7. Student-Facing Views — Lesson Viewer
 
 - [ ] Create `LessonViewerComponent` Livewire component:
   - [ ] Display lesson content (title, HTML body, video embed)
@@ -188,7 +210,7 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
   - [ ] GET `/lessons/{lesson_id}` — show lesson viewer
   - [ ] POST `/lessons/{lesson_id}/mark-complete` — mark lesson complete (Livewire wire:click)
 
-## 7. Validations & Authorization
+## 8. Validations & Authorization
 
 - [ ] Create `CoursePolicy`:
   - [ ] `viewAny`: authenticated user in same school
@@ -202,7 +224,7 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
   - [ ] Validate required fields, string lengths, URL formats
   - [ ] Validate order is numeric and unique per parent
 
-## 8. Testing
+## 9. Testing
 
 - [ ] Create `CourseTest` (feature test):
   - [ ] Instructor can create/edit/delete course
@@ -231,14 +253,18 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
   - [ ] Navigation to previous/next lesson works
 - [ ] Run `php artisan test --compact`
 
-## 9. Documentation & Verification
+## 10. Documentation & Verification
 
 - [ ] Update docs/CONTENT_ENGINE.md:
   - [ ] Course > Module > Lesson hierarchy explanation
   - [ ] How ordering works and cascade behavior
   - [ ] How to bulk import courses (if applicable)
   - [ ] Lesson viewer UX explanation
-- [ ] Run `php artisan migrate:fresh --seed` and verify schema matches ERD
+- [ ] Run `php artisan migrate:fresh --seed` and verify:
+  - [ ] All permissions seeded to database (from Section 3 PermissionSeeder)
+  - [ ] Default roles created for schools (Admin, Instructor, Student from DefaultRoleSeeder)
+  - [ ] Schema matches ERD
+  - [ ] Demo courses seeded and visible
 - [ ] Seed demo courses and verify structure in browser
 - [ ] Run `vendor/bin/pint --dirty --format agent`
 - [ ] Confirm Livewire components render without JS errors

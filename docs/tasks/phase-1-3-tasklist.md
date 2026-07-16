@@ -181,7 +181,96 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US1, US3, US4), Section 8 (Core Sy
     - [ ] Return Livewire component (GradingQueueTable)
     - [ ] Filter by instructor, apply current teacher's assignments
 
-## 7. Rate Limiting
+## 7. RBAC: Authorization Policies & Middleware
+
+**From Phase 1.1 Deferred Tasks:**
+
+- [ ] Create base `BasePolicy` class:
+  - [ ] Add protected method `userHasPermission($user, $permission_slug): bool`
+  - [ ] Add protected method `userHasRole($user, $role_slug): bool`
+  - [ ] All policies inherit from BasePolicy
+- [ ] Generate model policies:
+  - [ ] `RolePolicy` (who can create/view/edit/delete roles)
+    - [ ] `viewAny`: role:admin
+    - [ ] `view`: role:admin
+    - [ ] `create`: role:admin + permission:create-role
+    - [ ] `update`: role:admin + permission:edit-role + author/owner check
+    - [ ] `delete`: role:admin + permission:delete-role + cannot delete system roles
+  - [ ] `UserPolicy` (who can view/assign roles to users)
+    - [ ] `assignRole`: role:admin + permission:assign-roles
+    - [ ] `removeRole`: role:admin + permission:assign-roles
+  - [ ] `AssignmentPolicy` (use permission-based checks)
+    - [ ] `create`: permission:create-assignment
+    - [ ] `update`: permission:edit-assignment
+    - [ ] `delete`: permission:delete-assignment
+  - [ ] `SubmissionPolicy` (use permission-based checks)
+    - [ ] `view`: permission:view-submissions
+    - [ ] `override`: permission:override-grade
+  - [ ] Register policies in `AuthServiceProvider` (or auto-discovery if using Laravel 13)
+- [ ] Create `CheckPermission` middleware:
+  - [ ] Accepts `$permission` parameter (e.g., `middleware('auth', 'permission:edit-course')`)
+  - [ ] Checks: `auth()->user()->hasPermissionTo($permission)` for current school
+  - [ ] Returns 403 if denied
+- [ ] Create `CheckRole` middleware:
+  - [ ] Accepts `$role` parameter (e.g., `middleware('auth', 'role:instructor')`)
+  - [ ] Checks: `auth()->user()->hasRole($role)` for current school
+  - [ ] Returns 403 if denied
+- [ ] Register gates in `AuthServiceProvider`:
+  - [ ] `Gate::define('permission', fn ($user, $permission) => $user->hasPermissionTo($permission))`
+  - [ ] `Gate::define('role', fn ($user, $role) => $user->hasRole($role))`
+  - [ ] Use: `@can('permission', 'edit-course')` in Blade templates
+
+## 8. RBAC: School Admin Panel (Role & User Management)
+
+**From Phase 1.1 Deferred Tasks:**
+
+- [ ] Create `RoleManagerTable` Livewire component:
+  - [ ] Display paginated table of school's roles
+  - [ ] Show role name, slug, permission count, system flag
+  - [ ] Actions: Edit, Delete (disabled for system roles), Assign Permissions
+  - [ ] Link to `CreateRoleModal` for new role creation
+- [ ] Create `CreateRoleModal` Livewire component:
+  - [ ] Form fields: Role name, slug (auto-generated from name)
+  - [ ] Submit creates role in database (BelongsToSchool ensures school_id)
+  - [ ] Validation: name required, slug unique per school
+  - [ ] On success: refresh RoleManagerTable, show toast
+- [ ] Create `EditRoleModal` Livewire component:
+  - [ ] Pre-populate with existing role data
+  - [ ] Disable slug editing (immutable)
+  - [ ] Disable editing if `is_system_role = true`
+  - [ ] Submit updates role
+- [ ] Create `PermissionMatrix` Livewire component:
+  - [ ] Display permission grid: rows = permissions (grouped by category), columns = selected role(s)
+  - [ ] Checkbox for each (role, permission) pair
+  - [ ] "Check All" and "Check by Category" quick actions
+  - [ ] Save button syncs role_permission pivot
+  - [ ] Use wire:model to track checked permissions client-side
+  - [ ] Show toast on save success
+- [ ] Create `UserRoleAssigner` Livewire component:
+  - [ ] Display: user email, current roles, role selector
+  - [ ] Dropdown/multi-select for available roles
+  - [ ] Sync button assigns roles via `$user->syncRoles($role_ids)`
+  - [ ] Validation: at least one role required per user
+
+## 9. RBAC: Routes & Controller (Role Management)
+
+**From Phase 1.1 Deferred Tasks:**
+
+- [ ] Create `RoleController` with CRUD actions:
+  - [ ] `index()` — list roles (route: GET /admin/roles) → returns `RoleManagerTable` Livewire component
+  - [ ] `store()` — create role (route: POST /admin/roles) → called by `CreateRoleModal`
+  - [ ] `update($role)` — update role (route: PATCH /admin/roles/{id}) → called by `EditRoleModal`
+  - [ ] `destroy($role)` — soft delete role (route: DELETE /admin/roles/{id}) → prevent system role deletion
+  - [ ] All routes require `middleware('auth', 'permission:manage-roles')`
+- [ ] Create role management routes:
+  - [ ] `GET /admin/roles` — role list page
+  - [ ] `GET /admin/roles/{id}/permissions` — show permission matrix modal
+  - [ ] `PATCH /admin/roles/{id}/permissions` — sync permissions
+- [ ] Create `UserRoleController` for user role assignment:
+  - [ ] `assignRole()` — PATCH /admin/users/{id}/roles — assign roles to user
+  - [ ] Require `permission:assign-roles`
+
+## 10. Rate Limiting
 
 - [ ] Apply rate limit to submission endpoint:
   - [ ] Middleware or gate: `3 submissions per 1 minute per user + IP`
@@ -190,7 +279,7 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US1, US3, US4), Section 8 (Core Sy
   - [ ] Livewire component should show error toast
 - [ ] Test rate limit behavior in tests
 
-## 8. Audit Logging
+## 11. Audit Logging
 
 - [ ] Log to `audit_logs` table when:
   - [ ] Submission created
@@ -198,7 +287,7 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US1, US3, US4), Section 8 (Core Sy
   - [ ] Status changes (pending → processing, processing → graded/failed)
 - [ ] Capture old_values and new_values in JSONB (Phase 1.5)
 
-## 9. Testing
+## 12. Testing
 
 - [ ] Create `AssignmentTest` (feature):
   - [ ] Instructor can create/edit/delete assignment
@@ -232,15 +321,25 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US1, US3, US4), Section 8 (Core Sy
   - [ ] Override score modal opens and saves
   - [ ] Batch actions available
 
-## 10. Documentation & Verification
+## 13. Documentation & Verification
 
+- [ ] Create docs/RBAC.md (from Phase 1.1 deferred):
+  - [ ] System roles vs custom roles distinction
+  - [ ] Permission categories (courses, modules, lessons, assignments, submissions, roles, users, analytics, settings)
+  - [ ] School-scoped roles: how they work and why
+  - [ ] How to programmatically check permissions (hasPermissionTo, hasRole)
+  - [ ] How to use middleware and gates in routes/views
+  - [ ] Permission assignment matrix explanation
+  - [ ] Default roles reference (Admin, Instructor, Student)
 - [ ] Create docs/ASSESSMENT.md:
   - [ ] Submission state machine diagram (pending → processing → graded/failed)
   - [ ] Rubric JSON schema (examples)
   - [ ] Rate limiting explanation (3/min per user+IP)
   - [ ] Override behavior (instructor score takes precedence)
   - [ ] Error handling (failed submissions with retry details)
-- [ ] Run `php artisan migrate:fresh --seed`
+- [ ] Run `php artisan migrate:fresh --seed` and verify:
+  - [ ] Permissions and default roles seeded (from Phase 1.2)
+  - [ ] RBAC schema correct
 - [ ] Test submission flow end-to-end (create assignment, submit, verify status)
 - [ ] Run `vendor/bin/pint --dirty --format agent`
 

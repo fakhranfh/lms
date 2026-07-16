@@ -48,47 +48,14 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US6 & US13), Section 8 (Component 
   - [x] Already uses Spatie's `HasRoles` trait (polymorphic assignment via `model_has_roles`)
   - [x] Inherits: `hasRole()`, `assignRole()`, `removeRole()`, `syncRoles()`, `hasPermissionTo()`
 
-## 3. Permission Definitions & Seeding
+## 3. RBAC Tasks (Moved to Respective Phases)
 
-**Status: DEFERRED to Phase 1.2 (Content Engine)**
+- ✅ **Permission Seeding** → Moved to [Phase 1.2 Section 3](../tasks/phase-1-2-tasklist.md)
+- ✅ **Authorization Policies & Middleware** → Moved to [Phase 1.3 Section 7](../tasks/phase-1-3-tasklist.md)
+- ✅ **School Admin Panel (RBAC UI)** → Moved to [Phase 1.3 Section 8](../tasks/phase-1-3-tasklist.md)
+- ✅ **Role Management Routes** → Moved to [Phase 1.3 Section 9](../tasks/phase-1-3-tasklist.md)
 
-- [ ] Create `PermissionSeeder` defining all platform permissions once content models exist
-- [ ] Create `DefaultRoleSeeder` to seed default roles per school
-  - Deferred: Need Course, Module, Lesson, Assignment models first
-
-## 4. Authorization Policies
-
-**Status: DEFERRED to Phase 1.3 (Authorization & Middleware)**
-
-- [ ] Create base `BasePolicy` class
-- [ ] Generate model policies (Role, User, etc.)
-- [ ] Register policies in `AuthServiceProvider`
-
-## 5. Middleware & Gates
-
-**Status: DEFERRED to Phase 1.3 (Authorization & Middleware)**
-
-- [ ] Create `CheckPermission` middleware
-- [ ] Create `CheckRole` middleware
-- [ ] Register gates in `AuthServiceProvider`
-- [ ] Write authorization tests
-
-## 6. Livewire Components — School Admin Panel
-
-**Status: DEFERRED to Phase 1.3 (Authorization & Middleware)**
-
-- [ ] Create role management UI components
-- [ ] Create permission matrix component
-- [ ] Create user role assigner component
-
-## 7. Routes & Controller
-
-**Status: DEFERRED to Phase 1.3 (Authorization & Middleware)**
-
-- [ ] Create `RoleController` with CRUD actions
-- [ ] Create role management routes
-
-## 8. Testing
+## 4. Testing
 
 - [x] Created `Phase1_1_RbacTest` (feature test suite):
   - [x] Database Schema tests
@@ -115,14 +82,15 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US6 & US13), Section 8 (Component 
 - [x] Test Results: **14/14 tests passing**
 - [x] Full test suite: `php artisan test --compact` → **253/254 tests passing** (all existing tests still pass)
 
-## 9. Documentation & Verification
+## 5. Documentation & Verification
 
 - [x] Code committed with caveman-commit style: `feat(rbac): school-scoped roles and permissions`
 - [x] Updated memory at `.claude/projects/d--Projek-lms/memory/phase-1-1-rbac.md`
 - [x] All code formatted with Pint (vendor/bin/pint --dirty)
 - [x] No breaking changes — all 253 existing tests still pass
-- [ ] Create docs/RBAC.md (deferred — add after authorization policies in Phase 1.3)
-- [ ] Run `php artisan migrate:fresh --seed` (deferred — need seeders in Phase 1.2+)
+- ✅ **Deferred Tasks Moved:**
+  - → `Create docs/RBAC.md` moved to [Phase 1.3 Section 13](../tasks/phase-1-3-tasklist.md)
+  - → `Run php artisan migrate:fresh --seed` moved to [Phase 1.2 Section 10](../tasks/phase-1-2-tasklist.md)
 
 ---
 

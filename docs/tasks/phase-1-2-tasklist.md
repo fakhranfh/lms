@@ -10,82 +10,82 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 
 ## 1. Database Schema — Course Hierarchy
 
-- [ ] Create migration: `php artisan make:migration create_courses_modules_lessons_tables --no-interaction`
-  - [ ] `courses` table:
-    - [ ] `id` (UUID, PK)
-    - [ ] `school_id` (UUID, FK → schools.id, CASCADE, indexed) — **school-scoped**
-    - [ ] `title` (VARCHAR 255, not null)
-    - [ ] `description` (TEXT, nullable)
-    - [ ] `created_by` (UUID, FK → users.id, nullable, SET NULL) — instructor who created course
-    - [ ] `is_published` (BOOLEAN, default false) — draft vs published state
-    - [ ] `slug` (VARCHAR 255, nullable, unique per school) — for URL-friendly access
-    - [ ] timestamps
-  - [ ] `modules` table:
-    - [ ] `id` (UUID, PK)
-    - [ ] `course_id` (UUID, FK → courses.id, CASCADE)
-    - [ ] `title` (VARCHAR 255, not null)
-    - [ ] `description` (TEXT, nullable)
-    - [ ] `order` (UNSIGNED INT, not null) — enforced ordering (1, 2, 3...)
-    - [ ] `is_published` (BOOLEAN, default false)
-    - [ ] timestamps
-    - [ ] **Unique constraint:** `(course_id, order)` — prevent duplicate ordering within a course
-  - [ ] `lessons` table:
-    - [ ] `id` (UUID, PK)
-    - [ ] `module_id` (UUID, FK → modules.id, CASCADE)
-    - [ ] `title` (VARCHAR 255, not null)
-    - [ ] `content` (LONGTEXT, nullable) — rich HTML/markdown lesson body
-    - [ ] `video_embed_url` (VARCHAR 500, nullable) — external video URL (YouTube, Vimeo, etc.)
-    - [ ] `order` (UNSIGNED INT, not null) — enforced ordering within module
-    - [ ] `is_published` (BOOLEAN, default false)
-    - [ ] `duration_minutes` (UNSIGNED INT, nullable) — estimated reading/viewing time
-    - [ ] timestamps
-    - [ ] **Unique constraint:** `(module_id, order)` — prevent duplicate ordering within a module
-  - [ ] `lesson_user` pivot table (progress tracking):
-    - [ ] `id` (UUID, PK)
-    - [ ] `lesson_id` (UUID, FK → lessons.id, CASCADE)
-    - [ ] `user_id` (UUID, FK → users.id, CASCADE)
-    - [ ] `completed_at` (TIMESTAMP, nullable) — when student marked lesson complete
-    - [ ] `last_viewed_at` (TIMESTAMP, nullable) — for resuming progress
-    - [ ] timestamps
-    - [ ] **Unique constraint:** `(lesson_id, user_id)` — each student can complete once
-- [ ] Apply `HasUuid` trait to `Course`, `Module`, `Lesson` models
+- [x] Create migration: `php artisan make:migration create_courses_modules_lessons_tables --no-interaction`
+  - [x] `courses` table:
+    - [x] `id` (UUID, PK)
+    - [x] `school_id` (UUID, FK → schools.id, CASCADE, indexed) — **school-scoped**
+    - [x] `title` (VARCHAR 255, not null)
+    - [x] `description` (TEXT, nullable)
+    - [x] `created_by` (UUID, FK → users.id, nullable, SET NULL) — instructor who created course
+    - [x] `is_published` (BOOLEAN, default false) — draft vs published state
+    - [x] `slug` (VARCHAR 255, nullable, unique per school) — for URL-friendly access
+    - [x] timestamps
+  - [x] `modules` table:
+    - [x] `id` (UUID, PK)
+    - [x] `course_id` (UUID, FK → courses.id, CASCADE)
+    - [x] `title` (VARCHAR 255, not null)
+    - [x] `description` (TEXT, nullable)
+    - [x] `order` (UNSIGNED INT, not null) — enforced ordering (1, 2, 3...)
+    - [x] `is_published` (BOOLEAN, default false)
+    - [x] timestamps
+    - [x] **Unique constraint:** `(course_id, order)` — prevent duplicate ordering within a course
+  - [x] `lessons` table:
+    - [x] `id` (UUID, PK)
+    - [x] `module_id` (UUID, FK → modules.id, CASCADE)
+    - [x] `title` (VARCHAR 255, not null)
+    - [x] `content` (LONGTEXT, nullable) — rich HTML/markdown lesson body
+    - [x] `video_embed_url` (VARCHAR 500, nullable) — external video URL (YouTube, Vimeo, etc.)
+    - [x] `order` (UNSIGNED INT, not null) — enforced ordering within module
+    - [x] `is_published` (BOOLEAN, default false)
+    - [x] `duration_minutes` (UNSIGNED INT, nullable) — estimated reading/viewing time
+    - [x] timestamps
+    - [x] **Unique constraint:** `(module_id, order)` — prevent duplicate ordering within a module
+  - [x] `lesson_user` pivot table (progress tracking):
+    - [x] `id` (BIGINT, PK) — auto-increment for Laravel pivot compatibility
+    - [x] `lesson_id` (UUID, FK → lessons.id, CASCADE)
+    - [x] `user_id` (UUID, FK → users.id, CASCADE)
+    - [x] `completed_at` (TIMESTAMP, nullable) — when student marked lesson complete
+    - [x] `last_viewed_at` (TIMESTAMP, nullable) — for resuming progress
+    - [x] timestamps
+    - [x] **Unique constraint:** `(lesson_id, user_id)` — each student can complete once
+- [x] Apply `HasUuid` trait to `Course`, `Module`, `Lesson` models
 
 ## 2. Models & Relationships
 
-- [ ] Generate `Course` model:
-  - [ ] Apply `HasUuid` trait
-  - [ ] Apply `BelongsToSchool` trait (school-scoped)
-  - [ ] Add `$fillable` (`title`, `description`, `slug`, `is_published`)
-  - [ ] Define relationships:
-    - [ ] `hasMany(Module::class)` — ordered by `order` column
-    - [ ] `belongsTo(User::class, 'created_by')` — creator
-  - [ ] Add method: `publish(): void` — set `is_published = true`
-  - [ ] Add accessor: `isPublished(): bool`
-  - [ ] Add accessor: `modulesCount(): int` — count of modules
-- [ ] Generate `Module` model:
-  - [ ] Apply `HasUuid` trait
-  - [ ] Add `$fillable` (`title`, `description`, `order`, `is_published`)
-  - [ ] Define relationships:
-    - [ ] `belongsTo(Course::class)` — parent course
-    - [ ] `hasMany(Lesson::class)` — ordered by `order` column
-  - [ ] Add method: `moveUp(): void` — decrement order, swap with previous
-  - [ ] Add method: `moveDown(): void` — increment order, swap with next
-  - [ ] Add accessor: `lessonsCount(): int`
-  - [ ] Add method: `nextOrder(): int` — returns max(order) + 1 for new lessons
-- [ ] Generate `Lesson` model:
-  - [ ] Apply `HasUuid` trait
-  - [ ] Add `$fillable` (`title`, `content`, `video_embed_url`, `order`, `duration_minutes`, `is_published`)
-  - [ ] Define relationships:
-    - [ ] `belongsTo(Module::class)` — parent module
-    - [ ] `belongsToMany(User::class, 'lesson_user')` — students who completed
+- [x] Generate `Course` model:
+  - [x] Apply `HasUuid` trait
+  - [x] Apply `BelongsToSchool` trait (school-scoped)
+  - [x] Add `$fillable` (`title`, `description`, `slug`, `is_published`)
+  - [x] Define relationships:
+    - [x] `hasMany(Module::class)` — ordered by `order` column
+    - [x] `belongsTo(User::class, 'created_by')` — creator
+  - [x] Add method: `publish(): void` — set `is_published = true`
+  - [x] Add accessor: `isPublished(): bool`
+  - [x] Add accessor: `modulesCount(): int` — count of modules
+- [x] Generate `Module` model:
+  - [x] Apply `HasUuid` trait
+  - [x] Add `$fillable` (`title`, `description`, `order`, `is_published`)
+  - [x] Define relationships:
+    - [x] `belongsTo(Course::class)` — parent course
+    - [x] `hasMany(Lesson::class)` — ordered by `order` column
+  - [x] Add method: `moveUp(): void` — decrement order, swap with previous
+  - [x] Add method: `moveDown(): void` — increment order, swap with next
+  - [x] Add accessor: `lessonsCount(): int`
+  - [x] Add method: `nextOrder(): int` — returns max(order) + 1 for new lessons
+- [x] Generate `Lesson` model:
+  - [x] Apply `HasUuid` trait
+  - [x] Add `$fillable` (`title`, `content`, `video_embed_url`, `order`, `duration_minutes`, `is_published`)
+  - [x] Define relationships:
+    - [x] `belongsTo(Module::class)` — parent module
+    - [x] `belongsToMany(User::class, 'lesson_user')` — students who completed
     - [ ] `hasMany(Assignment::class)` — assignments in this lesson (Phase 1.3)
-  - [ ] Add method: `moveUp(): void`
-  - [ ] Add method: `moveDown(): void`
-  - [ ] Add method: `isCompletedBy($user): bool` — check if user completed lesson
-  - [ ] Add method: `markCompleteFor($user): void` — set completed_at for user
-  - [ ] Add accessor: `isPublished(): bool`
-- [ ] Create `LessonProgress` model (optional convenience model for lesson_user pivot):
-  - [ ] Alternatively, just use `User::lessons()` with pivot data
+  - [x] Add method: `moveUp(): void`
+  - [x] Add method: `moveDown(): void`
+  - [x] Add method: `isCompletedBy($user): bool` — check if user completed lesson
+  - [x] Add method: `markCompleteFor($user): void` — set completed_at for user
+  - [x] Add accessor: `isPublished(): bool`
+- [x] Create `LessonProgress` model (optional convenience model for lesson_user pivot):
+  - [x] Alternatively, just use `User::lessons()` with pivot data
 
 ## 3. RBAC: Permission Definitions & Seeding
 
@@ -111,18 +111,18 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 
 ## 4. Factories & Seeders (Content Engine)
 
-- [ ] Create `CourseFactory`:
-  - [ ] Generate random title, description, slug
-  - [ ] Associate with school via `school_id` (BelongsToSchool handles auto-fill)
-  - [ ] Associate with instructor as creator
-- [ ] Create `ModuleFactory`:
-  - [ ] Generate random title, description
-  - [ ] Accept course_id and order parameters
-  - [ ] Randomize is_published
-- [ ] Create `LessonFactory`:
-  - [ ] Generate random title, content (using faker), optional video URL
-  - [ ] Accept module_id and order parameters
-  - [ ] Randomize is_published, duration_minutes (5-60)
+- [x] Create `CourseFactory`:
+  - [x] Generate random title, description, slug
+  - [x] Associate with school via `school_id` (BelongsToSchool handles auto-fill)
+  - [x] Associate with instructor as creator
+- [x] Create `ModuleFactory`:
+  - [x] Generate random title, description
+  - [x] Accept course_id and order parameters
+  - [x] Randomize is_published
+- [x] Create `LessonFactory`:
+  - [x] Generate random title, content (using faker), optional video URL
+  - [x] Accept module_id and order parameters
+  - [x] Randomize is_published, duration_minutes (5-60)
 - [ ] Create `CourseDemoSeeder`:
   - [ ] Seeds 2-3 demo courses per school (if first-time setup)
   - [ ] Each course has 2-3 modules
@@ -226,6 +226,14 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 
 ## 9. Testing
 
+- [x] Create `CourseDatabaseTest` (feature test) — schema & model validation:
+  - [x] Course can be created and associated with school
+  - [x] Module belongs to course with enforced ordering
+  - [x] Lesson belongs to module with enforced ordering
+  - [x] Lesson completion tracking works correctly
+  - [x] Course slug is unique per school
+  - [x] Module and lesson ordering is enforced
+  - [x] Cascade delete removes related records (7/7 tests passing)
 - [ ] Create `CourseTest` (feature test):
   - [ ] Instructor can create/edit/delete course
   - [ ] Course is automatically scoped to school
@@ -251,7 +259,7 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
   - [ ] Unpublished lesson returns 403 for students (published view only)
   - [ ] "Mark Complete" button visible only if not completed
   - [ ] Navigation to previous/next lesson works
-- [ ] Run `php artisan test --compact`
+- [x] Run `php artisan test --compact` — database schema tests passing
 
 ## 10. Documentation & Verification
 

@@ -47,6 +47,9 @@ class DatabaseSeeder extends Seeder
         // Seed default roles for schools (permissions are seeded via migration)
         $this->call(DefaultRoleSeeder::class);
 
+        // Seed sample content for Content Engine
+        $this->call(ContentEngineSeeder::class);
+
         // $this->call(ProductSeeder::class);
     }
 }

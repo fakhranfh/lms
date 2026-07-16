@@ -1,4 +1,4 @@
-# Phase 1 — Data Architecture Foundation: Task List
+# Phase 1.0 — Data Architecture Foundation: Task List
 
 **Goal:** Establish the multi-school data foundation (UUID primary keys, `School` model, school-scoped `User`, and global scoping) that every later phase depends on. No later phase may begin until this one is stable.
 

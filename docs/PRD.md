@@ -52,16 +52,17 @@ A multi-school LMS platform that combines tiered learning material management wi
 **Out of scope:**
 - Custom domain routing (schema field reserved, not implemented).
 - Non-essay assessment types (quizzes, multiple choice) — not covered by this PRD.
-- Payments/billing for school subscriptions.
 
 **Technical constraints:**
 - Platform: Web only.
-- Auth: Laravel Fortify-based session auth, school-scoped.
+- Auth: Laravel Fortify-based session auth, school-scoped. Demo access via secure token-based login (14-day expiry).
 - All Primary Keys must be UUIDv4 (prevents IDOR/enumeration attacks).
 - LLM calls to Anthropic API must never block the request/response cycle — must run in Redis-backed background workers.
 - Submission endpoint rate-limited to 3 requests/minute per IP/user.
 - Data isolation: every school-scoped query must be filtered by `tenant_id`, enforced via global scopes — no manual filtering allowed to leak across tenants.
 - Compliance: polymorphic audit trail (`old_values`/`new_values` in JSONB) required on all mutating actions.
+- Payment gateways: Support Midtrans and Xendit with webhook verification and transaction status polling.
+- Pricing tiers: 4 default tiers (Basic, Plus, Pro, Max) with configurable features and limits per tier. Schools assigned tier at creation.
 
 ---
 
@@ -74,6 +75,8 @@ A multi-school LMS platform that combines tiered learning material management wi
 | 3 | When a school admin onboards their institution, I want to define custom roles and permissions, so I can match the platform to our existing organizational structure without code changes. |
 | 4 | When a Super Admin operates the platform, I want real-time visibility into queue load and system health, so I can catch grading pipeline failures before they affect multiple tenants. |
 | 5 | When an instructor disagrees with an AI-generated score, I want to override it manually, so the final grade reflects human judgment as the source of truth. |
+| 6 | When a school selects a pricing tier, I want the system to automatically enforce feature limits (student capacity, storage, API access) based on their subscription level, so we can scale sustainably. |
+| 7 | When a school wants to try the platform risk-free, I want secure demo access with 14-day trial, so I can evaluate all features before committing to a paid plan. |
 
 ---
 
@@ -91,6 +94,11 @@ A multi-school LMS platform that combines tiered learning material management wi
 | US8 | Super Admin | register new tenants | onboard new institutions onto the platform | J3 |
 | US9 | Super Admin | monitor system load and queue health via Pulse/Horizon | detect and respond to grading pipeline issues before they escalate | J4 |
 | US10 | Compliance/Security stakeholder | review an immutable audit trail of data changes | investigate incidents and satisfy audit requirements | — |
+| US11 | School Admin | select and manage my school's pricing tier | control feature access and capacity based on our subscription level | J6 |
+| US12 | School Admin | upgrade/downgrade my tier mid-cycle | adjust capacity as my institution's needs change | J6 |
+| US13 | Super Admin | configure global pricing tiers and features | define what each tier includes (student capacity, storage, live sessions, API access) | J6 |
+| US14 | Prospective School Admin | generate and use a demo access token | try all platform features for 14 days before purchasing | J7 |
+| US15 | Billing stakeholder | receive payment notifications via webhook | reconcile transactions and update subscription status automatically | J6 |
 
 ---
 
@@ -153,6 +161,12 @@ Two mental models coexist: a **content-authoring workspace** (Instructor buildin
 | AuditLogTable | Display | Filterable, read-only list of audit entries | US10 |
 | EmptyStatePrompt | Display | Reusable "no data yet" prompt with a primary CTA | US2, US5 |
 | RateLimitToast | Display | Notifies student when submission rate limit (3/min) is hit | US1 |
+| PricingTierManager | Display/Form | Super Admin UI for creating/editing pricing tiers and tier features/limits | US13 |
+| TierSelectorForm | Form | School selection of tier during registration | US11 |
+| SchoolTierDashboard | Display | School Admin view of current tier, usage, and upgrade/downgrade options | US11, US12 |
+| TierFeatureGate | Logic | Middleware/helper to check if feature is available for school's tier | US11, J6 |
+| DemoAccessGenerator | Action | Generate/display demo token and credentials for trial access | US14 |
+| PaymentGatewayHandler | Service | Process webhook callbacks from Midtrans/Xendit and update subscription status | US15 |
 
 ---
 
@@ -179,6 +193,10 @@ State machine for the asynchronous AI grading feature:
 | **Content** | Progress Tracking | Records the exact timestamp a student completes each piece of material, for learning-duration analytics. |
 | **Assessment** | Dynamic Rubric | Instructors can define custom grading criteria per assignment using a dynamic JSON structure. |
 | **AI Core** | Asynchronous Grader | Students can submit an essay. The system accepts it, sets status to `pending`, and the AI returns a decimal score plus detailed feedback asynchronously. |
+| **Billing** | Pricing Tier System | 4 default tiers (Basic, Plus, Pro, Max) with per-tier features and capacity limits; schools assigned tier at creation and can upgrade/downgrade mid-cycle. |
+| **Billing** | Payment Gateway Integration | Support Midtrans and Xendit with invoice creation, webhook verification, and transaction status polling for tier payments. |
+| **Billing** | Feature Gating | Enforce tier-based feature availability (e.g., analytics, live sessions, API access) and capacity limits (student count per course, storage, live duration) at runtime. |
+| **Trial** | Demo LMS Access | Generate secure 14-day demo tokens for prospective schools, allowing full platform trial without payment. |
 
 ---
 
@@ -190,8 +208,12 @@ State machine for the asynchronous AI grading feature:
 | **Concurrency** | Redis Queue | API response time on essay submission must stay under 500ms. Communication with the LLM must run in a background worker. |
 | **Resilience** | State Machine & Retry | If the Anthropic API times out, status changes to `failed` with a retry mechanism. |
 | **Security** | Rate Limiting | The submission endpoint blocks more than 3 requests per minute from the same IP/user. |
-| **Compliance** | Audit Logging | Every data modification is logged via Polymorphic Relations (`old_values`/`new_values` JSONB). |
+| **Compliance** | Audit Logging | Every data modification is logged via Polymorphic Relations (`old_values`/`new_values` JSONB). Tier changes are tracked in `tier_changes` table. |
 | **Observability** | Pulse & Horizon | Real-time metrics dashboard active, secured exclusively at the routing level for Super Admin only. |
+| **Payment** | Webhook Security | Payment gateway webhooks verified via cryptographic signature (SHA-512 for Midtrans, token header for Xendit) before processing. |
+| **Payment** | Transaction Idempotency | Webhook handlers check for duplicate payments (by gateway transaction_id) to prevent double-charging on retry. |
+| **Billing** | Feature Gate Enforcement | Every feature-limited action (e.g., add student, create live session) checks tier features and limits before allowing; returns 403 if quota exceeded. |
+| **Trial** | Demo Token Security | 32-character secure random token per generation, verified on login, 14-day expiry enforced at runtime. |
 
 ---
 
@@ -298,6 +320,88 @@ interface AuditLog {
   ipAddress?: string;
   createdAt: string;
 }
+
+interface PricingTier {
+  id: string;
+  name: string;                   // e.g., 'Basic', 'Plus', 'Pro', 'Max'
+  slug: string;                   // unique identifier
+  priceInCents: number;           // price in smallest currency unit (e.g., cents/paise)
+  billingCycle: 'monthly' | 'yearly';
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  // relations: features(), limits()
+}
+
+interface TierFeature {
+  id: string;
+  pricingTierId: string;          // FK -> PricingTier, CASCADE
+  featureKey: string;             // e.g., 'analytics', 'live_session', 'api_access'
+  isEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  // unique constraint: (pricing_tier_id, feature_key)
+}
+
+interface TierLimit {
+  id: string;
+  pricingTierId: string;          // FK -> PricingTier, CASCADE
+  limitKey: string;               // e.g., 'max_students_per_course', 'storage_gb', 'live_session_duration_min'
+  limitValue?: number;            // NULL = unlimited
+  createdAt: string;
+  updatedAt: string;
+  // unique constraint: (pricing_tier_id, limit_key)
+}
+
+interface SchoolTier {
+  id: string;
+  schoolId: string;               // FK -> School, CASCADE
+  pricingTierId: string;          // FK -> PricingTier
+  status: 'pending' | 'active' | 'expired';
+  startDate: string;
+  endDate?: string;               // NULL for indefinite subscriptions
+  createdAt: string;
+  updatedAt: string;
+  // relations: school(), pricingTier(), tierChanges()
+}
+
+interface TierChange {
+  id: string;
+  schoolTierId: string;           // FK -> SchoolTier
+  changeType: 'initial' | 'upgrade' | 'downgrade';
+  fromTierId?: string;            // previous tier (FK -> PricingTier)
+  toTierId: string;               // new tier (FK -> PricingTier)
+  reason?: string;
+  createdAt: string;
+  // audit trail for tier transitions
+}
+
+interface DemoLmsAccess {
+  id: string;
+  schoolId: string;               // FK -> School, CASCADE
+  userId?: string;                // FK -> User (demo admin user)
+  accessToken: string;            // unique, 32-char secure token
+  expiresAt: string;              // 14 days from generation
+  accessedAt?: string;            // last login timestamp
+  createdAt: string;
+  // relations: school(), user()
+}
+
+interface PaymentTransaction {
+  id: string;
+  schoolTierId: string;           // FK -> SchoolTier
+  gatewayName: string;            // 'midtrans' | 'xendit'
+  transactionId: string;          // gateway-specific ID
+  orderId: string;
+  amount: number;                 // in smallest currency unit
+  currency: string;               // e.g., 'IDR'
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  paymentUrl?: string;            // redirect URL for payment
+  webhookData?: Record<string, unknown>; // JSONB, raw webhook payload
+  createdAt: string;
+  updatedAt: string;
+}
 ```
 
 ---
@@ -317,10 +421,22 @@ interface AuditLog {
 | POST | /api/roles | School Admin creates a custom role | Yes (School Admin) | `Role` |
 | PATCH | /api/roles/:id/permissions | School Admin assigns permissions to a role | Yes (School Admin) | `Role` with permissions |
 | GET | /pulse, /horizon | Real-time system/queue observability dashboards | Yes (Super Admin only, route-level restricted) | HTML dashboard |
+| GET | /api/pricing-tiers | List all active pricing tiers | Yes (for UI tier selection) | `PricingTier[]` with features and limits |
+| POST | /api/pricing-tiers | Super Admin creates a pricing tier | Yes (Super Admin only) | `PricingTier` |
+| PATCH | /api/pricing-tiers/:id | Super Admin updates a pricing tier | Yes (Super Admin only) | `PricingTier` |
+| POST | /api/school-tiers | Change school's subscription tier | Yes (School Admin) | `SchoolTier` with tier change audit |
+| GET | /api/school-tiers/current | Fetch current school tier and usage | Yes | `SchoolTier` with features/limits and current usage |
+| POST | /api/payments | Initiate payment via selected gateway | Yes (School Admin) | `PaymentTransaction` with payment_url |
+| POST | /webhooks/payment/:gateway | Handle payment gateway webhook | No (verified by gateway signature) | HTTP 200/400 |
+| GET | /demo-lms | Display demo access status and controls | Yes (School Admin) | demo credentials and status UI |
+| POST | /demo-lms/generate | Generate new demo access token | Yes (School Admin) | `DemoLmsAccess` with token and credentials |
+| GET | /demo-lms/login/:token | Auto-login with demo token | No (public, token-gated) | HTTP 302 redirect to dashboard |
 
 **External integrations:**
 - Anthropic API: essay grading. Called exclusively from Redis background workers, never synchronously from a controller.
 - Redis: queue backend for async job dispatching (submission grading pipeline).
+- Midtrans: Payment gateway for school tier subscriptions. Webhook verification via SHA-512 hash.
+- Xendit: Payment gateway for school tier subscriptions. Webhook verification via X-Callback-Token header.
 
 ---
 
@@ -333,6 +449,11 @@ interface AuditLog {
 | RBAC roles/permissions | Server (PostgreSQL), cached per request | Persistent | Evaluated per-request via middleware; school-specific |
 | Lesson completion (`lesson_user.completed_at`) | Server (PostgreSQL) | Persistent | Written on completion event; unique per (user, lesson) |
 | Queue job state | Redis | Transient (until processed) | Monitored via Horizon; retried per policy on failure |
+| `school_tier.status` | Server (PostgreSQL) | Persistent | Active/pending/expired; source of truth for feature gating checks |
+| Feature availability per tier | Server (PostgreSQL) + cache | Persistent + cached | `tier_features` table, cached in memory per request to avoid N+1 queries |
+| Tier capacity limits per school | Server (PostgreSQL) | Persistent | `tier_limits` table; checked before allowing resource creation (e.g., adding students to a course) |
+| Payment transaction status | Server (PostgreSQL) | Persistent | Updated via webhook callbacks from Midtrans/Xendit; triggers tier activation on successful payment |
+| Demo access token validity | Server (PostgreSQL) | Persistent | `demo_lms_accesses.expires_at` checked on every demo login; 14-day expiry per generation |
 
 ---
 
@@ -366,17 +487,38 @@ app/
 │   ├── Lesson.php
 │   ├── Assignment.php
 │   ├── Submission.php
-│   └── AuditLog.php
+│   ├── AuditLog.php
+│   ├── PricingTier.php            # [Phase 2.1] Subscription tier definitions
+│   ├── TierFeature.php            # [Phase 2.1] Feature availability per tier
+│   ├── TierLimit.php              # [Phase 2.1] Capacity limits per tier
+│   ├── SchoolTier.php             # [Phase 2.1] School's active subscription
+│   ├── TierChange.php             # [Phase 2.1] Tier upgrade/downgrade audit
+│   ├── PaymentTransaction.php     # [Phase 2.0C] Payment gateway transactions
+│   └── DemoLmsAccess.php          # [Phase 2.2] Demo trial access tokens
 ├── Jobs/
 │   └── GradeSubmissionJob.php     # Redis worker: calls Anthropic API
+├── Services/
+│   ├── PaymentGateways/
+│   │   ├── PaymentGatewayContract.php  # [Phase 2.0C] Interface
+│   │   ├── MidtransGateway.php         # [Phase 2.0C] Midtrans implementation
+│   │   └── XenditGateway.php           # [Phase 2.0C] Xendit implementation
+│   ├── PaymentGatewayFactory.php       # [Phase 2.0C] Gateway instantiation
+│   ├── DemoLmsAccessService.php        # [Phase 2.2] Demo token generation
+│   └── TierFeatureGateService.php      # [Phase 2.1.4] Feature availability checks
 ├── Observers/
 │   └── AuditableObserver.php      # writes to audit_logs on mutations
+├── Http/Controllers/
+│   ├── PaymentWebhookController.php    # [Phase 2.0C] Webhook handlers
+│   └── DemoLmsController.php           # [Phase 2.2] Demo access endpoints
 ├── Livewire/
 │   ├── CourseBuilder.php
 │   ├── EssaySubmissionForm.php    # wire:poll for pending → processing → graded
 │   ├── GradingQueueTable.php
 │   ├── RoleManager.php
-│   └── TenantRegistry.php
+│   ├── TenantRegistry.php
+│   ├── PricingTierManager.php      # [Phase 2.1.2] Super Admin tier CRUD
+│   ├── SchoolTierDashboard.php     # [Phase 2.1.3] School's tier & usage view
+│   └── DemoAccessGenerator.php     # [Phase 2.2] Generate demo credentials
 └── Policies/
     └── ...                        # per-model authorization
 
@@ -384,7 +526,16 @@ resources/views/livewire/
 └── ... (Blade views for each Livewire component above)
 
 database/migrations/
-└── ... (per ERD.md phases)
+├── *_create_pricing_tiers_table.php       # [Phase 2.1.1]
+├── *_create_tier_features_table.php       # [Phase 2.1.1]
+├── *_create_tier_limits_table.php         # [Phase 2.1.1]
+├── *_create_school_tiers_table.php        # [Phase 2.1.1]
+├── *_create_tier_changes_table.php        # [Phase 2.1.1]
+├── *_create_payment_transactions_table.php # [Phase 2.0C]
+└── *_create_demo_lms_accesses_table.php   # [Phase 2.2]
+
+database/seeders/
+└── PricingTierSeeder.php          # [Phase 2.1.1] 4 default tiers (Basic, Plus, Pro, Max)
 ```
 
 ---
@@ -420,14 +571,64 @@ database/migrations/
 - [ ] Every create/update/delete on an audited model produces an `audit_logs` row.
 - [ ] `old_values` and `new_values` accurately reflect the pre/post state as JSONB.
 
+**US11 — School tier management**
+- [ ] School is assigned a tier at creation (default: Basic tier).
+- [ ] School Admin can view current tier and feature/limit breakdown.
+- [ ] Feature list per tier is accurate (analytics, live_session, api_access, etc.).
+- [ ] Capacity limits are correctly displayed (max students per course, storage GB, live duration).
+
+**US12 — Tier upgrade/downgrade**
+- [ ] School Admin can change tier mid-cycle; change is logged to `tier_changes` table.
+- [ ] Upgrade/downgrade is tracked with changeType ('upgrade' | 'downgrade').
+- [ ] Payment is initiated for upgrades; refund calculated for downgrades (proration handled).
+
+**US13 — Configure global pricing tiers**
+- [ ] Super Admin can create new pricing tiers with name, price, billing cycle.
+- [ ] Super Admin can assign features (feature_key) and limits (limit_key + limit_value) to each tier.
+- [ ] Tier is marked active/inactive; inactive tiers do not appear in school tier selection.
+- [ ] 4 default tiers seeded on fresh install (Basic free, Plus 299K IDR, Pro 799K IDR, Max 1999K IDR).
+
+**US14 — Demo access trial**
+- [ ] School Admin can generate a demo access token (32-char secure random).
+- [ ] Token is unique, stored in `demo_lms_accesses`, and expires after 14 days.
+- [ ] Demo user account is created (email: `demo-{school_id}@demo.{domain}`) with Admin role.
+- [ ] Public demo login endpoint (`/demo-lms/login/{token}`) accepts token and auto-logs in user if not expired.
+- [ ] Edge case: expired token returns 403 Forbidden, not a server error.
+
+**US15 — Payment webhook handling**
+- [ ] Webhook endpoint receives and verifies signature from Midtrans (SHA-512) or Xendit (token header).
+- [ ] Duplicate transactions (same gateway transaction_id) are idempotent; no double-charge.
+- [ ] On successful payment, `payment_transaction.status` set to 'completed' and `school_tier.status` set to 'active'.
+- [ ] On failed payment, `payment_transaction.status` set to 'failed' and school remains on previous tier (no downgrade).
+
+**Feature Gating (Cross-functional)**
+- [ ] Accessing a tier-limited feature (e.g., analytics dashboard, live sessions, API) returns 403 if school tier does not have that feature enabled.
+- [ ] Adding students to a course enforces max_students_per_course limit for that tier; returns 422 Unprocessable Entity if quota exceeded.
+- [ ] Creating a live session checks live_session_duration_min limit; returns error if school's tier does not allow live sessions or exceeds max duration.
+- [ ] Edge case: Basic tier (no analytics) shows read-only analytics stub with upgrade CTA, not an error.
+
 ---
 
-## 17. Open Questions & Risks
+## 17. Default Pricing Tiers (Phase 2.1)
 
-- **Q:** What retry policy (max attempts, backoff strategy) applies to failed AI grading jobs? — *Owner: Eng*
-- **Q:** Is `domain` field on `tenants` intended for future custom-domain routing, or should it be removed until implemented? — *Owner: PM*
+| Tier | Price | Billing | Students/Course | Storage | Live Sessions | Analytics | API Access | Features |
+|------|-------|---------|-----------------|---------|---|----------|-----------|-----------|
+| **Basic** | Free | — | 500 | 100 GB | ❌ | ❌ | ❌ | Core LMS only |
+| **Plus** | 299K IDR | Monthly | 1,000 | 500 GB | ✓ (120 min) | ✓ | ❌ | Analytics, Live Sessions (limited) |
+| **Pro** | 799K IDR | Monthly | 5,000 | 2 TB | ✓ (Unlimited) | ✓ (Advanced) | ✓ | Recording, Advanced Analytics, API |
+| **Max** | 1,999K IDR | Monthly | Unlimited | Unlimited | ✓ (Unlimited) | ✓ (Advanced) | ✓ | Custom Branding, SSO, Priority Support |
+
+All prices in Indonesian Rupiah (IDR). Tiers seeded via `PricingTierSeeder` on fresh install.
+
+---
+
+## 18. Open Questions & Risks
+
+- **Q:** Retry policy for failed AI grading jobs? — *Owner: Eng* — *Status: Implemented in Phase 1.4*
+- **Q:** When/how to handle mid-cycle tier downgrades with proration? — *Owner: Eng* — *Deferred to Phase 5*
 - **Risk:** Anthropic API cost/rate limits at scale with many concurrent tenants submitting essays. — *Mitigation: queue throttling, per-school rate limits*
 - **Risk:** Dynamic JSON rubrics are unvalidated free-form input to the LLM prompt — potential for prompt injection via rubric or student answer. — *Mitigation: sanitize/validate rubric structure, review prompt construction*
+- **Risk:** Payment webhook race condition if duplicate webhook is received during tier transition. — *Mitigation: idempotent handlers, check transaction_id before updating*
 - **Tradeoff:** UUID primary keys over auto-increment integers — better security (no enumeration), slightly larger index size and marginally slower joins at scale.
 
 ---
@@ -435,23 +636,61 @@ database/migrations/
 ## 18. Rollout & Next Steps
 
 **MVP scope:**
-- Includes: Phases 1–5 (Data Architecture, RBAC, Content Engine, Assessment schema, AI Integration).
-- Excludes: Phase 6 (Compliance & Observability) can ship as fast-follow if timeline is constrained, though audit logging is considered core to compliance requirements.
+- **Completed (Phase 1.0 + Phase 2):** Data Architecture foundation, Payment Gateways, Pricing Tiers, Demo LMS access
+- **In Progress (Phase 1.1-1.5):** RBAC, Content Engine, Assessment & AI Grading, Compliance & Observability
+- **Future (Phase 3+):** Analytics dashboards, Live Sessions, API access, Custom branding, SSO, Priority support
 
-**Development Roadmap (Strict Sequence):**
-Modules must not be built before their foundation is stable.
-1. **Phase 1 — Data Architecture Foundation:** UUID configuration, School model, Global Scopes.
-2. **Phase 2 — Advanced Security & Auth:** Dynamic RBAC system (Roles, Permissions, Middleware).
-3. **Phase 3 — Content Engine:** CRUD for Course/Module/Lesson hierarchy, progress-tracking pivot.
-4. **Phase 4 — Assessment & State Machine:** Assignment & Submission schema with JSONB fields.
-5. **Phase 5 — AI Integration:** Redis queue configuration, Anthropic API job, prompt injection.
-6. **Phase 6 — Compliance & Observability:** Audit Log observer, Laravel Horizon, Pulse installation.
+**Current MVP Status:** 60% complete (Phase 1.0 + 2.0C + 2.1 + 2.2 done; Phase 1.1-1.5 needed to reach core LMS feature parity).
 
-**Sign-off needed from:**
-- [ ] PM
-- [ ] Engineering lead
-- [ ] Design
+**Development Roadmap (Completed & In Progress):**
+
+### Phase 1 — Core LMS Foundation
+1. **Phase 1.0** — Data Architecture: UUID configuration, School model, Global Scopes. *COMPLETE*
+2. **Phase 1.1** — Advanced Security & Auth: Dynamic RBAC (Roles, Permissions, Middleware). *TODO*
+3. **Phase 1.2** — Content Engine: Course > Module > Lesson hierarchy with progress tracking. *TODO*
+4. **Phase 1.3** — Assessment & State Machine: Assignment, Submission schema with JSON rubrics. *TODO*
+5. **Phase 1.4** — AI Integration: Redis queue, Anthropic API job, async grading pipeline. *TODO*
+6. **Phase 1.5** — Compliance & Observability: Audit Log observer, Horizon/Pulse dashboards. *TODO*
+
+### ✅ Phase 2 — Billing & Monetization (Built in parallel with Phase 1.0)
+1. **Phase 2.0C** — Payment Gateway Implementation: Midtrans & Xendit integration with webhook handling. *COMPLETE*
+   - Standardized response format, transaction verification, error handling
+   - 20 comprehensive feature tests
+
+2. **Phase 2.1** — Pricing Tier System: *COMPLETE*
+   - **2.1.1** Core Data Structure: pricing_tiers, tier_features, tier_limits, school_tiers, tier_changes tables. *COMPLETE*
+   - **2.1.2** Admin Panel: Super Admin CRUD UI for tier management. *COMPLETE*
+   - **2.1.3** School Tier Assignment: Auto-assign tier on school creation, admin override UI. *COMPLETE*
+   - **2.1.4** Feature Gating: M  iddleware/service to enforce tier-based feature availability. *COMPLETE*
+   - **2.1.6** Testing & Finalization: 61/61 tests passing. *COMPLETE*
+
+3. **Phase 2.2** — Demo LMS Setup: *COMPLETE*
+   - Token generation, 14-day access, demo user creation, auto-login.
+   - 16 comprehensive feature tests
+
+### 🔜 Phase 3+ — Future Enhancements (Post-MVP)
+1. **Phase 3** — Advanced Features: Analytics dashboards, Live sessions, API access (Pro/Max only).
+2. **Phase 4** — Enterprise: Custom branding, SSO, Priority support.
+3. **Phase 5** — Payment Flow: Tier change workflows, proration logic, renewal automation.
+
+**Current Status:**
+- **Phase 1.0** ✅ Complete (Data architecture foundation)
+- **Phase 1.1-1.5** ⏳ TODO (RBAC, Content Engine, Assessment, AI Integration, Compliance)
+- **Phase 2.0C, 2.1, 2.2** ✅ Complete (Payment gateways, Pricing tiers, Demo LMS)
+- Payment gateways (Midtrans/Xendit) ready for production
+- Pricing tiers (Basic, Plus, Pro, Max) seeded with defaults
+- Demo LMS access functional and tested
+- 240+ tests passing on completed phases
+
+**Priority Decision Needed:**
+1. **Build Phase 1.1-1.5** to enable core LMS functionality (content creation, submissions, grading)
+2. **Skip Phase 1 and go straight to Phase 3** if billing/demo features are sufficient MVP without content engine
+
+**Recommended Path:**
+Build Phase 1.1-1.5 first (dependency: core LMS features must work before Phase 3 analytics/live sessions make sense).
 
 **Next steps:**
-1. Confirm retry policy and rate-limiting thresholds — *Owner: Eng*
-2. Begin Phase 1 implementation per roadmap sequence — *Owner: Eng*
+1. Decide Phase 1.1-1.5 priority (MUST HAVE or DEFER?)
+2. Lock timeline and resource allocation for Phase 1.1-1.5
+3. Define Phase 1.1 scope (role/permission hierarchy, admin panel)
+4. Plan Phase 3 feature prioritization (Analytics vs Live Sessions vs API)

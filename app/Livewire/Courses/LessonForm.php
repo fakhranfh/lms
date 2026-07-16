@@ -5,6 +5,7 @@ namespace App\Livewire\Courses;
 use App\Models\Lesson;
 use App\Models\Module;
 use App\Services\LessonService;
+use App\Support\CurrentSchool;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -28,10 +29,11 @@ class LessonForm extends Component
 
     public bool $isPublished = false;
 
-    public function mount(Module $module, ?Lesson $lesson = null): void
+    public function mount(Module $module, ?Lesson $lesson, CurrentSchool $currentSchool): void
     {
         abort_unless(auth()->user()->can('lessons.create') || auth()->user()->can('lessons.edit'), 403);
-        abort_unless($module->course->school_id === auth()->user()->school_id, 403);
+        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        abort_unless($module->course->school_id === $schoolId, 403);
 
         $this->module = $module;
 

@@ -3,6 +3,7 @@
 namespace App\Livewire\Courses;
 
 use App\Models\Course;
+use App\Support\CurrentSchool;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -22,9 +23,10 @@ class CoursesIndex extends Component
         $this->resetPage();
     }
 
-    public function render()
+    public function render(CurrentSchool $currentSchool)
     {
-        $query = Course::where('school_id', auth()->user()->school_id);
+        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $query = Course::where('school_id', $schoolId);
 
         if ($this->search) {
             $query->where(function ($q) {

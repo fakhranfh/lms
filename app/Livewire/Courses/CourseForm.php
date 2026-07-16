@@ -4,6 +4,7 @@ namespace App\Livewire\Courses;
 
 use App\Models\Course;
 use App\Services\CourseService;
+use App\Support\CurrentSchool;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -48,11 +49,11 @@ class CourseForm extends Component
         }
     }
 
-    public function save(CourseService $courseService)
+    public function save(CourseService $courseService, CurrentSchool $currentSchool)
     {
         $this->validate();
 
-        $schoolId = auth()->user()->school_id;
+        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
 
         if ($courseService->slugExists($this->slug, $schoolId, $this->course?->id)) {
             $this->addError('slug', __('Slug already exists for this school.'));

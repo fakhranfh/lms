@@ -5,6 +5,7 @@ namespace App\Livewire\Courses;
 use App\Models\Course;
 use App\Services\LessonService;
 use App\Services\ModuleService;
+use App\Support\CurrentSchool;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -27,9 +28,10 @@ class CourseBuilder extends Component
     /** @var array<string, bool> */
     public array $expandedModules = [];
 
-    public function mount(Course $course): void
+    public function mount(Course $course, CurrentSchool $currentSchool): void
     {
-        abort_unless(auth()->user()->can('courses.view') && $course->school_id === auth()->user()->school_id, 403);
+        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        abort_unless(auth()->user()->can('courses.view') && $course->school_id === $schoolId, 403);
         $this->course = $course;
     }
 

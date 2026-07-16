@@ -1,6 +1,6 @@
 @section('title', 'Edit School: ' . $this->school->name)
 
-<div class="space-y-space-lg">
+<div class="space-y-space-lg" x-data="tierChangeManager()">
     <div class="flex items-center justify-between">
         <h1 class="text-headline-lg font-headline-lg">Edit School: {{ $this->school->name }}</h1>
         <a href="{{ route('admin.schools.index') }}" class="px-space-md py-space-xs rounded-lg bg-outline-variant text-on-surface font-label-sm text-label-sm hover:bg-outline transition-colors">
@@ -104,7 +104,7 @@
                 <div class="space-y-space-md">
                     <div>
                         <label class="block font-label-md text-label-md text-on-surface mb-space-xs">Select New Tier</label>
-                        <select wire:model="newTierId" class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none">
+                        <select x-model="selectedTierId" class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none">
                             <option value="">-- Select Tier --</option>
                             @foreach($this->availableTiers as $tier)
                                 <option value="{{ $tier->id }}">
@@ -114,7 +114,7 @@
                         </select>
                     </div>
 
-                    <button wire:click="initiateChange" :disabled="!$wire.newTierId" class="w-full h-[44px] mt-space-lg bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-on-primary-fixed-variant active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button @click="showModal()" :disabled="!selectedTierId" class="w-full h-[44px] mt-space-lg bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-on-primary-fixed-variant active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                         Change Tier
                     </button>
                 </div>
@@ -144,22 +144,56 @@
     </div>
 
     <!-- Confirmation Modal -->
-    @if($showChangeConfirmation)
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-surface rounded-lg p-space-xl max-w-[420px] shadow-lg">
+    <template x-teleport="body">
+        <div
+            x-show="modalOpen"
+            x-cloak
+            class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
+        >
+            <div class="bg-surface rounded-lg p-space-xl max-w-[420px] w-full shadow-2xl">
                 <h3 class="text-title-md font-title-md text-on-surface mb-space-md">Confirm Tier Change</h3>
                 <p class="text-body-md text-on-surface-variant mb-space-lg">
-                    Are you sure you want to change the tier from <strong>{{ $this->school->tier->name }}</strong> to <strong>{{ $this->availableTiers->firstWhere('id', $this->newTierId)?->name }}</strong>?
+                    Are you sure you want to change the tier from <strong>{{ $this->school->tier->name }}</strong> to <strong x-text="getSelectedTierName()"></strong>?
                 </p>
                 <div class="flex gap-space-md">
-                    <button wire:click="cancelChange" class="flex-1 h-[44px] rounded-lg border border-outline-variant text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors">
+                    <button @click="cancelModal()" class="flex-1 h-[44px] rounded-lg border border-outline-variant text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors">
                         Cancel
                     </button>
-                    <button wire:click="confirmChange" class="flex-1 h-[44px] bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-on-primary-fixed-variant transition-colors">
+                    <button @click="confirmTierChange()" class="flex-1 h-[44px] bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-on-primary-fixed-variant transition-colors">
                         Confirm
                     </button>
                 </div>
             </div>
         </div>
-    @endif
+    </template>
+
+    <script>
+        function tierChangeManager() {
+            const tiers = @json($this->availableTiers);
+            return {
+                selectedTierId: '',
+                modalOpen: false,
+                showModal() {
+                    if (this.selectedTierId && this.selectedTierId !== '{{ $this->school->tier_id }}') {
+                        this.modalOpen = true;
+                    }
+                },
+                cancelModal() {
+                    this.modalOpen = false;
+                    this.selectedTierId = '';
+                },
+                getSelectedTierName() {
+                    const tier = tiers.find(t => t.id == this.selectedTierId);
+                    return tier ? tier.name : '';
+                },
+                confirmTierChange() {
+                    if (this.selectedTierId) {
+                        this.$wire.call('confirmChange', this.selectedTierId);
+                        this.modalOpen = false;
+                        this.selectedTierId = '';
+                    }
+                }
+            }
+        }
+    </script>
 </div>

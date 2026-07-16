@@ -14,10 +14,6 @@ class SchoolEdit extends Component
 {
     public string $schoolId;
 
-    public ?int $newTierId = null;
-
-    public bool $showChangeConfirmation = false;
-
     public ?string $successMessage = null;
 
     public ?string $errorMessage = null;
@@ -65,34 +61,14 @@ class SchoolEdit extends Component
         return $this->school->tier?->limits()->get() ?? collect();
     }
 
-    public function initiateChange(): void
-    {
-        $this->successMessage = null;
-        $this->errorMessage = null;
-
-        if (! $this->newTierId) {
-            $this->errorMessage = 'Please select a new tier.';
-
-            return;
-        }
-
-        if ($this->newTierId == $this->school->tier_id) {
-            $this->errorMessage = 'The selected tier is the same as the current tier.';
-
-            return;
-        }
-
-        $this->showChangeConfirmation = true;
-    }
-
-    public function confirmChange(SchoolService $schoolService, PricingTierService $pricingTierService, TierChangeService $tierChangeService): void
+    public function confirmChange($tierId, SchoolService $schoolService, PricingTierService $pricingTierService, TierChangeService $tierChangeService): void
     {
         $this->successMessage = null;
         $this->errorMessage = null;
 
         try {
             $school = $schoolService->findWith($this->schoolId, ['tier']);
-            $newTier = $pricingTierService->find($this->newTierId);
+            $newTier = $pricingTierService->find($tierId);
 
             if (! $newTier) {
                 $this->errorMessage = 'Selected tier not found.';
@@ -100,11 +76,15 @@ class SchoolEdit extends Component
                 return;
             }
 
+            if ($tierId == $school->tier_id) {
+                $this->errorMessage = 'The selected tier is the same as the current tier.';
+
+                return;
+            }
+
             // Use TierChangeService to handle tier change
             $tierChangeService->initiateTierChange($school, $newTier);
 
-            $this->showChangeConfirmation = false;
-            $this->newTierId = null;
             $this->successMessage = "School tier changed to {$newTier->name} successfully.";
 
             // Reset computed properties
@@ -112,13 +92,6 @@ class SchoolEdit extends Component
         } catch (\Exception $e) {
             $this->errorMessage = 'Failed to change tier: '.$e->getMessage();
         }
-    }
-
-    public function cancelChange(): void
-    {
-        $this->showChangeConfirmation = false;
-        $this->newTierId = null;
-        $this->errorMessage = null;
     }
 
     public function render()

@@ -78,12 +78,12 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
   - [x] Define relationships:
     - [x] `belongsTo(Module::class)` — parent module
     - [x] `belongsToMany(User::class, 'lesson_user')` — students who completed
-    - [ ] `hasMany(Assignment::class)` — assignments in this lesson (Phase 1.3)
   - [x] Add method: `moveUp(): void`
   - [x] Add method: `moveDown(): void`
   - [x] Add method: `isCompletedBy($user): bool` — check if user completed lesson
   - [x] Add method: `markCompleteFor($user): void` — set completed_at for user
   - [x] Add accessor: `isPublished(): bool`
+  - **Note:** `hasMany(Assignment::class)` deferred to Phase 1.3 (Assignment Implementation)
 - [x] Create `LessonProgress` model (optional convenience model for lesson_user pivot):
   - [x] Alternatively, just use `User::lessons()` with pivot data
 

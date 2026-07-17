@@ -84,4 +84,21 @@ class CourseService
     {
         $this->courseRepository->unpublish($id);
     }
+
+    /**
+     * Check if course has any student progress (lesson completion/view).
+     */
+    public function hasStudentProgress(string $courseId): bool
+    {
+        $course = $this->find($courseId);
+        if (! $course) {
+            return false;
+        }
+
+        return $course->modules()
+            ->whereHas('lessons', function ($q) {
+                $q->whereHas('users');
+            })
+            ->exists();
+    }
 }

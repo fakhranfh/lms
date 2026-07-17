@@ -19,11 +19,11 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 | 5. Livewire Components | ✅ Complete | CoursesIndex, CourseBuilder, CourseForm, ModuleForm, LessonForm all built; move up/down, publish toggle (inline checkbox); course delete was broken (mismatched events) and is now fixed, search is now case-insensitive with debounce + skeleton loading |
 | 6. Routes & Controller | ✅ Complete (architecture changed) | Implemented as full-page Livewire routes (`courses.*`, `modules.*`, `lessons.*`), not dedicated Controllers — see Resolved Decisions |
 | 7. Student-Facing Views | ✅ Complete | LessonViewerComponent with lesson display, navigation, progress tracking; CourseOutlineSidebar; 14 tests passing |
-| 8. Validations & Policies | 🟡 Partial (architecture changed) | No dedicated Policy/FormRequest classes; authorization is inline `abort_unless(can(...))` per component, validation via Livewire `#[Validate]` attributes |
-| 9. Testing | ✅ Complete | Schema tests ✅ (7/7); Seeder tests ✅ (8/8); Livewire feature tests ✅ (64/66 passing, 2 skipped); all test flakiness resolved |
+| 8. Validations & Policies | ✅ Complete | No dedicated Policy/FormRequest classes; authorization is inline `abort_unless(can(...))` per component, validation via Livewire `#[Validate]` attributes; video URL validation (YouTube/Vimeo only) + course delete guard implemented |
+| 9. Testing | ✅ Complete | Schema tests ✅ (7/7); Seeder tests ✅ (8/8); Livewire feature tests ✅ (83/84 passing, 1 skipped); all test flakiness resolved; new tests for video validation + delete guard added |
 | 10. Documentation | ⏳ Not Started | CONTENT_ENGINE.md documentation needed |
 
-**Overall:** 9/10 sections complete, 1 partial. Next: Documentation.
+**Overall:** 10/10 sections complete. Next: Documentation (Section 10).
 
 ### Known Issues (found during 2026-07-17 audit) — ALL RESOLVED
 
@@ -246,16 +246,16 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 
 ## 8. Validations & Authorization
 
-**Status:** 🟡 Partial, different architecture than planned. No Policy or FormRequest classes exist for this domain (`app/Policies/` only has `UserPolicy`). Authorization and validation are both handled inline in the Livewire components instead:
+**Status:** ✅ Complete, different architecture than planned. No Policy or FormRequest classes exist for this domain (`app/Policies/` only has `UserPolicy`). Authorization and validation are both handled inline in the Livewire components instead:
 
 - [x] Course/Module/Lesson authorization — implemented as inline `abort_unless(auth()->user()->can('courses.edit') && $course->school_id === $schoolId, 403)` style checks in each component's `mount()`, not as `CoursePolicy`/`ModulePolicy`/`LessonPolicy` classes
   - [x] School-scoping check present on every form/builder component
-  - [ ] No explicit "no students enrolled yet" delete guard on courses
+  - [x] **Delete guard added (2026-07-17):** `CoursesIndex::destroy()` now checks `CourseService::hasStudentProgress()` before allowing delete; if any student has viewed/completed lessons, delete is blocked with error message
 - [x] Field validation — implemented via Livewire `#[Validate('required|string|max:255')]` attributes directly on component properties, not `FormRequest` classes
   - [x] Required fields, string lengths enforced
-  - [ ] `video_embed_url` accepts any URL — no YouTube/Vimeo-specific format rule
+  - [x] **`video_embed_url` validation added (2026-07-17):** Custom `isValidVideoUrl()` method in `LessonForm` validates YouTube/Vimeo URLs only; non-YouTube/Vimeo URLs are rejected with error message; method added to `save()` before model persistence
   - [x] Order uniqueness per parent enforced at the DB layer (unique constraint), not duplicated in form validation
-  - [ ] `LessonForm::$durationMinutes` typed `?int` causes a hard Livewire type-coercion error (not a graceful validation message) when non-numeric input is submitted — see Known Issues
+  - [x] `LessonForm::$durationMinutes` typed `?string` (fixed per Known Issues, 2026-07-17) — validation correctly rejects non-numeric input
 
 ## 9. Testing
 

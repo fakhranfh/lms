@@ -60,6 +60,12 @@ class LessonForm extends Component
     {
         $this->validate();
 
+        if ($this->videoEmbedUrl && ! $this->isValidVideoUrl($this->videoEmbedUrl)) {
+            $this->addError('videoEmbedUrl', 'The video embed URL must be a YouTube or Vimeo link.');
+
+            return;
+        }
+
         $durationMinutes = $this->durationMinutes ? (int) $this->durationMinutes : null;
 
         if ($this->lesson) {
@@ -86,6 +92,29 @@ class LessonForm extends Component
         }
 
         return redirect()->route('courses.show', $this->module->course);
+    }
+
+    private function isValidVideoUrl(string $url): bool
+    {
+        $youtubePatterns = [
+            'youtube\.com\/watch\?v=',
+            'youtube\.com\/embed\/',
+            'youtu\.be\/',
+        ];
+
+        $vimeoPatterns = [
+            'vimeo\.com\/',
+            'player\.vimeo\.com\/video\/',
+        ];
+
+        $allPatterns = array_merge($youtubePatterns, $vimeoPatterns);
+        foreach ($allPatterns as $pattern) {
+            if (preg_match("/$pattern/i", $url)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function render()

@@ -43,6 +43,12 @@ class CoursesIndex extends Component
             return;
         }
 
+        if ($courseService->hasStudentProgress($id)) {
+            $this->errorMessage = __('Cannot delete course with active student progress. Please ensure all students have completed their work before deleting.');
+
+            return;
+        }
+
         $courseService->delete($id);
         $this->successMessage = __('Course deleted successfully.');
         $this->resetPage();

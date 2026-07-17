@@ -174,9 +174,15 @@ class LessonFormTest extends TestCase
         ]);
     }
 
-    public function test_invalid_video_url_validation(): void
+    public function test_invalid_video_url_rejected(): void
     {
-        $this->markTestSkipped('Video URL validation is intentionally loose per audit (accepts any URL format)');
+        $this->instructor->givePermissionTo('lessons.create');
+
+        Livewire::test(LessonForm::class, ['module' => $this->module])
+            ->set('title', 'Lesson')
+            ->set('videoEmbedUrl', 'https://example.com/video')
+            ->call('save')
+            ->assertHasErrors('videoEmbedUrl');
     }
 
     public function test_vimeo_video_url_accepted(): void

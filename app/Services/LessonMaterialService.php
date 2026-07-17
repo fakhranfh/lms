@@ -6,8 +6,8 @@ use App\Enums\MaterialType;
 use App\Models\Lesson;
 use App\Models\LessonMaterial;
 use App\Models\User;
-use App\Repositories\LessonMaterialRepository;
-use App\Repositories\LessonMaterialUserRepository;
+use App\Repositories\LessonMaterial\LessonMaterialRepository;
+use App\Repositories\LessonMaterialUser\LessonMaterialUserRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 

@@ -43,14 +43,16 @@ class Lesson extends Model
         $previousLesson = $this->module
             ->lessons()
             ->where('order', '<', $this->order)
-            ->orderByDesc('order')
+            ->reorder('order', 'desc')
             ->first();
 
         if ($previousLesson) {
-            $tempOrder = 0;
-            $this->update(['order' => $tempOrder]);
-            $previousLesson->update(['order' => $this->order]);
-            $this->update(['order' => $previousLesson->order]);
+            $thisOrder = $this->order;
+            $previousOrder = $previousLesson->order;
+
+            $this->update(['order' => 0]);
+            $previousLesson->update(['order' => $thisOrder]);
+            $this->update(['order' => $previousOrder]);
         }
     }
 
@@ -59,14 +61,16 @@ class Lesson extends Model
         $nextLesson = $this->module
             ->lessons()
             ->where('order', '>', $this->order)
-            ->orderBy('order')
+            ->reorder('order', 'asc')
             ->first();
 
         if ($nextLesson) {
-            $tempOrder = 999999;
-            $this->update(['order' => $tempOrder]);
-            $nextLesson->update(['order' => $this->order]);
-            $this->update(['order' => $nextLesson->order]);
+            $thisOrder = $this->order;
+            $nextOrder = $nextLesson->order;
+
+            $this->update(['order' => 999999]);
+            $nextLesson->update(['order' => $thisOrder]);
+            $this->update(['order' => $nextOrder]);
         }
     }
 

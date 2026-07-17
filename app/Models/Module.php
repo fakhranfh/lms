@@ -41,14 +41,16 @@ class Module extends Model
         $previousModule = $this->course
             ->modules()
             ->where('order', '<', $this->order)
-            ->orderByDesc('order')
+            ->reorder('order', 'desc')
             ->first();
 
         if ($previousModule) {
-            $tempOrder = 0;
-            $this->update(['order' => $tempOrder]);
-            $previousModule->update(['order' => $this->order]);
-            $this->update(['order' => $previousModule->order]);
+            $thisOrder = $this->order;
+            $previousOrder = $previousModule->order;
+
+            $this->update(['order' => 0]);
+            $previousModule->update(['order' => $thisOrder]);
+            $this->update(['order' => $previousOrder]);
         }
     }
 
@@ -57,14 +59,16 @@ class Module extends Model
         $nextModule = $this->course
             ->modules()
             ->where('order', '>', $this->order)
-            ->orderBy('order')
+            ->reorder('order', 'asc')
             ->first();
 
         if ($nextModule) {
-            $tempOrder = 999999;
-            $this->update(['order' => $tempOrder]);
-            $nextModule->update(['order' => $this->order]);
-            $this->update(['order' => $nextModule->order]);
+            $thisOrder = $this->order;
+            $nextOrder = $nextModule->order;
+
+            $this->update(['order' => 999999]);
+            $nextModule->update(['order' => $thisOrder]);
+            $this->update(['order' => $nextOrder]);
         }
     }
 

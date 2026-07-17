@@ -20,7 +20,74 @@ class LessonMaterialService
     ) {}
 
     /**
-     * Create a new lesson material with file upload
+     * Generate presigned PUT URL for direct R2 upload (client-side flow)
+     * Validates file extension BEFORE generating URL
+     *
+     * @param  string  $lessonId  Lesson ID
+     * @param  string  $filename  Original filename
+     * @param  string  $materialType  Material type (PDF, Video, etc)
+     * @return array{url: string, key: string, lesson_id: string}
+     */
+    public function generatePresignedUploadUrl(string $lessonId, string $filename, string $materialType): array
+    {
+        Lesson::findOrFail($lessonId);
+
+        // Extension validation happens here (server-side, before URL generation)
+        return $this->r2Service->generatePresignedPutUrl($lessonId, $filename, $materialType);
+    }
+
+    /**
+     * Create material from direct R2 upload (after client uploads file)
+     * Verifies file exists in R2 before saving metadata
+     */
+    public function createFromR2Upload(string $lessonId, array $data): LessonMaterial
+    {
+        $lesson = Lesson::findOrFail($lessonId);
+
+        // Validate material type
+        $type = MaterialType::tryFrom($data['type'] ?? '');
+        if (! $type) {
+            throw new \InvalidArgumentException("Invalid material type: {$data['type']}");
+        }
+
+        // Verify file exists in R2
+        $fileUrl = $data['file_url'] ?? '';
+        if (! $fileUrl) {
+            throw new \InvalidArgumentException('file_url is required');
+        }
+
+        $fileInfo = $this->r2Service->verifyFileExists($fileUrl);
+        if (! $fileInfo['exists']) {
+            throw new \Exception("File not found in R2: {$fileUrl}");
+        }
+
+        // Validate file size against material type limit
+        if ($fileInfo['size'] > $type->maxSize()) {
+            throw new \InvalidArgumentException(
+                "File size exceeds limit for {$type->value}. Max: ".$this->formatBytes($type->maxSize())
+            );
+        }
+
+        // Get next order
+        $order = $this->materialRepository->getNextOrder($lessonId);
+
+        // Create material with R2 file info
+        return $this->materialRepository->create([
+            'lesson_id' => $lessonId,
+            'type' => $type,
+            'title' => $data['title'] ?? 'Untitled',
+            'description' => $data['description'] ?? '',
+            'file_url' => $fileUrl,
+            'file_path' => $this->r2Service->extractKeyFromPath($fileUrl),
+            'file_size' => $fileInfo['size'],
+            'mime_type' => $fileInfo['mime_type'],
+            'order' => $order,
+        ]);
+    }
+
+    /**
+     * Create a new lesson material with file upload (server-side flow)
+     * Legacy: client uploads to server, server uploads to R2
      */
     public function create(string $lessonId, array $data): LessonMaterial
     {

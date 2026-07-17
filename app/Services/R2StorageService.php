@@ -108,6 +108,90 @@ class R2StorageService
     }
 
     /**
+     * Generate presigned PUT URL for direct client upload to R2
+     * Validates file extension BEFORE generating URL (no upload to server)
+     *
+     * @return array{url: string, key: string, lesson_id: string}
+     */
+    public function generatePresignedPutUrl(string $lessonId, string $filename, string $materialType, int $expiresIn = 3600): array
+    {
+        try {
+            // Validate extension BEFORE generating URL (server-side validation)
+            $this->validateFileExtension($filename, $materialType);
+
+            // Enforce quota
+            $this->enforceQuotaLimit();
+
+            $key = "lessons/{$lessonId}/materials/".substr(hash('sha256', uniqid()), 0, 8).'-'.$filename;
+
+            $cmd = $this->s3Client->getCommand('PutObject', [
+                'Bucket' => $this->bucket,
+                'Key' => $key,
+            ]);
+
+            $request = $this->s3Client->createPresignedRequest($cmd, "+{$expiresIn} seconds");
+            $presignedUrl = (string) $request->getUri();
+
+            return [
+                'url' => $presignedUrl,
+                'key' => $key,
+                'lesson_id' => $lessonId,
+            ];
+        } catch (AwsException $e) {
+            throw new \Exception("Failed to generate presigned PUT URL: {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * Validate file extension against material type
+     */
+    public function validateFileExtension(string $filename, string $materialType): void
+    {
+        try {
+            $materialTypeEnum = MaterialType::from($materialType);
+        } catch (\ValueError $e) {
+            throw new \InvalidArgumentException("Invalid material type: {$materialType}");
+        }
+
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $allowedExtensions = $materialTypeEnum->allowedExtensions();
+
+        if (! in_array($extension, $allowedExtensions)) {
+            throw new \InvalidArgumentException(
+                "Invalid file extension '.{$extension}' for {$materialTypeEnum->value}. "
+                .'Allowed: '.implode(', ', $allowedExtensions)
+            );
+        }
+    }
+
+    /**
+     * Verify file exists in R2 and get its metadata
+     */
+    public function verifyFileExists(string $fileUrl): array
+    {
+        try {
+            $key = $this->extractKeyFromPath($fileUrl);
+
+            $object = $this->s3Client->headObject([
+                'Bucket' => $this->bucket,
+                'Key' => $key,
+            ]);
+
+            return [
+                'exists' => true,
+                'size' => $object['ContentLength'] ?? 0,
+                'mime_type' => $object['ContentType'] ?? 'application/octet-stream',
+                'last_modified' => $object['LastModified'] ?? now(),
+            ];
+        } catch (AwsException $e) {
+            if ($e->getStatusCode() === 404) {
+                return ['exists' => false];
+            }
+            throw new \Exception("Failed to verify file: {$e->getMessage()}");
+        }
+    }
+
+    /**
      * Check storage quota for a school
      *
      * @return array{used: int, limit: int, remaining: int, percentage: float}
@@ -179,7 +263,7 @@ class R2StorageService
     /**
      * Extract S3 key from URL or return as-is
      */
-    protected function extractKeyFromPath(string $filePath): string
+    public function extractKeyFromPath(string $filePath): string
     {
         // If it's a full URL, extract key from it
         if (str_contains($filePath, 'r2.cloudflarestorage.com') || str_contains($filePath, 'https://')) {

@@ -82,34 +82,6 @@ class Lesson extends Model
         }
     }
 
-    public function isCompletedBy(User $user): bool
-    {
-        return $this->users()
-            ->where('user_id', $user->id)
-            ->where('completed_at', '!=', null)
-            ->exists();
-    }
-
-    public function markCompleteFor(User $user): void
-    {
-        $existing = $this->users()
-            ->wherePivot('user_id', $user->id)
-            ->first();
-
-        if ($existing) {
-            $this->users()
-                ->updateExistingPivot($user->id, [
-                    'completed_at' => now(),
-                    'last_viewed_at' => now(),
-                ]);
-        } else {
-            $this->users()->attach($user->id, [
-                'completed_at' => now(),
-                'last_viewed_at' => now(),
-            ]);
-        }
-    }
-
     public function isPublished(): bool
     {
         return $this->is_published;

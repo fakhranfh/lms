@@ -67,16 +67,6 @@ interface LessonRepositoryInterface
     public function unpublish(string $id): void;
 
     /**
-     * Mark lesson as completed by user.
-     */
-    public function markComplete(string $lessonId, string $userId): void;
-
-    /**
-     * Check if lesson is completed by user.
-     */
-    public function isCompletedBy(string $lessonId, string $userId): bool;
-
-    /**
      * Get all published lessons for a module, ordered by position.
      *
      * @param  array<string>  $with

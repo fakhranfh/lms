@@ -4,8 +4,9 @@ namespace App\Livewire\Courses;
 
 use App\Models\Lesson;
 use App\Models\Module;
-use App\Repositories\Lesson\LessonRepositoryInterface;
-use App\Repositories\Module\ModuleRepositoryInterface;
+use App\Services\LessonService;
+use App\Services\ModuleService;
+use App\Services\UserLessonService;
 use App\Support\CurrentSchool;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -31,36 +32,37 @@ class LessonViewer extends Component
     public function mount(
         CurrentSchool $currentSchool,
         Lesson $lesson,
-        LessonRepositoryInterface $lessonRepository,
-        ModuleRepositoryInterface $moduleRepository,
+        LessonService $lessonService,
+        ModuleService $moduleService,
+        UserLessonService $userLessonService,
     ): void {
         $this->lesson = $lesson;
-        $this->module = $moduleRepository->find($lesson->module_id, ['course']);
+        $this->module = $moduleService->find($lesson->module_id, ['course']);
 
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
         abort_unless($this->module->course->school_id === $schoolId, 403);
 
         abort_unless($lesson->is_published, 403);
 
-        $this->loadProgress($lessonRepository);
-        $this->loadNavigation($lessonRepository);
+        $this->loadProgress($lessonService, $userLessonService);
+        $this->loadNavigation($lessonService);
     }
 
-    private function loadProgress(LessonRepositoryInterface $lessonRepository): void
+    private function loadProgress(LessonService $lessonService, UserLessonService $userLessonService): void
     {
         $user = auth()->user();
 
         if ($user) {
-            $this->isCompleted = $lessonRepository->isCompletedBy($this->lesson->id, $user->id);
+            $this->isCompleted = $userLessonService->isCompletedBy($this->lesson->id, $user);
         }
 
-        $lessons = $lessonRepository->getByModulePublished($this->module->id);
+        $lessons = $lessonService->getByModulePublished($this->module->id);
 
         $this->totalLessonsInModule = $lessons->count();
 
         if ($user) {
             $this->completedLessonsInModule = $lessons->filter(
-                fn (Lesson $lesson) => $lessonRepository->isCompletedBy($lesson->id, $user->id)
+                fn (Lesson $lesson) => $userLessonService->isCompletedBy($lesson->id, $user)
             )->count();
         }
 
@@ -69,9 +71,9 @@ class LessonViewer extends Component
         ) + 1;
     }
 
-    private function loadNavigation(LessonRepositoryInterface $lessonRepository): void
+    private function loadNavigation(LessonService $lessonService): void
     {
-        $lessons = $lessonRepository->getByModulePublished($this->module->id);
+        $lessons = $lessonService->getByModulePublished($this->module->id);
 
         $currentIndex = $lessons->search(fn (Lesson $lesson) => $lesson->id === $this->lesson->id);
 
@@ -87,14 +89,16 @@ class LessonViewer extends Component
     #[On('mark-complete')]
     public function markComplete(): void
     {
-        if (! auth()->check()) {
+        $user = auth()->user();
+
+        if (! $user) {
             redirect()->route('login');
 
             return;
         }
 
-        $lessonRepository = app(LessonRepositoryInterface::class);
-        $lessonRepository->markComplete($this->lesson->id, auth()->user()->id);
+        $userLessonService = app(UserLessonService::class);
+        $userLessonService->markComplete($this->lesson->id, $user);
         $this->isCompleted = true;
         $this->dispatch('lesson-marked-complete', lessonId: $this->lesson->id);
     }

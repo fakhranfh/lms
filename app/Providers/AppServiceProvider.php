@@ -28,6 +28,8 @@ use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepository;
 use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepositoryInterface;
 use App\Repositories\User\UserRepository;
 use App\Repositories\User\UserRepositoryInterface;
+use App\Repositories\UserLesson\UserLessonRepository;
+use App\Repositories\UserLesson\UserLessonRepositoryInterface;
 use App\Services\CourseService;
 use App\Services\CredentialEncryption;
 use App\Services\FeatureGateService;
@@ -41,6 +43,7 @@ use App\Services\PricingTierService;
 use App\Services\SchoolService;
 use App\Services\SubscriptionPaymentService;
 use App\Services\TierChangeService;
+use App\Services\UserLessonService;
 use App\Support\CurrentSchool;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
@@ -74,6 +77,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CourseRepositoryInterface::class, CourseRepository::class);
         $this->app->bind(ModuleRepositoryInterface::class, ModuleRepository::class);
         $this->app->bind(LessonRepositoryInterface::class, LessonRepository::class);
+        $this->app->bind(UserLessonRepositoryInterface::class, UserLessonRepository::class);
 
         $this->app->singleton(CurrentSchool::class);
 
@@ -90,6 +94,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(CourseService::class);
         $this->app->singleton(ModuleService::class);
         $this->app->singleton(LessonService::class);
+        $this->app->singleton(UserLessonService::class);
     }
 
     /**

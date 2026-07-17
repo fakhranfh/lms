@@ -100,7 +100,7 @@ class LessonViewerTest extends TestCase
             ->call('markComplete')
             ->assertSee('Lesson Complete');
 
-        $this->assertTrue($this->publishedLesson->isCompletedBy($this->student));
+        $this->assertTrue(app(\App\Services\UserLessonService::class)->isCompletedBy($this->publishedLesson->id, $this->student));
         $this->assertDatabaseHas('lesson_user', [
             'lesson_id' => $this->publishedLesson->id,
             'user_id' => $this->student->id,
@@ -109,7 +109,7 @@ class LessonViewerTest extends TestCase
 
     public function test_completed_lesson_shows_completed_badge(): void
     {
-        $this->publishedLesson->markCompleteFor($this->student);
+        app(\App\Services\UserLessonService::class)->markComplete($this->publishedLesson->id, $this->student);
 
         Livewire::test(LessonViewer::class, ['lesson' => $this->publishedLesson])
             ->assertStatus(200)
@@ -176,8 +176,9 @@ class LessonViewerTest extends TestCase
         $lesson2 = Lesson::factory()->for($module2)->published()->create(['order' => 2]);
         $lesson3 = Lesson::factory()->for($module2)->published()->create(['order' => 3]);
 
-        $lesson1->markCompleteFor($this->student);
-        $lesson2->markCompleteFor($this->student);
+        $userLessonService = app(\App\Services\UserLessonService::class);
+        $userLessonService->markComplete($lesson1->id, $this->student);
+        $userLessonService->markComplete($lesson2->id, $this->student);
 
         Livewire::test(LessonViewer::class, ['lesson' => $lesson3])
             ->assertStatus(200)
@@ -203,7 +204,7 @@ class LessonViewerTest extends TestCase
         $lesson1 = Lesson::factory()->for($module2)->published()->create(['order' => 1]);
         $lesson2 = Lesson::factory()->for($module2)->published()->create(['order' => 2]);
 
-        $lesson1->markCompleteFor($this->student);
+        app(\App\Services\UserLessonService::class)->markComplete($lesson1->id, $this->student);
 
         Livewire::test(LessonViewer::class, ['lesson' => $lesson2])
             ->assertStatus(200);

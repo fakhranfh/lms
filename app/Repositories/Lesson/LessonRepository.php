@@ -3,8 +3,7 @@
 namespace App\Repositories\Lesson;
 
 use App\Models\Lesson;
-use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 
 class LessonRepository implements LessonRepositoryInterface
 {
@@ -12,7 +11,7 @@ class LessonRepository implements LessonRepositoryInterface
      * @param  array<string, mixed>  $filters
      * @param  array<string>  $with
      */
-    public function get(array $filters = [], array $with = []): Collection
+    public function get(array $filters = [], array $with = []): EloquentCollection
     {
         $query = Lesson::query();
 
@@ -101,26 +100,12 @@ class LessonRepository implements LessonRepositoryInterface
         Lesson::findOrFail($id)->update(['is_published' => false]);
     }
 
-    public function markComplete(string $lessonId, string $userId): void
-    {
-        $lesson = Lesson::findOrFail($lessonId);
-        $user = User::findOrFail($userId);
-        $lesson->markCompleteFor($user);
-    }
-
-    public function isCompletedBy(string $lessonId, string $userId): bool
-    {
-        $user = User::findOrFail($userId);
-
-        return Lesson::findOrFail($lessonId)->isCompletedBy($user);
-    }
-
     /**
      * Get all published lessons for a module, ordered by position.
      *
      * @param  array<string>  $with
      */
-    public function getByModulePublished(string $moduleId, array $with = []): Collection
+    public function getByModulePublished(string $moduleId, array $with = []): EloquentCollection
     {
         return Lesson::where('module_id', $moduleId)
             ->where('is_published', true)

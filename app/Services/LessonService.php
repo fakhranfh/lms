@@ -110,18 +110,12 @@ class LessonService
     }
 
     /**
-     * Mark lesson as completed by user.
+     * Get all published lessons for a module, ordered by position.
+     *
+     * @param  array<string>  $with
      */
-    public function markComplete(string $lessonId, string $userId): void
+    public function getByModulePublished(string $moduleId, array $with = []): Collection
     {
-        $this->lessonRepository->markComplete($lessonId, $userId);
-    }
-
-    /**
-     * Check if lesson is completed by user.
-     */
-    public function isCompletedBy(string $lessonId, string $userId): bool
-    {
-        return $this->lessonRepository->isCompletedBy($lessonId, $userId);
+        return $this->lessonRepository->getByModulePublished($moduleId, $with);
     }
 }

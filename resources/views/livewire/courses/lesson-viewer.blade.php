@@ -153,7 +153,7 @@
                                         >
                                             <div class="flex items-start gap-space-sm">
                                                 <span class="text-body-sm font-medium flex-shrink-0 pt-space-xs">
-                                                    @if (auth()->check() && $item->isCompletedBy(auth()->user()))
+                                                    @if (auth()->check() && app(\App\Services\UserLessonService::class)->isCompletedBy($item->id, auth()->user()))
                                                         ✓
                                                     @else
                                                         •

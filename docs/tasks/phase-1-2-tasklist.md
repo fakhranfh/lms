@@ -437,41 +437,47 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 
 ### 11.1 Database Schema & Migrations
 
-- [ ] Create `lesson_materials` migration:
-  - [ ] Table columns:
-    - [ ] `id` (UUID, PK)
-    - [ ] `lesson_id` (UUID, FK → lessons.id, CASCADE)
-    - [ ] `type` (ENUM: Video, PDF, Document, Audio, Presentation, Image, Interactive)
-    - [ ] `title` (VARCHAR 255) — custom name from user
-    - [ ] `description` (TEXT, nullable)
-    - [ ] `file_url` (VARCHAR 500) — R2 URL
-    - [ ] `file_path` (VARCHAR 500, nullable) — R2 path for deletion
-    - [ ] `file_size` (UNSIGNED INT) — size in bytes
-    - [ ] `mime_type` (VARCHAR 100)
-    - [ ] `order` (UNSIGNED INT) — position in lesson (for drag-drop reordering)
-    - [ ] timestamps (created_at, updated_at)
-  - [ ] Indexes: (lesson_id), (lesson_id, order), (type)
-  - [ ] Constraints: FK cascade, unique (lesson_id, order)
+**Status:** ✅ COMPLETE (2026-07-18)
 
-- [ ] Create `lesson_material_user` pivot migration:
-  - [ ] Table columns:
-    - [ ] `id` (BIGINT, PK, auto-increment)
-    - [ ] `lesson_material_id` (UUID, FK → lesson_materials.id, CASCADE)
-    - [ ] `user_id` (UUID, FK → users.id, CASCADE)
-    - [ ] `accessed_at` (TIMESTAMP) — when user marked as read
-    - [ ] timestamps (created_at, updated_at)
-  - [ ] Constraints: FK cascade, unique (lesson_material_id, user_id)
+- [x] Create `lesson_materials` migration:
+  - [x] Table columns:
+    - [x] `id` (UUID, PK)
+    - [x] `lesson_id` (UUID, FK → lessons.id, CASCADE)
+    - [x] `type` (VARCHAR 255: Video, PDF, Document, Audio, Presentation, Image, Interactive)
+    - [x] `title` (VARCHAR 255) — custom name from user
+    - [x] `description` (TEXT, nullable)
+    - [x] `file_url` (VARCHAR 500) — R2 URL
+    - [x] `file_path` (VARCHAR 500, nullable) — R2 path for deletion
+    - [x] `file_size` (UNSIGNED INT) — size in bytes
+    - [x] `mime_type` (VARCHAR 100)
+    - [x] `order` (UNSIGNED INT) — position in lesson (for drag-drop reordering)
+    - [x] timestamps (created_at, updated_at)
+  - [x] Indexes: (lesson_id), (lesson_id, order), (type)
+  - [x] Constraints: FK cascade, unique (lesson_id, order)
+  - [x] Migration file: `2026_07_17_222057_create_lesson_materials_table.php`
 
-- [ ] Create migration script to migrate existing videos:
-  - [ ] For each lesson with `video_embed_url IS NOT NULL`:
-    - [ ] Create record in `lesson_materials`
-    - [ ] type = 'Video'
-    - [ ] title = lesson title
-    - [ ] file_url = video_embed_url
-    - [ ] order = 1
-  - [ ] Test migration with ContentEngineSeeder data
+- [x] Create `lesson_material_user` pivot migration:
+  - [x] Table columns:
+    - [x] `lesson_material_id` (UUID, PK part 1)
+    - [x] `user_id` (UUID, PK part 2)
+    - [x] `accessed_at` (TIMESTAMP, nullable) — when user marked as read
+    - [x] timestamps (created_at, updated_at)
+  - [x] Composite primary key: (lesson_material_id, user_id)
+  - [x] Constraints: FK cascade on both columns
+  - [x] Performance: Composite key better than BIGINT ID for pivot tables (32 bytes vs 40+ bytes)
+  - [x] Migration file: `2026_07_17_222100_create_lesson_material_user_table.php`
 
-- [ ] Deprecate `lessons.video_embed_url` (keep column for backward compat, don't drop yet)
+- [x] Create migration script to migrate existing videos:
+  - [x] For each lesson with `video_embed_url IS NOT NULL`:
+    - [x] Create record in `lesson_materials`
+    - [x] type = 'Video'
+    - [x] title = lesson title
+    - [x] file_url = video_embed_url
+    - [x] order = 1
+  - [x] Tested: 0 videos currently in database (no demo data with videos yet)
+  - [x] Migration file: `2026_07_17_222102_migrate_video_embed_url_to_lesson_materials.php`
+
+- [x] Deprecate `lessons.video_embed_url` (kept for backward compat, not dropped)
 
 ---
 

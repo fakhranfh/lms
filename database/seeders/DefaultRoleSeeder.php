@@ -37,58 +37,5 @@ class DefaultRoleSeeder extends Seeder
 
         $adminPermissions = Permission::where('name', '!=', 'settings.billing')->get();
         $adminRole->syncPermissions($adminPermissions);
-
-        // Instructor Role
-        $instructorRole = Role::firstOrCreate(
-            ['name' => 'Instructor', 'guard_name' => 'web', 'school_id' => $schoolId],
-            ['slug' => 'instructor']
-        );
-
-        $instructorPermissions = Permission::whereIn('name', [
-            // Course Management
-            'courses.create',
-            'courses.view',
-            'courses.edit',
-            'courses.delete',
-            // Module Management
-            'modules.create',
-            'modules.view',
-            'modules.edit',
-            'modules.delete',
-            // Lesson Management
-            'lessons.create',
-            'lessons.view',
-            'lessons.edit',
-            'lessons.delete',
-            // Assignment Management
-            'assignments.create',
-            'assignments.view',
-            'assignments.edit',
-            'assignments.delete',
-            // Submission Grading
-            'submissions.view',
-            'submissions.grade',
-            'submissions.override-grade',
-            // Analytics
-            'analytics.view',
-        ])->get();
-
-        $instructorRole->syncPermissions($instructorPermissions);
-
-        // Student Role
-        $studentRole = Role::firstOrCreate(
-            ['name' => 'Student', 'guard_name' => 'web', 'school_id' => $schoolId],
-            ['slug' => 'student']
-        );
-
-        $studentPermissions = Permission::whereIn('name', [
-            'courses.view',
-            'modules.view',
-            'lessons.view',
-            'assignments.view',
-            'submissions.view',
-        ])->get();
-
-        $studentRole->syncPermissions($studentPermissions);
     }
 }

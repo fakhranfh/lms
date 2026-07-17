@@ -22,27 +22,11 @@ class DatabaseSeeder extends Seeder
         // Seed pricing tiers first (required for schools)
         $this->call(PricingTierSeeder::class);
 
+        // Seed root domain school with demo credentials
+        $this->call(RootDomainSchoolSeeder::class);
+
         // Get the basic tier for the test school
         $basicTier = PricingTier::where('slug', 'basic')->first();
-
-        // Create a test school
-        $school = School::create([
-            'id' => Str::uuid(),
-            'name' => 'Test School',
-            'domain' => 'test.local',
-            'tier_id' => $basicTier->id,
-        ]);
-
-        // Create test user directly (avoid factory UUID generation issue)
-        User::create([
-            'id' => Str::uuid(),
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'school_id' => $school->id,
-            'email_verified_at' => now(),
-            'password' => Hash::make('Password@123123'),
-            'timezone' => 'UTC',
-        ]);
 
         // Seed default roles for schools (permissions are seeded via migration)
         $this->call(DefaultRoleSeeder::class);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\TierChange\InitiateTierChangeRequest;
+use App\Models\DemoLmsAccess;
 use App\Models\PricingTier;
 use App\Models\School;
 use App\Services\TierChangeService;
@@ -17,10 +18,22 @@ class TierChangeController extends Controller
         private readonly CurrentSchool $currentSchool
     ) {}
 
+    private function isDemoMode(School $school): bool
+    {
+        $user = auth()->user();
+
+        return DemoLmsAccess::where('school_id', $school->id)
+            ->where('user_id', $user->id)
+            ->where('expires_at', '>', now())
+            ->exists();
+    }
+
     public function show(): View
     {
         $schoolId = auth()->user()->school_id ?? $this->currentSchool->getSchoolId();
         $school = School::findOrFail($schoolId);
+
+        $isDemoMode = $this->isDemoMode($school);
 
         $currentTier = $school->tier;
         $availableTiers = PricingTier::where('is_active', true)->get();
@@ -53,6 +66,7 @@ class TierChangeController extends Controller
             'prorations' => $prorations,
             'enabledGateways' => $enabledGateways,
             'pendingTier' => $pendingTier,
+            'isDemoMode' => $isDemoMode,
         ]);
     }
 
@@ -60,6 +74,9 @@ class TierChangeController extends Controller
     {
         $schoolId = auth()->user()->school_id ?? $this->currentSchool->getSchoolId();
         $school = School::findOrFail($schoolId);
+
+        abort_if($this->isDemoMode($school), 403, 'Demo accounts cannot change pricing tiers.');
+
         $newTier = PricingTier::findOrFail($request->input('tier_id'));
 
         $gatewayName = $request->input('gateway_name');

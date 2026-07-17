@@ -19,6 +19,13 @@
                     <p class="font-body-md text-body-md text-secondary">Manage your subscription tier and features</p>
                 </div>
 
+                @if ($isDemoMode)
+                    <div class="p-space-lg bg-warning/10 border border-warning/20 rounded-lg flex items-center gap-space-md">
+                        <span class="material-symbols-outlined text-warning text-[20px]" data-weight="fill">info</span>
+                        <p class="font-body-md text-body-md text-warning">This is a demo account. Tier management is read-only.</p>
+                    </div>
+                @endif
+
                 @if ($errors->any())
                     <div class="p-space-lg bg-error/10 border border-error/20 rounded-lg space-y-space-sm">
                         <p class="font-label-md text-label-md text-error uppercase">Error</p>
@@ -130,7 +137,9 @@
                                         @endif
                                     </div>
 
-                                    @if ($enabledGateways->count() > 0)
+                                    @if ($isDemoMode)
+                                        <div class="mt-auto pt-space-md font-body-md text-body-md text-secondary text-center">Demo accounts cannot upgrade</div>
+                                    @elseif ($enabledGateways->count() > 0)
                                         <form method="POST" action="{{ route('tier-management.change') }}" class="space-y-space-md mt-auto pt-space-md">
                                             @csrf
                                             <input type="hidden" name="tier_id" value="{{ $tier->id }}">
@@ -210,7 +219,9 @@
                                         @endif
                                     </div>
 
-                                    @if ($enabledGateways->count() > 0)
+                                    @if ($isDemoMode)
+                                        <div class="mt-auto pt-space-md font-body-md text-body-md text-secondary text-center">Demo accounts cannot downgrade</div>
+                                    @elseif ($enabledGateways->count() > 0)
                                         <form method="POST" action="{{ route('tier-management.change') }}" class="mt-auto pt-space-md">
                                             @csrf
                                             <input type="hidden" name="tier_id" value="{{ $tier->id }}">

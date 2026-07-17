@@ -207,9 +207,11 @@ class CoursesIndexTest extends TestCase
             ->count(15)
             ->create(['title' => 'Course']);
 
-        Livewire::test(CoursesIndex::class)
-            ->set('search', 'Course')
-            ->assertSet('paginators.page.before.page', 1);
+        $component = Livewire::test(CoursesIndex::class)
+            ->set('search', 'Course');
+
+        $courses = $component->viewData('courses');
+        $this->assertEquals(1, $courses->currentPage());
     }
 
     public function test_can_delete_course(): void

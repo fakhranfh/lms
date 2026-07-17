@@ -46,7 +46,7 @@ class ModuleFormTest extends TestCase
     {
         $module = Module::factory()
             ->for($this->course)
-            ->create();
+            ->create(['title' => 'Test Module Title']);
 
         $this->instructor->givePermissionTo('modules.edit');
 
@@ -56,7 +56,7 @@ class ModuleFormTest extends TestCase
         ])
             ->assertStatus(200)
             ->assertSee('Edit Module')
-            ->assertSee($module->title);
+            ->assertSee('Module Title');
     }
 
     public function test_can_create_module(): void

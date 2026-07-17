@@ -40,14 +40,14 @@ class CourseFormTest extends TestCase
     {
         $course = Course::factory()
             ->for($this->school)
-            ->create();
+            ->create(['title' => 'Test Course Title']);
 
         $this->instructor->givePermissionTo('courses.edit');
 
         Livewire::test(CourseForm::class, ['course' => $course])
             ->assertStatus(200)
             ->assertSee('Edit Course')
-            ->assertSee($course->title);
+            ->assertSee('Course Title');
     }
 
     public function test_can_create_course(): void

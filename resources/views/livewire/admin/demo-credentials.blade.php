@@ -111,12 +111,15 @@
                                         <div class="bg-white rounded p-3 border border-green-100">
                                             <label class="text-xs font-medium text-gray-600 block mb-1">Login URL</label>
                                             <div class="flex items-center gap-2">
+                                                @php
+                                                    $loginUrl = $demoAccess->getLoginUrl();
+                                                @endphp
                                                 <code
                                                     class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-gray-800 break-all">
-                                                    http://lms.local/demo-lms/login/{{ $demoAccess->access_token }}
+                                                    {{ $loginUrl }}
                                                 </code>
                                                 <button type="button"
-                                                    onclick="copyToClipboard(this, 'http://lms.local/demo-lms/login/{{ $demoAccess->access_token }}')"
+                                                    onclick="copyToClipboard(this, '{{ $loginUrl }}')"
                                                     class="p-2 hover:bg-gray-100 rounded transition flex-shrink-0">
                                                     <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor"
                                                         viewBox="0 0 24 24">

@@ -232,4 +232,55 @@ class DemoLmsAccessTest extends TestCase
             }
         }
     }
+
+    public function test_build_demo_login_url_uses_school_domain(): void
+    {
+        $school = School::factory()->create(['domain' => 'testschool.lms.local']);
+        $access = DemoLmsAccess::factory()
+            ->create(['school_id' => $school->id, 'expires_at' => now()->addDays(14)]);
+
+        $url = $this->demoService->buildDemoLoginUrl($school, $access->access_token);
+
+        $this->assertStringContainsString($school->domain, $url);
+        $this->assertStringContainsString($access->access_token, $url);
+        $this->assertTrue(str_starts_with($url, 'http://'));
+        $this->assertStringContainsString('/demo-lms/login/', $url);
+    }
+
+    public function test_build_demo_login_url_includes_port_when_not_standard(): void
+    {
+        $school = School::factory()->create(['domain' => 'testschool.lms.local']);
+        $access = DemoLmsAccess::factory()
+            ->create(['school_id' => $school->id]);
+
+        $url = $this->demoService->buildDemoLoginUrl($school, $access->access_token, 'http', 8080);
+
+        $this->assertStringContainsString(':8080', $url);
+    }
+
+    public function test_build_demo_login_url_omits_standard_ports(): void
+    {
+        $school = School::factory()->create(['domain' => 'testschool.lms.local']);
+        $access = DemoLmsAccess::factory()
+            ->create(['school_id' => $school->id]);
+
+        $httpUrl = $this->demoService->buildDemoLoginUrl($school, $access->access_token, 'http', 80);
+        $httpsUrl = $this->demoService->buildDemoLoginUrl($school, $access->access_token, 'https', 443);
+
+        $this->assertStringNotContainsString(':80', $httpUrl);
+        $this->assertStringNotContainsString(':443', $httpsUrl);
+    }
+
+    public function test_demo_access_get_login_url_method(): void
+    {
+        $school = School::factory()->create(['domain' => 'myschool.lms.local']);
+        $access = DemoLmsAccess::factory()
+            ->create(['school_id' => $school->id, 'expires_at' => now()->addDays(14)]);
+
+        $url = $access->getLoginUrl();
+
+        $this->assertStringContainsString('myschool.lms.local', $url);
+        $this->assertStringContainsString($access->access_token, $url);
+        $this->assertStringContainsString('/demo-lms/login/', $url);
+    }
 }

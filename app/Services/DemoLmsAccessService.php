@@ -118,4 +118,18 @@ class DemoLmsAccessService
 
         return $this->grantDemoAccess($school, $user);
     }
+
+    /**
+     * Build the demo login URL for a school.
+     */
+    public function buildDemoLoginUrl(School $school, string $token, string $scheme = 'http', ?int $port = null): string
+    {
+        $url = "{$scheme}://{$school->domain}/demo-lms/login/{$token}";
+
+        if ($port && ! in_array($port, [80, 443])) {
+            $url = "{$scheme}://{$school->domain}:{$port}/demo-lms/login/{$token}";
+        }
+
+        return $url;
+    }
 }

@@ -75,4 +75,11 @@ interface LessonRepositoryInterface
      * Check if lesson is completed by user.
      */
     public function isCompletedBy(string $lessonId, string $userId): bool;
+
+    /**
+     * Get all published lessons for a module, ordered by position.
+     *
+     * @param  array<string>  $with
+     */
+    public function getByModulePublished(string $moduleId, array $with = []): Collection;
 }

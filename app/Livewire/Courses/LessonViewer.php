@@ -4,6 +4,8 @@ namespace App\Livewire\Courses;
 
 use App\Models\Lesson;
 use App\Models\Module;
+use App\Repositories\Lesson\LessonRepositoryInterface;
+use App\Repositories\Module\ModuleRepositoryInterface;
 use App\Support\CurrentSchool;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -26,42 +28,39 @@ class LessonViewer extends Component
 
     public ?Lesson $nextLesson = null;
 
-    public function mount(CurrentSchool $currentSchool, Lesson $lesson): void
-    {
+    public function mount(
+        CurrentSchool $currentSchool,
+        Lesson $lesson,
+        LessonRepositoryInterface $lessonRepository,
+        ModuleRepositoryInterface $moduleRepository,
+    ): void {
         $this->lesson = $lesson;
-        $this->module = $lesson->module;
-
-        if (! $this->module->relationLoaded('course')) {
-            $this->module->load('course');
-        }
+        $this->module = $moduleRepository->find($lesson->module_id, ['course']);
 
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
         abort_unless($this->module->course->school_id === $schoolId, 403);
 
         abort_unless($lesson->is_published, 403);
 
-        $this->loadProgress();
-        $this->loadNavigation();
+        $this->loadProgress($lessonRepository);
+        $this->loadNavigation($lessonRepository);
     }
 
-    private function loadProgress(): void
+    private function loadProgress(LessonRepositoryInterface $lessonRepository): void
     {
         $user = auth()->user();
 
         if ($user) {
-            $this->isCompleted = $this->lesson->isCompletedBy($user);
+            $this->isCompleted = $lessonRepository->isCompletedBy($this->lesson->id, $user->id);
         }
 
-        $lessons = $this->module->lessons()
-            ->where('is_published', true)
-            ->orderBy('order')
-            ->get();
+        $lessons = $lessonRepository->getByModulePublished($this->module->id);
 
         $this->totalLessonsInModule = $lessons->count();
 
         if ($user) {
             $this->completedLessonsInModule = $lessons->filter(
-                fn (Lesson $lesson) => $lesson->isCompletedBy($user)
+                fn (Lesson $lesson) => $lessonRepository->isCompletedBy($lesson->id, $user->id)
             )->count();
         }
 
@@ -70,12 +69,9 @@ class LessonViewer extends Component
         ) + 1;
     }
 
-    private function loadNavigation(): void
+    private function loadNavigation(LessonRepositoryInterface $lessonRepository): void
     {
-        $lessons = $this->module->lessons()
-            ->where('is_published', true)
-            ->orderBy('order')
-            ->get();
+        $lessons = $lessonRepository->getByModulePublished($this->module->id);
 
         $currentIndex = $lessons->search(fn (Lesson $lesson) => $lesson->id === $this->lesson->id);
 
@@ -97,10 +93,10 @@ class LessonViewer extends Component
             return;
         }
 
-        $this->lesson->markCompleteFor(auth()->user());
+        $lessonRepository = app(LessonRepositoryInterface::class);
+        $lessonRepository->markComplete($this->lesson->id, auth()->user()->id);
         $this->isCompleted = true;
         $this->dispatch('lesson-marked-complete', lessonId: $this->lesson->id);
-        $this->loadProgress();
     }
 
     public function render()
@@ -108,6 +104,14 @@ class LessonViewer extends Component
         return view('livewire.courses.lesson-viewer', [
             'pageTitle' => $this->lesson->title,
             'course' => $this->module->course,
+            'module' => $this->module,
+            'lesson' => $this->lesson,
+            'isCompleted' => $this->isCompleted,
+            'totalLessonsInModule' => $this->totalLessonsInModule,
+            'completedLessonsInModule' => $this->completedLessonsInModule,
+            'currentLessonIndex' => $this->currentLessonIndex,
+            'previousLesson' => $this->previousLesson,
+            'nextLesson' => $this->nextLesson,
             'completionPercentage' => $this->totalLessonsInModule > 0
                 ? round(($this->completedLessonsInModule / $this->totalLessonsInModule) * 100)
                 : 0,

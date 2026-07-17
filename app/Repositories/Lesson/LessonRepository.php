@@ -104,13 +104,28 @@ class LessonRepository implements LessonRepositoryInterface
     public function markComplete(string $lessonId, string $userId): void
     {
         $lesson = Lesson::findOrFail($lessonId);
-        $lesson->markCompleteFor(new User(['id' => $userId]));
+        $user = User::findOrFail($userId);
+        $lesson->markCompleteFor($user);
     }
 
     public function isCompletedBy(string $lessonId, string $userId): bool
     {
-        $lesson = Lesson::findOrFail($lessonId);
+        $user = User::findOrFail($userId);
 
-        return $lesson->isCompletedBy(new User(['id' => $userId]));
+        return Lesson::findOrFail($lessonId)->isCompletedBy($user);
+    }
+
+    /**
+     * Get all published lessons for a module, ordered by position.
+     *
+     * @param  array<string>  $with
+     */
+    public function getByModulePublished(string $moduleId, array $with = []): Collection
+    {
+        return Lesson::where('module_id', $moduleId)
+            ->where('is_published', true)
+            ->orderBy('order')
+            ->with($with)
+            ->get();
     }
 }

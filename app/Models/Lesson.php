@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 #[Fillable(['module_id', 'title', 'content', 'video_embed_url', 'order', 'duration_minutes', 'is_published'])]
 class Lesson extends Model
@@ -44,6 +46,41 @@ class Lesson extends Model
         return $this->belongsToMany(User::class, 'lesson_user')
             ->withPivot('completed_at', 'last_viewed_at')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the materials for this lesson.
+     *
+     * @return HasMany<LessonMaterial, $this>
+     */
+    public function materials(): HasMany
+    {
+        return $this->hasMany(LessonMaterial::class);
+    }
+
+    /**
+     * Get materials ordered by order column.
+     *
+     * @return Collection<int, LessonMaterial>
+     */
+    public function getMaterialsOrdered(): Collection
+    {
+        return $this->materials()->orderBy('order')->get();
+    }
+
+    public function isCompletedBy(User $user): bool
+    {
+        return $this->users()
+            ->where('user_id', $user->id)
+            ->wherePivot('completed_at', '!=', null)
+            ->exists();
+    }
+
+    public function markCompleteFor(User $user): void
+    {
+        $this->users()->syncWithoutDetaching([
+            $user->id => ['completed_at' => now()],
+        ]);
     }
 
     public function moveUp(): void

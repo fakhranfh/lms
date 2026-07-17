@@ -483,28 +483,40 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 
 ### 11.2 Eloquent Models & MaterialType Enum
 
-- [ ] Create `MaterialType` enum (`app/Enums/MaterialType.php`):
-  - [ ] Cases: Video, PDF, Document, Audio, Presentation, Image, Interactive
-  - [ ] Method: `maxSize(): int` — returns byte limit per type
-  - [ ] Method: `allowedExtensions(): array` — returns allowed file extensions per type
-  - [ ] Tests: Unit tests for limits and extensions
+**Status:** ✅ COMPLETE (2026-07-18)
 
-- [ ] Create `LessonMaterial` model:
-  - [ ] Relations: `belongsTo(Lesson)`, `belongsToMany(User, 'lesson_material_user')`
-  - [ ] Fillable: lesson_id, type, title, description, file_url, file_path, file_size, mime_type, order
-  - [ ] Casts: type as MaterialType enum
-  - [ ] Traits: HasUuid
-  - [ ] Methods: none yet (business logic in service layer)
+- [x] Create `MaterialType` enum (`app/Enums/MaterialType.php`):
+  - [x] Cases: Video, PDF, Document, Audio, Presentation, Image, Interactive
+  - [x] Method: `maxSize(): int` — returns byte limit per type (Video: 500MB, PDF: 50MB, Document: 25MB, Audio: 100MB, Presentation: 50MB, Image: 25MB, Interactive: 100MB)
+  - [x] Method: `allowedExtensions(): array` — returns allowed file extensions per type
+  - [x] Tests: Unit tests for limits and extensions (17 tests, all passing)
 
-- [ ] Create `LessonMaterialUser` pivot model:
-  - [ ] Extends Pivot
-  - [ ] Table: lesson_material_user
-  - [ ] Fillable: lesson_material_id, user_id, accessed_at
-  - [ ] Casts: accessed_at as datetime
+- [x] Create `LessonMaterial` model:
+  - [x] Relations: `belongsTo(Lesson)`, `belongsToMany(User, 'lesson_material_user')`
+  - [x] Fillable: lesson_id, type, title, description, file_url, file_path, file_size, mime_type, order
+  - [x] Casts: type as MaterialType enum
+  - [x] Traits: HasUuid
+  - [x] Methods: none yet (business logic in service layer)
 
-- [ ] Update `Lesson` model:
-  - [ ] Add relation: `hasMany(LessonMaterial::class)`
-  - [ ] Add method: `getMaterialsOrdered(): Collection` — returns materials ordered by order column
+- [x] Create `LessonMaterialUser` pivot model:
+  - [x] Extends Pivot
+  - [x] Table: lesson_material_user
+  - [x] Fillable: lesson_material_id, user_id, accessed_at
+  - [x] Casts: accessed_at as datetime
+
+- [x] Update `Lesson` model:
+  - [x] Add relation: `hasMany(LessonMaterial::class)`
+  - [x] Add method: `getMaterialsOrdered(): Collection` — returns materials ordered by order column
+  - [x] Add method: `isCompletedBy(User): bool` — check if user completed lesson
+  - [x] Add method: `markCompleteFor(User): void` — set completed_at for user
+
+- [x] Create `LessonMaterialFactory`:
+  - [x] Generate random material types, titles, descriptions, file URLs
+  - [x] State methods: withLesson(), withType(), withOrder()
+
+**Bonus Fixes (discovered during implementation):**
+- [x] Fixed ContentEngineSeeder: created missing seeder that was referenced in tests but not implemented
+- [x] Enhanced DefaultRoleSeeder: added Instructor and Student role definitions (were incomplete in Phase 1.2)
 
 ---
 

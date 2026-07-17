@@ -54,13 +54,15 @@
         <!-- Courses Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg">
             @foreach ($courses as $course)
-                <a href="{{ route('courses.show', $course) }}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden hover:border-primary/50 transition-all hover:shadow-md group">
+                <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden hover:border-primary/50 transition-all hover:shadow-md group flex flex-col">
                     <!-- Card Header -->
                     <div class="p-space-lg border-b border-outline-variant">
                         <div class="flex items-start justify-between gap-space-md mb-space-md">
-                            <h3 class="font-label-lg text-label-lg text-on-surface group-hover:text-primary transition-colors line-clamp-2">
-                                {{ $course->title }}
-                            </h3>
+                            <a href="{{ route('courses.show', $course) }}" class="flex-1">
+                                <h3 class="font-label-lg text-label-lg text-on-surface group-hover:text-primary transition-colors line-clamp-2">
+                                    {{ $course->title }}
+                                </h3>
+                            </a>
                             @if ($course->is_published)
                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-success/10 border border-success/20 text-success whitespace-nowrap">
                                     Published
@@ -79,11 +81,36 @@
                         @endif
                     </div>
 
+                    <!-- Modules List -->
+                    <div class="flex-1 overflow-hidden flex flex-col">
+                        @if ($course->modules->isEmpty())
+                            <div class="px-space-lg py-space-lg text-center flex-1 flex items-center justify-center">
+                                <div>
+                                    <span class="material-symbols-outlined text-on-surface-variant text-[32px] block mx-auto mb-2">folder_open</span>
+                                    <p class="text-body-sm text-on-surface-variant">No modules yet</p>
+                                </div>
+                            </div>
+                        @else
+                            <div class="px-space-lg py-space-md space-y-space-xs max-h-[240px] overflow-y-auto">
+                                @foreach ($course->modules as $module)
+                                    <div class="flex items-start gap-space-md p-space-sm rounded hover:bg-surface-container/50 transition-colors group/item">
+                                        <span class="material-symbols-outlined text-on-surface-variant text-[18px] flex-shrink-0 mt-0.5">layers</span>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-body-sm text-on-surface font-medium line-clamp-1 group-hover/item:text-primary transition-colors">
+                                                {{ $module->title }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
                     <!-- Card Footer -->
-                    <div class="px-space-lg py-space-md bg-surface-container/50 flex items-center justify-between text-body-sm text-on-surface-variant">
-                        <div class="flex items-center gap-space-md">
+                    <div class="px-space-lg py-space-md bg-surface-container/50 border-t border-outline-variant flex items-center justify-between">
+                        <div class="flex items-center gap-space-md text-body-sm text-on-surface-variant">
                             <span class="material-symbols-outlined text-[18px]">folder</span>
-                            {{ $course->modulesCount() }} module{{ $course->modulesCount() !== 1 ? 's' : '' }}
+                            {{ $course->modules->count() }} module{{ $course->modules->count() !== 1 ? 's' : '' }}
                         </div>
 
                         <div class="flex gap-space-xs">
@@ -108,7 +135,7 @@
                             @endcan
                         </div>
                     </div>
-                </a>
+                </div>
             @endforeach
         </div>
 

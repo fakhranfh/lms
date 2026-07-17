@@ -35,7 +35,7 @@ class CoursesIndex extends Component
             });
         }
 
-        $courses = $query->with('creator')->latest()->paginate(10);
+        $courses = $query->with(['creator', 'modules'])->latest()->paginate(10);
 
         return view('livewire.courses.courses-index', [
             'courses' => $courses,

@@ -1,6 +1,6 @@
 @section('title', 'Course Builder')
 
-<div class="space-y-space-lg" x-data="{ deleteType: null, deleteId: null, deleteName: null, showDeleteModal: false }">
+<div class="space-y-space-lg" x-data="{ deleteType: null, deleteId: null, deleteName: null, showDeleteModal: false, deleteConfirmText: '' }">
     @if ($successMessage)
         <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
             <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
@@ -19,11 +19,16 @@
     <div class="flex items-start justify-between">
         <div>
             <h1 class="font-headline-md text-headline-md text-on-surface">{{ $course->title }}</h1>
-            <p class="text-body-sm text-on-surface-variant mt-1">
+            <p class="text-body-sm text-on-surface-variant mt-1 flex items-center gap-space-sm">
                 @if ($course->is_published)
                     <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-success/10 border border-success/20 text-success">
                         Published
                     </span>
+                    @if ($course->published_at)
+                        <span class="text-body-xs text-on-surface-variant">
+                            on {{ $course->published_at->format('M j, Y') }}
+                        </span>
+                    @endif
                 @else
                     <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant">
                         Draft
@@ -88,6 +93,11 @@
                                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-success/10 border border-success/20 text-success">
                                                     Published
                                                 </span>
+                                                @if ($module->published_at)
+                                                    <span class="text-body-xs text-on-surface-variant">
+                                                        on {{ $module->published_at->format('M j, Y') }}
+                                                    </span>
+                                                @endif
                                             @endif
                                         </div>
                                         @if ($module->description)
@@ -133,7 +143,7 @@
 
                                     <button
                                         type="button"
-                                        @click="deleteType = 'modules'; deleteId = @js($module->id); deleteName = @js($module->title); showDeleteModal = true"
+                                        @click="deleteType = 'modules'; deleteId = @js($module->id); deleteName = @js($module->title); deleteConfirmText = ''; showDeleteModal = true"
                                         class="p-2 hover:bg-surface-container rounded transition text-error"
                                     >
                                         <span class="material-symbols-outlined">delete</span>
@@ -171,6 +181,11 @@
                                                                 <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-success/10 border border-success/20 text-success">
                                                                     Published
                                                                 </span>
+                                                                @if ($lesson->published_at)
+                                                                    <span class="text-body-xs text-on-surface-variant">
+                                                                        on {{ $lesson->published_at->format('M j, Y') }}
+                                                                    </span>
+                                                                @endif
                                                             @endif
                                                         </div>
                                                         @if ($lesson->duration_minutes)
@@ -216,7 +231,7 @@
 
                                                     <button
                                                         type="button"
-                                                        @click="deleteType = 'lessons'; deleteId = @js($lesson->id); deleteName = @js($lesson->title); showDeleteModal = true"
+                                                        @click="deleteType = 'lessons'; deleteId = @js($lesson->id); deleteName = @js($lesson->title); deleteConfirmText = ''; showDeleteModal = true"
                                                         class="p-2 hover:bg-surface-container rounded transition text-error"
                                                     >
                                                         <span class="material-symbols-outlined">delete</span>
@@ -294,9 +309,23 @@
                         <h3 class="font-headline-sm text-headline-sm text-on-surface">Delete Confirmation</h3>
                         <p class="font-body-sm text-body-sm text-on-surface-variant">
                             Are you sure you want to delete "<span class="font-medium" x-text="deleteName ?? 'this item'"></span>"?
-                            <span x-show="deleteType === 'modules'">All lessons in this module will also be deleted.</span>
                             This action cannot be undone.
                         </p>
+                        <p x-show="deleteType === 'modules'" class="font-body-sm text-body-sm text-error">
+                            All lessons in this module will also be deleted.
+                        </p>
+                    </div>
+
+                    <div class="text-left">
+                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
+                            Type <span class="font-medium" x-text="deleteName"></span> to confirm
+                        </label>
+                        <input
+                            type="text"
+                            x-model="deleteConfirmText"
+                            autocomplete="off"
+                            class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
                     </div>
 
                     <div class="flex gap-space-md pt-space-md">
@@ -308,9 +337,11 @@
                             Cancel
                         </button>
                         <button
+                            :disabled="deleteConfirmText !== deleteName"
+                            :class="deleteConfirmText !== deleteName ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'"
                             @click="showDeleteModal = false; $wire.call('confirmDelete', deleteType, deleteId)"
                             type="button"
-                            class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                            class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md transition-opacity"
                         >
                             Delete
                         </button>

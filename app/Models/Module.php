@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TracksPublishedAt;
 use App\Traits\HasUuid;
 use Database\Factories\ModuleFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,7 +15,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Module extends Model
 {
     /** @use HasFactory<ModuleFactory> */
-    use HasFactory, HasUuid;
+    use HasFactory, HasUuid, TracksPublishedAt;
+
+    /**
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'published_at' => 'datetime',
+    ];
 
     /**
      * Get the course that owns this module.

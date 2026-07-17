@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToSchool;
+use App\Models\Concerns\TracksPublishedAt;
 use App\Traits\HasUuid;
 use Database\Factories\CourseFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -15,7 +16,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Course extends Model
 {
     /** @use HasFactory<CourseFactory> */
-    use BelongsToSchool, HasFactory, HasUuid;
+    use BelongsToSchool, HasFactory, HasUuid, TracksPublishedAt;
+
+    /**
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'published_at' => 'datetime',
+    ];
 
     /**
      * Get the school that owns this course.

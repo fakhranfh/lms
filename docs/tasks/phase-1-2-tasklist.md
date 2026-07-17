@@ -16,7 +16,7 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 | 2. Models & Relationships | ✅ Complete | Course, Module, Lesson models with full relationships & methods |
 | 3. RBAC: Permissions & Roles | ✅ Complete | 36 permissions seeded via migration, 3 roles per school via seeder |
 | 4. Factories & Seeders | ✅ Complete | CourseFactory, ModuleFactory, LessonFactory + ContentEngineSeeder (8 tests); RealisticCoursesSeeder added for non-dummy demo content |
-| 5. Livewire Components | ✅ Complete | CoursesIndex, CourseBuilder, CourseForm, ModuleForm, LessonForm all built; move up/down, publish toggle (inline checkbox), shared delete-confirm modal in place |
+| 5. Livewire Components | ✅ Complete | CoursesIndex, CourseBuilder, CourseForm, ModuleForm, LessonForm all built; move up/down, publish toggle (inline checkbox); course delete was broken (mismatched events) and is now fixed, search is now case-insensitive with debounce + skeleton loading |
 | 6. Routes & Controller | ✅ Complete (architecture changed) | Implemented as full-page Livewire routes (`courses.*`, `modules.*`, `lessons.*`), not dedicated Controllers — see Resolved Decisions |
 | 7. Student-Facing Views | ⏳ Not Started | LessonViewerComponent, CourseProgressComponent needed |
 | 8. Validations & Policies | 🟡 Partial (architecture changed) | No dedicated Policy/FormRequest classes; authorization is inline `abort_unless(can(...))` per component, validation via Livewire `#[Validate]` attributes |
@@ -27,10 +27,13 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 
 ### Known Issues (found during 2026-07-17 audit)
 
-- **Test isolation bug:** Running the Livewire course/module/lesson test files together throws `SQLSTATE[23505] duplicate key ... schools_domain_unique`. Faker-generated school domains collide across tests in the same run — needs a unique domain sequence in `SchoolFactory` or per-test `RefreshDatabase`/transaction isolation fix.
-- **Permission test failures:** Several `test_user_cannot_*_without_permission` tests fail because the expected `AuthorizationException` isn't thrown, and a couple of "renders" tests get `403` instead of `200`. Needs investigation — likely a test setup gap (missing `givePermissionTo` call) rather than a real authorization bug, but unconfirmed.
-- **`LessonForm` duration validation:** `test_duration_must_be_numeric` fails with `Cannot assign string to property LessonForm::$durationMinutes of type ?int` — Livewire's property type coercion rejects non-numeric input before validation runs; needs the property typed as untyped/string with validation, or a custom rule.
+- **Test isolation bug:** Running the Livewire course/module/lesson test files together throws `SQLSTATE[23505] duplicate key ... schools_domain_unique`. Faker-generated school domains collide across tests in the same run — needs a unique domain sequence in `SchoolFactory` or per-test `RefreshDatabase`/transaction isolation fix. **Still open.**
+- **Permission test failures — root cause confirmed:** `test_user_cannot_*_without_permission` tests wrap `Livewire::test(...)` in `expectException(AuthorizationException::class)`, but `abort_unless($cond, 403)` throws Symfony's `HttpException`, and Livewire's `->call()`/mount cycle captures it as a response status rather than re-throwing to PHPUnit — the correct assertion is `->assertStatus(403)`. Confirmed by direct reproduction (see `CoursesIndexTest::test_cannot_delete_course_without_permission`, which uses `assertStatus(403)` and passes). **Fixed in the 3 new delete tests; the pre-existing tests across `CourseFormTest`/`ModuleFormTest`/`CourseBuilderTest`/`CoursesIndexTest` still use the wrong assertion and remain broken — retrofit is a follow-up task, not yet done.**
+- **`LessonForm` duration validation:** `test_duration_must_be_numeric` fails with `Cannot assign string to property LessonForm::$durationMinutes of type ?int` — Livewire's property type coercion rejects non-numeric input before validation runs; needs the property typed as untyped/string with validation, or a custom rule. **Still open.**
 - Two real bugs in `Module`/`Lesson` `moveUp`/`moveDown` ordering were found and fixed separately (see git history: reorder() fix for relation's baked-in orderBy, and the in-memory attribute mutation bug) — not re-listed here since already resolved.
+- **Course delete button was completely non-functional** (found and fixed 2026-07-17): the button dispatched a `showDeleteModal` Livewire event that nothing listened for; the shared modal in `layouts/app.blade.php` listens for `open-delete-confirm` and its confirm button fires `delete-confirmed`, which `CoursesIndex` had no handler for at all. Fixed by matching the project's own code-generator convention (`LivewireIndexStubGenerator`): button now dispatches `open-delete-confirm` via plain Alpine `@click`, and `CoursesIndex` gained a `#[On('delete-confirmed')] destroy()` method backed by `CourseService`. **Resolved.**
+- **Course search was case-sensitive** (found and fixed 2026-07-17): used SQL `like` instead of Postgres's case-insensitive `ilike` (app is confirmed pgsql-only via `config:show database.default`). **Resolved.**
+- **Course search silently failed to re-render** (found and fixed 2026-07-17): the `@foreach` loop in `courses-index.blade.php` had no `wire:key`, so Livewire's DOM-morphing couldn't reliably reconcile the course grid when the filtered list changed — the classic missing-key pitfall. Added `wire:key` on both the course and module loops, plus debounced the search input (300ms) and added a skeleton-loading state (`wire:loading.delay.class.remove` scoped to `wire:target="search"`) so filtering has visible feedback. **Resolved.**
 
 ---
 
@@ -192,12 +195,13 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
     - [x] duration_minutes (optional, numeric — see Known Issues for a coercion bug on invalid input)
   - [x] Validation: title required; video_embed_url format validation not confirmed as strict YouTube/Vimeo pattern (accepts any URL)
   - [x] On submit: create/update lesson with correct order
-- [x] Delete confirmation (shared Alpine.js modal in `layouts/app.blade.php` + per-page modal in `course-builder.blade.php`, dispatched via `showDeleteModal`/`confirmDelete`):
-  - [x] Reusable modal for delete confirmations (course/module/lesson)
-  - [x] Shows item name being deleted
-  - [ ] No explicit cascade warning text or typed-confirmation requirement (simple Cancel/Delete buttons only)
+- [x] Delete confirmation — two patterns coexist in this codebase:
+  - [x] `CourseBuilder` (module/lesson delete): local Alpine `x-data` + its own modal at the bottom of `course-builder.blade.php`, calling `$wire.call('confirmDelete', deleteType, deleteId)` directly. Shows item name being deleted.
+  - [x] `CoursesIndex` (course delete): shared global modal in `layouts/app.blade.php`, wired via `@click="$dispatch('open-delete-confirm', { id, name, type })"` → `#[On('delete-confirmed')] destroy()`. **This was broken until 2026-07-17** — the button dispatched a mismatched event name (`showDeleteModal`) that nothing listened for, and the component had no delete method at all. Fixed to match the project's own RSC code-generator convention. The modal now also shows the item name and a cascade warning (see below) since the dispatch was extended with `name`/`type`.
+  - [x] Cascade warning text added (2026-07-17): shared modal now shows "This will also delete all of its modules and lessons." when `type === 'courses'`; `CourseBuilder`'s modal already had a module→lessons warning, now styled consistently in `text-error`.
+  - [x] Typed-confirmation requirement added (2026-07-17) to both patterns: Delete button is disabled (`:disabled`, dimmed) until the user types the exact item name/title into a confirmation input. Shared modal only gates this when a `name` is passed in the dispatch (backward-compatible with the RSC-generated stub, which doesn't pass one).
 - [x] Publish toggle — implemented as an `isPublished` checkbox inline in `CourseForm`/`ModuleForm`/`LessonForm`, not a standalone `PublishToggle` component:
-  - [ ] No visible "date published" shown
+  - [x] "Date published" now shown (2026-07-17): added a `published_at` timestamp column to `courses`/`modules`/`lessons` (migration `2026_07_17_025953_...`) plus a shared `App\Models\Concerns\TracksPublishedAt` trait that sets/clears it automatically via a `saving` hook whenever `is_published` changes (covers create, `update()`, and the repository `publish()`/`unpublish()` methods — no call-site changes needed). Displayed next to each "Published" badge in `courses-index.blade.php` and `course-builder.blade.php` (course/module/lesson level). 7 new tests in `PublishedAtTrackingTest` cover set-on-create, stays-null-as-draft, set-on-later-publish, cleared-on-unpublish, and that unrelated field updates don't touch it.
   - [x] Publishing a course does not cascade to modules/lessons (each has its own independent flag, as designed)
 
 ## 6. Routes & Controller
@@ -273,6 +277,8 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
   - [x] Move up/down correctly reorders adjacent siblings only (regression test for a bug where moveUp on the bottom item jumped it to the top)
   - [x] Repeated move calls don't corrupt order values (regression test for an in-memory attribute mutation bug)
   - [ ] Cascade delete tests (deleting course/module removes children) not yet written
+- [x] `CoursesIndexTest` additions (2026-07-17): `test_search_is_case_insensitive`, `test_can_delete_course`, `test_cannot_delete_course_without_permission` (uses `assertStatus(403)`, not `expectException` — see Known Issues), `test_cannot_delete_course_from_different_school`. All pass on a fresh test DB.
+- [x] `PublishedAtTrackingTest` (`tests/Feature/`) — added 2026-07-17, 7 tests covering the new `published_at` auto-tracking trait across Course/Module/Lesson (set on publish-at-create, stays null as draft, set on later publish, cleared on unpublish, unrelated updates don't touch it). All pass.
 - [ ] Create `ProgressTrackingTest`:
   - [ ] Student can mark lesson complete
   - [ ] Completion timestamp is recorded

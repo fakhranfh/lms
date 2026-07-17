@@ -113,7 +113,10 @@
                                 </h3>
                             </a>
                             @if ($course->is_published)
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-success/10 border border-success/20 text-success whitespace-nowrap">
+                                <span
+                                    class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-success/10 border border-success/20 text-success whitespace-nowrap"
+                                    @if ($course->published_at) title="Published on {{ $course->published_at->format('M j, Y') }}" @endif
+                                >
                                     Published
                                 </span>
                             @else
@@ -122,6 +125,12 @@
                                 </span>
                             @endif
                         </div>
+
+                        @if ($course->is_published && $course->published_at)
+                            <p class="text-body-xs text-on-surface-variant mb-space-sm">
+                                Published on {{ $course->published_at->format('M j, Y') }}
+                            </p>
+                        @endif
 
                         @if ($course->description)
                             <p class="text-body-sm text-on-surface-variant line-clamp-2">
@@ -175,7 +184,7 @@
                             @can('courses.delete')
                                 <button
                                     type="button"
-                                    @click="$dispatch('open-delete-confirm', { id: '{{ $course->id }}' })"
+                                    @click="$dispatch('open-delete-confirm', { id: '{{ $course->id }}', name: @js($course->title), type: 'courses' })"
                                     class="p-2 hover:bg-surface rounded transition text-error"
                                     title="Delete"
                                 >

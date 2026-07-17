@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'r2' => [
+        'account_id' => env('CLOUDFLARE_R2_ACCOUNT_ID'),
+        'access_key_id' => env('CLOUDFLARE_R2_ACCESS_KEY_ID'),
+        'secret_access_key' => env('CLOUDFLARE_R2_SECRET_ACCESS_KEY'),
+        'bucket' => env('CLOUDFLARE_R2_BUCKET'),
+        'custom_domain' => env('CLOUDFLARE_R2_CUSTOM_DOMAIN', ''),
+    ],
+
 ];

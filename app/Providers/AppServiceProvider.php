@@ -37,6 +37,8 @@ use App\Repositories\UserLesson\UserLessonRepositoryInterface;
 use App\Services\CourseService;
 use App\Services\CredentialEncryption;
 use App\Services\FeatureGateService;
+use App\Services\LessonCompletionService;
+use App\Services\LessonMaterialService;
 use App\Services\LessonService;
 use App\Services\ModuleService;
 use App\Services\PaymentGatewayConfigService;
@@ -44,6 +46,7 @@ use App\Services\PaymentGatewayFactory;
 use App\Services\PaymentGatewayRegistry;
 use App\Services\PaymentWebhookService;
 use App\Services\PricingTierService;
+use App\Services\R2StorageService;
 use App\Services\SchoolService;
 use App\Services\SubscriptionPaymentService;
 use App\Services\TierChangeService;
@@ -101,6 +104,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ModuleService::class);
         $this->app->singleton(LessonService::class);
         $this->app->singleton(UserLessonService::class);
+        $this->app->singleton(R2StorageService::class);
+        $this->app->singleton(LessonMaterialService::class);
+        $this->app->singleton(LessonCompletionService::class);
     }
 
     /**

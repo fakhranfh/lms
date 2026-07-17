@@ -15,15 +15,22 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 | 1. Database Schema | ✅ Complete | 4 migrations, 4 tables created (courses, modules, lessons, lesson_user) |
 | 2. Models & Relationships | ✅ Complete | Course, Module, Lesson models with full relationships & methods |
 | 3. RBAC: Permissions & Roles | ✅ Complete | 36 permissions seeded via migration, 3 roles per school via seeder |
-| 4. Factories & Seeders | ✅ Complete | CourseFactory, ModuleFactory, LessonFactory + ContentEngineSeeder (8 tests) |
-| 5. Livewire Components | ⏳ Not Started | CourseBuilder, CourseForm, ModuleForm, LessonForm needed |
-| 6. Routes & Controller | ⏳ Not Started | CourseController, ModuleController, LessonController needed |
+| 4. Factories & Seeders | ✅ Complete | CourseFactory, ModuleFactory, LessonFactory + ContentEngineSeeder (8 tests); RealisticCoursesSeeder added for non-dummy demo content |
+| 5. Livewire Components | ✅ Complete | CoursesIndex, CourseBuilder, CourseForm, ModuleForm, LessonForm all built; move up/down, publish toggle (inline checkbox), shared delete-confirm modal in place |
+| 6. Routes & Controller | ✅ Complete (architecture changed) | Implemented as full-page Livewire routes (`courses.*`, `modules.*`, `lessons.*`), not dedicated Controllers — see Resolved Decisions |
 | 7. Student-Facing Views | ⏳ Not Started | LessonViewerComponent, CourseProgressComponent needed |
-| 8. Validations & Policies | ⏳ Not Started | CoursePolicy, ModulePolicy, LessonPolicy needed |
-| 9. Testing | 🟡 Partial | Database schema tests ✅ (7/7); Seeder tests ✅ (8/8); feature tests ⏳ |
+| 8. Validations & Policies | 🟡 Partial (architecture changed) | No dedicated Policy/FormRequest classes; authorization is inline `abort_unless(can(...))` per component, validation via Livewire `#[Validate]` attributes |
+| 9. Testing | 🟡 Partial | Schema tests ✅ (7/7); Seeder tests ✅ (8/8); Livewire feature tests written for all 5 components but currently flaky — see Known Issues below |
 | 10. Documentation | ⏳ Not Started | CONTENT_ENGINE.md documentation needed |
 
-**Overall:** 4/10 sections complete. Next: Livewire components → Routes & Controllers → Student Views.
+**Overall:** 6/10 sections complete, 2 partial. Next: fix test-suite flakiness (Known Issues) → Student-Facing Views → Documentation.
+
+### Known Issues (found during 2026-07-17 audit)
+
+- **Test isolation bug:** Running the Livewire course/module/lesson test files together throws `SQLSTATE[23505] duplicate key ... schools_domain_unique`. Faker-generated school domains collide across tests in the same run — needs a unique domain sequence in `SchoolFactory` or per-test `RefreshDatabase`/transaction isolation fix.
+- **Permission test failures:** Several `test_user_cannot_*_without_permission` tests fail because the expected `AuthorizationException` isn't thrown, and a couple of "renders" tests get `403` instead of `200`. Needs investigation — likely a test setup gap (missing `givePermissionTo` call) rather than a real authorization bug, but unconfirmed.
+- **`LessonForm` duration validation:** `test_duration_must_be_numeric` fails with `Cannot assign string to property LessonForm::$durationMinutes of type ?int` — Livewire's property type coercion rejects non-numeric input before validation runs; needs the property typed as untyped/string with validation, or a custom rule.
+- Two real bugs in `Module`/`Lesson` `moveUp`/`moveDown` ordering were found and fixed separately (see git history: reorder() fix for relation's baked-in orderBy, and the in-memory attribute mutation bug) — not re-listed here since already resolved.
 
 ---
 
@@ -157,66 +164,63 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 
 ## 5. Livewire Components — Instructor Content Builder
 
-- [ ] Create `CourseBuilder` Livewire component:
-  - [ ] Display tree/outline view: Course > Modules > Lessons
-  - [ ] Expandable/collapsible modules
-  - [ ] Show lesson order and title
-  - [ ] Action buttons per level:
-    - [ ] Course: Edit, Publish, Delete, Add Module
-    - [ ] Module: Edit, Move Up/Down, Delete, Add Lesson
-    - [ ] Lesson: Edit, Move Up/Down, Delete
-  - [ ] Search/filter by title
-  - [ ] Drag-to-reorder (optional, requires JavaScript) or use up/down buttons (accessible)
-  - [ ] Real-time update of order via wire model
-- [ ] Create `CourseForm` Livewire component (modal):
-  - [ ] Fields: title (required), description (textarea), slug (auto-generated)
-  - [ ] Validation: title max 255, slug unique per school
-  - [ ] Mode: Create or Edit
-  - [ ] On submit: create/update course, refresh CourseBuilder
-- [ ] Create `ModuleForm` Livewire component (modal):
-  - [ ] Fields: title (required), description (textarea), order (hidden, auto-calculated)
-  - [ ] Link to parent course
-  - [ ] On submit: create/update module with correct order
-- [ ] Create `LessonForm` Livewire component (modal):
-  - [ ] Fields: 
-    - [ ] title (required)
-    - [ ] content (rich HTML editor, e.g., TinyMCE or Quill)
-    - [ ] video_embed_url (optional, validate YouTube/Vimeo URL)
-    - [ ] duration_minutes (optional, numeric)
-  - [ ] Validation: title required, video_embed_url valid URL format if provided
-  - [ ] On submit: create/update lesson with correct order
-- [ ] Create `DeleteConfirmModal`:
-  - [ ] Reusable modal for delete confirmations (course/module/lesson)
-  - [ ] Show what will be deleted (cascade warning: deleting course deletes all modules/lessons)
-  - [ ] Require typed confirmation (e.g., "type the title to confirm")
-- [ ] Create `PublishToggle` component:
-  - [ ] Simple button/toggle: "Publish Course" or "Unpublish"
-  - [ ] Show publish status and date published
-  - [ ] Note: publishing a course does NOT auto-publish modules/lessons (instructor must publish individually)
+- [x] Create `CourseBuilder` Livewire component (`app/Livewire/Courses/CourseBuilder.php`):
+  - [x] Display tree/outline view: Course > Modules > Lessons
+  - [x] Expandable/collapsible modules (`toggleModule()`)
+  - [x] Show lesson order and title
+  - [x] Action buttons per level:
+    - [x] Course: Edit, Delete, Add Module (Publish handled via `CourseForm` checkbox, not a separate button)
+    - [x] Module: Edit, Move Up/Down, Delete, Add Lesson
+    - [x] Lesson: Edit, Move Up/Down, Delete
+  - [ ] Search/filter by title — not implemented (course list search exists in `CoursesIndex`, not within a single course's module/lesson tree)
+  - [x] Reorder via up/down buttons (accessible); drag-to-reorder not implemented
+  - [x] Real-time update of order via Livewire `moveModuleUp/Down`, `moveLessonUp/Down`
+- [x] Create `CourseForm` Livewire component (full-page, not modal — see Resolved Decisions):
+  - [x] Fields: title (required), description (textarea), slug (auto-generated from title), isPublished (checkbox)
+  - [x] Validation: title max 255, slug unique per school (checked in `save()` via `CourseService::slugExists`)
+  - [x] Mode: Create or Edit
+  - [x] On submit: create/update course, redirect to `courses.show`
+- [x] Create `ModuleForm` Livewire component (full-page):
+  - [x] Fields: title (required), description (textarea), isPublished (checkbox); order auto-calculated by `ModuleService`/`ModuleRepository::getNextOrder()`
+  - [x] Link to parent course
+  - [x] On submit: create/update module with correct order
+- [x] Create `LessonForm` Livewire component (full-page):
+  - [x] Fields:
+    - [x] title (required)
+    - [x] content (plain textarea — HTML tags supported manually; rich editor like TinyMCE/Quill **not** integrated)
+    - [x] video_embed_url (optional)
+    - [x] duration_minutes (optional, numeric — see Known Issues for a coercion bug on invalid input)
+  - [x] Validation: title required; video_embed_url format validation not confirmed as strict YouTube/Vimeo pattern (accepts any URL)
+  - [x] On submit: create/update lesson with correct order
+- [x] Delete confirmation (shared Alpine.js modal in `layouts/app.blade.php` + per-page modal in `course-builder.blade.php`, dispatched via `showDeleteModal`/`confirmDelete`):
+  - [x] Reusable modal for delete confirmations (course/module/lesson)
+  - [x] Shows item name being deleted
+  - [ ] No explicit cascade warning text or typed-confirmation requirement (simple Cancel/Delete buttons only)
+- [x] Publish toggle — implemented as an `isPublished` checkbox inline in `CourseForm`/`ModuleForm`/`LessonForm`, not a standalone `PublishToggle` component:
+  - [ ] No visible "date published" shown
+  - [x] Publishing a course does not cascade to modules/lessons (each has its own independent flag, as designed)
 
 ## 6. Routes & Controller
 
-- [ ] Create `CourseController` with CRUD actions:
-  - [ ] `index()` — list courses for authenticated school (GET /courses)
-  - [ ] `create()` — show course form (GET /courses/create)
-  - [ ] `store()` — create course (POST /courses)
-  - [ ] `show($course)` — show course with module tree (GET /courses/{id})
-  - [ ] `edit($course)` — show edit form (GET /courses/{id}/edit)
-  - [ ] `update($course)` — update course (PATCH /courses/{id})
-  - [ ] `destroy($course)` — soft delete course (DELETE /courses/{id})
-  - [ ] All routes require `middleware('auth', 'permission:create-course')` etc.
-- [ ] Create `ModuleController`:
-  - [ ] `store($course)` — create module in course (POST /courses/{course_id}/modules)
-  - [ ] `update($module)` — update module (PATCH /modules/{id})
-  - [ ] `destroy($module)` — delete module (DELETE /modules/{id})
-  - [ ] `moveUp($module)`, `moveDown($module)` — reorder (POST /modules/{id}/move-up)
-- [ ] Create `LessonController`:
-  - [ ] `store($module)` — create lesson (POST /modules/{module_id}/lessons)
-  - [ ] `update($lesson)` — update lesson (PATCH /lessons/{id})
-  - [ ] `destroy($lesson)` — delete lesson (DELETE /lessons/{id})
-  - [ ] `moveUp($lesson)`, `moveDown($lesson)` — reorder
-  - [ ] `publish($lesson)` — toggle publish status (POST /lessons/{id}/publish)
-- [ ] Ensure all CRUD operations respect `BelongsToSchool` scope
+**Status:** ✅ Complete, but via a different architecture than originally planned — see [Resolved Decisions](#routing-architecture).
+No `CourseController`/`ModuleController`/`LessonController` exist. Instead, routes bind directly to full-page Livewire components (`Route::get(...)->name(...)` → `App\Livewire\Courses\*`), and create/update/delete/reorder all happen through Livewire actions on those components rather than separate REST endpoints.
+
+- [x] Course routes (`courses.index`, `courses.create`, `courses.show`, `courses.edit`) → `CoursesIndex`, `CourseForm`, `CourseBuilder`
+  - [x] List courses for authenticated school (`courses.index`)
+  - [x] Create/edit course form (`courses.create`, `courses.edit`)
+  - [x] Show course with module tree (`courses.show` → `CourseBuilder`)
+  - [x] Delete via Livewire `confirmDelete()` action (not a DELETE route)
+  - [x] Authorization inline per-component, not route middleware (`abort_unless(can(...))`)
+- [x] Module routes (`modules.create`, `modules.edit`) → `ModuleForm`
+  - [x] Create/update via `ModuleForm::save()`
+  - [x] Delete via `CourseBuilder::confirmDelete()`
+  - [x] Move up/down via `CourseBuilder::moveModuleUp/Down()` (Livewire actions, not routes)
+- [x] Lesson routes (`lessons.create`, `lessons.edit`) → `LessonForm`
+  - [x] Create/update via `LessonForm::save()`
+  - [x] Delete via `CourseBuilder::confirmDelete()`
+  - [x] Move up/down via `CourseBuilder::moveLessonUp/Down()`
+  - [ ] No standalone `publish($lesson)` toggle route — publish state is set via the `isPublished` checkbox in `LessonForm`
+- [x] All CRUD operations respect `BelongsToSchool` scope (checked via `CurrentSchool` + `school_id` comparison in each component's `mount()`)
 
 ## 7. Student-Facing Views — Lesson Viewer
 
@@ -238,17 +242,16 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 
 ## 8. Validations & Authorization
 
-- [ ] Create `CoursePolicy`:
-  - [ ] `viewAny`: authenticated user in same school
-  - [ ] `view`: authenticated + course in same school
-  - [ ] `create`: permission:create-course
-  - [ ] `update`: permission:edit-course + creator or admin
-  - [ ] `delete`: permission:delete-course + no students enrolled yet
-- [ ] Create `ModulePolicy`: similar to CoursePolicy
-- [ ] Create `LessonPolicy`: similar
-- [ ] Create `CourseFormRequest` / `ModuleFormRequest` / `LessonFormRequest`:
-  - [ ] Validate required fields, string lengths, URL formats
-  - [ ] Validate order is numeric and unique per parent
+**Status:** 🟡 Partial, different architecture than planned. No Policy or FormRequest classes exist for this domain (`app/Policies/` only has `UserPolicy`). Authorization and validation are both handled inline in the Livewire components instead:
+
+- [x] Course/Module/Lesson authorization — implemented as inline `abort_unless(auth()->user()->can('courses.edit') && $course->school_id === $schoolId, 403)` style checks in each component's `mount()`, not as `CoursePolicy`/`ModulePolicy`/`LessonPolicy` classes
+  - [x] School-scoping check present on every form/builder component
+  - [ ] No explicit "no students enrolled yet" delete guard on courses
+- [x] Field validation — implemented via Livewire `#[Validate('required|string|max:255')]` attributes directly on component properties, not `FormRequest` classes
+  - [x] Required fields, string lengths enforced
+  - [ ] `video_embed_url` accepts any URL — no YouTube/Vimeo-specific format rule
+  - [x] Order uniqueness per parent enforced at the DB layer (unique constraint), not duplicated in form validation
+  - [ ] `LessonForm::$durationMinutes` typed `?int` causes a hard Livewire type-coercion error (not a graceful validation message) when non-numeric input is submitted — see Known Issues
 
 ## 9. Testing
 
@@ -260,21 +263,16 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
   - [x] Course slug is unique per school
   - [x] Module and lesson ordering is enforced
   - [x] Cascade delete removes related records (7/7 tests passing)
-- [ ] Create `CourseTest` (feature test):
-  - [ ] Instructor can create/edit/delete course
-  - [ ] Course is automatically scoped to school
-  - [ ] Unpublished course is invisible to students (phase integration)
-  - [ ] Course slug is unique per school (allow same slug in different schools)
-- [ ] Create `ModuleTest`:
-  - [ ] Module can be created with auto-incremented order
-  - [ ] Move up/down correctly reorders siblings
-  - [ ] Cascade delete: deleting course deletes modules
-  - [ ] Order uniqueness constraint prevents duplicates
-- [ ] Create `LessonTest`:
-  - [ ] Lesson can be created/edited/deleted
-  - [ ] Video URL validation rejects invalid formats
-  - [ ] Lesson order within module is enforced
-  - [ ] Cascade delete: deleting module deletes lessons
+- [x] `CourseFormTest`, `ModuleFormTest`, `LessonFormTest`, `CourseBuilderTest`, `CoursesIndexTest` (Livewire feature tests, `tests/Feature/Livewire/Courses/`) cover most of what `CourseTest`/`ModuleTest`/`LessonTest` below describe, via the actual components rather than controllers:
+  - [x] Instructor can create/edit/delete course/module/lesson
+  - [x] Course/module/lesson scoped to school; cross-school access blocked
+  - [x] Course slug is unique per school
+  - [x] Module/lesson order auto-increments on create
+  - 🟡 Currently flaky when run as a full suite — see Known Issues (schools_domain_unique collisions, some permission-check test failures)
+- [x] `ModuleOrderingTest`, `CourseBuilderMoveOrderTest` (`tests/Feature/`) — added 2026-07-17 to cover move up/down correctness:
+  - [x] Move up/down correctly reorders adjacent siblings only (regression test for a bug where moveUp on the bottom item jumped it to the top)
+  - [x] Repeated move calls don't corrupt order values (regression test for an in-memory attribute mutation bug)
+  - [ ] Cascade delete tests (deleting course/module removes children) not yet written
 - [ ] Create `ProgressTrackingTest`:
   - [ ] Student can mark lesson complete
   - [ ] Completion timestamp is recorded
@@ -285,7 +283,7 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
   - [ ] Unpublished lesson returns 403 for students (published view only)
   - [ ] "Mark Complete" button visible only if not completed
   - [ ] Navigation to previous/next lesson works
-- [x] Run `php artisan test --compact` — database schema tests passing
+- [x] Run `php artisan test --compact` — database schema tests passing; Livewire component tests written but need the flakiness fix noted in Known Issues before they can be trusted in CI
 
 ## 10. Documentation & Verification
 
@@ -306,6 +304,21 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 ---
 
 ## Resolved Decisions
+
+### Routing Architecture
+**Decision:** Use full-page Livewire components bound directly to routes instead of traditional Controllers + FormRequests + Policies.
+
+**Rationale:**
+- Matches the pattern already used elsewhere in the app (`app/Livewire/Courses/*`)
+- Avoids duplicating validation/authorization logic across a Controller and a Livewire form component
+- Fewer files for the same CRUD surface (one component per screen instead of Controller + FormRequest + Policy + Blade view)
+
+**Implementation:**
+- `courses.index|create|show|edit`, `modules.create|edit`, `lessons.create|edit` route names each point directly at a Livewire component (`CoursesIndex`, `CourseForm`, `CourseBuilder`, `ModuleForm`, `LessonForm`)
+- Create/update/delete/reorder are Livewire actions (`save()`, `confirmDelete()`, `moveModuleUp()`, etc.), not REST-style Controller methods
+- Authorization is inline `abort_unless(auth()->user()->can(...) && $model->school_id === $schoolId, 403)` in each component's `mount()`, replacing what would have been Policy classes
+- Validation is inline `#[Validate(...)]` attributes on component properties, replacing what would have been FormRequest classes
+- **Trade-off accepted:** less separation of concerns than the originally planned MVC layout; acceptable here since each component maps 1:1 to a single screen with no reuse pressure
 
 ### Ordering Strategy
 **Decision:** Use numeric `order` column with unique constraint per parent; move up/down swaps order values.

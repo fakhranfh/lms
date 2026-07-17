@@ -383,3 +383,430 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 - [x] 2 comprehensive tests added to `TierChangeFlowTest` (demo prevention + UI verification)
 - [x] Admin pricing tier management pages remain unrestricted
 
+---
+
+## 11. Multi-Material Content Support (Phase 1.2 Extension)
+
+**Goal:** Expand lesson content beyond single video to support multiple material types (PDFs, presentations, audio, images, interactive content), stored in Cloudflare R2, with sidebar material navigator and manual completion tracking.
+
+**Core Requirements:**
+- Material types: Video, PDF, Document, Audio, Presentation, Image, Interactive
+- Storage: Cloudflare R2 (10 GB total quota for all schools)
+- UI: Sidebar material list (YouTube playlist style) with icon + filename
+- Completion: Manual "Mark as Read" per material; lesson complete = 100% all materials accessed
+- Materials: Reorderable via drag-drop, custom user-provided names, all downloadable
+- Video: Optional per lesson (previously required)
+- Data Migration: Existing single videos auto-migrate to multi-material structure
+
+**Storage & Quota Management:**
+- Global 10 GB quota shared across all schools
+- When quota full → **block all schools** from uploading until space freed
+- Admin must manually delete/archive old materials to free space
+- No per-school quota subdivision (all schools share single 10 GB pool)
+- Storage cost: **Included in tier pricing** (no extra billing)
+
+**Material Versioning:**
+- **Full version history** maintained for each material
+- All versions preserved when instructor updates material
+- Instructor can switch between versions (choose which is "active")
+- ⚠️ Impacts storage: every version consumes quota (archive strategy needed long-term)
+
+**Monitoring & Alerts (Admin Features):**
+- Dashboard with global storage usage (% + graph trend)
+- Email alerts: 80%, 90%, 100% quota usage
+- Per-school quota indicator: each school can see remaining quota
+- Admin panel to view storage breakdown by school
+
+**Status:** 📋 Planning Phase — Ready for implementation
+
+### Sub-sections Checklist
+
+- [ ] 11.1 Database Schema & Migrations
+- [ ] 11.2 Eloquent Models & MaterialType Enum
+- [ ] 11.3 Repository Layer
+- [ ] 11.4 Service Layer (LessonMaterialService, LessonCompletionService, R2StorageService)
+- [ ] 11.5 Livewire Components (LessonForm & LessonViewer updates)
+- [ ] 11.6 R2 Integration & Global Quota Management
+- [ ] 11.7 Material Versioning System
+- [ ] 11.8 Admin Monitoring & Alerts Dashboard
+- [ ] 11.9 Data Migration (Video → LessonMaterial)
+- [ ] 11.10 Testing (Unit, Feature, Integration)
+- [ ] 11.11 Documentation Updates
+
+---
+
+### 11.1 Database Schema & Migrations
+
+- [ ] Create `lesson_materials` migration:
+  - [ ] Table columns:
+    - [ ] `id` (UUID, PK)
+    - [ ] `lesson_id` (UUID, FK → lessons.id, CASCADE)
+    - [ ] `type` (ENUM: Video, PDF, Document, Audio, Presentation, Image, Interactive)
+    - [ ] `title` (VARCHAR 255) — custom name from user
+    - [ ] `description` (TEXT, nullable)
+    - [ ] `file_url` (VARCHAR 500) — R2 URL
+    - [ ] `file_path` (VARCHAR 500, nullable) — R2 path for deletion
+    - [ ] `file_size` (UNSIGNED INT) — size in bytes
+    - [ ] `mime_type` (VARCHAR 100)
+    - [ ] `order` (UNSIGNED INT) — position in lesson (for drag-drop reordering)
+    - [ ] timestamps (created_at, updated_at)
+  - [ ] Indexes: (lesson_id), (lesson_id, order), (type)
+  - [ ] Constraints: FK cascade, unique (lesson_id, order)
+
+- [ ] Create `lesson_material_user` pivot migration:
+  - [ ] Table columns:
+    - [ ] `id` (BIGINT, PK, auto-increment)
+    - [ ] `lesson_material_id` (UUID, FK → lesson_materials.id, CASCADE)
+    - [ ] `user_id` (UUID, FK → users.id, CASCADE)
+    - [ ] `accessed_at` (TIMESTAMP) — when user marked as read
+    - [ ] timestamps (created_at, updated_at)
+  - [ ] Constraints: FK cascade, unique (lesson_material_id, user_id)
+
+- [ ] Create migration script to migrate existing videos:
+  - [ ] For each lesson with `video_embed_url IS NOT NULL`:
+    - [ ] Create record in `lesson_materials`
+    - [ ] type = 'Video'
+    - [ ] title = lesson title
+    - [ ] file_url = video_embed_url
+    - [ ] order = 1
+  - [ ] Test migration with ContentEngineSeeder data
+
+- [ ] Deprecate `lessons.video_embed_url` (keep column for backward compat, don't drop yet)
+
+---
+
+### 11.2 Eloquent Models & MaterialType Enum
+
+- [ ] Create `MaterialType` enum (`app/Enums/MaterialType.php`):
+  - [ ] Cases: Video, PDF, Document, Audio, Presentation, Image, Interactive
+  - [ ] Method: `maxSize(): int` — returns byte limit per type
+  - [ ] Method: `allowedExtensions(): array` — returns allowed file extensions per type
+  - [ ] Tests: Unit tests for limits and extensions
+
+- [ ] Create `LessonMaterial` model:
+  - [ ] Relations: `belongsTo(Lesson)`, `belongsToMany(User, 'lesson_material_user')`
+  - [ ] Fillable: lesson_id, type, title, description, file_url, file_path, file_size, mime_type, order
+  - [ ] Casts: type as MaterialType enum
+  - [ ] Traits: HasUuid
+  - [ ] Methods: none yet (business logic in service layer)
+
+- [ ] Create `LessonMaterialUser` pivot model:
+  - [ ] Extends Pivot
+  - [ ] Table: lesson_material_user
+  - [ ] Fillable: lesson_material_id, user_id, accessed_at
+  - [ ] Casts: accessed_at as datetime
+
+- [ ] Update `Lesson` model:
+  - [ ] Add relation: `hasMany(LessonMaterial::class)`
+  - [ ] Add method: `getMaterialsOrdered(): Collection` — returns materials ordered by order column
+
+---
+
+### 11.3 Repository Layer
+
+- [ ] Create `LessonMaterialRepository` & interface:
+  - [ ] Methods: get(), find(), getByLesson(), create(), update(), delete(), reorder(), getNextOrder()
+  - [ ] Ordering: Always order by `order` column ascending
+  - [ ] Storage: Support filtering by type
+
+- [ ] Create `LessonMaterialUserRepository` & interface:
+  - [ ] Methods: markAccessed(), isAccessedBy(), getAccessedCount(), getAccessedMaterials()
+  - [ ] Pivot queries for tracking user access to materials
+
+- [ ] Tests: Feature tests for both repositories (CRUD, ordering, access tracking)
+
+---
+
+### 11.4 Service Layer
+
+- [ ] Create `LessonMaterialService`:
+  - [ ] `create(lessonId, data[]): LessonMaterial` — validate, upload to R2, persist
+  - [ ] `update(id, data[]): LessonMaterial` — handle file replacement
+  - [ ] `delete(id): int` — delete from R2 and DB
+  - [ ] `reorder(lessonId, orderedIds[]): void` — update order for all materials
+  - [ ] `getLessonMaterials(lessonId): Collection` — with access info
+  - [ ] `markMaterialAsAccessed(materialId, user): void` — record access, check completion
+
+- [ ] Create `LessonCompletionService` (new):
+  - [ ] `isLessonComplete(lesson, user): bool` — check if user accessed ALL materials
+  - [ ] `getLessonProgress(lesson, user): object` — {total, accessed, percentage}
+  - [ ] `markLessonIfComplete(lesson, user): void` — auto-update lesson_user.completed_at
+
+- [ ] Create `R2StorageService` (new):
+  - [ ] `upload(file, path, type: MaterialType): string` — returns R2 URL
+  - [ ] `delete(filePath): bool` — deletes from R2
+  - [ ] `getSignedUrl(filePath, expiresIn): string` — optional future feature
+  - [ ] `checkSchoolQuota(schoolId): object` — {used, limit, remaining}
+  - [ ] `enforceQuotaLimit(schoolId): bool` — throws if quota exceeded
+
+- [ ] Tests: Feature tests for all services, R2 mocking
+
+---
+
+### 11.5 Livewire Components
+
+### LessonForm Updates
+- [ ] Remove `videoEmbedUrl` field
+- [ ] Add "Materials" section:
+  - [ ] File upload input (accepts all material types)
+  - [ ] Material type selector (enum dropdown)
+  - [ ] Material title input (custom name)
+  - [ ] Delete button per material
+  - [ ] Drag-to-reorder UI (Alpine or Livewire Sortable)
+  - [ ] Display current file size and check quota
+- [ ] Events: material-uploaded, material-deleted, materials-reordered
+
+### LessonViewer Updates
+- [ ] Sidebar (left, ~40% width):
+  - [ ] Material list with icons per type
+  - [ ] Click to select/switch material
+  - [ ] Show "✓" checkmark when material accessed
+  - [ ] Drag-to-reorder (if instructor viewing)
+  - [ ] Collapsible on mobile
+  
+- [ ] Main area (right, ~60% width):
+  - [ ] Dynamic player/display based on material type:
+    - [ ] Video: HTML5 `<video>` player
+    - [ ] PDF: embed or download button
+    - [ ] Audio: `<audio>` player
+    - [ ] Images: display with optional zoom
+    - [ ] Presentations: embed or download
+    - [ ] Interactive: iframe with fallback
+  - [ ] "Mark as Read" button (manual tracking)
+  - [ ] "Download" button (all types)
+  - [ ] Progress bar: "X of Y materials completed"
+
+- [ ] Responsive design:
+  - [ ] Mobile: full-width list, sidebar on tap
+  - [ ] Tablet: sidebar becomes tab navigation
+  - [ ] Desktop: side-by-side 40/60 layout
+
+- [ ] Tests: Livewire tests for upload, reorder, marking access, completion
+
+---
+
+### 11.6 R2 Integration & Quota Management
+
+- [ ] Create `R2StorageService` (see Section 4)
+- [ ] Validation:
+  - [ ] File size check (per MaterialType limit)
+  - [ ] School quota enforcement (10 GB total)
+  - [ ] File extension whitelist (from enum)
+  - [ ] MIME type validation
+- [ ] Error handling:
+  - [ ] Throw exception if quota exceeded
+  - [ ] Graceful R2 failure messages
+  - [ ] Retry logic for transient failures
+- [ ] Tests: Mocked S3 integration, quota enforcement tests
+- [ ] Global quota enforcement:
+  - [ ] Check total storage used across ALL schools
+  - [ ] Block upload if quota exceeded (return 413 Payload Too Large)
+  - [ ] Clear error message: "System storage quota reached (10 GB). Contact admin."
+- [ ] Per-school quota indicator:
+  - [ ] Calculate: `remaining_quota = 10_GB - total_storage_used`
+  - [ ] Display in LessonForm upload area: "X.X GB remaining"
+  - [ ] Disable upload button if < file size
+
+---
+
+### 11.7 Material Versioning System
+
+**Goal:** Store full version history for each material; allow instructors to manage versions.
+
+**Database Changes:**
+- [ ] Add `version` column to `lesson_materials`:
+  - [ ] `version` (UNSIGNED INT, default 1) — version number for this material
+  - [ ] `is_active` (BOOLEAN, default true) — which version is currently displayed to students
+  - [ ] Composite unique key: `(lesson_material_id, version)` — multiple versions per material
+  - [ ] ⚠️ Consider: rename table to `lesson_material_versions` and track material metadata separately, OR keep flat structure with compound keys
+
+- [ ] Create `lesson_materials_history` pivot/audit table (optional):
+  - [ ] Track: old_url, old_size, updated_by (user_id), updated_at
+  - [ ] For audit trail and rollback capability
+
+**Service Layer:**
+- [ ] `LessonMaterialService::update()` — instead of overwriting, create new version:
+  - [ ] Increment `version` number
+  - [ ] Set `is_active = true` for new version, `is_active = false` for others
+  - [ ] Keep all old versions in database
+
+- [ ] `LessonMaterialService::switchVersion(materialId, versionNumber)`:
+  - [ ] Deactivate current version
+  - [ ] Activate selected version
+  - [ ] Update `last_viewed_at` for students (or reset access tracking?)
+
+- [ ] `LessonMaterialService::deleteVersion(materialId, versionNumber)`:
+  - [ ] Delete from R2
+  - [ ] Delete from lesson_materials
+  - [ ] Recalculate storage quota
+
+**UI Changes:**
+- [ ] LessonForm: Add "Version History" section
+  - [ ] List all versions with dates, file sizes, "active" badge
+  - [ ] Buttons: View, Activate, Delete
+  - [ ] Show total storage consumed by all versions of this material
+
+- [ ] LessonViewer: Add version indicator (optional for students)
+  - [ ] Show "v2" badge if not on latest version
+  - [ ] Instructor can switch versions mid-lesson if needed
+
+**Tests:**
+- [ ] Version creation on update (not overwrite)
+- [ ] Version activation/deactivation
+- [ ] Storage calculation includes all versions
+- [ ] Deletion removes R2 file + DB record
+- [ ] Access tracking persists across version switches (or resets?)
+
+---
+
+### 11.8 Admin Monitoring & Alerts Dashboard
+
+**Goal:** Real-time visibility into global storage usage, per-school breakdown, and quota alerts.
+
+**Database Changes:**
+- [ ] Create `storage_usage_logs` table (optional, for historical tracking):
+  - [ ] `id`, `timestamp`, `total_used_bytes`, `quota_bytes`, `usage_percent`, `school_id` (nullable for global)
+  - [ ] Log entry every upload/delete for audit trail
+
+**Admin Dashboard Section (New):**
+- [ ] Add route: `admin.storage.dashboard`
+- [ ] Livewire component: `AdminStorageDashboard`
+
+**Dashboard Displays:**
+1. **Global Storage Summary Card:**
+   - [ ] Total used: X GB / 10 GB
+   - [ ] Usage percentage with visual bar
+   - [ ] Trend graph (last 30 days): upload/delete activity
+   - [ ] Alert banner if > 80% (yellow), > 90% (orange), >= 100% (red)
+
+2. **Per-School Breakdown Table:**
+   - [ ] Columns: School Name, Storage Used, Material Count, Largest Material, Last Upload
+   - [ ] Sortable by: name, usage, count
+   - [ ] Click row → drill into school's materials
+
+3. **School Detail Modal:**
+   - [ ] List all materials with: type, size, version count, created date, last accessed
+   - [ ] Sort by: size (descending), date
+   - [ ] Buttons: View in LessonViewer, Delete, Archive (future)
+   - [ ] Delete confirmation: "Frees X MB, reduces school by Y%"
+
+**Email Alerts (Background Job):**
+- [ ] Daily/hourly check: `CalculateStorageUsageJob`
+  - [ ] Calculate total + per-school usage
+  - [ ] Send email if:
+    - [ ] First time crossing 80%: "Storage at 80% (8 GB). Consider archival strategy."
+    - [ ] First time crossing 90%: "⚠️ Storage at 90% (9 GB). Uploads may fail soon."
+    - [ ] At 100%: "❌ Storage quota full. All uploads blocked. Delete materials to resume."
+  - [ ] Recipients: all admins with `settings.school` permission
+
+**School-Level Quota Indicator:**
+- [ ] In LessonForm upload area:
+  - [ ] Display: "Remaining quota: X.X GB (Y% used globally)"
+  - [ ] Warning: "⚠️ Quota at 90%. Upload may fail."
+  - [ ] Error: "❌ Quota full. Uploads blocked."
+
+**Tests:**
+- [ ] Dashboard loads without errors (with/without data)
+- [ ] Email triggers at correct thresholds (80%, 90%, 100%)
+- [ ] Storage calculation is accurate
+- [ ] Per-school breakdown sums to global total
+- [ ] Drill-in modal shows correct materials
+
+---
+
+### 11.9 Data Migration (Video → LessonMaterial)
+
+- [ ] Create migration script (`database/migrations/...create_lesson_materials_migrate_videos.php`):
+  - [ ] Query all lessons with `video_embed_url IS NOT NULL`
+  - [ ] For each: create LessonMaterial record (type='Video', order=1, etc.)
+  - [ ] Log results (X lessons migrated)
+  - [ ] Reversible: down() deletes materials created by this migration
+  
+- [ ] Test on dummy data (ContentEngineSeeder output)
+- [ ] Verify existing videos appear in sidebar after migration
+
+---
+
+### 11.10 Testing (Unit, Feature, Integration)
+
+### Unit Tests
+- [ ] `MaterialTypeTest` — enum limits, extensions validation
+- [ ] `LessonMaterialServiceTest` — CRUD, R2 integration (mocked)
+- [ ] `LessonCompletionServiceTest` — completion logic (100% rule)
+
+### Feature Tests
+- [ ] `LessonMaterialRepositoryTest` — CRUD, ordering, filtering
+- [ ] `LessonMaterialUserRepositoryTest` — access tracking
+- [ ] `LessonMaterialManagementTest` (Livewire) — upload, delete, reorder
+- [ ] `LessonViewerMaterialTest` (Livewire) — sidebar, player, mark as read
+- [ ] `R2StorageServiceTest` — file operations (mocked S3)
+- [ ] `QuotaEnforcementTest` — 10 GB limit, error messages
+- [ ] `MaterialMigrationTest` — existing video → lesson_material
+
+### Coverage Areas
+- [ ] Material CRUD (create, read, update, delete)
+- [ ] File upload/delete validation
+- [ ] R2 integration (mocked)
+- [ ] Completion tracking (100% rule, manual mark)
+- [ ] Reordering materials
+- [ ] Video migration
+- [ ] Quota enforcement (global + per-school)
+- [ ] Storage calculation (including all versions)
+- [ ] Responsive UI (sidebar, player)
+- [ ] Material versioning (create, switch, delete versions)
+- [ ] Version history accuracy
+- [ ] Admin dashboard (loads, drill-in, sorting)
+- [ ] Email alerts (80%, 90%, 100% thresholds)
+
+---
+
+### 11.11 Documentation Updates
+
+- [ ] Update `docs/CONTENT_ENGINE.md`:
+  - [ ] Multi-material structure (1 lesson → N materials)
+  - [ ] Material types & file limits
+  - [ ] R2 storage & quota management
+  - [ ] Sidebar UI & player types
+  - [ ] Completion flow (manual mark, 100% rule)
+  - [ ] Instructor workflow (upload, reorder, delete)
+  - [ ] Student workflow (navigate, access, download)
+
+- [ ] Update comments/PHPDoc in models/services
+- [ ] Migration guide: existing single-video lessons → multi-material
+
+---
+
+## Implementation Timeline
+
+- **Week 1:** Database schema, models, repositories
+- **Week 2:** Services, R2 integration, data migration
+- **Week 3:** Livewire components (upload, sidebar, player)
+- **Week 4:** Testing, responsive refinement, documentation
+
+---
+
+## Trade-offs & Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Manual mark-as-read | User control, simple tracking, no play-time detection needed |
+| 100% completion rule | Ensures engagement, easy to validate |
+| Free material ordering | Flexibility, reordering via drag-drop |
+| MaterialType enum | Type safety, centralized validation, extensible |
+| R2 for storage | Scalable, CDN-ready, separation of concerns from application |
+| Keep `lessons.video_embed_url` column | Backward compatibility, can deprecate gradually |
+| Pivot table for access tracking | Flexible for future analytics/reporting features |
+| Sidebar UI vs tabs | YouTube-familiar pattern, scales to many materials |
+
+---
+
+## Risk Mitigation
+
+- **Data Loss:** Thoroughly test video migration script on staging data first
+- **Storage Quota:** Clear UI messages when approaching/exceeding limits, enforce at upload
+- **R2 Failures:** Add retry logic + fallback error messages, monitor logs
+- **Completion Bug:** Comprehensive testing of "100% rule" edge cases (cancel mark, retry, etc.)
+- **Performance:** Eager-load materials in LessonViewer, add DB indexes, cache quota check
+
+---
+

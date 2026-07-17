@@ -5,6 +5,7 @@ namespace App\Repositories\LessonMaterial;
 use App\Enums\MaterialType;
 use App\Models\LessonMaterial;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Support\Facades\DB;
 
 class LessonMaterialRepository implements LessonMaterialRepositoryInterface
 {
@@ -111,23 +112,21 @@ class LessonMaterialRepository implements LessonMaterialRepositoryInterface
      */
     public function reorder(string $lessonId, array $orderMap): void
     {
-        // Use a temporary high value to avoid unique constraint violations
-        $maxOrder = (int) LessonMaterial::where('lesson_id', $lessonId)->max('order');
-        $tempValue = $maxOrder + 1000;
-
-        // First pass: move all to temporary values
+        // Build CASE statement for single query reorder
+        // Unique constraint is DEFERRABLE, so intermediate violations are OK
+        $caseWhen = 'CASE id';
         foreach ($orderMap as $materialId => $order) {
-            $tempValue++;
-            LessonMaterial::where('id', $materialId)
-                ->where('lesson_id', $lessonId)
-                ->update(['order' => $tempValue]);
+            $caseWhen .= " WHEN '$materialId' THEN $order";
         }
+        $caseWhen .= ' END';
 
-        // Second pass: move to final values
-        foreach ($orderMap as $materialId => $order) {
-            LessonMaterial::where('id', $materialId)
-                ->where('lesson_id', $lessonId)
-                ->update(['order' => $order]);
-        }
+        $materialIds = array_keys($orderMap);
+        $placeholders = implode(',', array_fill(0, count($materialIds), '?'));
+
+        // Single atomic query - constraint validation deferred to transaction end
+        DB::update(
+            "UPDATE lesson_materials SET \"order\" = $caseWhen WHERE lesson_id = ? AND id IN ($placeholders)",
+            array_merge([$lessonId], $materialIds)
+        );
     }
 }

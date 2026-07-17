@@ -73,17 +73,24 @@
         <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
             <div class="space-y-0">
                 @foreach ($modules as $module)
-                    <div class="border-b border-outline-variant last:border-0">
+                    <div
+                        wire:key="module-{{ $module->id }}"
+                        class="border-b border-outline-variant last:border-0"
+                        x-data="{
+                            open: @js($expandedModules[$module->id] ?? false),
+                            loaded: @js($expandedModules[$module->id] ?? false),
+                        }"
+                    >
                         <!-- Module Header -->
                         <div class="p-space-lg">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-space-md flex-1">
                                     <button
                                         type="button"
-                                        wire:click="toggleModule('{{ $module->id }}')"
+                                        @click="open = !open; if (!loaded) { loaded = true; $wire.call('toggleModule', '{{ $module->id }}') }"
                                         class="p-2 hover:bg-surface-container rounded transition"
                                     >
-                                        <span class="material-symbols-outlined transition-transform" :class="@js($expandedModules[$module->id] ?? false) ? 'rotate-90' : ''">
+                                        <span class="material-symbols-outlined transition-transform" :class="open ? 'rotate-90' : ''">
                                             chevron_right
                                         </span>
                                     </button>
@@ -157,8 +164,29 @@
                         </div>
 
                         <!-- Lessons (Expandable) -->
-                        @if (($expandedModules[$module->id] ?? false))
-                            <div class="bg-surface-container/50 border-t border-outline-variant">
+                        <div x-show="open" class="w-full bg-surface-container/50 border-t border-outline-variant">
+                            @unless ($expandedModules[$module->id] ?? false)
+                                <div wire:loading wire:target="toggleModule('{{ $module->id }}')" class="w-full space-y-0">
+                                    @for ($i = 0; $i < 3; $i++)
+                                        <div class="w-full p-space-lg border-t border-outline-variant first:border-0 flex items-center justify-between gap-space-md">
+                                            <div class="flex items-center gap-space-md flex-1 min-w-0">
+                                                <div class="w-8 text-center flex-shrink-0">
+                                                    <div class="h-4 bg-gray-300 rounded w-6 animate-pulse"></div>
+                                                </div>
+                                                <div class="flex-1 min-w-0 space-y-2">
+                                                    <div class="h-5 bg-gray-300 rounded w-full animate-pulse"></div>
+                                                    <div class="h-4 bg-gray-300 rounded w-1/3 animate-pulse"></div>
+                                                </div>
+                                            </div>
+                                            <div class="flex gap-space-sm flex-shrink-0">
+                                                <div class="w-10 h-10 bg-gray-300 rounded animate-pulse"></div>
+                                            </div>
+                                        </div>
+                                    @endfor
+                                </div>
+                            @endunless
+
+                            @if ($expandedModules[$module->id] ?? false)
                                 @if ($module->lessons->isEmpty())
                                     <div class="p-space-lg text-center">
                                         <p class="text-body-sm text-on-surface-variant mb-space-md">No lessons in this module</p>
@@ -174,7 +202,7 @@
                                 @else
                                     <div class="space-y-0">
                                         @foreach ($module->lessons as $lesson)
-                                            <div class="p-space-lg border-t border-outline-variant first:border-0 flex items-center justify-between group">
+                                            <div wire:key="lesson-{{ $lesson->id }}" class="p-space-lg border-t border-outline-variant first:border-0 flex items-center justify-between group">
                                                 <div class="flex items-center gap-space-md flex-1">
                                                     <div class="w-8 text-center">
                                                         <span class="text-body-sm text-secondary font-medium">{{ $lesson->order }}</span>
@@ -281,8 +309,8 @@
                                         @endunless
                                     </div>
                                 @endif
-                            </div>
-                        @endif
+                            @endif
+                        </div>
                     </div>
                 @endforeach
             </div>

@@ -22,6 +22,9 @@ class CourseBuilder extends Component
     /** @var array<string, bool> */
     public array $expandedModules = [];
 
+    /** @var array<string, bool> */
+    public array $loadedModules = [];
+
     public function mount(Course $course, CurrentSchool $currentSchool): void
     {
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
@@ -43,6 +46,10 @@ class CourseBuilder extends Component
     public function toggleModule(string $moduleId): void
     {
         $this->expandedModules[$moduleId] = ! ($this->expandedModules[$moduleId] ?? false);
+
+        if ($this->expandedModules[$moduleId] && ! isset($this->loadedModules[$moduleId])) {
+            $this->loadedModules[$moduleId] = true;
+        }
     }
 
     public function moveModuleUp(string $moduleId, ModuleService $moduleService): void
@@ -102,6 +109,7 @@ class CourseBuilder extends Component
         return view('livewire.courses.course-builder', [
             'modules' => $this->course->modules,
             'isStudent' => $this->isStudent,
+            'loadedModules' => $this->loadedModules,
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->course->title])
             ->section('app-content');

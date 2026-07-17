@@ -368,3 +368,16 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 - Or use `LocalScope` in Lesson model with conditional check
 - Instructor routes bypass this scope to view/edit drafts
 
+---
+
+## Demo Mode Restrictions (Phase 2.1 Follow-up)
+
+**Added 2026-07-17:** Implemented read-only mode for demo school accounts on tier management page:
+- [x] Demo accounts can view tiers but cannot initiate upgrades/downgrades
+- [x] Banner displayed: "This is a demo account. Tier management is read-only."
+- [x] Upgrade/Downgrade buttons disabled with explanatory text
+- [x] `TierChangeController::show()` detects demo mode via `DemoLmsAccess` table
+- [x] `TierChangeController::initiate()` blocks demo tier changes with 403 status
+- [x] 2 comprehensive tests added to `TierChangeFlowTest` (demo prevention + UI verification)
+- [x] Admin pricing tier management pages remain unrestricted
+

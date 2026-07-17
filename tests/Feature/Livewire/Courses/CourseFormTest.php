@@ -6,7 +6,6 @@ use App\Livewire\Courses\CourseForm;
 use App\Models\Course;
 use App\Models\School;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -30,6 +29,8 @@ class CourseFormTest extends TestCase
 
     public function test_create_course_component_renders(): void
     {
+        $this->instructor->givePermissionTo('courses.create');
+
         Livewire::test(CourseForm::class)
             ->assertStatus(200)
             ->assertSee('Create New Course');
@@ -40,6 +41,8 @@ class CourseFormTest extends TestCase
         $course = Course::factory()
             ->for($this->school)
             ->create();
+
+        $this->instructor->givePermissionTo('courses.edit');
 
         Livewire::test(CourseForm::class, ['course' => $course])
             ->assertStatus(200)
@@ -149,9 +152,8 @@ class CourseFormTest extends TestCase
 
     public function test_user_cannot_access_form_without_permission(): void
     {
-        $this->expectException(AuthorizationException::class);
-
-        Livewire::test(CourseForm::class);
+        Livewire::test(CourseForm::class)
+            ->assertStatus(403);
     }
 
     public function test_user_cannot_edit_course_from_different_school(): void
@@ -163,8 +165,7 @@ class CourseFormTest extends TestCase
 
         $this->instructor->givePermissionTo('courses.edit');
 
-        $this->expectException(AuthorizationException::class);
-
-        Livewire::test(CourseForm::class, ['course' => $course]);
+        Livewire::test(CourseForm::class, ['course' => $course])
+            ->assertStatus(403);
     }
 }

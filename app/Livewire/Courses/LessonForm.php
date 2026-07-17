@@ -25,7 +25,7 @@ class LessonForm extends Component
     public string $videoEmbedUrl = '';
 
     #[Validate('nullable|integer|min:1|max:480')]
-    public ?int $durationMinutes = null;
+    public ?string $durationMinutes = null;
 
     public bool $isPublished = false;
 
@@ -36,6 +36,10 @@ class LessonForm extends Component
         $module ??= $lesson?->module;
 
         abort_if($module === null, 404);
+
+        if (! $module->relationLoaded('course')) {
+            $module->load('course');
+        }
 
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
         abort_unless($module->course->school_id === $schoolId, 403);
@@ -56,12 +60,14 @@ class LessonForm extends Component
     {
         $this->validate();
 
+        $durationMinutes = $this->durationMinutes ? (int) $this->durationMinutes : null;
+
         if ($this->lesson) {
             $lessonService->update($this->lesson->id, [
                 'title' => $this->title,
                 'content' => $this->content,
                 'video_embed_url' => $this->videoEmbedUrl,
-                'duration_minutes' => $this->durationMinutes,
+                'duration_minutes' => $durationMinutes,
                 'is_published' => $this->isPublished,
             ]);
 
@@ -72,7 +78,7 @@ class LessonForm extends Component
                 'title' => $this->title,
                 'content' => $this->content,
                 'video_embed_url' => $this->videoEmbedUrl,
-                'duration_minutes' => $this->durationMinutes,
+                'duration_minutes' => $durationMinutes,
                 'is_published' => $this->isPublished,
             ]);
 

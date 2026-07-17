@@ -22,7 +22,11 @@ class ModuleFactory extends Factory
             'course_id' => Course::factory(),
             'title' => fake()->sentence(2),
             'description' => fake()->paragraph(),
-            'order' => fake()->numberBetween(1, 10),
+            'order' => function ($attributes) {
+                $maxOrder = Module::where('course_id', $attributes['course_id'])->max('order') ?? 0;
+
+                return $maxOrder + 1;
+            },
             'is_published' => fake()->boolean(30),
         ];
     }

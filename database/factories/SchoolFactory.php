@@ -38,7 +38,7 @@ class SchoolFactory extends Factory
 
         return [
             'name' => fake()->company(),
-            'domain' => fake()->unique()->domainName(),
+            'domain' => 'school-'.str()->uuid().'.test',
             'tier_id' => $basicTier->id,
         ];
     }

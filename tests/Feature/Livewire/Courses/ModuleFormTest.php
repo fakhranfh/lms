@@ -7,7 +7,6 @@ use App\Models\Course;
 use App\Models\Module;
 use App\Models\School;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -143,9 +142,8 @@ class ModuleFormTest extends TestCase
 
     public function test_user_cannot_access_form_without_permission(): void
     {
-        $this->expectException(AuthorizationException::class);
-
-        Livewire::test(ModuleForm::class, ['course' => $this->course]);
+        Livewire::test(ModuleForm::class, ['course' => $this->course])
+            ->assertStatus(403);
     }
 
     public function test_user_cannot_create_module_in_different_school_course(): void
@@ -157,8 +155,7 @@ class ModuleFormTest extends TestCase
 
         $this->instructor->givePermissionTo('modules.create');
 
-        $this->expectException(AuthorizationException::class);
-
-        Livewire::test(ModuleForm::class, ['course' => $otherCourse]);
+        Livewire::test(ModuleForm::class, ['course' => $otherCourse])
+            ->assertStatus(403);
     }
 }

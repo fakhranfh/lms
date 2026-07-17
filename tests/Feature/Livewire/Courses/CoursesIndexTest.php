@@ -6,7 +6,6 @@ use App\Livewire\Courses\CoursesIndex;
 use App\Models\Course;
 use App\Models\School;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -263,8 +262,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_user_cannot_access_without_permission(): void
     {
-        $this->expectException(AuthorizationException::class);
-
-        Livewire::test(CoursesIndex::class);
+        Livewire::test(CoursesIndex::class)
+            ->assertStatus(403);
     }
 }

@@ -8,7 +8,6 @@ use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\School;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -202,9 +201,8 @@ class CourseBuilderTest extends TestCase
 
     public function test_user_cannot_access_builder_without_permission(): void
     {
-        $this->expectException(AuthorizationException::class);
-
-        Livewire::test(CourseBuilder::class, ['course' => $this->course]);
+        Livewire::test(CourseBuilder::class, ['course' => $this->course])
+            ->assertStatus(403);
     }
 
     public function test_user_cannot_view_course_from_different_school(): void
@@ -216,9 +214,8 @@ class CourseBuilderTest extends TestCase
 
         $this->instructor->givePermissionTo('courses.view');
 
-        $this->expectException(AuthorizationException::class);
-
-        Livewire::test(CourseBuilder::class, ['course' => $otherCourse]);
+        Livewire::test(CourseBuilder::class, ['course' => $otherCourse])
+            ->assertStatus(403);
     }
 
     public function test_displays_empty_state_when_no_modules(): void

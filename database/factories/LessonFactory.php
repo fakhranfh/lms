@@ -18,12 +18,18 @@ class LessonFactory extends Factory
      */
     public function definition(): array
     {
+        $module = Module::factory();
+
         return [
-            'module_id' => Module::factory(),
+            'module_id' => $module,
             'title' => fake()->sentence(2),
             'content' => fake()->paragraphs(3, true),
             'video_embed_url' => fake()->boolean(40) ? $this->generateVideoUrl() : null,
-            'order' => fake()->numberBetween(1, 10),
+            'order' => function ($attributes) {
+                $maxOrder = Lesson::where('module_id', $attributes['module_id'])->max('order') ?? 0;
+
+                return $maxOrder + 1;
+            },
             'is_published' => fake()->boolean(30),
             'duration_minutes' => fake()->numberBetween(5, 60),
         ];

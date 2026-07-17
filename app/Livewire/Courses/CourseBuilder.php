@@ -17,6 +17,8 @@ class CourseBuilder extends Component
 
     public ?string $errorMessage = null;
 
+    public bool $isStudent = false;
+
     /** @var array<string, bool> */
     public array $expandedModules = [];
 
@@ -25,6 +27,7 @@ class CourseBuilder extends Component
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
         abort_unless(auth()->user()->can('courses.view') && $course->school_id === $schoolId, 403);
         $this->course = $course;
+        $this->isStudent = auth()->user()->hasRole('Student');
     }
 
     #[On('module-created')]
@@ -98,6 +101,7 @@ class CourseBuilder extends Component
     {
         return view('livewire.courses.course-builder', [
             'modules' => $this->course->modules,
+            'isStudent' => $this->isStudent,
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->course->title])
             ->section('app-content');

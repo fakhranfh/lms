@@ -1,7 +1,7 @@
 @section('title', $pageTitle)
 
 <div class="min-h-screen bg-background py-space-xl px-gutter">
-    <div class="max-w-4xl mx-auto">
+    <div class="w-full">
         <!-- Breadcrumb -->
         <div class="mb-space-lg">
             <nav class="flex items-center gap-space-sm text-body-sm text-on-surface-variant">
@@ -81,10 +81,13 @@
                         @if (!$isCompleted)
                             <button
                                 wire:click="markComplete"
-                                class="w-full px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-space-sm"
+                                wire:loading.attr="disabled"
+                                class="w-full px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-space-sm disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <span>✓</span>
-                                <span>Mark as Complete</span>
+                                <span wire:loading.remove>✓</span>
+                                <span wire:loading class="inline-block animate-spin">⟳</span>
+                                <span wire:loading.remove>Mark as Complete</span>
+                                <span wire:loading>Marking...</span>
                             </button>
                         @else
                             <div class="w-full px-space-lg py-space-md bg-primary/10 text-primary rounded-lg font-label-md text-label-md flex items-center justify-center gap-space-sm">
@@ -117,10 +120,10 @@
                         </a>
                     @else
                         <a
-                            href="{{ route('dashboard') }}"
+                            href="{{ route('courses.show', $course) }}"
                             class="flex-1 px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md text-center hover:opacity-90 transition-opacity"
                         >
-                            Back to Courses
+                            Back to Course
                         </a>
                     @endif
                 </div>

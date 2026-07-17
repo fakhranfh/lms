@@ -1,4 +1,4 @@
-@section('title', 'Course Builder')
+@section('title', $isStudent ? $course->title : 'Course Builder')
 
 <div class="space-y-space-lg" x-data="{ deleteType: null, deleteId: null, deleteName: null, showDeleteModal: false, deleteConfirmText: '' }">
     @if ($successMessage)
@@ -37,15 +37,17 @@
             </p>
         </div>
 
-        <div class="flex gap-space-md">
-            <a
-                href="{{ route('modules.create', $course) }}"
-                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm"
-            >
-                <span class="material-symbols-outlined">add</span>
-                Add Module
-            </a>
-        </div>
+        @unless ($isStudent)
+            <div class="flex gap-space-md">
+                <a
+                    href="{{ route('modules.create', $course) }}"
+                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm"
+                >
+                    <span class="material-symbols-outlined">add</span>
+                    Add Module
+                </a>
+            </div>
+        @endunless
     </div>
 
     <!-- Course Description -->
@@ -110,45 +112,47 @@
                                 </div>
 
                                 <!-- Module Actions -->
-                                <div class="flex gap-space-sm ml-auto">
-                                    @if ($module->course->modules->count() > 1 && $module->order > 1)
+                                @unless ($isStudent)
+                                    <div class="flex gap-space-sm ml-auto">
+                                        @if ($module->course->modules->count() > 1 && $module->order > 1)
+                                            <button
+                                                type="button"
+                                                wire:click="moveModuleUp('{{ $module->id }}')"
+                                                title="Move up"
+                                                class="p-2 hover:bg-surface-container rounded transition"
+                                            >
+                                                <span class="material-symbols-outlined">arrow_upward</span>
+                                            </button>
+                                        @endif
+
+                                        @if ($module->course->modules->count() > 1 && $module->order < $module->course->modules->count())
+                                            <button
+                                                type="button"
+                                                wire:click="moveModuleDown('{{ $module->id }}')"
+                                                title="Move down"
+                                                class="p-2 hover:bg-surface-container rounded transition"
+                                            >
+                                                <span class="material-symbols-outlined">arrow_downward</span>
+                                            </button>
+                                        @endif
+
+                                        <a
+                                            href="{{ route('modules.edit', $module) }}"
+                                            class="p-2 hover:bg-surface-container rounded transition text-primary inline-flex"
+                                            title="Edit module"
+                                        >
+                                            <span class="material-symbols-outlined">edit</span>
+                                        </a>
+
                                         <button
                                             type="button"
-                                            wire:click="moveModuleUp('{{ $module->id }}')"
-                                            title="Move up"
-                                            class="p-2 hover:bg-surface-container rounded transition"
+                                            @click="deleteType = 'modules'; deleteId = @js($module->id); deleteName = @js($module->title); deleteConfirmText = ''; showDeleteModal = true"
+                                            class="p-2 hover:bg-surface-container rounded transition text-error"
                                         >
-                                            <span class="material-symbols-outlined">arrow_upward</span>
+                                            <span class="material-symbols-outlined">delete</span>
                                         </button>
-                                    @endif
-
-                                    @if ($module->course->modules->count() > 1 && $module->order < $module->course->modules->count())
-                                        <button
-                                            type="button"
-                                            wire:click="moveModuleDown('{{ $module->id }}')"
-                                            title="Move down"
-                                            class="p-2 hover:bg-surface-container rounded transition"
-                                        >
-                                            <span class="material-symbols-outlined">arrow_downward</span>
-                                        </button>
-                                    @endif
-
-                                    <a
-                                        href="{{ route('modules.edit', $module) }}"
-                                        class="p-2 hover:bg-surface-container rounded transition text-primary inline-flex"
-                                        title="Edit module"
-                                    >
-                                        <span class="material-symbols-outlined">edit</span>
-                                    </a>
-
-                                    <button
-                                        type="button"
-                                        @click="deleteType = 'modules'; deleteId = @js($module->id); deleteName = @js($module->title); deleteConfirmText = ''; showDeleteModal = true"
-                                        class="p-2 hover:bg-surface-container rounded transition text-error"
-                                    >
-                                        <span class="material-symbols-outlined">delete</span>
-                                    </button>
-                                </div>
+                                    </div>
+                                @endunless
                             </div>
                         </div>
 
@@ -158,12 +162,14 @@
                                 @if ($module->lessons->isEmpty())
                                     <div class="p-space-lg text-center">
                                         <p class="text-body-sm text-on-surface-variant mb-space-md">No lessons in this module</p>
-                                        <a
-                                            href="{{ route('lessons.create', $module) }}"
-                                            class="text-primary font-medium text-body-sm hover:underline"
-                                        >
-                                            Add First Lesson
-                                        </a>
+                                        @unless ($isStudent)
+                                            <a
+                                                href="{{ route('lessons.create', $module) }}"
+                                                class="text-primary font-medium text-body-sm hover:underline"
+                                            >
+                                                Add First Lesson
+                                            </a>
+                                        @endunless
                                     </div>
                                 @else
                                     <div class="space-y-0">
@@ -198,48 +204,60 @@
                                                 </div>
 
                                                 <!-- Lesson Actions -->
-                                                <div class="flex gap-space-sm ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    @if ($module->lessons->count() > 1 && $lesson->order > 1)
+                                                @if ($isStudent)
+                                                    @if ($lesson->is_published)
+                                                        <a
+                                                            href="{{ route('lessons.show', $lesson) }}"
+                                                            class="p-2 hover:bg-surface-container rounded transition text-primary inline-flex"
+                                                            title="View lesson"
+                                                        >
+                                                            <span class="material-symbols-outlined">play_circle</span>
+                                                        </a>
+                                                    @endif
+                                                @else
+                                                    <div class="flex gap-space-sm ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        @if ($module->lessons->count() > 1 && $lesson->order > 1)
+                                                            <button
+                                                                type="button"
+                                                                wire:click="moveLessonUp('{{ $lesson->id }}')"
+                                                                title="Move up"
+                                                                class="p-2 hover:bg-surface-container rounded transition"
+                                                            >
+                                                                <span class="material-symbols-outlined">arrow_upward</span>
+                                                            </button>
+                                                        @endif
+
+                                                        @if ($module->lessons->count() > 1 && $lesson->order < $module->lessons->count())
+                                                            <button
+                                                                type="button"
+                                                                wire:click="moveLessonDown('{{ $lesson->id }}')"
+                                                                title="Move down"
+                                                                class="p-2 hover:bg-surface-container rounded transition"
+                                                            >
+                                                                <span class="material-symbols-outlined">arrow_downward</span>
+                                                            </button>
+                                                        @endif
+
+                                                        <a
+                                                            href="{{ route('lessons.edit', $lesson) }}"
+                                                            class="p-2 hover:bg-surface-container rounded transition text-primary inline-flex"
+                                                            title="Edit lesson"
+                                                        >
+                                                            <span class="material-symbols-outlined">edit</span>
+                                                        </a>
+
                                                         <button
                                                             type="button"
-                                                            wire:click="moveLessonUp('{{ $lesson->id }}')"
-                                                            title="Move up"
-                                                            class="p-2 hover:bg-surface-container rounded transition"
+                                                            @click="deleteType = 'lessons'; deleteId = @js($lesson->id); deleteName = @js($lesson->title); deleteConfirmText = ''; showDeleteModal = true"
+                                                            class="p-2 hover:bg-surface-container rounded transition text-error"
                                                         >
-                                                            <span class="material-symbols-outlined">arrow_upward</span>
+                                                            <span class="material-symbols-outlined">delete</span>
                                                         </button>
-                                                    @endif
-
-                                                    @if ($module->lessons->count() > 1 && $lesson->order < $module->lessons->count())
-                                                        <button
-                                                            type="button"
-                                                            wire:click="moveLessonDown('{{ $lesson->id }}')"
-                                                            title="Move down"
-                                                            class="p-2 hover:bg-surface-container rounded transition"
-                                                        >
-                                                            <span class="material-symbols-outlined">arrow_downward</span>
-                                                        </button>
-                                                    @endif
-
-                                                    <a
-                                                        href="{{ route('lessons.edit', $lesson) }}"
-                                                        class="p-2 hover:bg-surface-container rounded transition text-primary inline-flex"
-                                                        title="Edit lesson"
-                                                    >
-                                                        <span class="material-symbols-outlined">edit</span>
-                                                    </a>
-
-                                                    <button
-                                                        type="button"
-                                                        @click="deleteType = 'lessons'; deleteId = @js($lesson->id); deleteName = @js($lesson->title); deleteConfirmText = ''; showDeleteModal = true"
-                                                        class="p-2 hover:bg-surface-container rounded transition text-error"
-                                                    >
-                                                        <span class="material-symbols-outlined">delete</span>
-                                                    </button>
-                                                </div>
+                                                    </div>
+                                                @endif
                                             </div>
 
-                                            @if (!$loop->last)
+                                            @if (!$loop->last && !$isStudent)
                                                 <div class="px-space-lg">
                                                     <a
                                                         href="{{ route('lessons.create', $module) }}"
@@ -251,14 +269,16 @@
                                             @endif
                                         @endforeach
 
-                                        <div class="px-space-lg py-space-md border-t border-outline-variant">
-                                            <a
-                                                href="{{ route('lessons.create', $module) }}"
-                                                class="block w-full py-space-md text-center text-primary text-body-sm font-medium hover:bg-surface-container transition rounded"
-                                            >
-                                                + Add Lesson
-                                            </a>
-                                        </div>
+                                        @unless ($isStudent)
+                                            <div class="px-space-lg py-space-md border-t border-outline-variant">
+                                                <a
+                                                    href="{{ route('lessons.create', $module) }}"
+                                                    class="block w-full py-space-md text-center text-primary text-body-sm font-medium hover:bg-surface-container transition rounded"
+                                                >
+                                                    + Add Lesson
+                                                </a>
+                                            </div>
+                                        @endunless
                                     </div>
                                 @endif
                             </div>

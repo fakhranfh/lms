@@ -26,16 +26,18 @@ class DemoLmsAccessService
     }
 
     /**
-     * Create a demo admin account for the school.
+     * Create a demo user account for the school.
      */
-    public function createDemoUser(School $school): User
+    public function createDemoUser(School $school, string $roleType = 'instructor'): User
     {
-        $email = 'demo-'.$school->id.'@demo.'.$school->domain;
+        $suffix = $roleType === 'student' ? '-student' : '';
+        $email = 'demo'.$suffix.'-'.$school->id.'@demo.'.$school->domain;
+        $name = $roleType === 'student' ? 'Demo Student' : 'Demo Instructor';
 
         $user = User::firstOrCreate(
             ['email' => $email],
             [
-                'name' => 'Demo Admin - '.$school->name,
+                'name' => $name.' - '.$school->name,
                 'school_id' => $school->id,
                 'password' => bcrypt('demo-password'),
                 'email_verified_at' => now(),
@@ -43,16 +45,25 @@ class DemoLmsAccessService
         );
 
         if (! $user->roles()->exists()) {
+            $roleName = $roleType === 'student' ? 'Student' : 'Instructor';
+            $roleSlug = $roleType === 'student' ? 'student' : 'instructor';
+
             $role = Role::where('school_id', $school->id)
-                ->where('name', 'Admin')
+                ->where('name', $roleName)
                 ->firstOrCreate(
-                    ['school_id' => $school->id, 'name' => 'Admin'],
-                    ['guard_name' => 'web', 'slug' => 'admin']
+                    ['school_id' => $school->id, 'name' => $roleName],
+                    ['guard_name' => 'web', 'slug' => $roleSlug]
                 );
 
-            // Sync all permissions (except billing) to admin role
+            // Sync permissions based on role type
             if (! $role->permissions()->exists()) {
-                $permissions = Permission::where('name', '!=', 'settings.billing')->get();
+                if ($roleType === 'student') {
+                    $permissions = Permission::where('name', 'like', 'courses.%')
+                        ->where('name', 'like', '%view')
+                        ->get();
+                } else {
+                    $permissions = Permission::where('name', '!=', 'settings.billing')->get();
+                }
                 $role->syncPermissions($permissions);
             }
 
@@ -65,7 +76,7 @@ class DemoLmsAccessService
     /**
      * Grant demo access to a user for 14 days.
      */
-    public function grantDemoAccess(School $school, User $user): DemoLmsAccess
+    public function grantDemoAccess(School $school, User $user, string $roleType = 'instructor'): DemoLmsAccess
     {
         $token = $this->generateAccessToken($school);
         $expiresAt = now()->addDays(14);
@@ -74,6 +85,7 @@ class DemoLmsAccessService
             'school_id' => $school->id,
             'user_id' => $user->id,
             'access_token' => $token,
+            'role' => $roleType,
             'expires_at' => $expiresAt,
         ]);
     }
@@ -93,9 +105,10 @@ class DemoLmsAccessService
     /**
      * Get or create demo access for a school.
      */
-    public function getOrCreateDemoAccess(School $school): DemoLmsAccess
+    public function getOrCreateDemoAccess(School $school, string $roleType = 'instructor'): DemoLmsAccess
     {
         $validAccess = DemoLmsAccess::where('school_id', $school->id)
+            ->where('role', $roleType)
             ->where('expires_at', '>', now())
             ->latest('created_at')
             ->first();
@@ -104,19 +117,30 @@ class DemoLmsAccessService
             return $validAccess;
         }
 
-        $user = $this->createDemoUser($school);
+        $user = $this->createDemoUser($school, $roleType);
 
-        return $this->grantDemoAccess($school, $user);
+        return $this->grantDemoAccess($school, $user, $roleType);
     }
 
     /**
      * Regenerate demo access for a school, always creating a new token.
      */
-    public function regenerateDemoAccess(School $school): DemoLmsAccess
+    public function regenerateDemoAccess(School $school, string $roleType = 'instructor'): DemoLmsAccess
     {
-        $user = $this->createDemoUser($school);
+        $user = $this->createDemoUser($school, $roleType);
 
-        return $this->grantDemoAccess($school, $user);
+        return $this->grantDemoAccess($school, $user, $roleType);
+    }
+
+    /**
+     * Get both instructor and student demo credentials.
+     */
+    public function getDemoCredentials(School $school): array
+    {
+        return [
+            'instructor' => $this->getOrCreateDemoAccess($school, 'instructor'),
+            'student' => $this->getOrCreateDemoAccess($school, 'student'),
+        ];
     }
 
     /**

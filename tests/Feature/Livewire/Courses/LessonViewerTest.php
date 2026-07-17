@@ -162,11 +162,11 @@ class LessonViewerTest extends TestCase
             ->assertSee('Previous Lesson');
     }
 
-    public function test_navigation_shows_back_to_courses_on_last_lesson(): void
+    public function test_navigation_shows_back_to_course_on_last_lesson(): void
     {
         Livewire::test(LessonViewer::class, ['lesson' => $this->publishedLesson])
             ->assertStatus(200)
-            ->assertSee('Back to Courses');
+            ->assertSee('Back to Course');
     }
 
     public function test_module_progress_calculates_correctly(): void

@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['school_id', 'user_id', 'access_token', 'expires_at', 'accessed_at'])]
+#[Fillable(['school_id', 'user_id', 'access_token', 'role', 'expires_at', 'accessed_at'])]
 class DemoLmsAccess extends Model
 {
     /** @use HasFactory<DemoLmsAccessFactory> */

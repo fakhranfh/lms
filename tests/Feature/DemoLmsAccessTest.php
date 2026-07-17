@@ -44,6 +44,27 @@ class DemoLmsAccessTest extends TestCase
         $this->assertStringContainsString($school->domain, $user->email);
     }
 
+    public function test_create_demo_user_creates_instructor_user(): void
+    {
+        $school = School::factory()->create();
+
+        $user = $this->demoService->createDemoUser($school, 'instructor');
+
+        $this->assertEquals($school->id, $user->school_id);
+        $this->assertStringContainsString('demo-', $user->email);
+        $this->assertStringNotContainsString('-student', $user->email);
+    }
+
+    public function test_create_demo_user_creates_student_user(): void
+    {
+        $school = School::factory()->create();
+
+        $user = $this->demoService->createDemoUser($school, 'student');
+
+        $this->assertEquals($school->id, $user->school_id);
+        $this->assertStringContainsString('demo-student', $user->email);
+    }
+
     public function test_create_demo_user_returns_existing_user_if_already_created(): void
     {
         $school = School::factory()->create();
@@ -65,7 +86,20 @@ class DemoLmsAccessTest extends TestCase
         $this->assertEquals(32, strlen($access->access_token));
         $this->assertEquals($school->id, $access->school_id);
         $this->assertEquals($user->id, $access->user_id);
+        $this->assertEquals('instructor', $access->role);
         $this->assertTrue($access->expires_at->isFuture());
+    }
+
+    public function test_grant_demo_access_stores_role_type(): void
+    {
+        $school = School::factory()->create();
+        $user = User::factory()->create(['school_id' => $school->id]);
+
+        $instructorAccess = $this->demoService->grantDemoAccess($school, $user, 'instructor');
+        $studentAccess = $this->demoService->grantDemoAccess($school, $user, 'student');
+
+        $this->assertEquals('instructor', $instructorAccess->role);
+        $this->assertEquals('student', $studentAccess->role);
     }
 
     public function test_is_demo_access_valid_returns_true_for_unexpired_access(): void
@@ -106,10 +140,11 @@ class DemoLmsAccessTest extends TestCase
             ->create([
                 'school_id' => $school->id,
                 'user_id' => $user->id,
+                'role' => 'instructor',
                 'expires_at' => now()->addDays(7),
             ]);
 
-        $access = $this->demoService->getOrCreateDemoAccess($school);
+        $access = $this->demoService->getOrCreateDemoAccess($school, 'instructor');
 
         $this->assertEquals($existingAccess->id, $access->id);
     }
@@ -199,14 +234,14 @@ class DemoLmsAccessTest extends TestCase
         $this->assertTrue($this->demoService->isDemoAccessValid($newAccess));
     }
 
-    public function test_demo_user_has_admin_role_with_all_permissions(): void
+    public function test_demo_user_has_instructor_role_with_all_permissions(): void
     {
         $school = School::factory()->create();
 
-        $user = $this->demoService->createDemoUser($school);
+        $user = $this->demoService->createDemoUser($school, 'instructor');
 
         $this->assertTrue($user->roles()->exists());
-        $this->assertTrue($user->hasRole('Admin'));
+        $this->assertTrue($user->hasRole('Instructor'));
 
         // Verify demo user has sidebar menu permissions
         $this->assertTrue($user->can('users.view'));
@@ -282,5 +317,37 @@ class DemoLmsAccessTest extends TestCase
         $this->assertStringContainsString('myschool.lms.local', $url);
         $this->assertStringContainsString($access->access_token, $url);
         $this->assertStringContainsString('/demo-lms/login/', $url);
+    }
+
+    public function test_get_demo_credentials_returns_both_roles(): void
+    {
+        $school = School::factory()->create();
+
+        $credentials = $this->demoService->getDemoCredentials($school);
+
+        $this->assertArrayHasKey('instructor', $credentials);
+        $this->assertArrayHasKey('student', $credentials);
+        $this->assertEquals('instructor', $credentials['instructor']->role);
+        $this->assertEquals('student', $credentials['student']->role);
+    }
+
+    public function test_demo_student_user_has_correct_permissions(): void
+    {
+        $school = School::factory()->create();
+
+        $user = $this->demoService->createDemoUser($school, 'student');
+
+        $this->assertTrue($user->roles()->exists());
+        $this->assertTrue($user->hasRole('Student'));
+    }
+
+    public function test_demo_instructor_user_has_correct_permissions(): void
+    {
+        $school = School::factory()->create();
+
+        $user = $this->demoService->createDemoUser($school, 'instructor');
+
+        $this->assertTrue($user->roles()->exists());
+        $this->assertTrue($user->hasRole('Instructor'));
     }
 }

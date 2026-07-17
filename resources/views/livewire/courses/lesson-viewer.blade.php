@@ -5,11 +5,11 @@
         <!-- Breadcrumb -->
         <div class="mb-space-lg">
             <nav class="flex items-center gap-space-sm text-body-sm text-on-surface-variant">
-                <a href="{{ route('dashboard') }}" class="hover:text-on-surface transition">Courses</a>
+                <a href="{{ route('courses.index') }}" class="hover:text-on-surface transition">Courses</a>
                 <span>/</span>
-                <a href="#" class="hover:text-on-surface transition">{{ $course->title }}</a>
+                <a href="{{ route('courses.show', $course) }}" class="hover:text-on-surface transition">{{ $course->title }}</a>
                 <span>/</span>
-                <a href="#" class="hover:text-on-surface transition">{{ $module->title }}</a>
+                <a href="{{ route('courses.show', $course) }}" class="hover:text-on-surface transition">{{ $module->title }}</a>
                 <span>/</span>
                 <span class="text-on-surface font-medium">{{ $lesson->title }}</span>
             </nav>

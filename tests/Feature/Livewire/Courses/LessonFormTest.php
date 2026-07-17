@@ -104,19 +104,49 @@ class LessonFormTest extends TestCase
         ]);
     }
 
-    public function test_can_create_lesson_with_video_url(): void
+    public function test_can_create_lesson_with_youtube_watch_url(): void
     {
         $this->instructor->givePermissionTo('lessons.create');
 
         Livewire::test(LessonForm::class, ['module' => $this->module])
             ->set('title', 'Video Lesson')
-            ->set('videoEmbedUrl', 'https://youtube.com/watch?v=dQw4w9WgXcQ')
+            ->set('videoEmbedUrl', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
             ->call('save')
             ->assertRedirect();
 
         $this->assertDatabaseHas('lessons', [
             'title' => 'Video Lesson',
-            'video_embed_url' => 'https://youtube.com/watch?v=dQw4w9WgXcQ',
+            'video_embed_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        ]);
+    }
+
+    public function test_youtube_short_url_is_converted_to_embed(): void
+    {
+        $this->instructor->givePermissionTo('lessons.create');
+
+        Livewire::test(LessonForm::class, ['module' => $this->module])
+            ->set('title', 'Short URL Lesson')
+            ->set('videoEmbedUrl', 'https://youtu.be/dQw4w9WgXcQ')
+            ->call('save')
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('lessons', [
+            'video_embed_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        ]);
+    }
+
+    public function test_already_embed_url_is_preserved(): void
+    {
+        $this->instructor->givePermissionTo('lessons.create');
+
+        Livewire::test(LessonForm::class, ['module' => $this->module])
+            ->set('title', 'Embed URL Lesson')
+            ->set('videoEmbedUrl', 'https://www.youtube.com/embed/dQw4w9WgXcQ')
+            ->call('save')
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('lessons', [
+            'video_embed_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
         ]);
     }
 

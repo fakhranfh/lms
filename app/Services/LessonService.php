@@ -40,6 +40,10 @@ class LessonService
      */
     public function create(array $data): Lesson
     {
+        if (isset($data['video_embed_url'])) {
+            $data['video_embed_url'] = Lesson::convertToEmbedUrl($data['video_embed_url']);
+        }
+
         return $this->lessonRepository->create($data);
     }
 
@@ -50,6 +54,10 @@ class LessonService
      */
     public function update(string $id, array $data): Lesson
     {
+        if (isset($data['video_embed_url'])) {
+            $data['video_embed_url'] = Lesson::convertToEmbedUrl($data['video_embed_url']);
+        }
+
         return $this->lessonRepository->update($id, $data);
     }
 

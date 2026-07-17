@@ -114,4 +114,25 @@ class Lesson extends Model
     {
         return $this->is_published;
     }
+
+    public static function convertToEmbedUrl(?string $url): ?string
+    {
+        if (! $url) {
+            return null;
+        }
+
+        if (preg_match('/youtu\.be\/([a-zA-Z0-9_-]{11})/', $url, $matches)) {
+            return "https://www.youtube.com/embed/{$matches[1]}";
+        }
+
+        if (preg_match('/youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/', $url, $matches)) {
+            return "https://www.youtube.com/embed/{$matches[1]}";
+        }
+
+        if (preg_match('/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/', $url, $matches)) {
+            return "https://www.youtube.com/embed/{$matches[1]}";
+        }
+
+        return $url;
+    }
 }

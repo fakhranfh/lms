@@ -223,7 +223,7 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
   - [x] Create/update via `LessonForm::save()`
   - [x] Delete via `CourseBuilder::confirmDelete()`
   - [x] Move up/down via `CourseBuilder::moveLessonUp/Down()`
-  - [ ] No standalone `publish($lesson)` toggle route — publish state is set via the `isPublished` checkbox in `LessonForm`
+  - [x] No standalone `publish($lesson)` toggle route — publish state is set via the `isPublished` checkbox in `LessonForm`
 - [x] All CRUD operations respect `BelongsToSchool` scope (checked via `CurrentSchool` + `school_id` comparison in each component's `mount()`)
 
 ## 7. Student-Facing Views — Lesson Viewer

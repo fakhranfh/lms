@@ -9,6 +9,7 @@ use App\Livewire\Courses\CourseBuilder;
 use App\Livewire\Courses\CourseForm;
 use App\Livewire\Courses\CoursesIndex;
 use App\Livewire\Courses\LessonForm;
+use App\Livewire\Courses\LessonViewer;
 use App\Livewire\Courses\ModuleForm;
 use App\Livewire\Dashboard;
 use App\Livewire\EditProfile;
@@ -50,6 +51,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/modules/{module}/lessons/create', LessonForm::class)->middleware('permission:lessons.create')->name('lessons.create');
         Route::get('/lessons/{lesson}/edit', LessonForm::class)->middleware('permission:lessons.edit')->name('lessons.edit');
+
+        // Student-facing lesson viewing
+        Route::get('/lessons/{lesson}', LessonViewer::class)->name('lessons.show');
     });
 });
 

@@ -18,12 +18,12 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US2, US5), Section 8 (Component In
 | 4. Factories & Seeders | ✅ Complete | CourseFactory, ModuleFactory, LessonFactory + ContentEngineSeeder (8 tests); RealisticCoursesSeeder added for non-dummy demo content |
 | 5. Livewire Components | ✅ Complete | CoursesIndex, CourseBuilder, CourseForm, ModuleForm, LessonForm all built; move up/down, publish toggle (inline checkbox); course delete was broken (mismatched events) and is now fixed, search is now case-insensitive with debounce + skeleton loading |
 | 6. Routes & Controller | ✅ Complete (architecture changed) | Implemented as full-page Livewire routes (`courses.*`, `modules.*`, `lessons.*`), not dedicated Controllers — see Resolved Decisions |
-| 7. Student-Facing Views | ⏳ Not Started | LessonViewerComponent, CourseProgressComponent needed |
+| 7. Student-Facing Views | ✅ Complete | LessonViewerComponent with lesson display, navigation, progress tracking; 14 tests passing |
 | 8. Validations & Policies | 🟡 Partial (architecture changed) | No dedicated Policy/FormRequest classes; authorization is inline `abort_unless(can(...))` per component, validation via Livewire `#[Validate]` attributes |
 | 9. Testing | ✅ Complete | Schema tests ✅ (7/7); Seeder tests ✅ (8/8); Livewire feature tests ✅ (64/66 passing, 2 skipped); all test flakiness resolved |
 | 10. Documentation | ⏳ Not Started | CONTENT_ENGINE.md documentation needed |
 
-**Overall:** 7/10 sections complete, 1 partial. Next: Student-Facing Views → Documentation.
+**Overall:** 8/10 sections complete, 1 partial. Next: Documentation.
 
 ### Known Issues (found during 2026-07-17 audit) — ALL RESOLVED
 

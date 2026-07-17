@@ -11,10 +11,9 @@ return [
         'label' => 'Courses',
         'route' => 'courses.index',
         'icon' => 'school',
-        'active_pattern' => 'courses.*',
+        'active_pattern' => 'courses.*|lessons.*',
         'requires_permission' => 'courses.view',
         'requires_school' => true,
-        'exclude_role' => 'Admin',
     ],
     [
         'label' => 'Users',

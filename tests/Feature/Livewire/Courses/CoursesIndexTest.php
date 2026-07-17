@@ -87,6 +87,23 @@ class CoursesIndexTest extends TestCase
             ->assertDontSee('JavaScript Basics');
     }
 
+    public function test_search_is_case_insensitive(): void
+    {
+        $this->instructor->givePermissionTo('courses.view');
+
+        Course::factory()
+            ->for($this->school)
+            ->create(['title' => 'PHP Fundamentals']);
+        Course::factory()
+            ->for($this->school)
+            ->create(['title' => 'JavaScript Basics']);
+
+        Livewire::test(CoursesIndex::class)
+            ->set('search', 'php fundamentals')
+            ->assertSee('PHP Fundamentals')
+            ->assertDontSee('JavaScript Basics');
+    }
+
     public function test_can_search_courses_by_description(): void
     {
         $this->instructor->givePermissionTo('courses.view');
@@ -194,6 +211,54 @@ class CoursesIndexTest extends TestCase
         Livewire::test(CoursesIndex::class)
             ->set('search', 'Course')
             ->assertSet('paginators.page.before.page', 1);
+    }
+
+    public function test_can_delete_course(): void
+    {
+        $this->instructor->givePermissionTo(['courses.view', 'courses.delete']);
+
+        $course = Course::factory()
+            ->for($this->school)
+            ->create(['title' => 'Course To Delete']);
+
+        Livewire::test(CoursesIndex::class)
+            ->call('destroy', $course->id)
+            ->assertSet('successMessage', 'Course deleted successfully.');
+
+        $this->assertDatabaseMissing('courses', ['id' => $course->id]);
+    }
+
+    public function test_cannot_delete_course_without_permission(): void
+    {
+        $this->instructor->givePermissionTo('courses.view');
+
+        $course = Course::factory()
+            ->for($this->school)
+            ->create();
+
+        // Livewire's ->call() captures abort_unless(..., 403) as a response status
+        // rather than re-throwing to PHPUnit — assertStatus is the correct check here.
+        Livewire::test(CoursesIndex::class)
+            ->call('destroy', $course->id)
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('courses', ['id' => $course->id]);
+    }
+
+    public function test_cannot_delete_course_from_different_school(): void
+    {
+        $this->instructor->givePermissionTo(['courses.view', 'courses.delete']);
+
+        $otherSchool = School::factory()->create();
+        $course = Course::factory()
+            ->for($otherSchool)
+            ->create();
+
+        Livewire::test(CoursesIndex::class)
+            ->call('destroy', $course->id)
+            ->assertSet('errorMessage', 'Course not found.');
+
+        $this->assertDatabaseHas('courses', ['id' => $course->id]);
     }
 
     public function test_user_cannot_access_without_permission(): void

@@ -1,6 +1,20 @@
 @section('title', 'Courses')
 
 <div class="space-y-space-lg">
+    @if ($successMessage)
+        <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
+            <p class="font-body-md text-body-md text-success">{{ $successMessage }}</p>
+        </div>
+    @endif
+
+    @if ($errorMessage)
+        <div class="px-gutter py-space-md bg-error/10 border border-error/20 rounded-lg flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-error text-[20px]" data-weight="fill">error</span>
+            <p class="font-body-md text-body-md text-error">{{ $errorMessage }}</p>
+        </div>
+    @endif
+
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
@@ -21,13 +35,48 @@
             <span class="material-symbols-outlined absolute left-space-lg top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
             <input
                 type="text"
-                wire:model.live="search"
+                wire:model.live.debounce.300ms="search"
                 placeholder="Search courses..."
                 class="w-full pl-12 pr-space-lg py-space-md border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
         </div>
     </div>
 
+    <!-- Skeleton Loading (shown while search is in flight) -->
+    <div
+        wire:loading.delay.class.remove="hidden"
+        wire:target="search"
+        class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg animate-pulse"
+    >
+        @for ($i = 0; $i < 6; $i++)
+            <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden flex flex-col">
+                <div class="p-space-lg border-b border-outline-variant space-y-space-md">
+                    <div class="flex items-start justify-between gap-space-md">
+                        <div class="h-4 bg-surface-container rounded w-2/3"></div>
+                        <div class="h-5 bg-surface-container rounded-full w-16 shrink-0"></div>
+                    </div>
+                    <div class="space-y-space-xs">
+                        <div class="h-3 bg-surface-container rounded w-full"></div>
+                        <div class="h-3 bg-surface-container rounded w-4/5"></div>
+                    </div>
+                </div>
+                <div class="px-space-lg py-space-md space-y-space-sm flex-1">
+                    <div class="h-3 bg-surface-container rounded w-3/4"></div>
+                    <div class="h-3 bg-surface-container rounded w-2/3"></div>
+                    <div class="h-3 bg-surface-container rounded w-1/2"></div>
+                </div>
+                <div class="px-space-lg py-space-md bg-surface-container/50 border-t border-outline-variant flex items-center justify-between">
+                    <div class="h-3 bg-surface-container rounded w-20"></div>
+                    <div class="flex gap-space-xs">
+                        <div class="h-8 w-8 bg-surface-container rounded"></div>
+                        <div class="h-8 w-8 bg-surface-container rounded"></div>
+                    </div>
+                </div>
+            </div>
+        @endfor
+    </div>
+
+    <div wire:loading.remove wire:target="search">
     @if ($courses->isEmpty())
         <div class="bg-surface border border-outline-variant rounded-lg p-8 text-center">
             @if ($search)
@@ -54,7 +103,7 @@
         <!-- Courses Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg">
             @foreach ($courses as $course)
-                <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden hover:border-primary/50 transition-all hover:shadow-md group flex flex-col">
+                <div wire:key="course-{{ $course->id }}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden hover:border-primary/50 transition-all hover:shadow-md group flex flex-col">
                     <!-- Card Header -->
                     <div class="p-space-lg border-b border-outline-variant">
                         <div class="flex items-start justify-between gap-space-md mb-space-md">
@@ -93,7 +142,7 @@
                         @else
                             <div class="px-space-lg py-space-md space-y-space-xs max-h-[240px] overflow-y-auto">
                                 @foreach ($course->modules as $module)
-                                    <div class="flex items-start gap-space-md p-space-sm rounded hover:bg-surface-container/50 transition-colors group/item">
+                                    <div wire:key="module-{{ $module->id }}" class="flex items-start gap-space-md p-space-sm rounded hover:bg-surface-container/50 transition-colors group/item">
                                         <span class="material-symbols-outlined text-on-surface-variant text-[18px] flex-shrink-0 mt-0.5">layers</span>
                                         <div class="min-w-0 flex-1">
                                             <p class="text-body-sm text-on-surface font-medium line-clamp-1 group-hover/item:text-primary transition-colors">
@@ -126,7 +175,7 @@
                             @can('courses.delete')
                                 <button
                                     type="button"
-                                    wire:click="$dispatch('showDeleteModal', { type: 'courses', id: '{{ $course->id }}', name: '{{ addslashes($course->title) }}' })"
+                                    @click="$dispatch('open-delete-confirm', { id: '{{ $course->id }}' })"
                                     class="p-2 hover:bg-surface rounded transition text-error"
                                     title="Delete"
                                 >
@@ -149,4 +198,5 @@
             </div>
         @endif
     @endif
+    </div>
 </div>

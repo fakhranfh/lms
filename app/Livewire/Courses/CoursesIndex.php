@@ -3,7 +3,9 @@
 namespace App\Livewire\Courses;
 
 use App\Models\Course;
+use App\Services\CourseService;
 use App\Support\CurrentSchool;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -12,6 +14,10 @@ class CoursesIndex extends Component
     use WithPagination;
 
     public ?string $search = null;
+
+    public ?string $successMessage = null;
+
+    public ?string $errorMessage = null;
 
     public function mount(): void
     {
@@ -23,6 +29,25 @@ class CoursesIndex extends Component
         $this->resetPage();
     }
 
+    #[On('delete-confirmed')]
+    public function destroy(string $id, CourseService $courseService): void
+    {
+        abort_unless(auth()->user()->can('courses.delete'), 403);
+
+        $this->successMessage = null;
+        $this->errorMessage = null;
+
+        if (! $courseService->find($id)) {
+            $this->errorMessage = __('Course not found.');
+
+            return;
+        }
+
+        $courseService->delete($id);
+        $this->successMessage = __('Course deleted successfully.');
+        $this->resetPage();
+    }
+
     public function render(CurrentSchool $currentSchool)
     {
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
@@ -30,8 +55,8 @@ class CoursesIndex extends Component
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('title', 'like', "%{$this->search}%")
-                    ->orWhere('description', 'like', "%{$this->search}%");
+                $q->where('title', 'ilike', "%{$this->search}%")
+                    ->orWhere('description', 'ilike', "%{$this->search}%");
             });
         }
 

@@ -522,16 +522,26 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 
 ### 11.3 Repository Layer
 
-- [ ] Create `LessonMaterialRepository` & interface:
-  - [ ] Methods: get(), find(), getByLesson(), create(), update(), delete(), reorder(), getNextOrder()
-  - [ ] Ordering: Always order by `order` column ascending
-  - [ ] Storage: Support filtering by type
+**Status:** ✅ COMPLETE (2026-07-18)
 
-- [ ] Create `LessonMaterialUserRepository` & interface:
-  - [ ] Methods: markAccessed(), isAccessedBy(), getAccessedCount(), getAccessedMaterials()
-  - [ ] Pivot queries for tracking user access to materials
+- [x] Create `LessonMaterialRepository` & interface:
+  - [x] Methods: get(), find(), getByLesson(), getByLessonAndType(), create(), update(), delete(), reorder(), getNextOrder()
+  - [x] Ordering: Always order by `order` column ascending
+  - [x] Storage: Support filtering by type
+  - [x] Reorder method uses two-pass approach to avoid unique constraint violations
 
-- [ ] Tests: Feature tests for both repositories (CRUD, ordering, access tracking)
+- [x] Create `LessonMaterialUserRepository` & interface:
+  - [x] Methods: markAccessed(), isAccessedBy(), getAccessedCount(), getAccessedMaterials(), getNotAccessedMaterials()
+  - [x] Pivot queries for tracking user access to materials
+  - [x] Support for eager-loading relations
+
+- [x] Tests: Feature tests for both repositories (CRUD, ordering, access tracking)
+  - [x] LessonMaterialRepositoryTest: 18 tests covering CRUD, ordering, filtering
+  - [x] LessonMaterialUserRepositoryTest: 18 tests covering access tracking
+  - [x] All 36 tests passing (59 assertions)
+
+- [x] Service provider bindings registered in AppServiceProvider
+- [x] LessonMaterialFactory updated to auto-increment order values properly
 
 ---
 

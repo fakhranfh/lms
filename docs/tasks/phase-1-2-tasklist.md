@@ -547,6 +547,21 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 
 ### 11.4 Service Layer
 
+**Prerequisites:**
+- [ ] Obtain Cloudflare R2 credentials from user:
+  - [ ] Account ID
+  - [ ] Access Key ID
+  - [ ] Secret Access Key
+  - [ ] Bucket name
+  - [ ] Custom domain (if available)
+- [ ] Add credentials to `.env` file with keys:
+  - `CLOUDFLARE_R2_ACCOUNT_ID`
+  - `CLOUDFLARE_R2_ACCESS_KEY_ID`
+  - `CLOUDFLARE_R2_SECRET_ACCESS_KEY`
+  - `CLOUDFLARE_R2_BUCKET`
+  - `CLOUDFLARE_R2_CUSTOM_DOMAIN` (optional)
+
+**Implementation:**
 - [ ] Create `LessonMaterialService`:
   - [ ] `create(lessonId, data[]): LessonMaterial` — validate, upload to R2, persist
   - [ ] `update(id, data[]): LessonMaterial` — handle file replacement

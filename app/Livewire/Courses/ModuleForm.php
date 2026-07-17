@@ -23,9 +23,14 @@ class ModuleForm extends Component
 
     public bool $isPublished = false;
 
-    public function mount(Course $course, ?Module $module, CurrentSchool $currentSchool): void
+    public function mount(CurrentSchool $currentSchool, ?Course $course = null, ?Module $module = null): void
     {
         abort_unless(auth()->user()->can('modules.create') || auth()->user()->can('modules.edit'), 403);
+
+        $course ??= $module?->course;
+
+        abort_if($course === null, 404);
+
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
         abort_unless($course->school_id === $schoolId, 403);
 

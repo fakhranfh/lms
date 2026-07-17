@@ -178,10 +178,7 @@ class CourseBuilderTest extends TestCase
             ->create();
 
         Livewire::test(CourseBuilder::class, ['course' => $this->course])
-            ->call('showDeleteConfirm', 'modules', $module->id, $module->title)
-            ->assertSet('showDeleteModal', true)
-            ->call('confirmDelete')
-            ->assertSet('showDeleteModal', false);
+            ->call('confirmDelete', 'modules', $module->id);
 
         $this->assertDatabaseMissing('modules', ['id' => $module->id]);
     }
@@ -198,8 +195,7 @@ class CourseBuilderTest extends TestCase
             ->create();
 
         Livewire::test(CourseBuilder::class, ['course' => $this->course])
-            ->call('showDeleteConfirm', 'lessons', $lesson->id, $lesson->title)
-            ->call('confirmDelete');
+            ->call('confirmDelete', 'lessons', $lesson->id);
 
         $this->assertDatabaseMissing('lessons', ['id' => $lesson->id]);
     }

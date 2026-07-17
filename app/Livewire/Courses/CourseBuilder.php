@@ -17,14 +17,6 @@ class CourseBuilder extends Component
 
     public ?string $errorMessage = null;
 
-    public bool $showDeleteModal = false;
-
-    public ?string $deleteType = null;
-
-    public ?string $deleteId = null;
-
-    public ?string $deleteName = null;
-
     /** @var array<string, bool> */
     public array $expandedModules = [];
 
@@ -84,34 +76,18 @@ class CourseBuilder extends Component
         $this->course->refresh();
     }
 
-    public function showDeleteConfirm(string $type, string $id, string $name): void
+    public function confirmDelete(string $type, string $id, ModuleService $moduleService, LessonService $lessonService): void
     {
         abort_unless(auth()->user()->can("{$type}.delete"), 403);
 
-        $this->deleteType = $type;
-        $this->deleteId = $id;
-        $this->deleteName = $name;
-        $this->showDeleteModal = true;
-    }
-
-    public function confirmDelete(ModuleService $moduleService, LessonService $lessonService): void
-    {
-        if (! $this->deleteType || ! $this->deleteId) {
-            return;
-        }
-
         try {
-            match ($this->deleteType) {
-                'modules' => $moduleService->delete($this->deleteId),
-                'lessons' => $lessonService->delete($this->deleteId),
+            match ($type) {
+                'modules' => $moduleService->delete($id),
+                'lessons' => $lessonService->delete($id),
                 default => throw new \Exception('Invalid delete type'),
             };
 
             $this->course->refresh();
-            $this->showDeleteModal = false;
-            $this->deleteType = null;
-            $this->deleteId = null;
-            $this->deleteName = null;
             $this->successMessage = __('Deleted successfully.');
         } catch (\Exception $e) {
             $this->errorMessage = __('Failed to delete resource.');

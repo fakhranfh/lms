@@ -1,6 +1,6 @@
 @section('title', 'Course Builder')
 
-<div class="space-y-space-lg" x-data="{ deleteId: null, showDeleteModal: false }">
+<div class="space-y-space-lg" x-data="{ deleteType: null, deleteId: null, deleteName: null, showDeleteModal: false }">
     @if ($successMessage)
         <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
             <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
@@ -73,7 +73,7 @@
                                 <div class="flex items-center gap-space-md flex-1">
                                     <button
                                         type="button"
-                                        @click="@js($this->expandedModules[$module->id] ?? false) ? $wire.toggleModule('@js($module->id)') : $wire.toggleModule('@js($module->id)')"
+                                        wire:click="toggleModule('{{ $module->id }}')"
                                         class="p-2 hover:bg-surface-container rounded transition"
                                     >
                                         <span class="material-symbols-outlined transition-transform" :class="@js($expandedModules[$module->id] ?? false) ? 'rotate-90' : ''">
@@ -104,7 +104,7 @@
                                     @if ($module->course->modules->count() > 1 && $module->order > 1)
                                         <button
                                             type="button"
-                                            wire:click="moveModuleUp({{ $module->id }})"
+                                            wire:click="moveModuleUp('{{ $module->id }}')"
                                             title="Move up"
                                             class="p-2 hover:bg-surface-container rounded transition"
                                         >
@@ -115,7 +115,7 @@
                                     @if ($module->course->modules->count() > 1 && $module->order < $module->course->modules->count())
                                         <button
                                             type="button"
-                                            wire:click="moveModuleDown({{ $module->id }})"
+                                            wire:click="moveModuleDown('{{ $module->id }}')"
                                             title="Move down"
                                             class="p-2 hover:bg-surface-container rounded transition"
                                         >
@@ -133,7 +133,7 @@
 
                                     <button
                                         type="button"
-                                        @click="$wire.call('showDeleteConfirm', 'modules', '@js($module->id)', @js($module->title)); showDeleteModal = true"
+                                        @click="deleteType = 'modules'; deleteId = @js($module->id); deleteName = @js($module->title); showDeleteModal = true"
                                         class="p-2 hover:bg-surface-container rounded transition text-error"
                                     >
                                         <span class="material-symbols-outlined">delete</span>
@@ -187,7 +187,7 @@
                                                     @if ($module->lessons->count() > 1 && $lesson->order > 1)
                                                         <button
                                                             type="button"
-                                                            wire:click="moveLessonUp({{ $lesson->id }})"
+                                                            wire:click="moveLessonUp('{{ $lesson->id }}')"
                                                             title="Move up"
                                                             class="p-2 hover:bg-surface-container rounded transition"
                                                         >
@@ -198,7 +198,7 @@
                                                     @if ($module->lessons->count() > 1 && $lesson->order < $module->lessons->count())
                                                         <button
                                                             type="button"
-                                                            wire:click="moveLessonDown({{ $lesson->id }})"
+                                                            wire:click="moveLessonDown('{{ $lesson->id }}')"
                                                             title="Move down"
                                                             class="p-2 hover:bg-surface-container rounded transition"
                                                         >
@@ -216,7 +216,7 @@
 
                                                     <button
                                                         type="button"
-                                                        @click="$wire.call('showDeleteConfirm', 'lessons', '@js($lesson->id)', @js($lesson->title)); showDeleteModal = true"
+                                                        @click="deleteType = 'lessons'; deleteId = @js($lesson->id); deleteName = @js($lesson->title); showDeleteModal = true"
                                                         class="p-2 hover:bg-surface-container rounded transition text-error"
                                                     >
                                                         <span class="material-symbols-outlined">delete</span>
@@ -293,10 +293,8 @@
                     <div class="text-center space-y-space-sm">
                         <h3 class="font-headline-sm text-headline-sm text-on-surface">Delete Confirmation</h3>
                         <p class="font-body-sm text-body-sm text-on-surface-variant">
-                            Are you sure you want to delete "<span class="font-medium">{{ $deleteName ?? 'this item' }}</span>"?
-                            @if ($deleteType === 'modules')
-                                All lessons in this module will also be deleted.
-                            @endif
+                            Are you sure you want to delete "<span class="font-medium" x-text="deleteName ?? 'this item'"></span>"?
+                            <span x-show="deleteType === 'modules'">All lessons in this module will also be deleted.</span>
                             This action cannot be undone.
                         </p>
                     </div>
@@ -310,7 +308,7 @@
                             Cancel
                         </button>
                         <button
-                            @click="showDeleteModal = false; $wire.call('confirmDelete')"
+                            @click="showDeleteModal = false; $wire.call('confirmDelete', deleteType, deleteId)"
                             type="button"
                             class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                         >

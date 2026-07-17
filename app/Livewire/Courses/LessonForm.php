@@ -29,9 +29,14 @@ class LessonForm extends Component
 
     public bool $isPublished = false;
 
-    public function mount(Module $module, ?Lesson $lesson, CurrentSchool $currentSchool): void
+    public function mount(CurrentSchool $currentSchool, ?Module $module = null, ?Lesson $lesson = null): void
     {
         abort_unless(auth()->user()->can('lessons.create') || auth()->user()->can('lessons.edit'), 403);
+
+        $module ??= $lesson?->module;
+
+        abort_if($module === null, 404);
+
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
         abort_unless($module->course->school_id === $schoolId, 403);
 

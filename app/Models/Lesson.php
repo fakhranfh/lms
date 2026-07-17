@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['title', 'content', 'video_embed_url', 'order', 'duration_minutes', 'is_published'])]
+#[Fillable(['module_id', 'title', 'content', 'video_embed_url', 'order', 'duration_minutes', 'is_published'])]
 class Lesson extends Model
 {
     /** @use HasFactory<LessonFactory> */

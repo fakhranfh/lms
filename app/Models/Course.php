@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['title', 'description', 'slug', 'is_published'])]
+#[Fillable(['school_id', 'created_by', 'title', 'description', 'slug', 'is_published'])]
 class Course extends Model
 {
     /** @use HasFactory<CourseFactory> */

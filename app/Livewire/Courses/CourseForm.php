@@ -55,6 +55,10 @@ class CourseForm extends Component
 
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
 
+        if (! $schoolId) {
+            abort(403, 'This action requires a school context.');
+        }
+
         if ($courseService->slugExists($this->slug, $schoolId, $this->course?->id)) {
             $this->addError('slug', __('Slug already exists for this school.'));
 

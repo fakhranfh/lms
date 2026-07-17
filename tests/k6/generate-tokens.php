@@ -19,8 +19,8 @@ for ($i = 0; $i < 30; $i++) {
 }
 
 file_put_contents(
-    __DIR__ . '/tokens.json',
+    __DIR__.'/tokens.json',
     json_encode($tokens, JSON_PRETTY_PRINT)
 );
 
-echo "Created " . count($tokens) . " tokens in tokens.json\n";
+echo 'Created '.count($tokens)." tokens in tokens.json\n";

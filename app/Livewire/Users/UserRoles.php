@@ -53,7 +53,7 @@ class UserRoles extends Component
         return view('livewire.users.user-roles', [
             'allRoles' => $roleService->getAll(),
         ])
-            ->extends('layouts.app', ['topbarTitle' => 'Assign Roles'])
-            ->section('app-content');
+            ->extends('layouts.admin', ['topbarTitle' => 'Assign Roles'])
+            ->section('admin-content');
     }
 }

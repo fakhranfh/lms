@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Permissions')
 
@@ -6,7 +6,7 @@
     $topbarTitle = 'Permissions';
 @endphp
 
-@section('app-content')
+@section('admin-content')
     <div class="space-y-space-lg">
         <h1 class="font-headline-sm text-headline-sm text-on-surface">Permissions</h1>
 

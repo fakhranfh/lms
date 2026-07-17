@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\BillingPeriod;
 use App\Enums\SubscriptionStatus;
 use App\Models\PricingTier;
 use App\Models\School;
@@ -23,14 +24,14 @@ class SchoolFactory extends Factory
     {
         // Get or create the basic tier
         $basicTier = PricingTier::where('slug', 'basic')->first();
-        if (!$basicTier) {
+        if (! $basicTier) {
             $basicTier = PricingTier::create([
                 'name' => 'Basic',
                 'slug' => 'basic',
                 'description' => 'Free tier for getting started',
                 'price' => 0,
                 'currency' => 'IDR',
-                'billing_period' => \App\Enums\BillingPeriod::Monthly->value,
+                'billing_period' => BillingPeriod::Monthly->value,
                 'is_active' => true,
             ]);
         }

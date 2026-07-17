@@ -16,8 +16,6 @@ class SchoolTierHistory extends Component
     {
         $this->schoolId = $school;
 
-        abort_unless(auth()->user()->can('manage_schools') || auth()->user()->hasRole('admin'), 403);
-
         if (! $schoolService->find($school)) {
             abort(404, 'School not found');
         }

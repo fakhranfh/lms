@@ -20,7 +20,7 @@ class EnsureTokenIsValid
         $token = $request->query('token');
         $email = $request->query('email');
 
-        if (!$token || !$email) {
+        if (! $token || ! $email) {
             return redirect('/login')->withErrors(['email' => 'The password reset link is invalid.']);
         }
 
@@ -30,7 +30,7 @@ class EnsureTokenIsValid
             ->first();
 
         // Jika tidak ada atau token tidak cocok
-        if (!$passwordReset || !Hash::check($token, $passwordReset->token)) {
+        if (! $passwordReset || ! Hash::check($token, $passwordReset->token)) {
             return redirect('/login')->withErrors(['email' => 'The password reset link is invalid or has already been used.']);
         }
 

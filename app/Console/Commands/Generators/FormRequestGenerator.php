@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands\Generators;
 
+use App\Console\Commands\Helpers\SchemaHelper;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Schema;
-use App\Console\Commands\Helpers\SchemaHelper;
 
 class FormRequestGenerator
 {
@@ -12,7 +12,7 @@ class FormRequestGenerator
 
     public function __construct()
     {
-        $this->filesystem = new Filesystem();
+        $this->filesystem = new Filesystem;
     }
 
     public function generate(string $name, callable $callback): void
@@ -64,7 +64,7 @@ class FormRequestGenerator
     private function getRequiredRule(string $name, string $col): string
     {
         $modelClass = "App\\Models\\$name";
-        if (!class_exists($modelClass)) {
+        if (! class_exists($modelClass)) {
             return 'nullable';
         }
 
@@ -73,12 +73,13 @@ class FormRequestGenerator
             $table = $model->getTable();
             $connection = Schema::getConnection();
 
-            if (!method_exists($connection, 'getDoctrineColumn')) {
+            if (! method_exists($connection, 'getDoctrineColumn')) {
                 return 'required';
             }
 
             $columnInfo = $connection->getDoctrineColumn($table, $col);
             $nullable = $columnInfo->getNotnull() ? false : true;
+
             return $nullable ? 'nullable' : 'required';
         } catch (\Exception $e) {
             return 'required';
@@ -88,7 +89,7 @@ class FormRequestGenerator
     private function getForeignKeyRule(string $name, string $col): ?string
     {
         $modelClass = "App\\Models\\$name";
-        if (!class_exists($modelClass)) {
+        if (! class_exists($modelClass)) {
             return null;
         }
 
@@ -97,7 +98,7 @@ class FormRequestGenerator
             $table = $model->getTable();
             $connection = Schema::getConnection();
 
-            if (!method_exists($connection, 'getDoctrineSchemaManager')) {
+            if (! method_exists($connection, 'getDoctrineSchemaManager')) {
                 return null;
             }
 
@@ -108,6 +109,7 @@ class FormRequestGenerator
                 if (in_array($col, $fk->getLocalColumns())) {
                     $foreignTable = $fk->getForeignTableName();
                     $foreignColumn = $fk->getForeignColumns()[0];
+
                     return "exists:$foreignTable,$foreignColumn";
                 }
             }
@@ -135,8 +137,8 @@ class FormRequestGenerator
     {
         $rulesExport = var_export($rules, true);
         $rulesExport = str_replace(['array (', ')'], ['[', ']'], $rulesExport);
-        $rulesExport = preg_replace("/=>\s+/", "=> ", $rulesExport);
-        $rulesExport = preg_replace("/\s+/", " ", $rulesExport);
+        $rulesExport = preg_replace("/=>\s+/", '=> ', $rulesExport);
+        $rulesExport = preg_replace("/\s+/", ' ', $rulesExport);
         $rulesExport = preg_replace('/\',/', "',\n\t\t\t", $rulesExport);
         $rulesExport = preg_replace('/\[/', "[\n\t\t\t", $rulesExport);
         $rulesExport = preg_replace('/,\s*\]/', "\n\t\t]", $rulesExport);

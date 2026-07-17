@@ -22,10 +22,6 @@ class SchoolIndex extends Component
 
     public int $perPage = 15;
 
-    public function mount(): void
-    {
-        abort_unless(auth()->user()->can('manage_schools') || auth()->user()->hasRole('admin'), 403);
-    }
 
     public function updating(string $property): void
     {

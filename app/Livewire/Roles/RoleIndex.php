@@ -37,7 +37,7 @@ class RoleIndex extends Component
         return view('livewire.roles.role-index', [
             'roles' => $roleService->get([], ['permissions']),
         ])
-            ->extends('layouts.app', ['topbarTitle' => 'Roles'])
-            ->section('app-content');
+            ->extends('layouts.admin', ['topbarTitle' => 'Roles'])
+            ->section('admin-content');
     }
 }

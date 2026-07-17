@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\DemoLmsAccess;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Support\Str;
@@ -41,7 +43,7 @@ class DemoLmsAccessService
         );
 
         if (! $user->roles()->exists()) {
-            $role = \App\Models\Role::where('school_id', $school->id)
+            $role = Role::where('school_id', $school->id)
                 ->where('name', 'Admin')
                 ->firstOrCreate(
                     ['school_id' => $school->id, 'name' => 'Admin'],
@@ -50,7 +52,7 @@ class DemoLmsAccessService
 
             // Sync all permissions (except billing) to admin role
             if (! $role->permissions()->exists()) {
-                $permissions = \App\Models\Permission::where('name', '!=', 'settings.billing')->get();
+                $permissions = Permission::where('name', '!=', 'settings.billing')->get();
                 $role->syncPermissions($permissions);
             }
 

@@ -19,7 +19,7 @@ class UserIndex extends Component
         return view('livewire.users.user-index', [
             'users' => $userService->getAllWithRoles(),
         ])
-            ->extends('layouts.app', ['topbarTitle' => 'Users'])
-            ->section('app-content');
+            ->extends('layouts.admin', ['topbarTitle' => 'Users'])
+            ->section('admin-content');
     }
 }

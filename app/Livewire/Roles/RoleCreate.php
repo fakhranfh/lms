@@ -46,7 +46,7 @@ class RoleCreate extends Component
         return view('livewire.roles.role-create', [
             'groupedPermissions' => $permissionService->getAllGrouped(),
         ])
-            ->extends('layouts.app', ['topbarTitle' => 'New Role'])
-            ->section('app-content');
+            ->extends('layouts.admin', ['topbarTitle' => 'New Role'])
+            ->section('admin-content');
     }
 }

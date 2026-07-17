@@ -64,7 +64,7 @@ class RoleEdit extends Component
         return view('livewire.roles.role-edit', [
             'groupedPermissions' => $permissionService->getAllGrouped(),
         ])
-            ->extends('layouts.app', ['topbarTitle' => 'Edit Role'])
-            ->section('app-content');
+            ->extends('layouts.admin', ['topbarTitle' => 'Edit Role'])
+            ->section('admin-content');
     }
 }

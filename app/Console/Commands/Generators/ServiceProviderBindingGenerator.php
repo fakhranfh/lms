@@ -10,13 +10,13 @@ class ServiceProviderBindingGenerator
 
     public function __construct()
     {
-        $this->filesystem = new Filesystem();
+        $this->filesystem = new Filesystem;
     }
 
     public function generate(string $name, callable $callback): void
     {
         $appServiceProviderPath = app_path('Providers/AppServiceProvider.php');
-        if (!$this->filesystem->exists($appServiceProviderPath)) {
+        if (! $this->filesystem->exists($appServiceProviderPath)) {
             return;
         }
 
@@ -60,12 +60,14 @@ class ServiceProviderBindingGenerator
 
         if (strpos($content, $bindLine) !== false) {
             $callback("Binding for {$interface} already exists in AppServiceProvider.", 'warn');
+
             return;
         }
 
         $pattern = '/public function register\(\): void\s*\{/';
-        if (!preg_match($pattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
+        if (! preg_match($pattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
             $callback("Could not find register() method in AppServiceProvider. Please add the following manually:\n{$bindLine}", 'warn');
+
             return;
         }
 
@@ -83,7 +85,7 @@ class ServiceProviderBindingGenerator
         }
 
         $insertPos = $pos - 1;
-        $newContent = substr($content, 0, $insertPos) . "\n        {$bindLine}" . substr($content, $insertPos);
+        $newContent = substr($content, 0, $insertPos)."\n        {$bindLine}".substr($content, $insertPos);
         $this->filesystem->put($appServiceProviderPath, $newContent);
         $callback("Binding for {$interface} added to AppServiceProvider.", 'info');
     }

@@ -5,7 +5,6 @@ namespace App\Livewire\PricingTiers;
 use App\Enums\BillingPeriod;
 use App\Enums\TierFeature;
 use App\Enums\TierLimit;
-use App\Http\Requests\PricingTier\UpdatePricingTierRequest;
 use App\Models\PricingTier;
 use App\Services\PricingTierService;
 use Livewire\Component;

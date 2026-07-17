@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Scopes\SchoolScope;
 use App\Models\School;
+use App\Models\Scopes\SchoolScope;
 use App\Models\User;
 use App\Support\CurrentSchool;
 

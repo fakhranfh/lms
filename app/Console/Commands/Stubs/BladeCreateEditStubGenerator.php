@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands\Stubs;
 
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Schema;
 use App\Console\Commands\Helpers\SchemaHelper;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class BladeCreateEditStubGenerator
 {
@@ -39,7 +39,7 @@ class BladeCreateEditStubGenerator
                 break;
             }
         }
-        if (!$firstCol) {
+        if (! $firstCol) {
             $firstCol = 'id';
         }
 

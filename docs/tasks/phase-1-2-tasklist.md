@@ -547,42 +547,57 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 
 ### 11.4 Service Layer
 
-**Prerequisites:**
-- [ ] Obtain Cloudflare R2 credentials from user:
-  - [ ] Account ID
-  - [ ] Access Key ID
-  - [ ] Secret Access Key
-  - [ ] Bucket name
-  - [ ] Custom domain (if available)
-- [ ] Add credentials to `.env` file with keys:
-  - `CLOUDFLARE_R2_ACCOUNT_ID`
-  - `CLOUDFLARE_R2_ACCESS_KEY_ID`
-  - `CLOUDFLARE_R2_SECRET_ACCESS_KEY`
-  - `CLOUDFLARE_R2_BUCKET`
-  - `CLOUDFLARE_R2_CUSTOM_DOMAIN` (optional)
+**Status:** ✅ COMPLETE (2026-07-18)
+
+**Credentials & Configuration:**
+- [x] Obtained Cloudflare R2 credentials from user
+- [x] Added credentials to `.env` file:
+  - `CLOUDFLARE_R2_ACCOUNT_ID=REDACTED_R2_ACCOUNT_ID`
+  - `CLOUDFLARE_R2_ACCESS_KEY_ID=REDACTED_R2_ACCESS_KEY_ID`
+  - `CLOUDFLARE_R2_SECRET_ACCESS_KEY=REDACTED_R2_SECRET_ACCESS_KEY`
+  - `CLOUDFLARE_R2_BUCKET=lms`
+  - `CLOUDFLARE_R2_CUSTOM_DOMAIN=` (optional)
+- [x] Added R2 config section to `config/services.php`
 
 **Implementation:**
-- [ ] Create `LessonMaterialService`:
-  - [ ] `create(lessonId, data[]): LessonMaterial` — validate, upload to R2, persist
-  - [ ] `update(id, data[]): LessonMaterial` — handle file replacement
-  - [ ] `delete(id): int` — delete from R2 and DB
-  - [ ] `reorder(lessonId, orderedIds[]): void` — update order for all materials
-  - [ ] `getLessonMaterials(lessonId): Collection` — with access info
-  - [ ] `markMaterialAsAccessed(materialId, user): void` — record access, check completion
+- [x] Created `R2StorageService` (`app/Services/R2StorageService.php`):
+  - [x] `upload(file, path, type: MaterialType): string` — uploads to R2, returns public URL
+  - [x] `delete(filePath): bool` — deletes from R2, handles URL extraction
+  - [x] `getSignedUrl(filePath, expiresIn): string` — generates temporary signed URLs
+  - [x] `checkSchoolQuota(schoolId): array` — {used, limit, remaining, percentage}
+  - [x] `enforceQuotaLimit(): void` — throws exception if quota exceeded
+  - [x] `getTotalStorageUsed(): int` — calculates total R2 storage usage
+  - [x] Global quota: 10 GB constant
 
-- [ ] Create `LessonCompletionService` (new):
-  - [ ] `isLessonComplete(lesson, user): bool` — check if user accessed ALL materials
-  - [ ] `getLessonProgress(lesson, user): object` — {total, accessed, percentage}
-  - [ ] `markLessonIfComplete(lesson, user): void` — auto-update lesson_user.completed_at
+- [x] Created `LessonMaterialService` (`app/Services/LessonMaterialService.php`):
+  - [x] `create(lessonId, data[]): LessonMaterial` — validates, uploads to R2, auto-increments order
+  - [x] `update(id, data[]): LessonMaterial` — handles file replacement with R2 deletion
+  - [x] `delete(id): int` — deletes from R2 and database
+  - [x] `reorder(lessonId, orderedIds[]): void` — reorders materials atomically
+  - [x] `getLessonMaterials(lessonId): Collection` — ordered by order column
+  - [x] `getLessonMaterialsByType(lessonId, type): Collection` — filters by type
+  - [x] `markMaterialAsAccessed(materialId, user): void` — records access, triggers completion check
+  - [x] `isMaterialAccessedBy(materialId, user): bool` — checks access status
+  - [x] `getAccessedMaterialCount(lessonId, user): int` — counts accessed materials
+  - [x] File validation: size limits per MaterialType, extension whitelist
+  - [x] R2 integration: quota enforcement, path hashing for security
 
-- [ ] Create `R2StorageService` (new):
-  - [ ] `upload(file, path, type: MaterialType): string` — returns R2 URL
-  - [ ] `delete(filePath): bool` — deletes from R2
-  - [ ] `getSignedUrl(filePath, expiresIn): string` — optional future feature
-  - [ ] `checkSchoolQuota(schoolId): object` — {used, limit, remaining}
-  - [ ] `enforceQuotaLimit(schoolId): bool` — throws if quota exceeded
+- [x] Created `LessonCompletionService` (`app/Services/LessonCompletionService.php`):
+  - [x] `isLessonComplete(lesson, user): bool` — checks if 100% materials accessed
+  - [x] `getLessonProgress(lesson, user): array` — {total, accessed, percentage, is_complete}
+  - [x] `markLessonIfComplete(lesson, user): void` — auto-updates lesson_user.completed_at
+  - [x] `getModuleProgress(moduleId, user): Collection` — aggregates lesson progress
+  - [x] `getCourseProgress(courseId, user): Collection` — aggregates module progress
 
-- [ ] Tests: Feature tests for all services, R2 mocking
+- [x] Service Registration in `AppServiceProvider`:
+  - [x] Added singletons: R2StorageService, LessonMaterialService, LessonCompletionService
+  - [x] Repository bindings already present (Section 11.3)
+
+- [x] Test Suites:
+  - [x] `R2StorageServiceTest` (7 tests) — configuration, quota management, API validation
+  - [x] `LessonMaterialServiceTest` (13 tests) — CRUD, ordering, type filtering, access tracking, validation
+  - [x] `LessonCompletionServiceTest` (14 tests) — completion logic, progress calculation, module/course aggregation
+  - [x] Total: 34 tests, focused on business logic + database integration
 
 ---
 

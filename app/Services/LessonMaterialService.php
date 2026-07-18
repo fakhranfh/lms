@@ -37,8 +37,95 @@ class LessonMaterialService
     }
 
     /**
+     * Finalize R2 upload from presigned URL (client uploaded to temp/ first)
+     * Runs 3-layer validation: extension (Layer 1), magic bytes (Layer 2), MIME type (Layer 3)
+     * Promotes file from temp to final location if all validations pass
+     * Cleans up on any failure
+     */
+    public function finalizeR2Upload(string $lessonId, array $data): LessonMaterial
+    {
+        $lesson = Lesson::findOrFail($lessonId);
+
+        // Validate material type
+        $type = MaterialType::tryFrom($data['type'] ?? '');
+        if (! $type) {
+            throw new \InvalidArgumentException("Invalid material type: {$data['type']}");
+        }
+
+        // Get temp key from data (e.g., temp/{lessonId}/xxx-filename.pdf)
+        $tempKey = $data['temp_key'] ?? '';
+        if (! $tempKey) {
+            throw new \InvalidArgumentException('temp_key is required');
+        }
+
+        // Verify temp file exists in R2
+        $fileInfo = $this->r2Service->verifyFileExists($tempKey);
+        if (! $fileInfo['exists']) {
+            throw new \Exception("Temp file not found in R2: {$tempKey}");
+        }
+
+        // Download to local temp for validation
+        $localTempPath = null;
+        $validationPassed = false;
+
+        try {
+            $localTempPath = $this->r2Service->downloadToLocalTemp($tempKey);
+
+            // Layer 2: Validate file content (magic bytes)
+            $this->r2Service->validateFileContent($localTempPath, $type->value);
+
+            // Layer 3: Validate MIME type
+            $this->r2Service->validateMimeType($localTempPath, $type->value);
+
+            // Validate file size against material type limit
+            if ($fileInfo['size'] > $type->maxSize()) {
+                throw new \InvalidArgumentException(
+                    "File size exceeds limit for {$type->value}. Max: ".$this->formatBytes($type->maxSize())
+                );
+            }
+
+            // All validations passed - promote file from temp to final location
+            $finalKey = "lessons/{$lessonId}/materials/".substr(hash('sha256', uniqid()), 0, 8).'-'.basename($tempKey);
+            $this->r2Service->promoteFromTemp($tempKey, $finalKey);
+            $validationPassed = true;
+
+            // Build final file URL
+            $fileUrl = "https://{$this->r2Service->bucket}.{$this->r2Service->accountId}.r2.cloudflarestorage.com/{$finalKey}";
+
+            // Get next order
+            $order = $this->materialRepository->getNextOrder($lessonId);
+
+            // Save material metadata
+            return $this->materialRepository->create([
+                'lesson_id' => $lessonId,
+                'type' => $type,
+                'title' => $data['title'] ?? 'Untitled',
+                'description' => $data['description'] ?? '',
+                'file_url' => $fileUrl,
+                'file_path' => $finalKey,
+                'file_size' => $fileInfo['size'],
+                'mime_type' => $fileInfo['mime_type'],
+                'order' => $order,
+            ]);
+
+        } finally {
+            // Always cleanup local temp file
+            if ($localTempPath && file_exists($localTempPath)) {
+                @unlink($localTempPath);
+            }
+
+            // On validation failure, cleanup R2 temp object too
+            if (! $validationPassed) {
+                $this->r2Service->deleteTempObject($tempKey);
+            }
+        }
+    }
+
+    /**
      * Create material from direct R2 upload (after client uploads file)
      * Verifies file exists in R2 before saving metadata
+     *
+     * @deprecated Use finalizeR2Upload() instead for 3-layer validation with temp staging
      */
     public function createFromR2Upload(string $lessonId, array $data): LessonMaterial
     {

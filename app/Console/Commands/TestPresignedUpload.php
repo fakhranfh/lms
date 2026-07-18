@@ -2,9 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\MaterialType;
 use App\Models\Lesson;
-use App\Models\LessonMaterial;
 use App\Models\School;
 use App\Services\LessonMaterialService;
 use App\Services\R2StorageService;
@@ -42,10 +40,21 @@ class TestPresignedUpload extends Command
             $this->info('📋 New Flow: Direct R2 Upload (Client-Side)');
             $this->line('');
 
-            // Step 1: Create test file
+            // Step 1: Create test file (actual minimal PDF)
             $this->line('Step 1️⃣  Creating test file locally...');
             $testFilePath = sys_get_temp_dir().'/test-presigned-'.time().'.pdf';
-            file_put_contents($testFilePath, str_repeat('Test PDF Content ', 6400)); // ~100 KB
+            // Create minimal valid PDF (PDF header + content)
+            $pdfContent = "%PDF-1.4\n";
+            $pdfContent .= "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n";
+            $pdfContent .= "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n";
+            $pdfContent .= "3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>\nendobj\n";
+            $pdfContent .= "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n";
+            $pdfContent .= "5 0 obj\n<< /Length 44 >>\nstream\nBT\n/F1 12 Tf\n100 700 Td\n(Test PDF) Tj\nET\nendstream\nendobj\n";
+            $pdfContent .= "xref\n0 6\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000263 00000 n\n0000000341 00000 n\n";
+            $pdfContent .= "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n434\n%%EOF\n";
+            // Pad with test content to reach ~100KB
+            $pdfContent .= '% '.str_repeat('Test content for size padding ', 3400)."\n";
+            file_put_contents($testFilePath, $pdfContent);
             $fileSize = filesize($testFilePath);
             $fileName = 'test-presigned-'.time().'.pdf';
             $this->info('✅ Test file created: '.$fileName.' ('.$fileSize.' bytes)');
@@ -87,9 +96,9 @@ class TestPresignedUpload extends Command
                 ]
             );
 
-            // Step 3: Upload file directly to R2 using presigned URL
+            // Step 3: Upload file directly to R2 using presigned URL (to TEMP folder)
             $this->line('');
-            $this->line('Step 3️⃣  Client uploads file directly to R2...');
+            $this->line('Step 3️⃣  Client uploads file directly to R2 (temp folder)...');
             $this->line('        (Using presigned PUT URL, no server involved)');
 
             try {
@@ -111,8 +120,7 @@ class TestPresignedUpload extends Command
                 curl_close($ch);
 
                 if ($httpCode === 200) {
-                    $this->info('✅ File uploaded to R2 successfully!');
-                    $fileUrl = 'https://'.$presignedData['key']; // Simplified URL construction
+                    $this->info('✅ File uploaded to R2 (temp) successfully!');
                 } else {
                     throw new \Exception("Upload failed with HTTP {$httpCode}");
                 }
@@ -122,43 +130,31 @@ class TestPresignedUpload extends Command
                 return self::FAILURE;
             }
 
-            $bucket = config('services.r2.bucket');
-            $accountId = config('services.r2.account_id');
-            $fileUrl = 'https://'.$bucket.'.'.$accountId.'.r2.cloudflarestorage.com/'.$presignedData['key'];
-
+            // Step 4: Server runs 3-layer validation and promotes file
             $this->line('');
-            $this->line('File URL: '.$fileUrl);
-
-            // Step 4: Client notifies server to save metadata
-            $this->line('');
-            $this->line('Step 4️⃣  Client notifies server with file URL...');
-            $this->line('        Server verifies and saves metadata');
+            $this->line('Step 4️⃣  Server validates file (3-layer check)...');
             $this->line('');
 
-            // Verify file exists in R2
-            $r2Service = app(R2StorageService::class);
-            $fileInfo = $r2Service->verifyFileExists($fileUrl);
+            $materialService = app(LessonMaterialService::class);
 
-            if ($fileInfo['exists']) {
-                $this->info('✅ File verified in R2!');
-            } else {
-                $this->warn('⚠️  File not yet verified in R2 (may take a moment)');
+            try {
+                $material = $materialService->finalizeR2Upload($lesson->id, [
+                    'type' => 'PDF',
+                    'title' => 'Presigned Upload Test',
+                    'description' => 'Uploaded via presigned PUT URL with 3-layer validation',
+                    'temp_key' => $presignedData['key'],
+                ]);
+
+                $this->info('✅ All validations passed!');
+                $this->info('✅ File promoted from temp to final location!');
+                $this->info('✅ Material metadata saved!');
+
+            } catch (\Exception $e) {
+                $this->error('Validation/finalization failed: '.$e->getMessage());
+
+                return self::FAILURE;
             }
 
-            // Create material
-            $material = LessonMaterial::create([
-                'lesson_id' => $lesson->id,
-                'type' => MaterialType::PDF,
-                'title' => 'Presigned Upload Test',
-                'description' => 'Uploaded via presigned PUT URL (direct to R2)',
-                'file_url' => $fileUrl,
-                'file_path' => $presignedData['key'],
-                'file_size' => $fileSize,
-                'mime_type' => 'application/pdf',
-                'order' => 1,
-            ]);
-
-            $this->info('✅ Material metadata saved!');
             $this->line('');
             $this->table(
                 ['Property', 'Value'],
@@ -168,6 +164,7 @@ class TestPresignedUpload extends Command
                     ['Type', $material->type->value],
                     ['File Size', number_format($material->file_size).' bytes'],
                     ['File URL', $material->file_url],
+                    ['File Path', $material->file_path],
                 ]
             );
 
@@ -195,8 +192,112 @@ class TestPresignedUpload extends Command
             $this->line('');
             $this->warn('💡 Benefit: No server storage needed, direct R2 upload, lower latency!');
 
+            // Test 2: Upload file with FAKE extension (plain text with .pdf extension)
+            $this->line('');
+            $this->line('═════════════════════════════════════════════════════════════');
+            $this->line('');
+            $this->info('🧪 Test 2: File with FAKE extension (should be REJECTED)');
+            $this->line('');
+
+            // Create file with .pdf extension but plain text content
+            $fakeFilePath = sys_get_temp_dir().'/fake-presigned-'.time().'.pdf';
+            file_put_contents($fakeFilePath, "This is plain text, not a PDF file!\n".str_repeat('Malicious content ', 5000));
+            $fakeFileSize = filesize($fakeFilePath);
+            $fakeFileName = basename($fakeFilePath);
+
+            $this->line('Step 1️⃣  Created malicious file: '.$fakeFileName.' (fake .pdf extension)');
+            $this->line('         Content: Plain text (not PDF)');
+
+            // Request presigned URL
+            $this->line('');
+            $this->line('Step 2️⃣  Requesting presigned URL (extension validation)...');
+            try {
+                $fakePresignedData = $service->generatePresignedUploadUrl($lesson->id, $fakeFileName, 'PDF');
+                $this->info('✅ Extension check passed (only checks extension, not content yet)');
+            } catch (\InvalidArgumentException $e) {
+                $this->error('❌ Extension rejected: '.$e->getMessage());
+
+                return self::FAILURE;
+            }
+
+            // Upload to temp
+            $this->line('');
+            $this->line('Step 3️⃣  Client uploads malicious file to R2 (temp)...');
+            try {
+                $fakeFileContent = file_get_contents($fakeFilePath);
+                $ch = curl_init();
+                curl_setopt_array($ch, [
+                    CURLOPT_URL => $fakePresignedData['url'],
+                    CURLOPT_CUSTOMREQUEST => 'PUT',
+                    CURLOPT_POSTFIELDS => $fakeFileContent,
+                    CURLOPT_HTTPHEADER => [
+                        'Content-Type: application/octet-stream',
+                        'Content-Length: '.$fakeFileSize,
+                    ],
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                ]);
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($httpCode === 200) {
+                    $this->info('✅ File uploaded to R2 temp');
+                } else {
+                    throw new \Exception("Upload failed with HTTP {$httpCode}");
+                }
+            } catch (\Exception $e) {
+                $this->error('Upload error: '.$e->getMessage());
+
+                return self::FAILURE;
+            }
+
+            // Try to finalize (should fail on Layer 2: magic bytes)
+            $this->line('');
+            $this->line('Step 4️⃣  Server validates file (3-layer check)...');
+            $this->line('');
+
+            try {
+                $materialService->finalizeR2Upload($lesson->id, [
+                    'type' => 'PDF',
+                    'title' => 'Malicious Test (should fail)',
+                    'description' => 'File with fake .pdf extension but text content',
+                    'temp_key' => $fakePresignedData['key'],
+                ]);
+
+                $this->error('❌ SECURITY FAIL: File should have been rejected!');
+
+                return self::FAILURE;
+
+            } catch (\InvalidArgumentException $e) {
+                $this->info('✅ REJECTED at Layer 2 (Magic Bytes Validation)');
+                $this->info('   Error: '.$e->getMessage());
+            }
+
+            // Verify temp object was cleaned up
+            $this->line('');
+            $this->line('Step 5️⃣  Verifying temp object cleanup...');
+            $r2Service = app(R2StorageService::class);
+            $tempFileInfo = $r2Service->verifyFileExists($fakePresignedData['key']);
+
+            if ($tempFileInfo['exists']) {
+                $this->error('❌ Temp file was NOT cleaned up!');
+
+                return self::FAILURE;
+            } else {
+                $this->info('✅ Temp file automatically deleted after rejection');
+            }
+
+            $this->line('');
+            $this->info('🛡️  Security Test Summary:');
+            $this->line('  ✅ Extension validation (Layer 1) - allows only .pdf');
+            $this->line('  ✅ Magic bytes validation (Layer 2) - rejects fake PDFs');
+            $this->line('  ✅ MIME type validation (Layer 3) - double-check content type');
+            $this->line('  ✅ Auto-cleanup - removes rejected files from R2');
+
             // Cleanup
             @unlink($testFilePath);
+            @unlink($fakeFilePath);
 
             return self::SUCCESS;
 

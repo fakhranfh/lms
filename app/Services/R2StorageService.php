@@ -11,9 +11,9 @@ class R2StorageService
 {
     protected S3Client $s3Client;
 
-    protected string $bucket;
+    public string $bucket;
 
-    protected string $accountId;
+    public string $accountId;
 
     protected string $customDomain;
 
@@ -108,21 +108,23 @@ class R2StorageService
     }
 
     /**
-     * Generate presigned PUT URL for direct client upload to R2
-     * Validates file extension BEFORE generating URL (no upload to server)
+     * Generate presigned PUT URL for direct client upload to R2 (temp staging)
+     * Validates file extension BEFORE generating URL (Layer 1)
+     * File will be uploaded to temp/ folder first for content validation
      *
      * @return array{url: string, key: string, lesson_id: string}
      */
     public function generatePresignedPutUrl(string $lessonId, string $filename, string $materialType, int $expiresIn = 3600): array
     {
         try {
-            // Validate extension BEFORE generating URL (server-side validation)
+            // Layer 1: Validate extension BEFORE generating URL (server-side validation)
             $this->validateFileExtension($filename, $materialType);
 
             // Enforce quota
             $this->enforceQuotaLimit();
 
-            $key = "lessons/{$lessonId}/materials/".substr(hash('sha256', uniqid()), 0, 8).'-'.$filename;
+            // Upload to temp folder first (content validation happens in finalizeR2Upload)
+            $key = "temp/{$lessonId}/".substr(hash('sha256', uniqid()), 0, 8).'-'.$filename;
 
             $cmd = $this->s3Client->getCommand('PutObject', [
                 'Bucket' => $this->bucket,
@@ -143,7 +145,7 @@ class R2StorageService
     }
 
     /**
-     * Validate file extension against material type
+     * Layer 1: Validate file extension against material type
      */
     public function validateFileExtension(string $filename, string $materialType): void
     {
@@ -161,6 +163,160 @@ class R2StorageService
                 "Invalid file extension '.{$extension}' for {$materialTypeEnum->value}. "
                 .'Allowed: '.implode(', ', $allowedExtensions)
             );
+        }
+    }
+
+    /**
+     * Download file from R2 to local temp storage
+     */
+    public function downloadToLocalTemp(string $key): string
+    {
+        try {
+            $tempPath = sys_get_temp_dir().'/r2-'.substr(hash('sha256', uniqid()), 0, 8).'-'.basename($key);
+
+            $this->s3Client->getObject([
+                'Bucket' => $this->bucket,
+                'Key' => $key,
+                'SaveAs' => $tempPath,
+            ]);
+
+            return $tempPath;
+        } catch (AwsException $e) {
+            throw new \Exception("Failed to download file from R2: {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * Layer 2: Validate file content (magic bytes signature)
+     */
+    public function validateFileContent(string $localPath, string $materialType): void
+    {
+        try {
+            $materialTypeEnum = MaterialType::from($materialType);
+        } catch (\ValueError $e) {
+            throw new \InvalidArgumentException("Invalid material type: {$materialType}");
+        }
+
+        $magicBytesToCheck = $materialTypeEnum->magicBytes();
+
+        // Skip check for formats without reliable magic bytes (text-based)
+        if (empty($magicBytesToCheck)) {
+            return;
+        }
+
+        // Read file header
+        $handle = fopen($localPath, 'rb');
+        if ($handle === false) {
+            throw new \Exception("Cannot read file: {$localPath}");
+        }
+
+        $headerBytes = fread($handle, 512); // Read first 512 bytes
+        fclose($handle);
+
+        if ($headerBytes === false) {
+            throw new \Exception('Failed to read file header');
+        }
+
+        // Convert to hex
+        $headerHex = bin2hex($headerBytes);
+
+        // Check if any magic bytes match
+        $foundMatch = false;
+        foreach ($magicBytesToCheck as $magicHex) {
+            if (str_starts_with($headerHex, $magicHex)) {
+                $foundMatch = true;
+                break;
+            }
+        }
+
+        if (! $foundMatch) {
+            throw new \InvalidArgumentException(
+                "File content does not match {$materialTypeEnum->value} format. "
+                .'Expected file signature not found in header.'
+            );
+        }
+    }
+
+    /**
+     * Layer 3: Validate MIME type using finfo
+     */
+    public function validateMimeType(string $localPath, string $materialType): void
+    {
+        try {
+            $materialTypeEnum = MaterialType::from($materialType);
+        } catch (\ValueError $e) {
+            throw new \InvalidArgumentException("Invalid material type: {$materialType}");
+        }
+
+        $allowedMimeTypes = $materialTypeEnum->allowedMimeTypes();
+
+        // Get actual MIME type from file
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo === false) {
+            throw new \Exception('Cannot initialize finfo');
+        }
+
+        $actualMime = finfo_file($finfo, $localPath);
+        finfo_close($finfo);
+
+        if ($actualMime === false) {
+            throw new \Exception('Cannot determine file MIME type');
+        }
+
+        // Normalize MIME type (remove charset, etc.)
+        $actualMime = strtolower(explode(';', $actualMime)[0]);
+
+        // Check if MIME type is allowed
+        $mimeTypeMatches = in_array($actualMime, array_map('strtolower', $allowedMimeTypes));
+
+        if (! $mimeTypeMatches) {
+            throw new \InvalidArgumentException(
+                "File MIME type '{$actualMime}' not allowed for {$materialTypeEnum->value}. "
+                .'Allowed: '.implode(', ', $allowedMimeTypes)
+            );
+        }
+    }
+
+    /**
+     * Promote file from temp folder to final location in R2
+     * Uses server-side copy (no re-upload needed)
+     */
+    public function promoteFromTemp(string $tempKey, string $finalKey): void
+    {
+        try {
+            // Copy from temp to final
+            $this->s3Client->copyObject([
+                'Bucket' => $this->bucket,
+                'CopySource' => "{$this->bucket}/{$tempKey}",
+                'Key' => $finalKey,
+            ]);
+
+            // Delete temp object
+            $this->s3Client->deleteObject([
+                'Bucket' => $this->bucket,
+                'Key' => $tempKey,
+            ]);
+        } catch (AwsException $e) {
+            throw new \Exception("Failed to promote file from temp: {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * Delete temporary R2 object (cleanup on validation failure)
+     */
+    public function deleteTempObject(string $tempKey): bool
+    {
+        try {
+            $this->s3Client->deleteObject([
+                'Bucket' => $this->bucket,
+                'Key' => $tempKey,
+            ]);
+
+            return true;
+        } catch (AwsException $e) {
+            \Log::error("Failed to delete temp R2 object {$tempKey}: {$e->getMessage()}");
+
+            return false;
         }
     }
 

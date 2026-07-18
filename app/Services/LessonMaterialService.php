@@ -3,9 +3,9 @@
 namespace App\Services;
 
 use App\Enums\MaterialType;
-use App\Models\Lesson;
 use App\Models\LessonMaterial;
 use App\Models\User;
+use App\Repositories\Lesson\LessonRepository;
 use App\Repositories\LessonMaterial\LessonMaterialRepository;
 use App\Repositories\LessonMaterialUser\LessonMaterialUserRepository;
 use Illuminate\Database\Eloquent\Collection;
@@ -14,6 +14,7 @@ use Illuminate\Http\UploadedFile;
 class LessonMaterialService
 {
     public function __construct(
+        protected LessonRepository $lessonRepository,
         protected LessonMaterialRepository $materialRepository,
         protected LessonMaterialUserRepository $accessRepository,
         protected R2StorageService $r2Service,
@@ -30,7 +31,7 @@ class LessonMaterialService
      */
     public function generatePresignedUploadUrl(string $lessonId, string $filename, string $materialType): array
     {
-        Lesson::findOrFail($lessonId);
+        $this->lessonRepository->findOrFail($lessonId);
 
         // Extension validation happens here (server-side, before URL generation)
         return $this->r2Service->generatePresignedPutUrl($lessonId, $filename, $materialType);
@@ -44,7 +45,7 @@ class LessonMaterialService
      */
     public function finalizeR2Upload(string $lessonId, array $data): LessonMaterial
     {
-        $lesson = Lesson::findOrFail($lessonId);
+        $lesson = $this->lessonRepository->findOrFail($lessonId);
 
         // Validate material type
         $type = MaterialType::tryFrom($data['type'] ?? '');
@@ -92,10 +93,7 @@ class LessonMaterialService
             // Build final file URL
             $fileUrl = "https://{$this->r2Service->bucket}.{$this->r2Service->accountId}.r2.cloudflarestorage.com/{$finalKey}";
 
-            // Get next order
-            $order = $this->materialRepository->getNextOrder($lessonId);
-
-            // Save material metadata
+            // Save material metadata via repository
             return $this->materialRepository->create([
                 'lesson_id' => $lessonId,
                 'type' => $type,
@@ -105,7 +103,6 @@ class LessonMaterialService
                 'file_path' => $finalKey,
                 'file_size' => $fileInfo['size'],
                 'mime_type' => $fileInfo['mime_type'],
-                'order' => $order,
             ]);
 
         } finally {
@@ -129,7 +126,7 @@ class LessonMaterialService
      */
     public function createFromR2Upload(string $lessonId, array $data): LessonMaterial
     {
-        $lesson = Lesson::findOrFail($lessonId);
+        $lesson = $this->lessonRepository->findOrFail($lessonId);
 
         // Validate material type
         $type = MaterialType::tryFrom($data['type'] ?? '');
@@ -178,7 +175,7 @@ class LessonMaterialService
      */
     public function create(string $lessonId, array $data): LessonMaterial
     {
-        $lesson = Lesson::findOrFail($lessonId);
+        $lesson = $this->lessonRepository->findOrFail($lessonId);
 
         // Validate material type
         $type = MaterialType::tryFrom($data['type'] ?? '');

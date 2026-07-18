@@ -117,6 +117,24 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
 - Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
 
+=== git rules ===
+
+# Git Workflow
+
+## Squashing Commits
+
+**Must use the helper script** to squash commits. Do not use manual `git reset --soft` commands.
+
+```bash
+# Squash last 3 commits with message
+./squash-commits.sh 3 "Your commit message"
+
+# Squash without message (will be prompted)
+./squash-commits.sh 3
+```
+
+The `squash-commits.sh` script ensures consistent commit handling and prevents errors.
+
 === laravel/core rules ===
 
 # Do Things the Laravel Way

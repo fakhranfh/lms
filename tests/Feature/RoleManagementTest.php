@@ -76,14 +76,14 @@ test('user with roles.update can update a role and its permissions', function ()
 
 test('admin role name cannot be changed even if submitted', function () {
     $user = actingAsRoleManager(['roles.view', 'roles.update']);
-    $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+    $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
 
     Livewire::actingAs($user)->test(RoleEdit::class, ['role' => $admin])
         ->set('name', 'super-admin')
         ->call('update');
 
     $admin->refresh();
-    expect($admin->name)->toBe('admin');
+    expect($admin->name)->toBe('Admin');
 });
 
 test('user with roles.delete can delete a non-admin role', function () {
@@ -99,7 +99,7 @@ test('user with roles.delete can delete a non-admin role', function () {
 
 test('admin role cannot be deleted', function () {
     $user = actingAsRoleManager(['roles.view', 'roles.delete']);
-    $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+    $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
 
     Livewire::actingAs($user)->test(RoleIndex::class)
         ->call('destroy', $admin->id)

@@ -40,7 +40,9 @@ describe('LessonMaterialService', function () {
             ];
 
             // All should be positive numbers
-            expect($maxSizes)->each->toBeInt()->each->toBeGreaterThan(0);
+            foreach ($maxSizes as $maxSize) {
+                expect($maxSize)->toBeInt()->toBeGreaterThan(0);
+            }
         });
 
         test('material type enum has allowed extensions', function () {
@@ -51,9 +53,9 @@ describe('LessonMaterialService', function () {
 
         test('extensions are lowercase', function () {
             foreach (MaterialType::cases() as $type) {
-                $extensions = $type->allowedExtensions();
-                expect($extensions)->each->toBe($extensions[0] === strtolower($extensions[0]))
-                    ->toBe(true);
+                foreach ($type->allowedExtensions() as $extension) {
+                    expect($extension)->toBe(strtolower($extension));
+                }
             }
         });
     });
@@ -62,15 +64,10 @@ describe('LessonMaterialService', function () {
         test('service has required methods', function () {
             $service = app(LessonMaterialService::class);
 
-            expect($service)->toHaveMethod('create')
-                ->toHaveMethod('update')
-                ->toHaveMethod('delete')
-                ->toHaveMethod('reorder')
-                ->toHaveMethod('getLessonMaterials')
-                ->toHaveMethod('getLessonMaterialsByType')
-                ->toHaveMethod('markMaterialAsAccessed')
-                ->toHaveMethod('isMaterialAccessedBy')
-                ->toHaveMethod('getAccessedMaterialCount');
+            $methods = ['create', 'update', 'delete', 'reorder', 'getLessonMaterials', 'getLessonMaterialsByType', 'markMaterialAsAccessed', 'isMaterialAccessedBy', 'getAccessedMaterialCount'];
+            foreach ($methods as $method) {
+                expect(method_exists($service, $method))->toBeTrue();
+            }
         });
     });
 

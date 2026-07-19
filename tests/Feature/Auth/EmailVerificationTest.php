@@ -62,7 +62,7 @@ test('admin user can access protected routes without email verification', functi
     $user = User::factory()->unverified()->create([
         'school_id' => null,
     ]);
-    $user->assignRole('admin');
+    $user->assignRole('Admin');
 
     $this->actingAs($user)
         ->get(route('admin.dashboard'))

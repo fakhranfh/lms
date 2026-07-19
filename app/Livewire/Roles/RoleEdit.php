@@ -48,7 +48,7 @@ class RoleEdit extends Component
 
         $validated = $this->validate();
 
-        if ($this->role->name === 'admin') {
+        if ($this->role->name === 'Admin') {
             $validated['name'] = $this->role->name;
         }
 

@@ -17,11 +17,9 @@ describe('LessonCompletionService', function () {
         test('service has required methods', function () {
             $service = app(LessonCompletionService::class);
 
-            expect($service)->toHaveMethod('isLessonComplete')
-                ->toHaveMethod('getLessonProgress')
-                ->toHaveMethod('markLessonIfComplete')
-                ->toHaveMethod('getModuleProgress')
-                ->toHaveMethod('getCourseProgress');
+            foreach (['isLessonComplete', 'getLessonProgress', 'markLessonIfComplete', 'getModuleProgress', 'getCourseProgress'] as $method) {
+                expect(method_exists($service, $method))->toBeTrue();
+            }
         });
     });
 

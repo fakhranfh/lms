@@ -21,12 +21,10 @@ describe('R2StorageService', function () {
     test('methods exist and are callable', function () {
         $service = new R2StorageService;
 
-        expect($service)->toHaveMethod('upload')
-            ->toHaveMethod('delete')
-            ->toHaveMethod('getSignedUrl')
-            ->toHaveMethod('checkSchoolQuota')
-            ->toHaveMethod('enforceQuotaLimit')
-            ->toHaveMethod('getTotalStorageUsed');
+        $methods = ['upload', 'delete', 'getSignedUrl', 'checkSchoolQuota', 'enforceQuotaLimit', 'getTotalStorageUsed'];
+        foreach ($methods as $method) {
+            expect(method_exists($service, $method))->toBeTrue();
+        }
     });
 
     describe('public API', function () {

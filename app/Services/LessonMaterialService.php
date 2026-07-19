@@ -273,7 +273,12 @@ class LessonMaterialService
      */
     public function reorder(string $lessonId, array $orderedIds): void
     {
-        $this->materialRepository->reorder($lessonId, $orderedIds);
+        $orderMap = [];
+        foreach ($orderedIds as $index => $materialId) {
+            $orderMap[$materialId] = $index + 1;
+        }
+
+        $this->materialRepository->reorder($lessonId, $orderMap);
     }
 
     /**
@@ -300,7 +305,7 @@ class LessonMaterialService
         $material = LessonMaterial::findOrFail($materialId);
 
         // Record access
-        $this->accessRepository->markAccessed($materialId, $user->id);
+        $this->accessRepository->markAccessed($materialId, $user);
 
         // Check if lesson is now complete
         $lessonCompletionService = app(LessonCompletionService::class);
@@ -312,7 +317,7 @@ class LessonMaterialService
      */
     public function isMaterialAccessedBy(string $materialId, User $user): bool
     {
-        return $this->accessRepository->isAccessedBy($materialId, $user->id);
+        return $this->accessRepository->isAccessedBy($materialId, $user);
     }
 
     /**
@@ -320,7 +325,7 @@ class LessonMaterialService
      */
     public function getAccessedMaterialCount(string $lessonId, User $user): int
     {
-        return $this->accessRepository->getAccessedCount($lessonId, $user->id);
+        return $this->accessRepository->getAccessedCount($lessonId, $user);
     }
 
     /**

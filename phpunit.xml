@@ -19,6 +19,8 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_URL" value="http://lms.local"/>
+        <env name="APP_DOMAIN" value="lms.local"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
@@ -36,5 +38,9 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="CLOUDFLARE_R2_ACCOUNT_ID" value="test-account-id"/>
+        <env name="CLOUDFLARE_R2_ACCESS_KEY_ID" value="test-access-key"/>
+        <env name="CLOUDFLARE_R2_SECRET_ACCESS_KEY" value="test-secret-key"/>
+        <env name="CLOUDFLARE_R2_BUCKET" value="test-bucket"/>
     </php>
 </phpunit>

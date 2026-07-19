@@ -47,7 +47,7 @@ class LessonCompletionService
             return [
                 'total' => 0,
                 'accessed' => 0,
-                'percentage' => 0,
+                'percentage' => 0.0,
                 'is_complete' => false,
             ];
         }

@@ -108,7 +108,7 @@ class LessonMaterialRepository implements LessonMaterialRepositoryInterface
     }
 
     /**
-     * @param  array<string, int>  $orderMap
+     * @param  array<string, int>  $orderMap  ['material_id' => order_number]
      */
     public function reorder(string $lessonId, array $orderMap): void
     {

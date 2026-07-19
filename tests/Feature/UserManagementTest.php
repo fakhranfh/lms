@@ -60,11 +60,11 @@ test('updating roles requires users.assign-roles permission even via direct comp
 
 test('removing the last admin role from the only admin user is blocked', function () {
     $actor = actingAsUserManager(['users.assign-roles']);
-    $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+    $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
 
     // The create_admin_role_and_assign_admin_user migration seeds its own
     // admin user; remove it so the target below is genuinely the only admin.
-    User::role('admin')->get()->each->delete();
+    User::role('Admin')->get()->each->delete();
 
     $target = User::factory()->create();
     $target->assignRole($admin);
@@ -74,5 +74,5 @@ test('removing the last admin role from the only admin user is blocked', functio
         ->call('updateRoles')
         ->assertHasErrors('roles');
 
-    expect($target->fresh()->hasRole('admin'))->toBeTrue();
+    expect($target->fresh()->hasRole('Admin'))->toBeTrue();
 });

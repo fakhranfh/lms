@@ -14,7 +14,7 @@ test('admin user can login on admin domain', function () {
         'password' => 'password',
         'school_id' => null,
     ]);
-    $user->assignRole('admin');
+    $user->assignRole('Admin');
 
     $response = $this->post(route('admin.login.store'), [
         'email' => $user->email,
@@ -23,7 +23,7 @@ test('admin user can login on admin domain', function () {
 
     $response->assertRedirect(route('admin.dashboard'));
     $this->assertAuthenticated();
-    $this->assertTrue(auth()->check() && auth()->user()->hasRole('admin'));
+    $this->assertTrue(auth()->check() && auth()->user()->hasRole('Admin'));
 });
 
 test('non-admin user cannot login on admin domain', function () {
@@ -47,7 +47,7 @@ test('admin login fails with wrong password', function () {
         'password' => 'password',
         'school_id' => null,
     ]);
-    $user->assignRole('admin');
+    $user->assignRole('Admin');
 
     $response = $this->post(route('admin.login.store'), [
         'email' => $user->email,
@@ -62,7 +62,7 @@ test('admin can access admin dashboard', function () {
     $user = User::factory()->create([
         'school_id' => null,
     ]);
-    $user->assignRole('admin');
+    $user->assignRole('Admin');
 
     $this->actingAs($user)
         ->get(route('admin.dashboard'))
@@ -73,7 +73,7 @@ test('authenticated admin can logout from admin domain', function () {
     $user = User::factory()->create([
         'school_id' => null,
     ]);
-    $user->assignRole('admin');
+    $user->assignRole('Admin');
 
     $response = $this->actingAs($user)
         ->post(route('admin.logout'));

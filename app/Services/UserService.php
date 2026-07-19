@@ -67,7 +67,7 @@ class UserService
 
     public function syncRoles(User $user, array $roleIds): void
     {
-        if ($user->hasRole('admin') && ! in_array($this->adminRoleId(), $roleIds)) {
+        if ($user->hasRole('Admin') && ! in_array($this->adminRoleId(), $roleIds)) {
             $this->guardLastAdmin($user);
         }
 
@@ -76,7 +76,7 @@ class UserService
 
     private function guardLastAdmin(User $user): void
     {
-        $otherAdmins = User::role('admin')->where('id', '!=', $user->id)->exists();
+        $otherAdmins = User::role('Admin')->where('id', '!=', $user->id)->exists();
 
         if (! $otherAdmins) {
             throw ValidationException::withMessages([
@@ -87,6 +87,6 @@ class UserService
 
     private function adminRoleId(): ?int
     {
-        return Role::where('name', 'admin')->value('id');
+        return Role::where('name', 'Admin')->value('id');
     }
 }

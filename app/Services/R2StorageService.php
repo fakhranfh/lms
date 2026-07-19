@@ -357,7 +357,7 @@ class R2StorageService
         $used = $this->getTotalStorageUsed();
         $limit = self::GLOBAL_QUOTA_BYTES;
         $remaining = max(0, $limit - $used);
-        $percentage = $limit > 0 ? ($used / $limit) * 100 : 0;
+        $percentage = $limit > 0 ? ((float) $used / $limit) * 100 : 0.0;
 
         return [
             'used' => $used,

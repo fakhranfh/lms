@@ -23,7 +23,7 @@ class PricingTierManagementTest extends TestCase
     public function test_admin_can_view_pricing_tiers_index(): void
     {
         $adminUser = User::factory()->create(['school_id' => null]);
-        $adminUser->assignRole('admin');
+        $adminUser->assignRole('Admin');
 
         $response = $this->actingAs($adminUser)->get(
             'http://admin.lms.local/pricing-tiers'
@@ -46,7 +46,7 @@ class PricingTierManagementTest extends TestCase
     public function test_admin_can_view_create_pricing_tier_form(): void
     {
         $adminUser = User::factory()->create(['school_id' => null]);
-        $adminUser->assignRole('admin');
+        $adminUser->assignRole('Admin');
 
         $response = $this->actingAs($adminUser)->get(
             'http://admin.lms.local/pricing-tiers/create'
@@ -58,7 +58,7 @@ class PricingTierManagementTest extends TestCase
     public function test_admin_can_create_pricing_tier_with_features_and_limits(): void
     {
         $adminUser = User::factory()->create(['school_id' => null]);
-        $adminUser->assignRole('admin');
+        $adminUser->assignRole('Admin');
         $adminUser->givePermissionTo('pricing-tiers.create');
 
         $tier = PricingTier::factory()->create([
@@ -80,7 +80,7 @@ class PricingTierManagementTest extends TestCase
     public function test_admin_can_update_pricing_tier(): void
     {
         $adminUser = User::factory()->create(['school_id' => null]);
-        $adminUser->assignRole('admin');
+        $adminUser->assignRole('Admin');
         $adminUser->givePermissionTo('pricing-tiers.update');
 
         $tier = PricingTier::factory()->create([
@@ -98,7 +98,7 @@ class PricingTierManagementTest extends TestCase
     public function test_admin_cannot_delete_tier_with_active_schools(): void
     {
         $adminUser = User::factory()->create(['school_id' => null]);
-        $adminUser->assignRole('admin');
+        $adminUser->assignRole('Admin');
         $adminUser->givePermissionTo('pricing-tiers.delete');
 
         $tier = PricingTier::factory()->create();
@@ -112,7 +112,7 @@ class PricingTierManagementTest extends TestCase
     public function test_admin_can_delete_unused_pricing_tier(): void
     {
         $adminUser = User::factory()->create(['school_id' => null]);
-        $adminUser->assignRole('admin');
+        $adminUser->assignRole('Admin');
         $adminUser->givePermissionTo('pricing-tiers.delete');
 
         $tier = PricingTier::factory()->create();

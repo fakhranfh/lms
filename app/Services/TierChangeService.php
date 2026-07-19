@@ -46,7 +46,7 @@ class TierChangeService
             return 0.0;
         }
 
-        $billingPeriod = $currentTier->billing_period;
+        $billingPeriod = $newTier->billing_period;
         $daysInPeriod = $billingPeriod->value === 'monthly' ? 30 : 365;
 
         $oldDailyRate = $currentTier->price / $daysInPeriod;

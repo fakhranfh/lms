@@ -19,6 +19,11 @@ class SchoolPaymentGateway extends Model
 
     protected $table = 'school_payment_gateways';
 
+    protected $casts = [
+        'is_enabled' => 'boolean',
+        'is_sandbox_mode' => 'boolean',
+    ];
+
     /**
      * Get the school.
      *

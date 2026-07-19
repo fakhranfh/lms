@@ -21,6 +21,7 @@ class Module extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'is_published' => 'boolean',
         'published_at' => 'datetime',
     ];
 

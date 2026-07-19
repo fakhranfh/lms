@@ -11,6 +11,10 @@ class Role extends SpatieRole
 {
     protected $fillable = ['name', 'guard_name', 'school_id', 'slug', 'protected'];
 
+    protected $casts = [
+        'protected' => 'boolean',
+    ];
+
     public function delete(): ?bool
     {
         if ($this->protected) {

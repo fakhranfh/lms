@@ -112,21 +112,35 @@ class LessonMaterialRepository implements LessonMaterialRepositoryInterface
      */
     public function reorder(string $lessonId, array $orderMap): void
     {
-        // Build CASE statement for single query reorder
-        // Unique constraint is DEFERRABLE, so intermediate violations are OK
-        $caseWhen = 'CASE id';
-        foreach ($orderMap as $materialId => $order) {
-            $caseWhen .= " WHEN '$materialId' THEN $order";
-        }
-        $caseWhen .= ' END';
-
         $materialIds = array_keys($orderMap);
         $placeholders = implode(',', array_fill(0, count($materialIds), '?'));
 
-        // Single atomic query - constraint validation deferred to transaction end
-        DB::update(
-            "UPDATE lesson_materials SET \"order\" = $caseWhen WHERE lesson_id = ? AND id IN ($placeholders)",
-            array_merge([$lessonId], $materialIds)
-        );
+        // The (lesson_id, order) unique constraint is only DEFERRABLE on pgsql,
+        // so a single CASE update can collide mid-statement on other drivers
+        // (e.g. sqlite in CI). Shift into a negative, non-colliding range first,
+        // then apply the final positive order in a second pass.
+        DB::transaction(function () use ($orderMap, $lessonId, $materialIds, $placeholders): void {
+            $tempCaseWhen = 'CASE id';
+            foreach ($orderMap as $materialId => $order) {
+                $tempCaseWhen .= " WHEN '$materialId' THEN ".(-$order);
+            }
+            $tempCaseWhen .= ' END';
+
+            DB::update(
+                "UPDATE lesson_materials SET \"order\" = $tempCaseWhen WHERE lesson_id = ? AND id IN ($placeholders)",
+                array_merge([$lessonId], $materialIds)
+            );
+
+            $finalCaseWhen = 'CASE id';
+            foreach ($orderMap as $materialId => $order) {
+                $finalCaseWhen .= " WHEN '$materialId' THEN $order";
+            }
+            $finalCaseWhen .= ' END';
+
+            DB::update(
+                "UPDATE lesson_materials SET \"order\" = $finalCaseWhen WHERE lesson_id = ? AND id IN ($placeholders)",
+                array_merge([$lessonId], $materialIds)
+            );
+        });
     }
 }

@@ -61,8 +61,8 @@ class CoursesIndex extends Component
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('title', 'ilike', "%{$this->search}%")
-                    ->orWhere('description', 'ilike', "%{$this->search}%");
+                $q->whereLike('title', "%{$this->search}%", caseSensitive: false)
+                    ->orWhereLike('description', "%{$this->search}%", caseSensitive: false);
             });
         }
 

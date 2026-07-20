@@ -2,12 +2,16 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\MaterialType;
 use App\Models\Lesson;
+use App\Models\LessonMaterial;
 use App\Models\Module;
+use App\Services\LessonMaterialService;
 use App\Services\LessonService;
 use App\Services\ModuleService;
 use App\Services\UserLessonService;
 use App\Support\CurrentSchool;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -29,12 +33,21 @@ class LessonViewer extends Component
 
     public ?Lesson $nextLesson = null;
 
+    public Collection $materials;
+
+    public ?LessonMaterial $selectedMaterial = null;
+
+    public int $accessedMaterialCount = 0;
+
+    public int $totalMaterialCount = 0;
+
     public function mount(
         CurrentSchool $currentSchool,
         Lesson $lesson,
         LessonService $lessonService,
         ModuleService $moduleService,
         UserLessonService $userLessonService,
+        LessonMaterialService $materialService,
     ): void {
         $this->lesson = $lesson;
         $this->module = $moduleService->find($lesson->module_id, ['course']);
@@ -44,23 +57,38 @@ class LessonViewer extends Component
 
         abort_unless($lesson->is_published, 403);
 
-        $this->loadProgress($lessonService, $userLessonService);
+        $this->loadMaterials($materialService);
+        $this->loadProgress($lessonService, $userLessonService, $materialService);
         $this->loadNavigation($lessonService);
     }
 
-    private function loadProgress(LessonService $lessonService, UserLessonService $userLessonService): void
+    private function loadMaterials(LessonMaterialService $materialService): void
     {
-        $user = auth()->user();
+        $this->materials = $this->lesson->materials()->orderBy('order')->get();
+        $this->totalMaterialCount = $this->materials->count();
 
-        if ($user) {
+        if ($this->materials->count() > 0) {
+            $this->selectedMaterial = $this->materials->first();
+        }
+    }
+
+    private function loadProgress(
+        LessonService $lessonService,
+        UserLessonService $userLessonService,
+        LessonMaterialService $materialService,
+    ): void {
+        if (auth()->check()) {
+            $user = auth()->user();
             $this->isCompleted = $userLessonService->isCompletedBy($this->lesson->id, $user);
+            $this->accessedMaterialCount = $materialService->getAccessedMaterialCount($this->lesson->id, $user);
         }
 
         $lessons = $lessonService->getByModulePublished($this->module->id);
 
         $this->totalLessonsInModule = $lessons->count();
 
-        if ($user) {
+        if (auth()->check()) {
+            $user = auth()->user();
             $this->completedLessonsInModule = $lessons->filter(
                 fn (Lesson $lesson) => $userLessonService->isCompletedBy($lesson->id, $user)
             )->count();
@@ -86,21 +114,59 @@ class LessonViewer extends Component
         }
     }
 
+    public function selectMaterial(string $materialId): void
+    {
+        $this->selectedMaterial = $this->materials->firstWhere('id', $materialId);
+    }
+
+    public function markMaterialAsRead(LessonMaterialService $materialService): void
+    {
+        if (! $this->selectedMaterial || ! auth()->check()) {
+            return;
+        }
+
+        $user = auth()->user();
+        $materialService->markMaterialAsAccessed($this->selectedMaterial->id, $user);
+        $this->accessedMaterialCount = $materialService->getAccessedMaterialCount($this->lesson->id, $user);
+        $this->dispatch('material-marked-read', materialId: $this->selectedMaterial->id);
+    }
+
+    public function isMaterialAccessed(LessonMaterialService $materialService, LessonMaterial $material): bool
+    {
+        if (! auth()->check()) {
+            return false;
+        }
+
+        return $materialService->isMaterialAccessedBy($material->id, auth()->user());
+    }
+
     #[On('mark-complete')]
     public function markComplete(): void
     {
-        $user = auth()->user();
-
-        if (! $user) {
+        if (! auth()->check()) {
             redirect()->route('login');
 
             return;
         }
 
+        $user = auth()->user();
         $userLessonService = app(UserLessonService::class);
         $userLessonService->markComplete($this->lesson->id, $user);
         $this->isCompleted = true;
         $this->dispatch('lesson-marked-complete', lessonId: $this->lesson->id);
+    }
+
+    public function getMaterialIcon(MaterialType $type): string
+    {
+        return match ($type) {
+            MaterialType::Video => '🎥',
+            MaterialType::PDF => '📄',
+            MaterialType::Document => '📝',
+            MaterialType::Audio => '🎵',
+            MaterialType::Presentation => '📊',
+            MaterialType::Image => '🖼️',
+            MaterialType::Interactive => '🎮',
+        };
     }
 
     public function render()
@@ -119,7 +185,13 @@ class LessonViewer extends Component
             'completionPercentage' => $this->totalLessonsInModule > 0
                 ? round(($this->completedLessonsInModule / $this->totalLessonsInModule) * 100)
                 : 0,
-        ])->extends('layouts.app', ['topbarTitle' => 'Lesson'])
+            'materialProgress' => $this->totalMaterialCount > 0
+                ? round(($this->accessedMaterialCount / $this->totalMaterialCount) * 100)
+                : 0,
+            'materialService' => app(LessonMaterialService::class),
+            'MaterialType' => MaterialType::class,
+        ])
+            ->extends('layouts.app', ['topbarTitle' => 'Lesson'])
             ->section('app-content');
     }
 }

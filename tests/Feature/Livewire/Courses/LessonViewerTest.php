@@ -128,16 +128,21 @@ class LessonViewerTest extends TestCase
             ->assertSee('30 min');
     }
 
-    public function test_lesson_displays_video_embed_url(): void
+    public function test_lesson_displays_materials(): void
     {
-        $lessonWithVideo = Lesson::factory()
+        $lessonWithMaterial = Lesson::factory()
             ->for($this->module)
             ->published()
-            ->create(['video_embed_url' => 'https://youtube.com/embed/test']);
+            ->create();
 
-        Livewire::test(LessonViewer::class, ['lesson' => $lessonWithVideo])
+        \App\Models\LessonMaterial::factory()
+            ->for($lessonWithMaterial)
+            ->create(['type' => 'Video', 'title' => 'Test Video']);
+
+        Livewire::test(LessonViewer::class, ['lesson' => $lessonWithMaterial])
             ->assertStatus(200)
-            ->assertSee('https://youtube.com/embed/test');
+            ->assertSee('Test Video')
+            ->assertSee('Materials');
     }
 
     public function test_navigation_shows_next_lesson(): void

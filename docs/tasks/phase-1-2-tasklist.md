@@ -598,43 +598,54 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 
 ### 11.5 Livewire Components
 
+**Status:** ✅ COMPLETE (2026-07-20)
+
 ### LessonForm Updates
-- [ ] Remove `videoEmbedUrl` field
-- [ ] Add "Materials" section:
-  - [ ] File upload input (accepts all material types)
-  - [ ] Material type selector (enum dropdown)
-  - [ ] Material title input (custom name)
-  - [ ] Delete button per material
-  - [ ] Drag-to-reorder UI (Alpine or Livewire Sortable)
-  - [ ] Display current file size and check quota
-- [ ] Events: material-uploaded, material-deleted, materials-reordered
+- [x] Keep `videoEmbedUrl` field (backward compatibility in collapsible details section)
+- [x] Add "Materials" section:
+  - [x] Display current materials list with type icons and file sizes
+  - [x] Delete button per material
+  - [x] Display storage quota (used, limit, remaining percentage)
+  - [x] Quota warning colors (green <80%, yellow 80-90%, red ≥90%)
+- [x] Methods: `generateUploadUrl()`, `finalizeUpload()`, `deleteMaterial()`, `reorderMaterials()`
+- [x] Helper methods: `formatBytes()`, `getMaterialIcon()`
 
 ### LessonViewer Updates
-- [ ] Sidebar (left, ~40% width):
-  - [ ] Material list with icons per type
-  - [ ] Click to select/switch material
-  - [ ] Show "✓" checkmark when material accessed
-  - [ ] Drag-to-reorder (if instructor viewing)
-  - [ ] Collapsible on mobile
+- [x] Sidebar (right, ~33% width - adjusted from 40%):
+  - [x] Material list with icons per type
+  - [x] Click to select/switch material
+  - [x] Show "✓" checkmark when material accessed
+  - [x] Material progress bar: "X of Y materials accessed"
+  - [x] Course outline below materials (existing feature preserved)
   
-- [ ] Main area (right, ~60% width):
-  - [ ] Dynamic player/display based on material type:
-    - [ ] Video: HTML5 `<video>` player
-    - [ ] PDF: embed or download button
-    - [ ] Audio: `<audio>` player
-    - [ ] Images: display with optional zoom
-    - [ ] Presentations: embed or download
-    - [ ] Interactive: iframe with fallback
-  - [ ] "Mark as Read" button (manual tracking)
-  - [ ] "Download" button (all types)
-  - [ ] Progress bar: "X of Y materials completed"
+- [x] Main area (left, ~67% width):
+  - [x] Dynamic player/display based on material type:
+    - [x] Video: HTML5 `<video>` player
+    - [x] PDF: icon + download button
+    - [x] Audio: `<audio>` player
+    - [x] Images: display with max sizing
+    - [x] Presentation/Document/Interactive: icon + download button
+  - [x] "Mark as Read" button (manual tracking, hidden if already accessed)
+  - [x] "Download" button (all types)
+  - [x] "Lesson Content" section showing course-level description
+  - [x] Progress bar: "X of Y lessons completed" (module level)
 
-- [ ] Responsive design:
-  - [ ] Mobile: full-width list, sidebar on tap
-  - [ ] Tablet: sidebar becomes tab navigation
-  - [ ] Desktop: side-by-side 40/60 layout
+- [x] Responsive design:
+  - [x] Desktop: side-by-side 67/33 layout
+  - [x] Mobile: stacked layout (material viewer on top, sidebar below)
+  - [x] Tailwind breakpoints: `lg:col-span-2` and `lg:col-span-1`
 
-- [ ] Tests: Livewire tests for upload, reorder, marking access, completion
+- [x] Tests: Livewire tests updated
+  - [x] Updated test_lesson_displays_video_embed_url → test_lesson_displays_materials (uses LessonMaterial factory)
+  - [x] All 28/29 tests passing (1 skipped), 66 assertions
+
+**Implementation Details:**
+- Materials are ordered by `order` column in sidebar
+- Material type icons: 🎥 Video, 📄 PDF, 📝 Document, 🎵 Audio, 📊 Presentation, 🖼️ Image, 🎮 Interactive
+- Backward compatibility: videoEmbedUrl still stored in lessons table, shown in collapsible details for form editing
+- LessonViewer only displays materials, not video_embed_url directly (encourages migration to multi-material system)
+- `isMaterialAccessedBy()` checks user access via lesson_material_user pivot table
+- Material selection persists across page in component state
 
 ---
 

@@ -48,32 +48,129 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-space-lg">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-space-lg">
             <!-- Main Content -->
-            <div class="lg:col-span-3">
-                <!-- Video Section -->
-                @if ($lesson->video_embed_url)
-                    <div class="mb-space-xl">
-                        <div class="bg-surface-container rounded-lg overflow-hidden aspect-video flex items-center justify-center">
-                            <iframe
-                                width="100%"
-                                height="100%"
-                                src="{{ $lesson->video_embed_url }}"
-                                title="{{ $lesson->title }}"
-                                frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen
-                            ></iframe>
+            <div class="lg:col-span-2">
+                <!-- Materials Section -->
+                @if ($materials->count() > 0)
+                    <!-- Material Display -->
+                    @if ($selectedMaterial)
+                        <div class="mb-space-xl bg-surface-container rounded-lg overflow-hidden">
+                            <!-- Material Viewer based on Type -->
+                            @switch($selectedMaterial->type->value)
+                                @case('Video')
+                                    <div class="aspect-video flex items-center justify-center bg-surface">
+                                        <video width="100%" height="100%" controls class="w-full h-full">
+                                            <source src="{{ $selectedMaterial->file_url }}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                    @break
+
+                                @case('PDF')
+                                    <div class="aspect-video flex flex-col items-center justify-center bg-surface gap-space-md p-space-lg">
+                                        <span class="text-5xl">📄</span>
+                                        <p class="text-body-md text-on-surface">{{ $selectedMaterial->title }}</p>
+                                        <a
+                                            href="{{ $selectedMaterial->file_url }}"
+                                            download
+                                            class="px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition"
+                                        >
+                                            Download PDF
+                                        </a>
+                                    </div>
+                                    @break
+
+                                @case('Audio')
+                                    <div class="aspect-video flex flex-col items-center justify-center bg-surface gap-space-md p-space-lg">
+                                        <span class="text-5xl">🎵</span>
+                                        <p class="text-body-md text-on-surface">{{ $selectedMaterial->title }}</p>
+                                        <audio controls class="w-full">
+                                            <source src="{{ $selectedMaterial->file_url }}" type="audio/mpeg">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </div>
+                                    @break
+
+                                @case('Image')
+                                    <div class="aspect-video flex items-center justify-center bg-surface overflow-auto">
+                                        <img
+                                            src="{{ $selectedMaterial->file_url }}"
+                                            alt="{{ $selectedMaterial->title }}"
+                                            class="max-w-full max-h-full"
+                                        />
+                                    </div>
+                                    @break
+
+                                @case('Presentation')
+                                @case('Document')
+                                @case('Interactive')
+                                    <div class="aspect-video flex flex-col items-center justify-center bg-surface gap-space-md p-space-lg">
+                                        <span class="text-5xl">
+                                            @if ($selectedMaterial->type->value === 'Presentation')
+                                                📊
+                                            @elseif ($selectedMaterial->type->value === 'Document')
+                                                📝
+                                            @else
+                                                🎮
+                                            @endif
+                                        </span>
+                                        <p class="text-body-md text-on-surface">{{ $selectedMaterial->title }}</p>
+                                        <a
+                                            href="{{ $selectedMaterial->file_url }}"
+                                            download
+                                            class="px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition"
+                                        >
+                                            Open or Download
+                                        </a>
+                                    </div>
+                                    @break
+                            @endswitch
                         </div>
+
+                        <!-- Material Actions -->
+                        <div class="mb-space-xl flex gap-space-md">
+                            @auth
+                                @if (! $materialService->isMaterialAccessedBy($selectedMaterial->id, auth()->user()))
+                                    <button
+                                        wire:click="markMaterialAsRead"
+                                        class="flex-1 px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                                    >
+                                        Mark as Read
+                                    </button>
+                                @else
+                                    <div class="flex-1 px-space-lg py-space-md bg-primary/10 text-primary rounded-lg font-label-md text-label-md flex items-center justify-center gap-space-sm">
+                                        <span>✓</span>
+                                        <span>Material Accessed</span>
+                                    </div>
+                                @endif
+                            @endauth
+
+                            <a
+                                href="{{ $selectedMaterial->file_url }}"
+                                download
+                                class="px-space-lg py-space-md border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition"
+                            >
+                                Download
+                            </a>
+                        </div>
+                    @endif
+                @else
+                    <!-- No Materials -->
+                    <div class="mb-space-xl p-space-lg bg-surface-container rounded-lg border border-outline text-center">
+                        <p class="text-body-md text-on-surface-variant">No materials available for this lesson yet.</p>
                     </div>
                 @endif
 
                 <!-- Content -->
-                <div class="mb-space-xl bg-surface-container rounded-lg p-space-lg">
-                    <div class="prose prose-sm max-w-none text-on-surface">
-                        {!! nl2br(e($lesson->content)) !!}
+                @if ($lesson->content)
+                    <div class="mb-space-xl bg-surface-container rounded-lg p-space-lg">
+                        <h3 class="text-label-lg font-label-md text-on-surface mb-space-md">Lesson Content</h3>
+                        <div class="prose prose-sm max-w-none text-on-surface">
+                            {!! nl2br(e($lesson->content)) !!}
+                        </div>
                     </div>
-                </div>
+                @endif
 
                 <!-- Mark Complete Button -->
                 @auth
@@ -129,8 +226,56 @@
                 </div>
             </div>
 
-            <!-- Sidebar: Course Outline -->
-            <div class="lg:col-span-1">
+            <!-- Sidebar: Materials and Course Outline -->
+            <div class="lg:col-span-1 space-y-space-lg">
+                <!-- Materials List -->
+                @if ($materials->count() > 0)
+                    <div class="bg-surface-container rounded-lg p-space-lg sticky top-space-lg">
+                        <h3 class="font-label-lg text-label-lg text-on-surface mb-space-md">
+                            Materials
+                        </h3>
+
+                        <!-- Material Progress -->
+                        <div class="mb-space-md">
+                            <div class="flex items-center justify-between mb-space-sm">
+                                <span class="text-label-sm text-on-surface-variant">Progress</span>
+                                <span class="text-label-sm font-label-md">{{ $accessedMaterialCount }} / {{ $totalMaterialCount }}</span>
+                            </div>
+                            <div class="w-full h-2 bg-surface rounded-full overflow-hidden">
+                                <div
+                                    class="h-full bg-primary transition-all duration-300"
+                                    style="width: {{ $materialProgress }}%"
+                                ></div>
+                            </div>
+                        </div>
+
+                        <!-- Material Items -->
+                        <div class="space-y-space-xs max-h-96 overflow-y-auto">
+                            @foreach ($materials as $material)
+                                <button
+                                    wire:click="selectMaterial('{{ $material->id }}')"
+                                    class="w-full text-left px-space-md py-space-sm rounded-lg transition @if ($selectedMaterial?->id === $material->id) bg-primary/10 text-primary font-medium @else text-on-surface hover:bg-surface @endif"
+                                >
+                                    <div class="flex items-start gap-space-sm">
+                                        <span class="flex-shrink-0 pt-space-xs">
+                                            @if (auth()->check() && $materialService->isMaterialAccessedBy($material->id, auth()->user()))
+                                                ✓
+                                            @else
+                                                {{ $this->getMaterialIcon($material->type) }}
+                                            @endif
+                                        </span>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-body-sm truncate">{{ $material->title }}</p>
+                                            <p class="text-body-xs text-on-surface-variant">{{ $material->type->value }}</p>
+                                        </div>
+                                    </div>
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Course Outline -->
                 <div class="bg-surface-container rounded-lg p-space-lg sticky top-space-lg">
                     <h3 class="font-label-lg text-label-lg text-on-surface mb-space-md">
                         {{ $course->title }}
@@ -139,12 +284,10 @@
                     <div class="space-y-space-md max-h-96 overflow-y-auto">
                         @foreach ($course->modules()->where('is_published', true)->orderBy('order')->get() as $mod)
                             <div class="space-y-space-xs">
-                                <!-- Module Title -->
                                 <div class="px-space-md py-space-sm rounded-lg bg-surface text-on-surface-variant">
                                     <p class="text-label-sm font-label-md">{{ $mod->title }}</p>
                                 </div>
 
-                                <!-- Lessons in Module -->
                                 <div class="space-y-space-xs pl-space-md">
                                     @foreach ($mod->lessons()->where('is_published', true)->orderBy('order')->get() as $item)
                                         <a

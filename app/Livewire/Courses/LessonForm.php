@@ -2,10 +2,15 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\MaterialType;
 use App\Models\Lesson;
+use App\Models\LessonMaterial;
 use App\Models\Module;
+use App\Services\LessonMaterialService;
 use App\Services\LessonService;
+use App\Services\R2StorageService;
 use App\Support\CurrentSchool;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -21,13 +26,19 @@ class LessonForm extends Component
     #[Validate('nullable|string')]
     public string $content = '';
 
-    #[Validate('nullable|url')]
-    public string $videoEmbedUrl = '';
-
     #[Validate('nullable|integer|min:1|max:480')]
     public ?string $durationMinutes = null;
 
     public bool $isPublished = false;
+
+    #[Validate('nullable|url')]
+    public string $videoEmbedUrl = '';
+
+    public Collection $materials;
+
+    public array $uploadProgress = [];
+
+    public ?string $errorMessage = null;
 
     public function mount(CurrentSchool $currentSchool, ?Module $module = null, ?Lesson $lesson = null): void
     {
@@ -45,14 +56,23 @@ class LessonForm extends Component
         abort_unless($module->course->school_id === $schoolId, 403);
 
         $this->module = $module;
+        $this->materials = new Collection;
 
         if ($lesson) {
             $this->lesson = $lesson;
             $this->title = $lesson->title;
             $this->content = $lesson->content ?? '';
-            $this->videoEmbedUrl = $lesson->video_embed_url ?? '';
             $this->durationMinutes = $lesson->duration_minutes;
             $this->isPublished = $lesson->is_published;
+            $this->loadMaterials();
+        }
+    }
+
+    private function loadMaterials(): void
+    {
+        if ($this->lesson) {
+            $this->materials = $this->lesson->materials()->orderBy('order')->get();
+            $this->videoEmbedUrl = $this->lesson->video_embed_url ?? '';
         }
     }
 
@@ -117,10 +137,103 @@ class LessonForm extends Component
         return false;
     }
 
+    public function generateUploadUrl(string $filename, string $materialType, R2StorageService $r2Service): array
+    {
+        if (! $this->lesson) {
+            throw new \InvalidArgumentException('Lesson must be saved before uploading materials');
+        }
+
+        try {
+            $type = MaterialType::tryFrom($materialType);
+            if (! $type) {
+                return ['error' => 'Invalid material type'];
+            }
+
+            $url = $r2Service->generatePresignedPutUrl($this->lesson->id, $filename, $materialType);
+
+            return $url;
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    public function finalizeUpload(array $data, LessonMaterialService $materialService): void
+    {
+        try {
+            if (! $this->lesson) {
+                throw new \InvalidArgumentException('Lesson must be saved before uploading materials');
+            }
+
+            $material = $materialService->finalizeR2Upload($this->lesson->id, $data);
+            $this->materials->push($material);
+            $this->errorMessage = null;
+            $this->dispatch('material-uploaded', materialId: $material->id);
+        } catch (\Exception $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    public function deleteMaterial(string $materialId, LessonMaterialService $materialService): void
+    {
+        try {
+            $materialService->delete($materialId);
+            $this->materials = $this->materials->reject(fn (LessonMaterial $m) => $m->id === $materialId);
+            $this->dispatch('material-deleted', materialId: $materialId);
+        } catch (\Exception $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    public function reorderMaterials(array $materialIds, LessonMaterialService $materialService): void
+    {
+        try {
+            if (! $this->lesson) {
+                return;
+            }
+
+            $materialService->reorder($this->lesson->id, $materialIds);
+            $this->loadMaterials();
+            $this->dispatch('materials-reordered');
+        } catch (\Exception $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    public function getStorageQuota(R2StorageService $r2Service): array
+    {
+        return $r2Service->checkSchoolQuota(auth()->user()->school_id);
+    }
+
+    public function formatBytes(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= (1 << (10 * $pow));
+
+        return round($bytes, 2).' '.$units[$pow];
+    }
+
+    public function getMaterialIcon(MaterialType $type): string
+    {
+        return match ($type) {
+            MaterialType::Video => '🎥',
+            MaterialType::PDF => '📄',
+            MaterialType::Document => '📝',
+            MaterialType::Audio => '🎵',
+            MaterialType::Presentation => '📊',
+            MaterialType::Image => '🖼️',
+            MaterialType::Interactive => '🎮',
+        };
+    }
+
     public function render()
     {
         return view('livewire.courses.lesson-form', [
             'pageTitle' => $this->lesson ? 'Edit Lesson' : 'Create Lesson',
+            'materialTypes' => MaterialType::cases(),
+            'quota' => $this->getStorageQuota(app(R2StorageService::class)),
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->lesson ? 'Edit Lesson' : 'Create Lesson'])
             ->section('app-content');

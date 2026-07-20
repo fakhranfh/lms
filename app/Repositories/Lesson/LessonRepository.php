@@ -35,6 +35,14 @@ class LessonRepository implements LessonRepositoryInterface
     }
 
     /**
+     * @param  array<string>  $with
+     */
+    public function findOrFail(string $id, array $with = []): Lesson
+    {
+        return Lesson::with($with)->findOrFail($id);
+    }
+
+    /**
      * @param  array<string, mixed>  $data
      */
     public function create(array $data): Lesson

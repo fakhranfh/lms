@@ -23,6 +23,13 @@ interface LessonRepositoryInterface
     public function find(string $id, array $with = []): ?Lesson;
 
     /**
+     * Find a lesson by ID or throw an exception.
+     *
+     * @param  array<string>  $with
+     */
+    public function findOrFail(string $id, array $with = []): Lesson;
+
+    /**
      * Create a new lesson.
      *
      * @param  array<string, mixed>  $data

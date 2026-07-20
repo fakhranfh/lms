@@ -112,8 +112,13 @@
                                         @if ($module->description)
                                             <p class="text-body-sm text-on-surface-variant mt-1">{{ $module->description }}</p>
                                         @endif
+                                        @php
+                                            $lessonCount = $isStudent
+                                                ? $module->lessons()->where('is_published', true)->count()
+                                                : $module->lessonsCount();
+                                        @endphp
                                         <p class="text-body-sm text-secondary mt-2">
-                                            {{ $module->lessonsCount() }} lesson{{ $module->lessonsCount() !== 1 ? 's' : '' }}
+                                            {{ $lessonCount }} lesson{{ $lessonCount !== 1 ? 's' : '' }}
                                         </p>
                                     </div>
                                 </div>
@@ -187,7 +192,12 @@
                             @endunless
 
                             @if ($expandedModules[$module->id] ?? false)
-                                @if ($module->lessons->isEmpty())
+                                @php
+                                    $visibleLessons = $isStudent
+                                        ? $module->lessons->where('is_published', true)->values()
+                                        : $module->lessons;
+                                @endphp
+                                @if ($visibleLessons->isEmpty())
                                     <div class="p-space-lg text-center">
                                         <p class="text-body-sm text-on-surface-variant mb-space-md">No lessons in this module</p>
                                         @unless ($isStudent)
@@ -201,7 +211,7 @@
                                     </div>
                                 @else
                                     <div class="space-y-0">
-                                        @foreach ($module->lessons as $lesson)
+                                        @foreach ($visibleLessons as $lesson)
                                             <div wire:key="lesson-{{ $lesson->id }}" class="p-space-lg border-t border-outline-variant first:border-0 flex items-center justify-between group">
                                                 <div class="flex items-center gap-space-md flex-1">
                                                     <div class="w-8 text-center">

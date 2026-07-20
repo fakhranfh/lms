@@ -6,6 +6,8 @@ use App\Livewire\Courses\CourseBuilder;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
 use Livewire\Livewire;
@@ -257,5 +259,42 @@ class CourseBuilderTest extends TestCase
         $component->dispatch('module-created');
 
         $this->assertNull($component->get('errorMessage'));
+    }
+
+    public function test_students_do_not_see_unpublished_lessons(): void
+    {
+        $studentRole = Role::firstOrCreate(
+            ['name' => 'Student', 'guard_name' => 'web', 'school_id' => $this->school->id],
+            ['slug' => 'student']
+        );
+        $studentRole->syncPermissions(
+            Permission::whereIn('name', ['courses.view', 'modules.view', 'lessons.view'])->get()
+        );
+
+        $student = User::factory()->for($this->school)->create();
+        $student->assignRole($studentRole);
+
+        $module = Module::factory()->for($this->course)->published()->create();
+        Lesson::factory()->for($module)->published()->create(['title' => 'Published Lesson', 'order' => 1]);
+        Lesson::factory()->for($module)->create(['title' => 'Draft Lesson', 'is_published' => false, 'order' => 2]);
+
+        $this->actingAs($student);
+
+        Livewire::test(CourseBuilder::class, ['course' => $this->course])
+            ->call('toggleModule', $module->id)
+            ->assertSee('Published Lesson')
+            ->assertDontSee('Draft Lesson');
+    }
+
+    public function test_instructor_still_sees_unpublished_lessons(): void
+    {
+        $this->instructor->givePermissionTo('courses.view');
+
+        $module = Module::factory()->for($this->course)->published()->create();
+        Lesson::factory()->for($module)->create(['title' => 'Draft Lesson', 'is_published' => false, 'order' => 1]);
+
+        Livewire::test(CourseBuilder::class, ['course' => $this->course])
+            ->call('toggleModule', $module->id)
+            ->assertSee('Draft Lesson');
     }
 }

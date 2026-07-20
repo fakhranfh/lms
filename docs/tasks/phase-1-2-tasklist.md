@@ -551,12 +551,7 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 
 **Credentials & Configuration:**
 - [x] Obtained Cloudflare R2 credentials from user
-- [x] Added credentials to `.env` file:
-  - `CLOUDFLARE_R2_ACCOUNT_ID=REDACTED_R2_ACCOUNT_ID`
-  - `CLOUDFLARE_R2_ACCESS_KEY_ID=REDACTED_R2_ACCESS_KEY_ID`
-  - `CLOUDFLARE_R2_SECRET_ACCESS_KEY=REDACTED_R2_SECRET_ACCESS_KEY`
-  - `CLOUDFLARE_R2_BUCKET=lms`
-  - `CLOUDFLARE_R2_CUSTOM_DOMAIN=` (optional)
+- [x] Added credentials to `.env` file (not committed)
 - [x] Added R2 config section to `config/services.php`
 
 **Implementation:**

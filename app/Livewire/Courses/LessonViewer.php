@@ -166,6 +166,7 @@ class LessonViewer extends Component
             MaterialType::Presentation => '📊',
             MaterialType::Image => '🖼️',
             MaterialType::Interactive => '🎮',
+            MaterialType::Markdown => '📄',
         };
     }
 

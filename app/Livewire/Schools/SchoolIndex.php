@@ -22,7 +22,6 @@ class SchoolIndex extends Component
 
     public int $perPage = 15;
 
-
     public function updating(string $property): void
     {
         if ($property !== 'sort' && $property !== 'direction') {

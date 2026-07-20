@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Lesson;
 use App\Models\Module;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<Lesson>
@@ -21,6 +22,7 @@ class LessonFactory extends Factory
         $module = Module::factory();
 
         return [
+            'id' => Str::uuid(),
             'module_id' => $module,
             'title' => fake()->sentence(2),
             'content' => fake()->paragraphs(3, true),

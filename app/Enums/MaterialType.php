@@ -11,6 +11,7 @@ enum MaterialType: string
     case Presentation = 'Presentation';
     case Image = 'Image';
     case Interactive = 'Interactive';
+    case Markdown = 'Markdown';
 
     public function label(): string
     {
@@ -22,6 +23,7 @@ enum MaterialType: string
             self::Presentation => 'Presentation',
             self::Image => 'Image',
             self::Interactive => 'Interactive',
+            self::Markdown => 'Markdown',
         };
     }
 
@@ -35,6 +37,7 @@ enum MaterialType: string
             self::Presentation => 50 * 1024 * 1024,  // 50 MB
             self::Image => 25 * 1024 * 1024,         // 25 MB
             self::Interactive => 100 * 1024 * 1024,  // 100 MB
+            self::Markdown => 10 * 1024 * 1024,      // 10 MB
         };
     }
 
@@ -51,6 +54,7 @@ enum MaterialType: string
             self::Presentation => ['ppt', 'pptx', 'odp'],
             self::Image => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
             self::Interactive => ['html', 'htm', 'json'],
+            self::Markdown => ['md', 'markdown'],
         };
     }
 
@@ -92,6 +96,7 @@ enum MaterialType: string
                 'd0cf11e0', // OLE (PPT)
             ],
             self::Interactive => [], // HTML/JSON are text-based, no strict magic bytes check
+            self::Markdown => [], // Markdown is text-based, no strict magic bytes check
         };
     }
 
@@ -145,6 +150,11 @@ enum MaterialType: string
             self::Interactive => [
                 'text/html',
                 'application/json',
+                'text/plain',
+            ],
+            self::Markdown => [
+                'text/markdown',
+                'text/x-markdown',
                 'text/plain',
             ],
         };

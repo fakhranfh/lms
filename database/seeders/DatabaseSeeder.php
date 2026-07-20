@@ -2,13 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\PricingTier;
-use App\Models\School;
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -25,14 +20,14 @@ class DatabaseSeeder extends Seeder
         // Seed root domain school with demo credentials
         $this->call(RootDomainSchoolSeeder::class);
 
-        // Get the basic tier for the test school
-        $basicTier = PricingTier::where('slug', 'basic')->first();
-
         // Seed default roles for schools (permissions are seeded via migration)
         $this->call(DefaultRoleSeeder::class);
 
         // Seed sample content for Content Engine
         $this->call(ContentEngineSeeder::class);
+
+        // Seed lesson materials with file uploads to R2 (requires lessons to exist)
+        $this->call(DummyMaterialsUploadSeeder::class);
 
         // $this->call(ProductSeeder::class);
     }

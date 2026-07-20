@@ -23,6 +23,7 @@ class CourseFactory extends Factory
         $title = fake()->sentence(3);
 
         return [
+            'id' => Str::uuid(),
             'school_id' => School::factory(),
             'title' => $title,
             'description' => fake()->paragraph(),

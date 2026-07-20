@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\DemoLmsAccess;
-use App\Models\Permission;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
@@ -75,6 +74,6 @@ class RootDomainSchoolSeeder extends Seeder
 
         $this->command->info("Root domain school created: {$school->domain}");
         $this->command->info("Demo user: {$demoEmail}");
-        $this->command->info("Demo password: demo-password");
+        $this->command->info('Demo password: demo-password');
     }
 }

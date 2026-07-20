@@ -5,9 +5,11 @@ namespace Tests\Feature\Livewire\Courses;
 use App\Livewire\Courses\LessonViewer;
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\LessonMaterial;
 use App\Models\Module;
 use App\Models\School;
 use App\Models\User;
+use App\Services\UserLessonService;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -100,7 +102,7 @@ class LessonViewerTest extends TestCase
             ->call('markComplete')
             ->assertSee('Lesson Complete');
 
-        $this->assertTrue(app(\App\Services\UserLessonService::class)->isCompletedBy($this->publishedLesson->id, $this->student));
+        $this->assertTrue(app(UserLessonService::class)->isCompletedBy($this->publishedLesson->id, $this->student));
         $this->assertDatabaseHas('lesson_user', [
             'lesson_id' => $this->publishedLesson->id,
             'user_id' => $this->student->id,
@@ -109,7 +111,7 @@ class LessonViewerTest extends TestCase
 
     public function test_completed_lesson_shows_completed_badge(): void
     {
-        app(\App\Services\UserLessonService::class)->markComplete($this->publishedLesson->id, $this->student);
+        app(UserLessonService::class)->markComplete($this->publishedLesson->id, $this->student);
 
         Livewire::test(LessonViewer::class, ['lesson' => $this->publishedLesson])
             ->assertStatus(200)
@@ -135,7 +137,7 @@ class LessonViewerTest extends TestCase
             ->published()
             ->create();
 
-        \App\Models\LessonMaterial::factory()
+        LessonMaterial::factory()
             ->for($lessonWithMaterial)
             ->create(['type' => 'Video', 'title' => 'Test Video']);
 
@@ -181,7 +183,7 @@ class LessonViewerTest extends TestCase
         $lesson2 = Lesson::factory()->for($module2)->published()->create(['order' => 2]);
         $lesson3 = Lesson::factory()->for($module2)->published()->create(['order' => 3]);
 
-        $userLessonService = app(\App\Services\UserLessonService::class);
+        $userLessonService = app(UserLessonService::class);
         $userLessonService->markComplete($lesson1->id, $this->student);
         $userLessonService->markComplete($lesson2->id, $this->student);
 
@@ -209,7 +211,7 @@ class LessonViewerTest extends TestCase
         $lesson1 = Lesson::factory()->for($module2)->published()->create(['order' => 1]);
         $lesson2 = Lesson::factory()->for($module2)->published()->create(['order' => 2]);
 
-        app(\App\Services\UserLessonService::class)->markComplete($lesson1->id, $this->student);
+        app(UserLessonService::class)->markComplete($lesson1->id, $this->student);
 
         Livewire::test(LessonViewer::class, ['lesson' => $lesson2])
             ->assertStatus(200);
@@ -224,5 +226,88 @@ class LessonViewerTest extends TestCase
             ->assertStatus(200)
             ->assertSee($this->publishedLesson->title)
             ->assertSee('Mark as Complete');
+    }
+
+    public function test_pdf_material_displays_with_embed_viewer(): void
+    {
+        $lessonWithPdf = Lesson::factory()
+            ->for($this->module)
+            ->published()
+            ->create();
+
+        LessonMaterial::factory()
+            ->for($lessonWithPdf)
+            ->create([
+                'type' => 'PDF',
+                'title' => 'Test PDF',
+                'file_url' => 'https://example.com/test.pdf',
+            ]);
+
+        Livewire::test(LessonViewer::class, ['lesson' => $lessonWithPdf])
+            ->assertStatus(200)
+            ->assertSee('embed')
+            ->assertSee('application/pdf');
+    }
+
+    public function test_interactive_material_displays_with_iframe(): void
+    {
+        $lessonWithInteractive = Lesson::factory()
+            ->for($this->module)
+            ->published()
+            ->create();
+
+        LessonMaterial::factory()
+            ->for($lessonWithInteractive)
+            ->create([
+                'type' => 'Interactive',
+                'title' => 'Test Interactive',
+                'file_url' => 'https://example.com/interactive.html',
+            ]);
+
+        Livewire::test(LessonViewer::class, ['lesson' => $lessonWithInteractive])
+            ->assertStatus(200)
+            ->assertSee('iframe')
+            ->assertSee('sandbox');
+    }
+
+    public function test_presentation_material_displays_with_office_viewer(): void
+    {
+        $lessonWithPresentation = Lesson::factory()
+            ->for($this->module)
+            ->published()
+            ->create();
+
+        LessonMaterial::factory()
+            ->for($lessonWithPresentation)
+            ->create([
+                'type' => 'Presentation',
+                'title' => 'Test Presentation',
+                'file_url' => 'https://example.com/test.pptx',
+            ]);
+
+        Livewire::test(LessonViewer::class, ['lesson' => $lessonWithPresentation])
+            ->assertStatus(200)
+            ->assertSee('view.officeapps.live.com');
+    }
+
+    public function test_markdown_material_displays_with_html_renderer(): void
+    {
+        $lessonWithMarkdown = Lesson::factory()
+            ->for($this->module)
+            ->published()
+            ->create();
+
+        LessonMaterial::factory()
+            ->for($lessonWithMarkdown)
+            ->create([
+                'type' => 'Markdown',
+                'title' => 'Test Markdown',
+                'file_url' => 'https://example.com/test.md',
+            ]);
+
+        Livewire::test(LessonViewer::class, ['lesson' => $lessonWithMarkdown])
+            ->assertStatus(200)
+            ->assertSee('Loading')
+            ->assertSee('window.renderMarkdown');
     }
 }

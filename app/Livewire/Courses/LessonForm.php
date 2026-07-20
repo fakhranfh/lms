@@ -173,6 +173,22 @@ class LessonForm extends Component
         }
     }
 
+    public function updateMaterialTitle(string $materialId, string $title, LessonMaterialService $materialService): void
+    {
+        try {
+            if (trim($title) === '') {
+                return;
+            }
+
+            $material = $materialService->update($materialId, ['title' => trim($title)]);
+            $this->materials = $this->materials->map(
+                fn (LessonMaterial $m) => $m->id === $material->id ? $material : $m
+            );
+        } catch (\Exception $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
     public function deleteMaterial(string $materialId, LessonMaterialService $materialService): void
     {
         try {

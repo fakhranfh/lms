@@ -5,6 +5,7 @@ namespace Tests\Feature\Livewire\Courses;
 use App\Livewire\Courses\LessonForm;
 use App\Models\Course;
 use App\Models\Lesson;
+use App\Models\LessonMaterial;
 use App\Models\Module;
 use App\Models\School;
 use App\Models\User;
@@ -238,6 +239,26 @@ class LessonFormTest extends TestCase
         );
         $this->assertDatabaseMissing('lesson_materials', [
             'lesson_id' => $lesson->id,
+        ]);
+    }
+
+    public function test_material_title_can_be_updated(): void
+    {
+        $lesson = Lesson::factory()->for($this->module)->create();
+        $material = LessonMaterial::factory()->for($lesson)->create(['title' => 'original-filename']);
+
+        $this->instructor->givePermissionTo('lessons.edit');
+
+        $component = Livewire::test(LessonForm::class, [
+            'module' => $this->module,
+            'lesson' => $lesson,
+        ]);
+
+        $component->instance()->updateMaterialTitle($material->id, 'A Much Better Title', app(LessonMaterialService::class));
+
+        $this->assertDatabaseHas('lesson_materials', [
+            'id' => $material->id,
+            'title' => 'A Much Better Title',
         ]);
     }
 }

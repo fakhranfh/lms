@@ -2,14 +2,33 @@
 
 <div class="min-h-screen bg-background py-space-xl px-gutter">
     <div class="max-w-2xl mx-auto">
+        <!-- Breadcrumb -->
+        <div class="mb-space-lg">
+            <nav class="flex items-center gap-space-sm text-body-sm text-on-surface-variant">
+                <a href="{{ route('courses.index') }}" class="hover:text-on-surface transition">Courses</a>
+                <span>/</span>
+                <a href="{{ route('courses.show', $course) }}" class="hover:text-on-surface transition">{{ $course->title }}</a>
+                <span>/</span>
+                <span class="text-on-surface font-medium">{{ $pageTitle }}</span>
+            </nav>
+        </div>
+
         <!-- Header -->
-        <div class="mb-space-xl">
-            <h1 class="font-headline-md text-headline-md text-on-surface">
-                {{ $pageTitle }}
-            </h1>
-            <p class="text-body-md text-on-surface-variant mt-space-sm">
-                in <strong>{{ $course->title }}</strong>
-            </p>
+        <div class="mb-space-xl flex items-center justify-between">
+            <div>
+                <h1 class="font-headline-md text-headline-md text-on-surface">
+                    {{ $pageTitle }}
+                </h1>
+                <p class="text-body-md text-on-surface-variant mt-space-sm">
+                    in <strong>{{ $course->title }}</strong>
+                </p>
+            </div>
+            <a
+                href="{{ route('courses.show', $course) }}"
+                class="px-space-md py-space-xs rounded-lg bg-outline-variant text-on-surface font-label-sm text-label-sm hover:bg-outline transition-colors flex-shrink-0"
+            >
+                Back to Course
+            </a>
         </div>
 
         <!-- Form -->

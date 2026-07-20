@@ -16,13 +16,21 @@
         </div>
 
         <!-- Header -->
-        <div class="mb-space-xl">
-            <h1 class="font-headline-md text-headline-md text-on-surface">
-                {{ $pageTitle }}
-            </h1>
-            <p class="text-body-md text-on-surface-variant mt-space-sm">
-                in <strong>{{ $module->title }}</strong> / {{ $module->course->title }}
-            </p>
+        <div class="mb-space-xl flex items-center justify-between">
+            <div>
+                <h1 class="font-headline-md text-headline-md text-on-surface">
+                    {{ $pageTitle }}
+                </h1>
+                <p class="text-body-md text-on-surface-variant mt-space-sm">
+                    in <strong>{{ $module->title }}</strong> / {{ $module->course->title }}
+                </p>
+            </div>
+            <a
+                href="{{ route('courses.show', $module->course) }}"
+                class="px-space-md py-space-xs rounded-lg bg-outline-variant text-on-surface font-label-sm text-label-sm hover:bg-outline transition-colors flex-shrink-0"
+            >
+                Back to Course
+            </a>
         </div>
 
         <!-- Form -->
@@ -99,8 +107,19 @@
                                 <div class="flex items-center justify-between p-space-md bg-surface-container rounded-lg">
                                     <div class="flex items-center gap-space-md flex-1">
                                         <span class="text-body-md">{{ $this->getMaterialIcon($material->type) }}</span>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-body-sm text-on-surface font-medium truncate">{{ $material->title }}</p>
+                                        <div class="flex-1 min-w-0" x-data="{ savingTitle: false }">
+                                            <div class="flex items-center gap-space-xs" :class="{ 'opacity-70': savingTitle }">
+                                                <input
+                                                    type="text"
+                                                    value="{{ $material->title }}"
+                                                    :disabled="savingTitle"
+                                                    @keydown.enter.prevent="$event.target.blur()"
+                                                    @change="savingTitle = true; await $wire.updateMaterialTitle('{{ $material->id }}', $event.target.value); savingTitle = false"
+                                                    wire:key="material-title-{{ $material->id }}"
+                                                    class="w-full bg-transparent text-body-sm text-on-surface font-medium truncate px-space-xs -mx-space-xs rounded border border-transparent hover:border-outline focus:border-primary focus:outline-none focus:bg-surface disabled:cursor-wait"
+                                                />
+                                                <span x-show="savingTitle" x-cloak class="inline-block animate-spin text-on-surface-variant flex-shrink-0">⟳</span>
+                                            </div>
                                             <p class="text-body-sm text-on-surface-variant">{{ $material->type->value }} • {{ $this->formatBytes($material->file_size) }}</p>
                                         </div>
                                     </div>

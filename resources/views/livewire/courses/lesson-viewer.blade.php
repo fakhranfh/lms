@@ -337,7 +337,7 @@
                                             class="block px-space-md py-space-sm rounded-lg transition @if ($item->id === $lesson->id) bg-primary/10 text-primary font-medium @else text-on-surface hover:bg-surface @endif"
                                         >
                                             <div class="flex items-start gap-space-sm">
-                                                <span class="text-body-sm font-medium flex-shrink-0 pt-space-xs">
+                                                <span class="w-4 h-5 flex-shrink-0 flex items-center justify-center text-body-sm font-medium">
                                                     @if (auth()->check() && app(\App\Services\UserLessonService::class)->isCompletedBy($item->id, auth()->user()))
                                                         ✓
                                                     @else

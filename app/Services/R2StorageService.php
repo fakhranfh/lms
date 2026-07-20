@@ -460,7 +460,7 @@ class R2StorageService
     /**
      * Get public URL for a file
      */
-    protected function getPublicUrl(string $key): string
+    public function getPublicUrl(string $key): string
     {
         if ($this->customDomain) {
             return "{$this->customDomain}/{$key}";

@@ -74,4 +74,22 @@ describe('R2StorageService', function () {
             }
         });
     });
+
+    describe('getPublicUrl', function () {
+        test('uses the configured custom domain', function () {
+            config(['services.r2.custom_domain' => 'https://cdn.example.com']);
+            $service = new R2StorageService;
+
+            expect($service->getPublicUrl('lessons/abc/materials/file.pdf'))
+                ->toBe('https://cdn.example.com/lessons/abc/materials/file.pdf');
+        });
+
+        test('falls back to the raw R2 domain when no custom domain is set', function () {
+            config(['services.r2.custom_domain' => '']);
+            $service = new R2StorageService;
+
+            expect($service->getPublicUrl('lessons/abc/materials/file.pdf'))
+                ->toContain('r2.cloudflarestorage.com/lessons/abc/materials/file.pdf');
+        });
+    });
 });

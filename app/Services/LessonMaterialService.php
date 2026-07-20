@@ -91,8 +91,8 @@ class LessonMaterialService
             $this->r2Service->promoteFromTemp($tempKey, $finalKey);
             $validationPassed = true;
 
-            // Build final file URL
-            $fileUrl = "https://{$this->r2Service->bucket}.{$this->r2Service->accountId}.r2.cloudflarestorage.com/{$finalKey}";
+            // Build final file URL (uses custom domain if configured)
+            $fileUrl = $this->r2Service->getPublicUrl($finalKey);
 
             // Save material metadata via repository
             return $this->materialRepository->create([

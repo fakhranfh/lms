@@ -285,16 +285,6 @@
                                                 @endif
                                             </div>
 
-                                            @if (!$loop->last && !$isStudent)
-                                                <div class="px-space-lg">
-                                                    <a
-                                                        href="{{ route('lessons.create', $module) }}"
-                                                        class="block w-full py-space-md text-center text-primary text-body-sm font-medium hover:bg-surface-container transition rounded"
-                                                    >
-                                                        + Add Lesson
-                                                    </a>
-                                                </div>
-                                            @endif
                                         @endforeach
 
                                         @unless ($isStudent)

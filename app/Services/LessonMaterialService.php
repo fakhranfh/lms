@@ -81,7 +81,8 @@ class LessonMaterialService
             // Validate file size against material type limit
             if ($fileInfo['size'] > $type->maxSize()) {
                 throw new \InvalidArgumentException(
-                    "File size exceeds limit for {$type->value}. Max: ".$this->formatBytes($type->maxSize())
+                    "This file is too large for a {$type->label()} upload. ".
+                    'Maximum allowed size: '.$this->formatBytes($type->maxSize()).'.'
                 );
             }
 

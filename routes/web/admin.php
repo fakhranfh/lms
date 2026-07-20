@@ -13,6 +13,7 @@ use App\Livewire\Schools\SchoolEdit;
 use App\Livewire\Schools\SchoolIndex;
 use App\Livewire\Schools\SchoolTierHistory;
 use App\Livewire\Users\UserIndex;
+use App\Services\R2StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -27,8 +28,10 @@ Route::domain('admin.'.config('app.domain'))->group(function () {
     });
 
     Route::middleware(['auth', 'role:Admin'])->group(function () {
-        Route::get('/dashboard', function () {
-            return view('admin.dashboard');
+        Route::get('/dashboard', function (R2StorageService $r2Service) {
+            return view('admin.dashboard', [
+                'quota' => $r2Service->checkSchoolQuota(''),
+            ]);
         })->name('admin.dashboard');
 
         Route::get('/settings', function () {

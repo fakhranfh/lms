@@ -44,4 +44,34 @@ describe('R2StorageService', function () {
                 ->and($quota['percentage'])->toBeFloat();
         });
     });
+
+    describe('validateFileContent', function () {
+        test('accepts a real MP4 file whose ftyp signature is offset by a box-size prefix', function () {
+            $service = new R2StorageService;
+            $path = storage_path('dummy-materials/file_example_MP4_480_1_5MG.mp4');
+
+            if (! file_exists($path)) {
+                $this->markTestSkipped('Dummy MP4 fixture not present.');
+            }
+
+            // Real MP4 files start with a 4-byte box-size field before the
+            // "ftyp" signature, so it never sits at byte 0 — this should not throw.
+            $service->validateFileContent($path, 'Video');
+
+            expect(true)->toBeTrue();
+        });
+
+        test('rejects a file with no matching signature for the given type', function () {
+            $service = new R2StorageService;
+            $path = tempnam(sys_get_temp_dir(), 'not-a-video');
+            file_put_contents($path, 'plain text content, not a real video file');
+
+            try {
+                expect(fn () => $service->validateFileContent($path, 'Video'))
+                    ->toThrow(InvalidArgumentException::class);
+            } finally {
+                unlink($path);
+            }
+        });
+    });
 });

@@ -8,6 +8,9 @@ use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\School;
 use App\Models\User;
+use App\Services\LessonMaterialService;
+use App\Services\LessonService;
+use App\Services\R2StorageService;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -104,52 +107,6 @@ class LessonFormTest extends TestCase
         ]);
     }
 
-    public function test_can_create_lesson_with_youtube_watch_url(): void
-    {
-        $this->instructor->givePermissionTo('lessons.create');
-
-        Livewire::test(LessonForm::class, ['module' => $this->module])
-            ->set('title', 'Video Lesson')
-            ->set('videoEmbedUrl', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
-            ->call('save')
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('lessons', [
-            'title' => 'Video Lesson',
-            'video_embed_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        ]);
-    }
-
-    public function test_youtube_short_url_is_converted_to_embed(): void
-    {
-        $this->instructor->givePermissionTo('lessons.create');
-
-        Livewire::test(LessonForm::class, ['module' => $this->module])
-            ->set('title', 'Short URL Lesson')
-            ->set('videoEmbedUrl', 'https://youtu.be/dQw4w9WgXcQ')
-            ->call('save')
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('lessons', [
-            'video_embed_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        ]);
-    }
-
-    public function test_already_embed_url_is_preserved(): void
-    {
-        $this->instructor->givePermissionTo('lessons.create');
-
-        Livewire::test(LessonForm::class, ['module' => $this->module])
-            ->set('title', 'Embed URL Lesson')
-            ->set('videoEmbedUrl', 'https://www.youtube.com/embed/dQw4w9WgXcQ')
-            ->call('save')
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('lessons', [
-            'video_embed_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        ]);
-    }
-
     public function test_can_update_lesson(): void
     {
         $lesson = Lesson::factory()
@@ -171,32 +128,6 @@ class LessonFormTest extends TestCase
             'id' => $lesson->id,
             'title' => 'New Title',
             'content' => '<p>New content</p>',
-        ]);
-    }
-
-    public function test_invalid_video_url_rejected(): void
-    {
-        $this->instructor->givePermissionTo('lessons.create');
-
-        Livewire::test(LessonForm::class, ['module' => $this->module])
-            ->set('title', 'Lesson')
-            ->set('videoEmbedUrl', 'https://example.com/video')
-            ->call('save')
-            ->assertHasErrors('videoEmbedUrl');
-    }
-
-    public function test_vimeo_video_url_accepted(): void
-    {
-        $this->instructor->givePermissionTo('lessons.create');
-
-        Livewire::test(LessonForm::class, ['module' => $this->module])
-            ->set('title', 'Vimeo Lesson')
-            ->set('videoEmbedUrl', 'https://vimeo.com/123456789')
-            ->call('save')
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('lessons', [
-            'video_embed_url' => 'https://vimeo.com/123456789',
         ]);
     }
 
@@ -241,5 +172,72 @@ class LessonFormTest extends TestCase
     public function test_user_cannot_create_lesson_in_different_school_module(): void
     {
         $this->markTestSkipped('Livewire component render happens before mount abort; tested via CourseBuilderTest for module/lesson deletion from different schools');
+    }
+
+    public function test_uploading_a_material_before_saving_creates_a_draft_lesson(): void
+    {
+        $this->instructor->givePermissionTo('lessons.create');
+
+        $this->mock(R2StorageService::class, function ($mock) {
+            $mock->shouldReceive('generatePresignedPutUrl')
+                ->andReturn(['url' => 'https://example.com/presigned', 'key' => 'temp/abc/notes.pdf', 'lesson_id' => 'placeholder']);
+        });
+
+        $component = Livewire::test(LessonForm::class, ['module' => $this->module])
+            ->set('title', 'Draft Lesson');
+
+        $result = $component->instance()->generateUploadUrl('notes.pdf', 'PDF', app(R2StorageService::class), app(LessonService::class));
+
+        $this->assertArrayNotHasKey('error', $result);
+        $this->assertDatabaseHas('lessons', [
+            'title' => 'Draft Lesson',
+            'module_id' => $this->module->id,
+            'is_published' => false,
+        ]);
+    }
+
+    public function test_uploading_a_material_without_a_title_returns_an_error(): void
+    {
+        $this->instructor->givePermissionTo('lessons.create');
+
+        $component = Livewire::test(LessonForm::class, ['module' => $this->module]);
+
+        $result = $component->instance()->generateUploadUrl('notes.pdf', 'PDF', app(R2StorageService::class), app(LessonService::class));
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertDatabaseMissing('lessons', [
+            'module_id' => $this->module->id,
+        ]);
+    }
+
+    public function test_finalize_upload_returns_error_when_validation_fails(): void
+    {
+        $lesson = Lesson::factory()->for($this->module)->create();
+
+        $this->instructor->givePermissionTo('lessons.edit');
+
+        $this->mock(LessonMaterialService::class, function ($mock) {
+            $mock->shouldReceive('finalizeR2Upload')
+                ->andThrow(new \Exception('File content does not match Video format. Expected file signature not found in header.'));
+        });
+
+        $component = Livewire::test(LessonForm::class, [
+            'module' => $this->module,
+            'lesson' => $lesson,
+        ]);
+
+        $result = $component->instance()->finalizeUpload([
+            'type' => 'Video',
+            'temp_key' => 'temp/abc/fake.mp4',
+        ], app(LessonMaterialService::class));
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertSame(
+            'File content does not match Video format. Expected file signature not found in header.',
+            $result['error']
+        );
+        $this->assertDatabaseMissing('lesson_materials', [
+            'lesson_id' => $lesson->id,
+        ]);
     }
 }

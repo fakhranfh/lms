@@ -220,10 +220,14 @@ class R2StorageService
         // Convert to hex
         $headerHex = bin2hex($headerBytes);
 
-        // Check if any magic bytes match
+        // Check if any magic bytes match. Most formats place their signature at
+        // byte 0, but MP4/MOV containers prefix it with a 4-byte box-size field
+        // (e.g. "ftyp" sits at offset 4), so search within the first 16 bytes
+        // rather than requiring an exact match at the very start of the file.
         $foundMatch = false;
+        $searchWindow = substr($headerHex, 0, 32);
         foreach ($magicBytesToCheck as $magicHex) {
-            if (str_starts_with($headerHex, $magicHex)) {
+            if (str_contains($searchWindow, $magicHex)) {
                 $foundMatch = true;
                 break;
             }
@@ -231,8 +235,9 @@ class R2StorageService
 
         if (! $foundMatch) {
             throw new \InvalidArgumentException(
-                "File content does not match {$materialTypeEnum->value} format. "
-                .'Expected file signature not found in header.'
+                "This file doesn't look like a valid {$materialTypeEnum->label()} file. ".
+                'It may be corrupted, or its extension was changed to something it isn\'t. '.
+                'Please check the file and try again.'
             );
         }
     }
@@ -271,8 +276,9 @@ class R2StorageService
 
         if (! $mimeTypeMatches) {
             throw new \InvalidArgumentException(
-                "File MIME type '{$actualMime}' not allowed for {$materialTypeEnum->value}. "
-                .'Allowed: '.implode(', ', $allowedMimeTypes)
+                "This file isn't a supported {$materialTypeEnum->label()} file. ".
+                'Please upload a file in one of these formats: '.
+                implode(', ', $materialTypeEnum->allowedExtensions()).'.'
             );
         }
     }
@@ -365,6 +371,17 @@ class R2StorageService
             'remaining' => $remaining,
             'percentage' => $percentage,
         ];
+    }
+
+    public static function formatBytes(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= (1 << (10 * $pow));
+
+        return round($bytes, 2).' '.$units[$pow];
     }
 
     /**

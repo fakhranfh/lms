@@ -31,12 +31,7 @@ class LessonForm extends Component
 
     public bool $isPublished = false;
 
-    #[Validate('nullable|url')]
-    public string $videoEmbedUrl = '';
-
     public Collection $materials;
-
-    public array $uploadProgress = [];
 
     public ?string $errorMessage = null;
 
@@ -72,7 +67,6 @@ class LessonForm extends Component
     {
         if ($this->lesson) {
             $this->materials = $this->lesson->materials()->orderBy('order')->get();
-            $this->videoEmbedUrl = $this->lesson->video_embed_url ?? '';
         }
     }
 
@@ -80,19 +74,12 @@ class LessonForm extends Component
     {
         $this->validate();
 
-        if ($this->videoEmbedUrl && ! $this->isValidVideoUrl($this->videoEmbedUrl)) {
-            $this->addError('videoEmbedUrl', 'The video embed URL must be a YouTube or Vimeo link.');
-
-            return;
-        }
-
         $durationMinutes = $this->durationMinutes ? (int) $this->durationMinutes : null;
 
         if ($this->lesson) {
             $lessonService->update($this->lesson->id, [
                 'title' => $this->title,
                 'content' => $this->content,
-                'video_embed_url' => $this->videoEmbedUrl,
                 'duration_minutes' => $durationMinutes,
                 'is_published' => $this->isPublished,
             ]);
@@ -103,7 +90,6 @@ class LessonForm extends Component
                 'module_id' => $this->module->id,
                 'title' => $this->title,
                 'content' => $this->content,
-                'video_embed_url' => $this->videoEmbedUrl,
                 'duration_minutes' => $durationMinutes,
                 'is_published' => $this->isPublished,
             ]);
@@ -114,33 +100,40 @@ class LessonForm extends Component
         return redirect()->route('courses.show', $this->module->course);
     }
 
-    private function isValidVideoUrl(string $url): bool
+    /**
+     * Silently persist the lesson as a draft so materials can be attached
+     * before the user explicitly submits the form.
+     *
+     * @return array{error?: string}
+     */
+    private function ensureLessonExists(LessonService $lessonService): array
     {
-        $youtubePatterns = [
-            'youtube\.com\/watch\?v=',
-            'youtube\.com\/embed\/',
-            'youtu\.be\/',
-        ];
-
-        $vimeoPatterns = [
-            'vimeo\.com\/',
-            'player\.vimeo\.com\/video\/',
-        ];
-
-        $allPatterns = array_merge($youtubePatterns, $vimeoPatterns);
-        foreach ($allPatterns as $pattern) {
-            if (preg_match("/$pattern/i", $url)) {
-                return true;
-            }
+        if ($this->lesson) {
+            return [];
         }
 
-        return false;
+        if (trim($this->title) === '') {
+            return ['error' => 'Please enter a lesson title before uploading materials.'];
+        }
+
+        $this->lesson = $lessonService->create([
+            'module_id' => $this->module->id,
+            'title' => $this->title,
+            'content' => $this->content,
+            'duration_minutes' => $this->durationMinutes ? (int) $this->durationMinutes : null,
+            'is_published' => false,
+        ]);
+
+        $this->loadMaterials();
+
+        return [];
     }
 
-    public function generateUploadUrl(string $filename, string $materialType, R2StorageService $r2Service): array
+    public function generateUploadUrl(string $filename, string $materialType, R2StorageService $r2Service, LessonService $lessonService): array
     {
-        if (! $this->lesson) {
-            throw new \InvalidArgumentException('Lesson must be saved before uploading materials');
+        $draft = $this->ensureLessonExists($lessonService);
+        if (isset($draft['error'])) {
+            return $draft;
         }
 
         try {
@@ -157,7 +150,10 @@ class LessonForm extends Component
         }
     }
 
-    public function finalizeUpload(array $data, LessonMaterialService $materialService): void
+    /**
+     * @return array{error?: string}
+     */
+    public function finalizeUpload(array $data, LessonMaterialService $materialService): array
     {
         try {
             if (! $this->lesson) {
@@ -168,8 +164,12 @@ class LessonForm extends Component
             $this->materials->push($material);
             $this->errorMessage = null;
             $this->dispatch('material-uploaded', materialId: $material->id);
+
+            return [];
         } catch (\Exception $e) {
-            $this->errorMessage = $e->getMessage();
+            // Reported back to the JS uploader (clientError) instead of $errorMessage,
+            // which would otherwise render the same message a second time server-side.
+            return ['error' => $e->getMessage()];
         }
     }
 
@@ -199,11 +199,6 @@ class LessonForm extends Component
         }
     }
 
-    public function getStorageQuota(R2StorageService $r2Service): array
-    {
-        return $r2Service->checkSchoolQuota(auth()->user()->school_id);
-    }
-
     public function formatBytes(int $bytes): string
     {
         $units = ['B', 'KB', 'MB', 'GB'];
@@ -225,15 +220,34 @@ class LessonForm extends Component
             MaterialType::Presentation => '📊',
             MaterialType::Image => '🖼️',
             MaterialType::Interactive => '🎮',
+            MaterialType::Markdown => '📄',
         };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function getExtensionToTypeMap(): array
+    {
+        $map = [];
+        foreach (MaterialType::cases() as $type) {
+            foreach ($type->allowedExtensions() as $extension) {
+                $map[$extension] = $type->value;
+            }
+        }
+
+        return $map;
     }
 
     public function render()
     {
+        $extensionTypeMap = $this->getExtensionToTypeMap();
+
         return view('livewire.courses.lesson-form', [
             'pageTitle' => $this->lesson ? 'Edit Lesson' : 'Create Lesson',
             'materialTypes' => MaterialType::cases(),
-            'quota' => $this->getStorageQuota(app(R2StorageService::class)),
+            'extensionTypeMap' => $extensionTypeMap,
+            'acceptedExtensions' => implode(',', array_map(fn (string $ext) => ".{$ext}", array_keys($extensionTypeMap))),
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->lesson ? 'Edit Lesson' : 'Create Lesson'])
             ->section('app-content');

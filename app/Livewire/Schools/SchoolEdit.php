@@ -48,12 +48,6 @@ class SchoolEdit extends Component
     }
 
     #[Computed]
-    public function tierFeatures(): BaseCollection
-    {
-        return $this->school->tier?->features()->get() ?? collect();
-    }
-
-    #[Computed]
     public function tierLimits(): BaseCollection
     {
         return $this->school->tier?->limits()->get() ?? collect();

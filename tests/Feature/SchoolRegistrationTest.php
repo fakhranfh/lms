@@ -1,8 +1,11 @@
 <?php
 
 use App\Models\School;
+use Database\Seeders\PricingTierSeeder;
 
 test('a school can register with a valid name and domain', function () {
+    $this->seed(PricingTierSeeder::class);
+
     $rootDomain = config('app.domain');
     $schoolDomain = "myschool.{$rootDomain}";
 

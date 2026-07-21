@@ -20,7 +20,7 @@ class ModuleFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => Str::uuid(),
+            'id' => (string) Str::uuid(),
             'course_id' => Course::factory(),
             'title' => fake()->sentence(2),
             'description' => fake()->paragraph(),

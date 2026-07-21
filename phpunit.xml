@@ -38,6 +38,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="FEATURE_EMAIL_ENABLED" value="true"/>
         <env name="CLOUDFLARE_R2_ACCOUNT_ID" value="test-account-id"/>
         <env name="CLOUDFLARE_R2_ACCESS_KEY_ID" value="test-access-key"/>
         <env name="CLOUDFLARE_R2_SECRET_ACCESS_KEY" value="test-secret-key"/>

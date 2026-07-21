@@ -22,7 +22,7 @@ class LessonFactory extends Factory
         $module = Module::factory();
 
         return [
-            'id' => Str::uuid(),
+            'id' => (string) Str::uuid(),
             'module_id' => $module,
             'title' => fake()->sentence(2),
             'content' => fake()->paragraphs(3, true),

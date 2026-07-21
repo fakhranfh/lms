@@ -64,10 +64,11 @@ class ContentEngineSeeder extends Seeder
             $instructor = $instructors->random();
 
             $course = Course::create([
-                'id' => Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'school_id' => $school->id,
                 'created_by' => $instructor->id,
                 'title' => $courseData['title'],
+                'slug' => Str::slug($courseData['title']).'-'.Str::random(6),
                 'description' => $courseData['description'],
                 'is_published' => $courseData['is_published'],
                 'created_at' => now(),
@@ -84,7 +85,7 @@ class ContentEngineSeeder extends Seeder
 
         foreach ($modulesByTitle as $index => $moduleData) {
             $module = Module::create([
-                'id' => Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'course_id' => $course->id,
                 'title' => $moduleData['title'],
                 'description' => $moduleData['description'],
@@ -102,7 +103,7 @@ class ContentEngineSeeder extends Seeder
     {
         foreach ($lessons as $index => $lessonData) {
             Lesson::create([
-                'id' => Str::uuid(),
+                'id' => (string) Str::uuid(),
                 'module_id' => $module->id,
                 'title' => $lessonData['title'],
                 'content' => $lessonData['content'],

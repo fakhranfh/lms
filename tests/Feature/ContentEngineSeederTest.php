@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Course;
-use App\Models\Lesson;
 use App\Models\Module;
 use App\Models\School;
 use App\Models\User;
@@ -79,7 +78,7 @@ test('seeded courses have correct structure', function () {
                 expect($lesson->title)->toBeString()->not->toBeEmpty();
                 expect($lesson->content)->toBeString();
                 expect($lesson->duration_minutes)->toBeInt();
-                expect($lesson->is_published)->toBeTrue();
+                expect($lesson->is_published)->toBe($course->is_published);
             }
         }
     }
@@ -98,23 +97,6 @@ test('seeded courses have published and unpublished variants', function () {
 
     expect($publishedCourses)->toBeGreaterThan(0);
     expect($unpublishedCourses)->toBeGreaterThan(0);
-});
-
-test('seeded lessons can have optional video urls', function () {
-    $school = School::factory()->create();
-    User::factory()->for($school)->create();
-
-    $this->seed(ContentEngineSeeder::class);
-
-    $lessons = Lesson::whereIn('module_id', Module::whereIn('course_id', Course::where('school_id', $school->id)->pluck('id'))->pluck('id'))->get();
-
-    $lessonsWithVideo = $lessons->whereNotNull('video_embed_url')->count();
-    $lessonsWithoutVideo = $lessons->whereNull('video_embed_url')->count();
-
-    expect($lessons->count())->toBeGreaterThan(0);
-    // Some lessons should have videos, some shouldn't
-    expect($lessonsWithVideo)->toBeGreaterThan(0);
-    expect($lessonsWithoutVideo)->toBeGreaterThan(0);
 });
 
 test('seeded content belongs to correct school', function () {

@@ -43,7 +43,7 @@ class UserFactory extends Factory
 
         // Create school directly to avoid factory trait closure issues
         $school = School::create([
-            'id' => Str::uuid(),
+            'id' => (string) Str::uuid(),
             'name' => fake()->company(),
             'domain' => fake()->unique()->domainName(),
             'tier_id' => $basicTier->id,

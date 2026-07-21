@@ -55,7 +55,7 @@ class PricingTierManagementTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_admin_can_create_pricing_tier_with_features_and_limits(): void
+    public function test_admin_can_create_pricing_tier_with_limits(): void
     {
         $adminUser = User::factory()->create(['school_id' => null]);
         $adminUser->assignRole('Admin');
@@ -65,7 +65,6 @@ class PricingTierManagementTest extends TestCase
             'name' => 'Enterprise',
             'slug' => 'enterprise',
         ]);
-        $tier->features()->create(['feature_key' => 'analytics', 'is_enabled' => true]);
         $tier->limits()->create(['limit_key' => 'student_capacity_per_course', 'limit_value' => 1000]);
 
         $this->assertDatabaseHas('pricing_tiers', [
@@ -73,7 +72,6 @@ class PricingTierManagementTest extends TestCase
             'slug' => 'enterprise',
         ]);
 
-        $this->assertCount(1, $tier->features);
         $this->assertCount(1, $tier->limits);
     }
 

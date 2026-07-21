@@ -56,23 +56,6 @@
                     <p class="text-body-sm text-on-surface-variant">{{ $this->school->tier->description }}</p>
                 </div>
 
-                <!-- Features -->
-                @if($this->tierFeatures->count() > 0)
-                    <div class="mb-space-lg">
-                        <h4 class="font-label-md text-label-md text-on-surface mb-space-sm">Features</h4>
-                        <ul class="space-y-space-xs">
-                            @foreach($this->tierFeatures as $feature)
-                                @if($feature->is_enabled)
-                                    <li class="flex items-center gap-space-sm text-body-sm text-on-surface">
-                                        <span class="w-5 h-5 flex items-center justify-center rounded bg-primary text-on-primary text-xs">✓</span>
-                                        {{ ucfirst(str_replace('_', ' ', $feature->feature_key)) }}
-                                    </li>
-                                @endif
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-
                 <!-- Limits -->
                 @if($this->tierLimits->count() > 0)
                     <div>

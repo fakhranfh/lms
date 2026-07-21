@@ -25,16 +25,6 @@ class PricingTier extends Model
     ];
 
     /**
-     * Get the tier features.
-     *
-     * @return HasMany<TierFeature, $this>
-     */
-    public function features(): HasMany
-    {
-        return $this->hasMany(TierFeature::class, 'pricing_tier_id');
-    }
-
-    /**
      * Get the tier limits.
      *
      * @return HasMany<TierLimit, $this>

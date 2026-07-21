@@ -33,6 +33,8 @@ class LessonForm extends Component
 
     public Collection $materials;
 
+    public Collection $materialVersions;
+
     public ?string $errorMessage = null;
 
     public function mount(CurrentSchool $currentSchool, ?Module $module = null, ?Lesson $lesson = null): void
@@ -52,6 +54,7 @@ class LessonForm extends Component
 
         $this->module = $module;
         $this->materials = new Collection;
+        $this->materialVersions = new Collection;
 
         if ($lesson) {
             $this->lesson = $lesson;
@@ -210,6 +213,48 @@ class LessonForm extends Component
             $materialService->reorder($this->lesson->id, $materialIds);
             $this->loadMaterials();
             $this->dispatch('materials-reordered');
+        } catch (\Exception $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    /**
+     * Get all versions of a material
+     *
+     * @return Collection<int, LessonMaterial>
+     */
+    public function getMaterialVersions(string $materialId): Collection
+    {
+        try {
+            return app(LessonMaterialService::class)->getAllVersions($materialId);
+        } catch (\Exception $e) {
+            return new Collection;
+        }
+    }
+
+    /**
+     * Switch to a different version of a material
+     */
+    public function switchToVersion(string $materialId, int $targetVersion, LessonMaterialService $materialService): void
+    {
+        try {
+            $materialService->switchVersion($materialId, $targetVersion);
+            $this->loadMaterials();
+            $this->dispatch('version-switched', materialId: $materialId, version: $targetVersion);
+        } catch (\Exception $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    /**
+     * Delete a specific version of a material
+     */
+    public function deleteVersion(string $materialId, int $versionToDelete, LessonMaterialService $materialService): void
+    {
+        try {
+            $materialService->deleteVersion($materialId, $versionToDelete);
+            $this->loadMaterials();
+            $this->dispatch('version-deleted', materialId: $materialId, version: $versionToDelete);
         } catch (\Exception $e) {
             $this->errorMessage = $e->getMessage();
         }

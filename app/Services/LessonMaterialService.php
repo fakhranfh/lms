@@ -250,34 +250,49 @@ class LessonMaterialService
 
     /**
      * Update an existing lesson material
+     * Creates a new version if file is updated; otherwise updates metadata inline
      */
     public function update(string $materialId, array $data): LessonMaterial
     {
         $material = LessonMaterial::findOrFail($materialId);
 
-        // If new file provided, upload and delete old one
+        // If new file provided, create a new version
         if (isset($data['file']) && $data['file'] instanceof UploadedFile) {
             $type = $material->type;
             $this->validateFile($data['file'], $type);
-
-            // Delete old file from R2
-            if ($material->file_path) {
-                $this->r2Service->delete($material->file_path);
-            }
 
             // Upload new file
             $path = "lessons/{$material->lesson_id}/materials";
             $fileUrl = $this->r2Service->upload($data['file'], $path, $type);
 
-            $data['file_url'] = $fileUrl;
-            $data['file_size'] = $data['file']->getSize();
-            $data['mime_type'] = $data['file']->getMimeType();
-            $data['file_path'] = $path.'/'.basename($fileUrl);
+            // Prepare version data
+            $versionData = [
+                'lesson_id' => $material->lesson_id,
+                'type' => $type,
+                'title' => $data['title'] ?? $material->title,
+                'description' => $data['description'] ?? $material->description,
+                'file_url' => $fileUrl,
+                'file_size' => $data['file']->getSize(),
+                'mime_type' => $data['file']->getMimeType(),
+                'file_path' => $path.'/'.basename($fileUrl),
+                'order' => $material->order,
+                'version' => $material->version + 1,
+                'is_active' => true,
+            ];
 
-            unset($data['file']);
+            // Deactivate current version
+            $this->materialRepository->update($materialId, ['is_active' => false]);
+
+            // Create new version
+            $newVersion = $this->materialRepository->create($versionData);
+
+            // Note: old file from R2 is kept for potential rollback/archive purposes
+            // To fully delete it, implement archival/cleanup job separately
+
+            return $newVersion;
         }
 
-        // Update material
+        // If no new file, just update metadata
         return $this->materialRepository->update($materialId, $data);
     }
 
@@ -381,6 +396,92 @@ class LessonMaterialService
                 "Invalid file extension for {$type->value}. Allowed: ".implode(', ', $allowedExtensions)
             );
         }
+    }
+
+    /**
+     * Get all versions of a material (by lesson_id + title)
+     *
+     * @return Collection<int, LessonMaterial>
+     */
+    public function getAllVersions(string $materialId): Collection
+    {
+        $material = LessonMaterial::findOrFail($materialId);
+
+        return LessonMaterial::where('lesson_id', $material->lesson_id)
+            ->where('title', $material->title)
+            ->orderBy('version', 'desc')
+            ->get();
+    }
+
+    /**
+     * Switch to a different version of a material
+     * Deactivates current version, activates selected version
+     */
+    public function switchVersion(string $materialId, int $targetVersion): LessonMaterial
+    {
+        $material = LessonMaterial::findOrFail($materialId);
+
+        // Find target version
+        $targetMaterial = LessonMaterial::where('lesson_id', $material->lesson_id)
+            ->where('title', $material->title)
+            ->where('version', $targetVersion)
+            ->firstOrFail();
+
+        // Deactivate current active version
+        LessonMaterial::where('lesson_id', $material->lesson_id)
+            ->where('title', $material->title)
+            ->where('is_active', true)
+            ->update(['is_active' => false]);
+
+        // Activate target version
+        $targetMaterial->update(['is_active' => true]);
+
+        return $targetMaterial;
+    }
+
+    /**
+     * Delete a specific version of a material
+     * Cannot delete the last remaining version (use delete() instead)
+     */
+    public function deleteVersion(string $materialId, int $versionToDelete): void
+    {
+        $material = LessonMaterial::findOrFail($materialId);
+
+        // Check how many versions exist for this material
+        $versionCount = LessonMaterial::where('lesson_id', $material->lesson_id)
+            ->where('title', $material->title)
+            ->count();
+
+        if ($versionCount <= 1) {
+            throw new \InvalidArgumentException('Cannot delete the last version. Use delete() to remove the material entirely.');
+        }
+
+        // Find the version to delete
+        $versionToDeleteRecord = LessonMaterial::where('lesson_id', $material->lesson_id)
+            ->where('title', $material->title)
+            ->where('version', $versionToDelete)
+            ->firstOrFail();
+
+        // If this is the active version, activate the most recent other version
+        if ($versionToDeleteRecord->is_active) {
+            $nextVersion = LessonMaterial::where('lesson_id', $material->lesson_id)
+                ->where('title', $material->title)
+                ->where('version', '!=', $versionToDelete)
+                ->orderBy('version', 'desc')
+                ->first();
+
+            if ($nextVersion) {
+                $nextVersion->update(['is_active' => true]);
+            }
+        }
+
+        // Delete from R2
+        if ($versionToDeleteRecord->file_path) {
+            $this->r2Service->delete($versionToDeleteRecord->file_path);
+        }
+
+        // Delete from database
+        $this->materialRepository->delete($versionToDeleteRecord->id);
     }
 
     /**

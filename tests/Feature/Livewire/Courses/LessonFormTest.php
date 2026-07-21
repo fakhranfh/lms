@@ -261,4 +261,91 @@ class LessonFormTest extends TestCase
             'title' => 'A Much Better Title',
         ]);
     }
+
+    public function test_material_versions_can_be_retrieved(): void
+    {
+        $lesson = Lesson::factory()->for($this->module)->create();
+        $material = LessonMaterial::factory()
+            ->for($lesson)
+            ->create(['title' => 'Versioned Material', 'version' => 1, 'is_active' => true]);
+
+        // Create additional versions
+        LessonMaterial::factory()
+            ->for($lesson)
+            ->create(['title' => 'Versioned Material', 'version' => 2, 'is_active' => false]);
+
+        $this->instructor->givePermissionTo('lessons.edit');
+
+        $component = Livewire::test(LessonForm::class, [
+            'module' => $this->module,
+            'lesson' => $lesson,
+        ]);
+
+        $versions = $component->instance()->getMaterialVersions($material->id);
+
+        expect($versions)->toHaveCount(2);
+        expect($versions->first()->version)->toBe(2);
+        expect($versions->first()->is_active)->toBe(false);
+        expect($versions->last()->version)->toBe(1);
+        expect($versions->last()->is_active)->toBe(true);
+    }
+
+    public function test_can_switch_material_version(): void
+    {
+        $lesson = Lesson::factory()->for($this->module)->create();
+        $v1 = LessonMaterial::factory()
+            ->for($lesson)
+            ->create(['title' => 'Switch Test', 'version' => 1, 'is_active' => true]);
+        $v2 = LessonMaterial::factory()
+            ->for($lesson)
+            ->create(['title' => 'Switch Test', 'version' => 2, 'is_active' => false]);
+
+        $this->instructor->givePermissionTo('lessons.edit');
+
+        $component = Livewire::test(LessonForm::class, [
+            'module' => $this->module,
+            'lesson' => $lesson,
+        ]);
+
+        $component->call('switchToVersion', $v1->id, 2);
+
+        $this->assertDatabaseHas('lesson_materials', [
+            'id' => $v1->id,
+            'is_active' => false,
+        ]);
+
+        $this->assertDatabaseHas('lesson_materials', [
+            'id' => $v2->id,
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_can_delete_material_version(): void
+    {
+        $lesson = Lesson::factory()->for($this->module)->create();
+        $v1 = LessonMaterial::factory()
+            ->for($lesson)
+            ->create(['title' => 'Delete Test', 'version' => 1, 'is_active' => false]);
+        $v2 = LessonMaterial::factory()
+            ->for($lesson)
+            ->create(['title' => 'Delete Test', 'version' => 2, 'is_active' => true]);
+
+        $this->instructor->givePermissionTo('lessons.edit');
+
+        $component = Livewire::test(LessonForm::class, [
+            'module' => $this->module,
+            'lesson' => $lesson,
+        ]);
+
+        $component->call('deleteVersion', $v1->id, 1);
+
+        $this->assertDatabaseMissing('lesson_materials', [
+            'id' => $v1->id,
+        ]);
+
+        $this->assertDatabaseHas('lesson_materials', [
+            'id' => $v2->id,
+            'is_active' => true,
+        ]);
+    }
 }

@@ -693,51 +693,64 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 
 ### 11.7 Material Versioning System
 
-**Goal:** Store full version history for each material; allow instructors to manage versions.
+**Status:** ✅ COMPLETE — Backend + UI (2026-07-21)
 
 **Database Changes:**
-- [ ] Add `version` column to `lesson_materials`:
-  - [ ] `version` (UNSIGNED INT, default 1) — version number for this material
-  - [ ] `is_active` (BOOLEAN, default true) — which version is currently displayed to students
-  - [ ] Composite unique key: `(lesson_material_id, version)` — multiple versions per material
-  - [ ] ⚠️ Consider: rename table to `lesson_material_versions` and track material metadata separately, OR keep flat structure with compound keys
-
-- [ ] Create `lesson_materials_history` pivot/audit table (optional):
-  - [ ] Track: old_url, old_size, updated_by (user_id), updated_at
-  - [ ] For audit trail and rollback capability
+- [x] Add `version` column to `lesson_materials`:
+  - [x] `version` (UNSIGNED INT, default 1) — version number for this material
+  - [x] `is_active` (BOOLEAN, default true) — which version is currently displayed to students
+  - [x] Composite unique key: `(lesson_id, title, version)` — flat structure with compound keys approach
+  - [x] Migration: `2026_07_21_051527_add_versioning_to_lesson_materials_table.php`
 
 **Service Layer:**
-- [ ] `LessonMaterialService::update()` — instead of overwriting, create new version:
-  - [ ] Increment `version` number
-  - [ ] Set `is_active = true` for new version, `is_active = false` for others
-  - [ ] Keep all old versions in database
+- [x] `LessonMaterialService::update()` — creates new version on file update:
+  - [x] Increments `version` number
+  - [x] Sets `is_active = true` for new version, `is_active = false` for old
+  - [x] Keeps all old versions in database for rollback/archive
 
-- [ ] `LessonMaterialService::switchVersion(materialId, versionNumber)`:
-  - [ ] Deactivate current version
-  - [ ] Activate selected version
-  - [ ] Update `last_viewed_at` for students (or reset access tracking?)
+- [x] `LessonMaterialService::switchVersion(materialId, versionNumber)`:
+  - [x] Deactivates current active version
+  - [x] Activates selected version
+  - [x] Returns activated material record
 
-- [ ] `LessonMaterialService::deleteVersion(materialId, versionNumber)`:
-  - [ ] Delete from R2
-  - [ ] Delete from lesson_materials
-  - [ ] Recalculate storage quota
+- [x] `LessonMaterialService::deleteVersion(materialId, versionNumber)`:
+  - [x] Cannot delete last remaining version (throws InvalidArgumentException)
+  - [x] Deletes from R2 storage
+  - [x] Deletes from lesson_materials DB
+  - [x] Auto-activates previous version if deleting active version
+  - [x] Updates storage quota calculation
 
-**UI Changes:**
-- [ ] LessonForm: Add "Version History" section
-  - [ ] List all versions with dates, file sizes, "active" badge
-  - [ ] Buttons: View, Activate, Delete
-  - [ ] Show total storage consumed by all versions of this material
+**Model Methods:**
+- [x] `LessonMaterial::scopeActive()` — filter only is_active=true materials
+- [x] `LessonMaterial::getAllVersions()` — get all versions of a material by lesson_id + title
+- [x] `LessonMaterial::getActiveVersion()` — get current active version
 
-- [ ] LessonViewer: Add version indicator (optional for students)
-  - [ ] Show "v2" badge if not on latest version
-  - [ ] Instructor can switch versions mid-lesson if needed
+**Livewire Component Updates:**
+- [x] `LessonForm::getMaterialVersions()` — retrieve all versions for a material
+- [x] `LessonForm::switchToVersion()` — switch to different version
+- [x] `LessonForm::deleteVersion()` — delete specific version (calls service)
+- [x] UI: Version History section in LessonForm (collapsible per material)
+- [x] UI: List all versions with dates, file sizes, "active" badge
+- [x] UI: Activate/Delete buttons per version
+- [x] UI: Total storage calculation across all versions
+
+**Repository Updates:**
+- [x] `LessonMaterialRepository::create()` — handle version/is_active params (default 1/true)
+- [x] `LessonMaterialRepository::update()` — support version/is_active field updates
 
 **Tests:**
-- [ ] Version creation on update (not overwrite)
-- [ ] Version activation/deactivation
-- [ ] Storage calculation includes all versions
-- [ ] Deletion removes R2 file + DB record
-- [ ] Access tracking persists across version switches (or resets?)
+- [x] Material version is 1 on creation
+- [x] Updating material with file creates new version
+- [x] Updating material without file updates metadata inline (no version bump)
+- [x] Can retrieve all versions of a material (ordered by version DESC)
+- [x] Can switch to different version (swaps is_active flag)
+- [x] Cannot delete the only version of a material
+- [x] Can delete version when multiple exist
+- [x] Deleting active version activates previous version
+- [x] Material scope filters only active versions
+- [x] Material::getAllVersions() returns all versions ordered by version desc
+- [x] Material::getActiveVersion() returns current active version
+- [x] Total: 11/11 tests passing
 
 ---
 

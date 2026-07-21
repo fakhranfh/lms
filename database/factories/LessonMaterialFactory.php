@@ -46,6 +46,8 @@ class LessonMaterialFactory extends Factory
 
                 return self::$orderCounter;
             },
+            'version' => 1,
+            'is_active' => true,
         ];
     }
 

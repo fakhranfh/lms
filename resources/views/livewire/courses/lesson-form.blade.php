@@ -104,36 +104,128 @@
                         <h4 class="text-label-md text-on-surface font-label-md">Current Materials</h4>
                         <div class="space-y-space-xs">
                             @foreach ($materials as $material)
-                                <div class="flex items-center justify-between p-space-md bg-surface-container rounded-lg">
-                                    <div class="flex items-center gap-space-md flex-1">
-                                        <span class="text-body-md">{{ $this->getMaterialIcon($material->type) }}</span>
-                                        <div class="flex-1 min-w-0" x-data="{ savingTitle: false }">
-                                            <div class="flex items-center gap-space-xs" :class="{ 'opacity-70': savingTitle }">
-                                                <input
-                                                    type="text"
-                                                    value="{{ $material->title }}"
-                                                    :disabled="savingTitle"
-                                                    @keydown.enter.prevent="$event.target.blur()"
-                                                    @change="savingTitle = true; await $wire.updateMaterialTitle('{{ $material->id }}', $event.target.value); savingTitle = false"
-                                                    wire:key="material-title-{{ $material->id }}"
-                                                    class="w-full bg-transparent text-body-sm text-on-surface font-medium truncate px-space-xs -mx-space-xs rounded border border-transparent hover:border-outline focus:border-primary focus:outline-none focus:bg-surface disabled:cursor-wait"
-                                                />
-                                                <span x-show="savingTitle" x-cloak class="inline-block animate-spin text-on-surface-variant flex-shrink-0">⟳</span>
+                                <div x-data="{ showVersions: false }" class="bg-surface-container rounded-lg border border-outline overflow-hidden">
+                                    <!-- Material Header -->
+                                    <div class="flex items-center justify-between p-space-md">
+                                        <div class="flex items-center gap-space-md flex-1">
+                                            <span class="text-body-md">{{ $this->getMaterialIcon($material->type) }}</span>
+                                            <div class="flex-1 min-w-0" x-data="{ savingTitle: false }">
+                                                <div class="flex items-center gap-space-xs" :class="{ 'opacity-70': savingTitle }">
+                                                    <input
+                                                        type="text"
+                                                        value="{{ $material->title }}"
+                                                        :disabled="savingTitle"
+                                                        @keydown.enter.prevent="$event.target.blur()"
+                                                        @change="savingTitle = true; await $wire.updateMaterialTitle('{{ $material->id }}', $event.target.value); savingTitle = false"
+                                                        wire:key="material-title-{{ $material->id }}"
+                                                        class="w-full bg-transparent text-body-sm text-on-surface font-medium truncate px-space-xs -mx-space-xs rounded border border-transparent hover:border-outline focus:border-primary focus:outline-none focus:bg-surface disabled:cursor-wait"
+                                                    />
+                                                    <span x-show="savingTitle" x-cloak class="inline-block animate-spin text-on-surface-variant flex-shrink-0">⟳</span>
+                                                </div>
+                                                <p class="text-body-sm text-on-surface-variant">
+                                                    {{ $material->type->value }} • {{ $this->formatBytes($material->file_size) }}
+                                                    <span class="ml-space-sm inline-flex items-center px-space-sm py-0.5 rounded-full bg-success/20 text-success text-label-xs font-label-xs">
+                                                        ✓ Active
+                                                    </span>
+                                                </p>
                                             </div>
-                                            <p class="text-body-sm text-on-surface-variant">{{ $material->type->value }} • {{ $this->formatBytes($material->file_size) }}</p>
+                                        </div>
+                                        <div class="flex items-center gap-space-xs ml-space-md">
+                                            @php
+                                                $allVersions = $this->getMaterialVersions($material->id);
+                                            @endphp
+                                            @if ($allVersions->count() > 1)
+                                                <button
+                                                    type="button"
+                                                    @click="showVersions = !showVersions"
+                                                    class="px-space-md py-space-sm text-secondary hover:bg-secondary/10 rounded transition text-label-sm"
+                                                >
+                                                    <span x-text="showVersions ? '▼' : '▶'"></span>
+                                                    <span class="ml-space-xs">{{ $allVersions->count() }} versions</span>
+                                                </button>
+                                            @endif
+                                            <button
+                                                type="button"
+                                                wire:click="deleteMaterial('{{ $material->id }}')"
+                                                wire:loading.attr="disabled"
+                                                wire:target="deleteMaterial('{{ $material->id }}')"
+                                                class="px-space-md py-space-sm text-error hover:bg-error/10 rounded transition flex items-center gap-space-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <span wire:loading.remove wire:target="deleteMaterial('{{ $material->id }}')">Delete</span>
+                                                <span wire:loading wire:target="deleteMaterial('{{ $material->id }}')" class="inline-block animate-spin">⟳</span>
+                                            </button>
                                         </div>
                                     </div>
-                                    <button
-                                        type="button"
-                                        wire:click="deleteMaterial('{{ $material->id }}')"
-                                        wire:loading.attr="disabled"
-                                        wire:target="deleteMaterial('{{ $material->id }}')"
-                                        class="ml-space-md px-space-md py-space-sm text-error hover:bg-error/10 rounded transition flex items-center gap-space-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <span wire:loading.remove wire:target="deleteMaterial('{{ $material->id }}')">Delete</span>
-                                        <span wire:loading wire:target="deleteMaterial('{{ $material->id }}')" class="inline-block animate-spin">⟳</span>
-                                        <span wire:loading wire:target="deleteMaterial('{{ $material->id }}')">Deleting...</span>
-                                    </button>
+
+                                    <!-- Version History (Collapsible) -->
+                                    @if ($allVersions->count() > 1)
+                                        <div x-show="showVersions" class="border-t border-outline bg-surface divide-y divide-outline">
+                                            <div class="px-space-md py-space-md">
+                                                <h5 class="text-label-sm text-on-surface-variant font-label-sm mb-space-md">
+                                                    Version History
+                                                </h5>
+                                                <div class="space-y-space-md">
+                                                    @php
+                                                        $totalVersionSize = $allVersions->sum('file_size');
+                                                    @endphp
+                                                    @foreach ($allVersions as $version)
+                                                        <div class="p-space-md bg-surface-container rounded-lg border border-outline">
+                                                            <div class="flex items-start justify-between gap-space-md">
+                                                                <div class="flex-1 min-w-0">
+                                                                    <div class="flex items-center gap-space-md mb-space-xs">
+                                                                        <span class="text-label-sm font-label-sm text-on-surface">
+                                                                            v{{ $version->version }}
+                                                                        </span>
+                                                                        @if ($version->is_active)
+                                                                            <span class="inline-flex items-center px-space-sm py-0.5 rounded-full bg-success/20 text-success text-label-xs font-label-xs">
+                                                                                Current
+                                                                            </span>
+                                                                        @endif
+                                                                    </div>
+                                                                    <p class="text-body-sm text-on-surface-variant">
+                                                                        {{ $this->formatBytes($version->file_size) }}
+                                                                        <span class="mx-space-xs">•</span>
+                                                                        {{ $version->created_at->format('M d, Y H:i') }}
+                                                                    </p>
+                                                                </div>
+                                                                <div class="flex items-center gap-space-xs flex-shrink-0">
+                                                                    @if (! $version->is_active)
+                                                                        <button
+                                                                            type="button"
+                                                                            wire:click="switchToVersion('{{ $version->id }}', {{ $version->version }})"
+                                                                            wire:loading.attr="disabled"
+                                                                            wire:target="switchToVersion('{{ $version->id }}')"
+                                                                            class="px-space-md py-space-sm text-primary hover:bg-primary/10 rounded transition text-label-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            <span wire:loading.remove wire:target="switchToVersion('{{ $version->id }}')">Activate</span>
+                                                                            <span wire:loading wire:target="switchToVersion('{{ $version->id }}')" class="inline-block animate-spin">⟳</span>
+                                                                        </button>
+                                                                    @endif
+                                                                    @if ($allVersions->count() > 1)
+                                                                        <button
+                                                                            type="button"
+                                                                            wire:click="deleteVersion('{{ $version->id }}', {{ $version->version }})"
+                                                                            wire:loading.attr="disabled"
+                                                                            wire:target="deleteVersion('{{ $version->id }}')"
+                                                                            class="px-space-md py-space-sm text-error hover:bg-error/10 rounded transition text-label-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            <span wire:loading.remove wire:target="deleteVersion('{{ $version->id }}')">Remove</span>
+                                                                            <span wire:loading wire:target="deleteVersion('{{ $version->id }}')" class="inline-block animate-spin">⟳</span>
+                                                                        </button>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                                <div class="mt-space-md pt-space-md border-t border-outline">
+                                                    <p class="text-body-sm text-on-surface-variant">
+                                                        <strong>Total storage:</strong> {{ $this->formatBytes($totalVersionSize) }} ({{ $allVersions->count() }} versions)
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>

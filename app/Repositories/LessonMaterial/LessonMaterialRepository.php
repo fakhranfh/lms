@@ -74,6 +74,8 @@ class LessonMaterialRepository implements LessonMaterialRepositoryInterface
             'file_size' => $data['file_size'],
             'mime_type' => $data['mime_type'],
             'order' => $data['order'] ?? $this->getNextOrder($data['lesson_id']),
+            'version' => $data['version'] ?? 1,
+            'is_active' => $data['is_active'] ?? true,
         ]);
     }
 
@@ -92,6 +94,8 @@ class LessonMaterialRepository implements LessonMaterialRepositoryInterface
             'file_path' => $data['file_path'] ?? $material->file_path,
             'file_size' => $data['file_size'] ?? $material->file_size,
             'mime_type' => $data['mime_type'] ?? $material->mime_type,
+            'version' => $data['version'] ?? $material->version,
+            'is_active' => $data['is_active'] ?? $material->is_active,
         ]);
 
         return $material;

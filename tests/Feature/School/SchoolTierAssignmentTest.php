@@ -12,13 +12,13 @@ describe('School Tier Assignment', function () {
         $this->seed('PricingTierSeeder');
     });
 
-    test('new school gets default basic tier', function () {
+    test('new school gets default free tier', function () {
         $school = School::factory()->create();
 
-        $basicTier = PricingTier::where('slug', 'basic')->first();
+        $basicTier = PricingTier::where('slug', 'free')->first();
 
         expect($school->tier_id)->toBe($basicTier->id);
-        expect($school->tier->slug)->toBe('basic');
+        expect($school->tier->slug)->toBe('free');
     });
 
     test('school tier subscription is created on school creation', function () {
@@ -46,24 +46,16 @@ describe('School Tier Assignment', function () {
 
     test('school can access current tier via relationship', function () {
         $school = School::factory()->create();
-        $basicTier = PricingTier::where('slug', 'basic')->first();
+        $basicTier = PricingTier::where('slug', 'free')->first();
 
         expect($school->tier)->toBeInstanceOf(PricingTier::class);
         expect($school->tier->id)->toBe($basicTier->id);
     });
 
-    test('school can access tier features', function () {
-        $school = School::factory()->create();
-
-        // Basic tier has no features seeded by default
-        $features = $school->tier->features;
-        expect($features->count())->toBeGreaterThanOrEqual(0);
-    });
-
     test('school can access tier limits', function () {
         $school = School::factory()->create();
 
-        // Basic tier has 3 limits seeded (student_capacity, video_storage, live_session_duration)
+        // Basic tier has material_storage_gb limit added via migration
         $limits = $school->tier->limits;
         expect($limits->count())->toBeGreaterThanOrEqual(1);
     });
@@ -101,38 +93,6 @@ describe('School Tier Assignment', function () {
 
         $limit = $school->getCurrentTierLimit('video_storage');
         expect($limit)->toBeNull();
-    });
-
-    test('is_feature_enabled returns true for enabled feature', function () {
-        $school = School::factory()->create();
-        $basicTier = $school->tier;
-
-        // Create an enabled feature
-        $basicTier->features()->create([
-            'feature_key' => 'analytics',
-            'is_enabled' => true,
-        ]);
-
-        expect($school->isFeatureEnabled('analytics'))->toBeTrue();
-    });
-
-    test('is_feature_enabled returns false for disabled feature', function () {
-        $school = School::factory()->create();
-        $basicTier = $school->tier;
-
-        // Create a disabled feature
-        $basicTier->features()->create([
-            'feature_key' => 'api_access',
-            'is_enabled' => false,
-        ]);
-
-        expect($school->isFeatureEnabled('api_access'))->toBeFalse();
-    });
-
-    test('is_feature_enabled returns false for nonexistent feature', function () {
-        $school = School::factory()->create();
-
-        expect($school->isFeatureEnabled('nonexistent_feature'))->toBeFalse();
     });
 
     test('get_current_school_tier returns most recent tier', function () {

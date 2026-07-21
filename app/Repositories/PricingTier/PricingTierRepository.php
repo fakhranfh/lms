@@ -3,7 +3,6 @@
 namespace App\Repositories\PricingTier;
 
 use App\Models\PricingTier;
-use App\Models\TierFeature;
 use App\Models\TierLimit;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -33,12 +32,12 @@ class PricingTierRepository implements PricingTierRepositoryInterface
      */
     public function get(array $filters = [], array $with = []): Collection
     {
-        return $this->query($filters)->with($with)->get();
+        return $this->query($filters)->with($with)->orderBy('id')->get();
     }
 
     public function getAll(): Collection
     {
-        return PricingTier::all();
+        return PricingTier::orderBy('id')->get();
     }
 
     public function find(int $id): ?PricingTier
@@ -51,7 +50,7 @@ class PricingTierRepository implements PricingTierRepositoryInterface
      */
     public function create(array $data): PricingTier
     {
-        return PricingTier::create([
+        $tier = PricingTier::create([
             'name' => $data['name'],
             'slug' => $data['slug'],
             'description' => $data['description'] ?? '',
@@ -60,6 +59,12 @@ class PricingTierRepository implements PricingTierRepositoryInterface
             'billing_period' => $data['billing_period'],
             'is_active' => $data['is_active'] ?? true,
         ]);
+
+        if (! empty($data['limits'])) {
+            $this->syncLimits($tier, $data['limits']);
+        }
+
+        return $tier;
     }
 
     /**
@@ -77,36 +82,16 @@ class PricingTierRepository implements PricingTierRepositoryInterface
             'is_active' => $data['is_active'] ?? $tier->is_active,
         ]);
 
+        if (! empty($data['limits'])) {
+            $this->syncLimits($tier, $data['limits']);
+        }
+
         return $tier;
     }
 
     public function delete(int $id): int
     {
         return PricingTier::destroy($id);
-    }
-
-    /**
-     * @param  array<int, array{feature_key: string, is_enabled: bool}>  $features
-     */
-    public function syncFeatures(PricingTier $tier, array $features): void
-    {
-        $tier->features()->delete();
-
-        if (empty($features)) {
-            return;
-        }
-
-        $featuresToInsert = array_map(function ($feature) use ($tier) {
-            return [
-                'pricing_tier_id' => $tier->id,
-                'feature_key' => $feature['feature_key'],
-                'is_enabled' => $feature['is_enabled'] ?? true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        }, $features);
-
-        TierFeature::insert($featuresToInsert);
     }
 
     /**

@@ -40,7 +40,6 @@
                         <tr class="border-b border-outline-variant bg-surface-container-lowest">
                             <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Name</th>
                             <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Price</th>
-                            <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Features</th>
                             <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Status</th>
                             <th scope="col" class="px-space-lg py-space-md text-right font-label-md text-label-md text-secondary uppercase">Actions</th>
                         </tr>
@@ -54,9 +53,6 @@
                                 </td>
                                 <td class="px-space-lg py-space-md font-body-md text-body-md text-on-surface">
                                     Rp {{ number_format($tier->price, 0, '.', '.') }}
-                                </td>
-                                <td class="px-space-lg py-space-md font-body-sm text-body-sm text-secondary">
-                                    {{ $tier->features->count() }} feature{{ $tier->features->count() !== 1 ? 's' : '' }}
                                 </td>
                                 <td class="px-space-lg py-space-md">
                                     @if ($tier->is_active)

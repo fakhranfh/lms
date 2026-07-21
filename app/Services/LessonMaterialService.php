@@ -21,8 +21,34 @@ class LessonMaterialService
     ) {}
 
     /**
+     * Get school ID from a lesson (lesson -> module -> course -> school)
+     */
+    private function getSchoolIdFromLesson(string $lessonId): ?string
+    {
+        try {
+            $lesson = $this->lessonRepository->findOrFail($lessonId);
+
+            if (! $lesson->relationLoaded('module')) {
+                $lesson->load('module');
+            }
+
+            $module = $lesson->module;
+            if (! $module || ! $module->relationLoaded('course')) {
+                $module->load('course');
+            }
+
+            return $module->course->school_id ?? null;
+        } catch (\Exception $e) {
+            \Log::error("Failed to get school ID from lesson {$lessonId}: {$e->getMessage()}");
+
+            return null;
+        }
+    }
+
+    /**
      * Generate presigned PUT URL for direct R2 upload (client-side flow)
      * Validates file extension BEFORE generating URL
+     * Enforces school-based quota
      *
      * @param  string  $lessonId  Lesson ID
      * @param  string  $filename  Original filename
@@ -32,6 +58,10 @@ class LessonMaterialService
     public function generatePresignedUploadUrl(string $lessonId, string $filename, string $materialType): array
     {
         $this->lessonRepository->findOrFail($lessonId);
+
+        // Get school ID and enforce quota before generating URL
+        $schoolId = $this->getSchoolIdFromLesson($lessonId);
+        $this->r2Service->enforceQuotaLimit($schoolId);
 
         // Extension validation happens here (server-side, before URL generation)
         return $this->r2Service->generatePresignedPutUrl($lessonId, $filename, $materialType);

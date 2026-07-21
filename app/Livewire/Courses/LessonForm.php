@@ -241,6 +241,66 @@ class LessonForm extends Component
     }
 
     /**
+     * Get school ID from module
+     */
+    private function getSchoolId(): ?string
+    {
+        try {
+            // Handle case where module is not initialized (e.g., in tests)
+            if (! isset($this->module) || ! $this->module) {
+                return null;
+            }
+
+            if (! $this->module->relationLoaded('course')) {
+                $this->module->load('course');
+            }
+
+            return $this->module->course->school_id ?? null;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get quota information for display in the UI
+     * Shows remaining storage and usage percentage with color coding
+     * Based on school's tier limits
+     *
+     * @return array{used: string, remaining: string, percentage: float, color: string, warning: string|null, limit_gb: int|null}
+     */
+    public function getQuotaInfo(R2StorageService $r2Service): array
+    {
+        $schoolId = $this->getSchoolId();
+        $quota = $r2Service->checkSchoolQuota($schoolId);
+        $percentage = $quota['percentage'];
+
+        // Determine warning level and color based on usage
+        $color = match (true) {
+            $percentage < 80 => 'text-green-600',
+            $percentage < 90 => 'text-yellow-600',
+            $percentage < 100 => 'text-orange-600',
+            default => 'text-red-600',
+        };
+
+        $warning = match (true) {
+            $percentage >= 100 => '❌ Quota full. Uploads blocked.',
+            $percentage >= 90 => '⚠️ Quota at 90%. Upload may fail soon.',
+            $percentage >= 80 => '⚠️ Quota at 80%. Consider freeing space.',
+            default => null,
+        };
+
+        return [
+            'used' => $this->formatBytes($quota['used']),
+            'remaining' => $this->formatBytes($quota['remaining']),
+            'percentage' => round($percentage, 1),
+            'color' => $color,
+            'warning' => $warning,
+            'can_upload' => $percentage < 100,
+            'limit_gb' => $quota['limit_gb'] ?? null,
+        ];
+    }
+
+    /**
      * @return array<string, string>
      */
     private function getExtensionToTypeMap(): array

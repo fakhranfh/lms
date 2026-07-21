@@ -35,12 +35,7 @@ class PricingTierService
      */
     public function create(array $data): PricingTier
     {
-        $tier = $this->pricingTierRepository->create($data);
-
-        $this->pricingTierRepository->syncFeatures($tier, $data['features'] ?? []);
-        $this->pricingTierRepository->syncLimits($tier, $data['limits'] ?? []);
-
-        return $tier;
+        return $this->pricingTierRepository->create($data);
     }
 
     /**
@@ -48,12 +43,7 @@ class PricingTierService
      */
     public function update(int $id, array $data): PricingTier
     {
-        $tier = $this->pricingTierRepository->update($id, $data);
-
-        $this->pricingTierRepository->syncFeatures($tier, $data['features'] ?? []);
-        $this->pricingTierRepository->syncLimits($tier, $data['limits'] ?? []);
-
-        return $tier;
+        return $this->pricingTierRepository->update($id, $data);
     }
 
     public function delete(int $id): int

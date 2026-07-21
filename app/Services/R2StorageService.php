@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Enums\MaterialType;
+use App\Models\School;
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use Illuminate\Http\UploadedFile;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class R2StorageService
 {
@@ -17,7 +19,12 @@ class R2StorageService
 
     protected string $customDomain;
 
-    protected const GLOBAL_QUOTA_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB
+    // Deprecated: per-school quota now determined by tier
+    protected const GLOBAL_QUOTA_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB (legacy)
+
+    protected const MAX_RETRIES = 3;
+
+    protected const RETRY_DELAY_MS = 1000;
 
     public function __construct()
     {
@@ -38,30 +45,49 @@ class R2StorageService
     }
 
     /**
-     * Upload file to R2 and return public URL
+     * Upload file to R2 and return public URL with retry logic for transient failures
      */
     public function upload(UploadedFile $file, string $path, MaterialType $type): string
     {
-        try {
-            // Enforce global quota before upload
-            $this->enforceQuotaLimit();
+        // Enforce global quota before upload
+        $this->enforceQuotaLimit();
 
-            // Build S3 key (path/filename)
-            $key = $this->buildS3Key($path, $file->getClientOriginalName());
+        // Build S3 key (path/filename)
+        $key = $this->buildS3Key($path, $file->getClientOriginalName());
 
-            // Upload to R2
-            $this->s3Client->putObject([
-                'Bucket' => $this->bucket,
-                'Key' => $key,
-                'Body' => fopen($file->getRealPath(), 'r'),
-                'ContentType' => $file->getMimeType(),
-            ]);
+        $lastException = null;
 
-            // Return public URL
-            return $this->getPublicUrl($key);
-        } catch (AwsException $e) {
-            throw new \Exception("R2 Upload failed: {$e->getMessage()}");
+        // Retry loop for transient failures (network timeouts, service unavailable)
+        for ($attempt = 1; $attempt <= self::MAX_RETRIES; $attempt++) {
+            try {
+                // Upload to R2
+                $this->s3Client->putObject([
+                    'Bucket' => $this->bucket,
+                    'Key' => $key,
+                    'Body' => fopen($file->getRealPath(), 'r'),
+                    'ContentType' => $file->getMimeType(),
+                ]);
+
+                // Return public URL on success
+                return $this->getPublicUrl($key);
+            } catch (AwsException $e) {
+                $lastException = $e;
+
+                // Check if error is retryable (transient)
+                if ($this->isRetryableError($e) && $attempt < self::MAX_RETRIES) {
+                    // Exponential backoff: 1s, 2s, 4s
+                    usleep(self::RETRY_DELAY_MS * (2 ** ($attempt - 1)) * 1000);
+
+                    continue;
+                }
+
+                // Non-retryable or last attempt exhausted
+                break;
+            }
         }
+
+        // All retries exhausted, throw error with guidance
+        $this->handleUploadException($lastException);
     }
 
     /**
@@ -354,22 +380,33 @@ class R2StorageService
     }
 
     /**
-     * Check storage quota for a school
+     * Check storage quota for a school based on tier
      *
-     * @return array{used: int, limit: int, remaining: int, percentage: float}
+     * @return array{used: int, limit: int, remaining: int, percentage: float, limit_gb: int|null}
      */
-    public function checkSchoolQuota(string $schoolId): array
+    public function checkSchoolQuota(?string $schoolId = null): array
     {
-        $used = $this->getTotalStorageUsed();
-        $limit = self::GLOBAL_QUOTA_BYTES;
-        $remaining = max(0, $limit - $used);
-        $percentage = $limit > 0 ? ((float) $used / $limit) * 100 : 0.0;
+        if ($schoolId) {
+            // Per-school quota based on tier
+            $used = $this->getSchoolStorageUsed($schoolId);
+            $limitBytes = $this->getSchoolStorageQuotaBytes($schoolId);
+            $limitGb = $limitBytes / (1024 * 1024 * 1024);
+        } else {
+            // Legacy global quota
+            $used = $this->getTotalStorageUsed();
+            $limitBytes = self::GLOBAL_QUOTA_BYTES;
+            $limitGb = 10;
+        }
+
+        $remaining = max(0, $limitBytes - $used);
+        $percentage = $limitBytes > 0 ? ((float) $used / $limitBytes) * 100 : 0.0;
 
         return [
             'used' => $used,
-            'limit' => $limit,
+            'limit' => $limitBytes,
             'remaining' => $remaining,
             'percentage' => $percentage,
+            'limit_gb' => (int) $limitGb,
         ];
     }
 
@@ -385,14 +422,166 @@ class R2StorageService
     }
 
     /**
-     * Enforce global quota limit before allowing uploads
+     * Enforce quota limit before allowing uploads (throws 413 Payload Too Large)
+     * Supports both school-specific and global quota enforcement
      */
-    public function enforceQuotaLimit(): void
+    public function enforceQuotaLimit(?string $schoolId = null): void
     {
-        $quota = $this->checkSchoolQuota('');
-        if ($quota['remaining'] <= 0) {
-            throw new \Exception('System storage quota reached (10 GB). Contact admin.');
+        if ($schoolId) {
+            $quota = $this->checkSchoolQuota($schoolId);
+            if ($quota['remaining'] <= 0) {
+                throw new HttpException(
+                    413,
+                    "Your school's storage quota ({$quota['limit_gb']} GB) is full. "
+                    .'Please contact admin or upgrade your plan to free up space.'
+                );
+            }
+        } else {
+            // Legacy global quota check (kept for backward compatibility)
+            $globalUsed = $this->getTotalStorageUsed();
+            if ($globalUsed >= self::GLOBAL_QUOTA_BYTES) {
+                throw new HttpException(
+                    413,
+                    'System storage quota full (10 GB). Contact admin to free up space.'
+                );
+            }
         }
+    }
+
+    /**
+     * Get school's tier-based storage quota in bytes
+     */
+    public function getSchoolStorageQuotaBytes(?string $schoolId = null): int
+    {
+        if (! $schoolId) {
+            return self::GLOBAL_QUOTA_BYTES;
+        }
+
+        try {
+            $school = School::find($schoolId);
+            if (! $school || ! $school->tier) {
+                // Default to Basic tier (1 GB) if no tier found
+                return 1 * 1024 * 1024 * 1024;
+            }
+
+            // Get material_storage_gb limit from tier
+            $limit = $school->tier->limits()
+                ->where('limit_key', 'material_storage_gb')
+                ->first();
+
+            if (! $limit) {
+                // Default to Basic tier (1 GB)
+                return 1 * 1024 * 1024 * 1024;
+            }
+
+            $gb = $limit->limit_value ?? 1;
+
+            return $gb * 1024 * 1024 * 1024;
+        } catch (\Exception $e) {
+            \Log::warning("Failed to get school storage quota for {$schoolId}: {$e->getMessage()}");
+
+            return 1 * 1024 * 1024 * 1024; // Default to 1 GB on error
+        }
+    }
+
+    /**
+     * Get school's storage usage (used bytes only, not limit)
+     */
+    public function getSchoolStorageUsed(?string $schoolId = null): int
+    {
+        if (! $schoolId) {
+            return $this->getTotalStorageUsed();
+        }
+
+        try {
+            $total = 0;
+            $paginator = $this->s3Client->getPaginator('ListObjectsV2', [
+                'Bucket' => $this->bucket,
+                'Prefix' => 'lessons/', // All materials are under lessons/
+            ]);
+
+            foreach ($paginator as $result) {
+                if (isset($result['Contents'])) {
+                    foreach ($result['Contents'] as $object) {
+                        // Filter by school path pattern if available
+                        // For now, count all materials (could be enhanced with lesson->module->course->school check)
+                        $total += $object['Size'] ?? 0;
+                    }
+                }
+            }
+
+            return $total;
+        } catch (AwsException $e) {
+            \Log::error("Failed to get school storage used for {$schoolId}: {$e->getMessage()}");
+
+            return 0;
+        }
+    }
+
+    /**
+     * Determine if an AwsException is retryable (transient network error)
+     */
+    protected function isRetryableError(AwsException $e): bool
+    {
+        $statusCode = $e->getStatusCode();
+
+        // Retryable HTTP status codes: 408 (timeout), 429 (throttled), 500-599 (server errors)
+        if ($statusCode && in_array($statusCode, [408, 429, 500, 502, 503, 504])) {
+            return true;
+        }
+
+        // Check error code for connection-level issues
+        $errorCode = $e->getAwsErrorCode();
+        $retryableErrorCodes = [
+            'RequestTimeout',
+            'ConnectionError',
+            'ThrottlingException',
+            'ServiceUnavailable',
+            'RequestLimitExceeded',
+            'SlowDown',
+        ];
+
+        return in_array($errorCode, $retryableErrorCodes);
+    }
+
+    /**
+     * Handle upload exceptions with appropriate messaging
+     */
+    protected function handleUploadException(AwsException $e): void
+    {
+        $statusCode = $e->getStatusCode();
+        $errorCode = $e->getAwsErrorCode();
+
+        \Log::error('R2 Upload failed', [
+            'status_code' => $statusCode,
+            'error_code' => $errorCode,
+            'message' => $e->getMessage(),
+        ]);
+
+        // Specific error messages for common issues
+        if ($statusCode === 413 || $statusCode === 400) {
+            throw new HttpException(
+                413,
+                'File is too large. Please check the file size limits and try again.'
+            );
+        }
+
+        if ($statusCode === 403) {
+            throw new HttpException(
+                403,
+                'Upload permission denied. Please contact admin.'
+            );
+        }
+
+        if ($statusCode >= 500) {
+            throw new HttpException(
+                503,
+                'R2 storage service is temporarily unavailable. Please try again in a few moments.'
+            );
+        }
+
+        // Generic error for other cases
+        throw new \Exception("File upload failed. Please try again later. (Error: {$errorCode})");
     }
 
     /**

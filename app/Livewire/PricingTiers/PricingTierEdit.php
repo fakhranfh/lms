@@ -3,7 +3,6 @@
 namespace App\Livewire\PricingTiers;
 
 use App\Enums\BillingPeriod;
-use App\Enums\TierFeature;
 use App\Enums\TierLimit;
 use App\Models\PricingTier;
 use App\Services\PricingTierService;
@@ -28,18 +27,13 @@ class PricingTierEdit extends Component
     public bool $is_active = true;
 
     /**
-     * @var array<int, array{feature_key: string, is_enabled: bool}>
-     */
-    public array $features = [];
-
-    /**
      * @var array<int, array{limit_key: string, limit_value: string}>
      */
     public array $limits = [];
 
     public function mount(): void
     {
-        $this->tier->load(['features', 'limits']);
+        $this->tier->load(['limits']);
 
         $this->name = $this->tier->name;
         $this->slug = $this->tier->slug;
@@ -48,15 +42,6 @@ class PricingTierEdit extends Component
         $this->currency = $this->tier->currency;
         $this->billing_period = $this->tier->billing_period->value;
         $this->is_active = $this->tier->is_active;
-
-        $tierFeaturesMap = $this->tier->features->keyBy('feature_key')->toArray();
-
-        $this->features = collect(TierFeature::cases())
-            ->map(fn ($feature) => [
-                'feature_key' => $feature->value,
-                'is_enabled' => $tierFeaturesMap[$feature->value]['is_enabled'] ?? false,
-            ])
-            ->toArray();
 
         $tierLimitsMap = $this->tier->limits->keyBy('limit_key')->toArray();
 
@@ -85,9 +70,6 @@ class PricingTierEdit extends Component
             }],
             'billing_period' => ['required', 'in:monthly,yearly'],
             'is_active' => ['boolean'],
-            'features' => ['array'],
-            'features.*.feature_key' => ['required', 'string'],
-            'features.*.is_enabled' => ['boolean'],
             'limits' => ['array'],
             'limits.*.limit_key' => ['required', 'string'],
             'limits.*.limit_value' => ['nullable', 'integer', 'min:0'],
@@ -100,7 +82,6 @@ class PricingTierEdit extends Component
 
         $data = $this->validate();
 
-        $featuresToStore = array_filter($data['features'] ?? [], fn ($feature) => $feature['is_enabled']);
         $limitsToStore = array_filter(
             array_map(fn ($limit) => [
                 'limit_key' => $limit['limit_key'],
@@ -111,7 +92,6 @@ class PricingTierEdit extends Component
 
         $tierService->update($this->tier->id, [
             ...$data,
-            'features' => array_values($featuresToStore),
             'limits' => array_values($limitsToStore),
         ]);
 
@@ -124,7 +104,6 @@ class PricingTierEdit extends Component
     {
         return view('livewire.pricing-tiers.pricing-tier-edit', [
             'billingPeriods' => BillingPeriod::cases(),
-            'availableFeatures' => TierFeature::cases(),
             'availableLimits' => TierLimit::cases(),
         ])
             ->extends('layouts.admin')

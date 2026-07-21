@@ -56,19 +56,6 @@
 
         <div class="border-t border-outline-variant pt-space-lg space-y-space-lg">
             <div>
-                <h3 class="font-label-md text-label-md text-on-surface mb-space-md">Features</h3>
-                <div class="space-y-space-sm">
-                    @foreach ($availableFeatures as $feature)
-                        <label class="flex items-center gap-space-sm">
-                            <input type="checkbox" wire:model="features.{{ $loop->index }}.is_enabled" name="features[{{ $loop->index }}][is_enabled]" value="true" class="w-4 h-4 rounded border-outline" />
-                            <input type="hidden" name="features[{{ $loop->index }}][feature_key]" value="{{ $feature->value }}" />
-                            <span class="font-body-sm text-body-sm text-on-surface">{{ $feature->label() }}</span>
-                        </label>
-                    @endforeach
-                </div>
-            </div>
-
-            <div>
                 <h3 class="font-label-md text-label-md text-on-surface mb-space-md">Limits</h3>
                 <div class="space-y-space-md">
                     @foreach ($availableLimits as $limit)

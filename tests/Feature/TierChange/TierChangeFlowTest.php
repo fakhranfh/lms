@@ -66,7 +66,7 @@ it('applies immediate downgrade without payment', function () {
 
     expect((float) $school->tier->price)->toEqual(299000.0);
 
-    $basicTier = PricingTier::where('slug', 'basic')->first();
+    $basicTier = PricingTier::where('slug', 'free')->first();
     expect((float) $basicTier->price)->toEqual(0.0);
 
     $service = app(TierChangeService::class);

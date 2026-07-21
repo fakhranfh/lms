@@ -13,16 +13,13 @@ class FeatureGateService
 {
     /**
      * Check if a user or school has access to a feature.
+     * Features are no longer supported - all tiers have all features.
      */
     public function can(User|School|Model $entity, TierFeature $feature): bool
     {
         $school = $this->getSchool($entity);
 
-        if (! $school) {
-            return false;
-        }
-
-        return $school->isFeatureEnabled($feature->value);
+        return $school !== null;
     }
 
     /**

@@ -70,17 +70,6 @@ class School extends Model
     }
 
     /**
-     * Check if a feature is enabled for this school's current tier.
-     */
-    public function isFeatureEnabled(string $featureKey): bool
-    {
-        return $this->tier?->features()
-            ->where('feature_key', $featureKey)
-            ->where('is_enabled', true)
-            ->exists() ?? false;
-    }
-
-    /**
      * Get the most recent active school tier subscription.
      */
     public function getCurrentSchoolTier(): ?SchoolTier

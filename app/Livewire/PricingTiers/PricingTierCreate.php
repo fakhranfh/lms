@@ -3,7 +3,6 @@
 namespace App\Livewire\PricingTiers;
 
 use App\Enums\BillingPeriod;
-use App\Enums\TierFeature;
 use App\Enums\TierLimit;
 use App\Http\Requests\PricingTier\StorePricingTierRequest;
 use App\Services\PricingTierService;
@@ -26,24 +25,12 @@ class PricingTierCreate extends Component
     public bool $is_active = true;
 
     /**
-     * @var array<int, array{feature_key: string, is_enabled: bool}>
-     */
-    public array $features = [];
-
-    /**
      * @var array<int, array{limit_key: string, limit_value: string}>
      */
     public array $limits = [];
 
     public function mount(): void
     {
-        $this->features = collect(TierFeature::cases())
-            ->map(fn ($feature) => [
-                'feature_key' => $feature->value,
-                'is_enabled' => false,
-            ])
-            ->toArray();
-
         $this->limits = collect(TierLimit::cases())
             ->map(fn ($limit) => [
                 'limit_key' => $limit->value,
@@ -66,7 +53,6 @@ class PricingTierCreate extends Component
 
         $data = $this->validate();
 
-        $featuresToStore = array_filter($data['features'] ?? [], fn ($feature) => $feature['is_enabled']);
         $limitsToStore = array_filter(
             array_map(fn ($limit) => [
                 'limit_key' => $limit['limit_key'],
@@ -77,7 +63,6 @@ class PricingTierCreate extends Component
 
         $tierService->create([
             ...$data,
-            'features' => array_values($featuresToStore),
             'limits' => array_values($limitsToStore),
         ]);
 
@@ -90,7 +75,6 @@ class PricingTierCreate extends Component
     {
         return view('livewire.pricing-tiers.pricing-tier-create', [
             'billingPeriods' => BillingPeriod::cases(),
-            'availableFeatures' => TierFeature::cases(),
             'availableLimits' => TierLimit::cases(),
         ])
             ->extends('layouts.admin')

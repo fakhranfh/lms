@@ -45,13 +45,6 @@ interface PricingTierRepositoryInterface
     public function delete(int $id): int;
 
     /**
-     * Sync features for a pricing tier (replace-all pattern).
-     *
-     * @param  array<int, array{feature_key: string, is_enabled: bool}>  $features
-     */
-    public function syncFeatures(PricingTier $tier, array $features): void;
-
-    /**
      * Sync limits for a pricing tier (replace-all pattern).
      *
      * @param  array<int, array{limit_key: string, limit_value: int|null}>  $limits

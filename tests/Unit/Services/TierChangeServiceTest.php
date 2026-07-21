@@ -26,7 +26,7 @@ it('can determine if a downgrade is possible', function () {
     $school = School::factory()->create();
     $school->update(['tier_id' => PricingTier::where('slug', 'plus')->first()->id]);
 
-    $basicTier = PricingTier::where('slug', 'basic')->first();
+    $basicTier = PricingTier::where('slug', 'free')->first();
     $plusTier = $school->tier;
 
     $service = new TierChangeService(
@@ -39,7 +39,7 @@ it('can determine if a downgrade is possible', function () {
 
 it('calculates zero proration for free tiers with no active subscription', function () {
     $school = School::factory()->create();
-    $newTier = PricingTier::where('slug', 'basic')->first();
+    $newTier = PricingTier::where('slug', 'free')->first();
 
     $service = new TierChangeService(
         app(SubscriptionPaymentService::class)
@@ -77,7 +77,7 @@ it('calculates negative proration (credit) for downgrades', function () {
     $school->update(['tier_id' => PricingTier::where('slug', 'plus')->first()->id]);
 
     $oldTier = $school->tier;
-    $newTier = PricingTier::where('slug', 'basic')->first();
+    $newTier = PricingTier::where('slug', 'free')->first();
 
     $schoolTier = $school->schoolTiers()->latest('created_at')->first();
     $schoolTier->update([

@@ -37,11 +37,11 @@ describe('R2StorageService', function () {
             $service = new R2StorageService;
             $quota = $service->checkSchoolQuota('test-school');
 
-            expect($quota)->toHaveKeys(['used', 'limit', 'remaining', 'percentage'])
-                ->and($quota['limit'])->toBe(10 * 1024 * 1024 * 1024)
+            expect($quota)->toHaveKeys(['used', 'limit', 'remaining', 'percentage', 'limit_gb'])
                 ->and($quota['used'])->toBeInt()
                 ->and($quota['remaining'])->toBeInt()
-                ->and($quota['percentage'])->toBeFloat();
+                ->and($quota['percentage'])->toBeFloat()
+                ->and($quota['limit_gb'])->toBeInt();
         });
     });
 

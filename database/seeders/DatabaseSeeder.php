@@ -17,8 +17,7 @@ class DatabaseSeeder extends Seeder
         // Seed pricing tiers first (required for schools)
         $this->call(PricingTierSeeder::class);
 
-        // Seed root domain school with demo credentials
-        $this->call(RootDomainSchoolSeeder::class);
+        // Root domain school is created via migration (2026_07_17_010711)
 
         // Seed default roles for schools (permissions are seeded via migration)
         $this->call(DefaultRoleSeeder::class);

@@ -135,7 +135,7 @@ class AssignmentForm extends Component
             $this->assignment = $assignmentService->create($data);
         }
 
-        return redirect()->route('lessons.show', $this->lesson);
+        return redirect()->route('lessons.edit', $this->lesson);
     }
 
     public function publish(AssignmentService $assignmentService): void
@@ -167,7 +167,7 @@ class AssignmentForm extends Component
         $lesson = $this->lesson;
         $assignmentService->delete($this->assignment->id);
 
-        return redirect()->route('lessons.show', $lesson);
+        return redirect()->route('lessons.edit', $lesson);
     }
 
     public function render()

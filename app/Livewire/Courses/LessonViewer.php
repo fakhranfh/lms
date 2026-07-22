@@ -59,6 +59,8 @@ class LessonViewer extends Component
 
         abort_unless($lesson->is_published, 403);
 
+        abort_if(auth()->user()->can('lessons.edit'), 403);
+
         $this->loadMaterials($materialService);
         $this->loadProgress($lessonService, $userLessonService, $materialService);
         $this->loadNavigation($lessonService);

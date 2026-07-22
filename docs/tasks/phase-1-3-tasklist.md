@@ -10,95 +10,104 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US1, US3, US4), Section 8 (Core Sy
 
 ## 1. Database Schema — Assignments & Submissions
 
-- [ ] Create migration: `php artisan make:migration create_assignments_submissions_tables --no-interaction`
-  - [ ] `assignments` table:
-    - [ ] `id` (UUID, PK)
-    - [ ] `lesson_id` (UUID, FK → lessons.id, CASCADE)
-    - [ ] `title` (VARCHAR 255, not null)
-    - [ ] `prompt_question` (LONGTEXT, not null) — the question/prompt for students
-    - [ ] `rubric` (JSON/JSONB, nullable) — dynamic grading criteria structure
-    - [ ] `max_score` (DECIMAL 5,2, default 100.00) — typically 0-100
-    - [ ] `passing_score` (DECIMAL 5,2, nullable) — optional threshold
-    - [ ] `is_published` (BOOLEAN, default false)
-    - [ ] `allow_multiple_submissions` (BOOLEAN, default false) — one vs multiple attempts
-    - [ ] timestamps
-  - [ ] `submissions` table:
-    - [ ] `id` (UUID, PK)
-    - [ ] `assignment_id` (UUID, FK → assignments.id, CASCADE)
-    - [ ] `user_id` (UUID, FK → users.id, CASCADE)
-    - [ ] `student_answer` (LONGTEXT, not null) — raw essay text
-    - [ ] `status` (ENUM: 'pending', 'processing', 'graded', 'failed', default 'pending')
-    - [ ] `ai_score` (DECIMAL 5,2, nullable) — AI-generated score
-    - [ ] `ai_feedback` (JSON/JSONB, nullable) — structured AI response (e.g., {overall_score, feedback_per_rubric_item, suggestions})
-    - [ ] `instructor_score` (DECIMAL 5,2, nullable) — manual override score
-    - [ ] `instructor_feedback` (LONGTEXT, nullable) — manual override feedback
-    - [ ] `instructor_reviewed_at` (TIMESTAMP, nullable) — when instructor graded/overrode
-    - [ ] `reviewed_by` (UUID, FK → users.id, nullable, SET NULL) — which instructor reviewed
-    - [ ] `submitted_at` (TIMESTAMP, not null, default NOW) — submission timestamp
-    - [ ] `graded_at` (TIMESTAMP, nullable) — when AI/instructor finished grading
-    - [ ] `retry_count` (UNSIGNED INT, default 0) — how many times job has retried
-    - [ ] `error_message` (TEXT, nullable) — if status='failed', error details (from Anthropic API)
-    - [ ] timestamps
-    - [ ] **Unique constraint:** `(assignment_id, user_id)` if `allow_multiple_submissions = false`
-    - [ ] **Index:** `(assignment_id, status)` for filtering by status
-    - [ ] **Index:** `(user_id, status)` for student dashboard queries
-- [ ] Apply `HasUuid` trait to `Assignment` and `Submission` models
+- [x] Create migration: `php artisan make:migration create_assignments_submissions_tables --no-interaction`
+  - [x] `assignments` table:
+    - [x] `id` (UUID, PK)
+    - [x] `lesson_id` (UUID, FK → lessons.id, CASCADE)
+    - [x] `title` (VARCHAR 255, not null)
+    - [x] `prompt_question` (LONGTEXT, not null) — the question/prompt for students
+    - [x] `rubric` (JSON/JSONB, nullable) — dynamic grading criteria structure
+    - [x] `max_score` (DECIMAL 5,2, default 100.00) — typically 0-100
+    - [x] `passing_score` (DECIMAL 5,2, nullable) — optional threshold
+    - [x] `is_published` (BOOLEAN, default false)
+    - [x] `allow_multiple_submissions` (BOOLEAN, default false) — one vs multiple attempts
+    - [x] timestamps
+  - [x] `submissions` table:
+    - [x] `id` (UUID, PK)
+    - [x] `assignment_id` (UUID, FK → assignments.id, CASCADE)
+    - [x] `user_id` (UUID, FK → users.id, CASCADE)
+    - [x] `student_answer` (LONGTEXT, not null) — raw essay text
+    - [x] `status` (ENUM: 'pending', 'processing', 'graded', 'failed', default 'pending')
+    - [x] `ai_score` (DECIMAL 5,2, nullable) — AI-generated score
+    - [x] `ai_feedback` (JSON/JSONB, nullable) — structured AI response (e.g., {overall_score, feedback_per_rubric_item, suggestions})
+    - [x] `instructor_score` (DECIMAL 5,2, nullable) — manual override score
+    - [x] `instructor_feedback` (LONGTEXT, nullable) — manual override feedback
+    - [x] `instructor_reviewed_at` (TIMESTAMP, nullable) — when instructor graded/overrode
+    - [x] `reviewed_by` (UUID, FK → users.id, nullable, SET NULL) — which instructor reviewed
+    - [x] `submitted_at` (TIMESTAMP, not null, default NOW) — submission timestamp
+    - [x] `graded_at` (TIMESTAMP, nullable) — when AI/instructor finished grading
+    - [x] `retry_count` (UNSIGNED INT, default 0) — how many times job has retried
+    - [x] `error_message` (TEXT, nullable) — if status='failed', error details (from Anthropic API)
+    - [x] timestamps
+    - [x] **Unique constraint:** `(assignment_id, user_id)` if `allow_multiple_submissions = false` — enforced at the application layer (`SubmissionFormRequest`/`SubmissionService`), not as a DB constraint, since it's conditional
+    - [x] **Index:** `(assignment_id, status)` for filtering by status
+    - [x] **Index:** `(user_id, status)` for student dashboard queries
+- [x] Apply `HasUuid` trait to `Assignment` and `Submission` models
 
 ## 2. Models & Relationships
 
-- [ ] Update `Lesson` model (from Phase 1.2):
-  - [ ] Add relationship: `hasMany(Assignment::class)` — assignments in this lesson
-- [ ] Generate `Assignment` model:
-  - [ ] Apply `HasUuid` trait
-  - [ ] Add `$fillable` (`lesson_id`, `title`, `prompt_question`, `rubric`, `max_score`, `passing_score`, `is_published`, `allow_multiple_submissions`)
-  - [ ] Add `$casts` for JSON: `rubric` as array/collection
-  - [ ] Define relationships:
-    - [ ] `belongsTo(Lesson::class)` — parent lesson
-    - [ ] `hasMany(Submission::class)` — student submissions
-  - [ ] Add method: `getScore(Submission $submission): ?float` — returns instructor_score if set, else ai_score
-  - [ ] Add method: `isPassing(Submission $submission): bool` — check if score >= passing_score
-  - [ ] Add accessor: `rubricItems(): array` — parse rubric structure (e.g., [['key' => 'clarity', 'weight' => 0.5], ...])
-- [ ] Generate `Submission` model:
-  - [ ] Apply `HasUuid` trait
-  - [ ] Add `$fillable` (`assignment_id`, `user_id`, `student_answer`, `status`, `ai_score`, `ai_feedback`, `instructor_score`, `instructor_feedback`, `submitted_at`)
-  - [ ] Add `$casts` for JSON: `ai_feedback` as array/collection
-  - [ ] Add `$casts` for ENUM: `status` as SubmissionStatus enum (see Phase 2.1.1 for enum pattern)
-  - [ ] Define relationships:
-    - [ ] `belongsTo(Assignment::class)` — parent assignment
-    - [ ] `belongsTo(User::class)` — student who submitted
-    - [ ] `belongsTo(User::class, 'reviewed_by')` — instructor who graded
-  - [ ] Add method: `isPending(): bool` — status === 'pending'
-  - [ ] Add method: `isProcessing(): bool` — status === 'processing'
-  - [ ] Add method: `isGraded(): bool` — status === 'graded'
-  - [ ] Add method: `isFailed(): bool` — status === 'failed'
-  - [ ] Add method: `overrideScore(float $score, string $feedback, User $instructor): void`
-    - [ ] Set instructor_score, instructor_feedback, reviewed_by, instructor_reviewed_at
-    - [ ] Log to audit trail (Phase 1.5)
-  - [ ] Add method: `getDisplayScore(): ?float` — returns max(ai_score, instructor_score) or instructor_score if set
-  - [ ] Add method: `getDisplayFeedback(): ?string` — returns instructor_feedback if set, else ai_feedback
+- [x] Update `Lesson` model (from Phase 1.2):
+  - [x] Add relationship: `hasMany(Assignment::class)` — assignments in this lesson
+- [x] Generate `Assignment` model:
+  - [x] Apply `HasUuid` trait
+  - [x] Add `$fillable` (`lesson_id`, `title`, `prompt_question`, `rubric`, `max_score`, `passing_score`, `is_published`, `allow_multiple_submissions`)
+  - [x] Add `$casts` for JSON: `rubric` as array/collection
+  - [x] Define relationships:
+    - [x] `belongsTo(Lesson::class)` — parent lesson
+    - [x] `hasMany(Submission::class)` — student submissions
+  - [x] Add method: `getScore(Submission $submission): ?float` — returns instructor_score if set, else ai_score
+  - [x] Add method: `isPassing(Submission $submission): bool` — check if score >= passing_score
+  - [x] Add accessor: `rubricItems(): array` — parse rubric structure (e.g., [['key' => 'clarity', 'weight' => 0.5], ...])
+- [x] Generate `Submission` model:
+  - [x] Apply `HasUuid` trait
+  - [x] Add `$fillable` (`assignment_id`, `user_id`, `student_answer`, `status`, `ai_score`, `ai_feedback`, `instructor_score`, `instructor_feedback`, `submitted_at`) — plus `reviewed_by`, `instructor_reviewed_at`, `graded_at`, `retry_count`, `error_message` (required for `overrideScore()`/grading pipeline mass-assignment)
+  - [x] Add `$casts` for JSON: `ai_feedback` as array/collection
+  - [x] Add `$casts` for ENUM: `status` as SubmissionStatus enum (see Phase 2.1.1 for enum pattern)
+  - [x] Define relationships:
+    - [x] `belongsTo(Assignment::class)` — parent assignment
+    - [x] `belongsTo(User::class)` — student who submitted
+    - [x] `belongsTo(User::class, 'reviewed_by')` — instructor who graded
+  - [x] Add method: `isPending(): bool` — status === 'pending'
+  - [x] Add method: `isProcessing(): bool` — status === 'processing'
+  - [x] Add method: `isGraded(): bool` — status === 'graded'
+  - [x] Add method: `isFailed(): bool` — status === 'failed'
+  - [x] Add method: `overrideScore(float $score, string $feedback, User $instructor): void`
+    - [x] Set instructor_score, instructor_feedback, reviewed_by, instructor_reviewed_at
+    - [ ] Log to audit trail (Phase 1.5) — deferred, no audit_logs infra yet
+  - [x] Add method: `getDisplayScore(): ?float` — returns instructor_score if set, else ai_score
+  - [x] Add method: `getDisplayFeedback(): ?string` — returns instructor_feedback if set, else ai_feedback
 
 ## 3. Enums
 
-- [ ] Create `SubmissionStatus` enum (PHP 8.1 backed enum):
-  - [ ] Values: `pending`, `processing`, `graded`, `failed`
-  - [ ] Add method: `label(): string` — human-readable label ("Pending", "Processing", etc.)
-  - [ ] Add method: `isTerminal(): bool` — true if status is graded or failed
-- [ ] Add to Submission model casting: `'status' => SubmissionStatus::class`
+- [x] Create `SubmissionStatus` enum (PHP 8.1 backed enum):
+  - [x] Values: `pending`, `processing`, `graded`, `failed`
+  - [x] Add method: `label(): string` — human-readable label ("Pending", "Processing", etc.)
+  - [x] Add method: `isTerminal(): bool` — true if status is graded or failed
+- [x] Add to Submission model casting: `'status' => SubmissionStatus::class`
 
 ## 4. Validation & Constraints
 
-- [ ] Create `AssignmentFormRequest`:
-  - [ ] Validate: title required, prompt_question required, max_score numeric 0-100
-  - [ ] Validate: rubric is valid JSON if provided
-  - [ ] Validate: passing_score <= max_score if both provided
-- [ ] Create `SubmissionFormRequest`:
-  - [ ] Validate: student_answer required, non-empty
-  - [ ] Validate: user_id belongs to same school (school_id match)
-  - [ ] Check: assignment allows multiple submissions if user already has graded submission
-- [ ] Create `OverrideScoreFormRequest`:
-  - [ ] Validate: instructor_score numeric 0-100
-  - [ ] Validate: instructor_feedback required (optional, but good practice)
-  - [ ] Validate: user is instructor with permission:override-grade
+- [x] Create `AssignmentFormRequest`:
+  - [x] Validate: title required, prompt_question required, max_score numeric 0-100
+  - [x] Validate: rubric is valid JSON if provided (`array` rule; JSON-decoded by the request)
+  - [x] Validate: passing_score <= max_score if both provided
+- [x] Create `SubmissionFormRequest`:
+  - [x] Validate: student_answer required, non-empty
+  - [x] Validate: user_id belongs to same school (school_id match)
+  - [x] Check: assignment allows multiple submissions if user already has graded submission
+- [x] Create `OverrideScoreFormRequest`:
+  - [x] Validate: instructor_score numeric 0-100
+  - [x] Validate: instructor_feedback required (optional, but good practice)
+  - [x] Validate: user is instructor with permission:override-grade (`submissions.override-grade` permission slug)
+
+## Repository & Service Layer (added beyond original task list)
+
+- [x] `AssignmentRepository` / `AssignmentRepositoryInterface` — bound in `AppServiceProvider`
+- [x] `SubmissionRepository` / `SubmissionRepositoryInterface` — bound in `AppServiceProvider`
+- [x] `AssignmentService` (CRUD passthrough + `publish()`/`unpublish()`)
+- [x] `SubmissionService` (CRUD passthrough + `submit()` enforcing publish-state and multiple-submission rules + `overrideScore()`)
+- [x] `AssignmentFactory` / `SubmissionFactory`
+- [x] Tests: `AssignmentRepositoryTest`, `SubmissionRepositoryTest`, `AssignmentServiceTest`, `SubmissionServiceTest` (26 tests, all passing)
 
 ## 5. Livewire Components — Submission & Grading
 

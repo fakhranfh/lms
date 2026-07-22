@@ -41,6 +41,7 @@ class LessonMaterialUserRepository implements LessonMaterialUserRepositoryInterf
     public function getAccessedCount(string $lessonId, User $user): int
     {
         return LessonMaterial::where('lesson_id', $lessonId)
+            ->active()
             ->whereHas('users', function ($query) use ($user) {
                 $query->where('lesson_material_user.user_id', $user->id)
                     ->whereNotNull('lesson_material_user.accessed_at');
@@ -54,6 +55,7 @@ class LessonMaterialUserRepository implements LessonMaterialUserRepositoryInterf
     public function getAccessedMaterials(string $lessonId, User $user, array $with = []): EloquentCollection
     {
         return LessonMaterial::where('lesson_id', $lessonId)
+            ->active()
             ->whereHas('users', function ($query) use ($user) {
                 $query->where('lesson_material_user.user_id', $user->id)
                     ->whereNotNull('lesson_material_user.accessed_at');
@@ -69,6 +71,7 @@ class LessonMaterialUserRepository implements LessonMaterialUserRepositoryInterf
     public function getNotAccessedMaterials(string $lessonId, User $user, array $with = []): EloquentCollection
     {
         return LessonMaterial::where('lesson_id', $lessonId)
+            ->active()
             ->whereDoesntHave('users', function ($query) use ($user) {
                 $query->where('lesson_material_user.user_id', $user->id)
                     ->whereNotNull('lesson_material_user.accessed_at');

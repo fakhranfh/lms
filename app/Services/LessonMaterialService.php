@@ -150,6 +150,84 @@ class LessonMaterialService
     }
 
     /**
+     * Finalize a new version upload for an existing material (presigned URL flow)
+     * Runs the same 3-layer validation as finalizeR2Upload(), but instead of
+     * creating a brand-new material, deactivates the current version and
+     * creates a new version tied to the same lesson_id + title.
+     */
+    public function finalizeVersionUpload(string $materialId, array $data): LessonMaterial
+    {
+        $material = LessonMaterial::findOrFail($materialId);
+        $type = $material->type;
+
+        $tempKey = $data['temp_key'] ?? '';
+        if (! $tempKey) {
+            throw new \InvalidArgumentException('temp_key is required');
+        }
+
+        $fileInfo = $this->r2Service->verifyFileExists($tempKey);
+        if (! $fileInfo['exists']) {
+            throw new \Exception("Temp file not found in R2: {$tempKey}");
+        }
+
+        $localTempPath = null;
+        $validationPassed = false;
+
+        try {
+            $localTempPath = $this->r2Service->downloadToLocalTemp($tempKey);
+
+            // Layer 2 & 3: content + MIME validation
+            $this->r2Service->validateFileContent($localTempPath, $type->value);
+            $this->r2Service->validateMimeType($localTempPath, $type->value);
+
+            if ($fileInfo['size'] > $type->maxSize()) {
+                throw new \InvalidArgumentException(
+                    "This file is too large for a {$type->label()} upload. ".
+                    'Maximum allowed size: '.$this->formatBytes($type->maxSize()).'.'
+                );
+            }
+
+            $finalKey = "lessons/{$material->lesson_id}/materials/".substr(hash('sha256', uniqid()), 0, 8).'-'.basename($tempKey);
+            $this->r2Service->promoteFromTemp($tempKey, $finalKey);
+            $validationPassed = true;
+
+            $fileUrl = $this->r2Service->getPublicUrl($finalKey);
+
+            $nextVersion = LessonMaterial::where('lesson_id', $material->lesson_id)
+                ->where('title', $material->title)
+                ->max('version') + 1;
+
+            // Deactivate all current versions of this material
+            LessonMaterial::where('lesson_id', $material->lesson_id)
+                ->where('title', $material->title)
+                ->where('is_active', true)
+                ->update(['is_active' => false]);
+
+            return $this->materialRepository->create([
+                'lesson_id' => $material->lesson_id,
+                'type' => $type,
+                'title' => $material->title,
+                'description' => $material->description,
+                'file_url' => $fileUrl,
+                'file_path' => $finalKey,
+                'file_size' => $fileInfo['size'],
+                'mime_type' => $fileInfo['mime_type'],
+                'order' => $material->order,
+                'version' => $nextVersion,
+                'is_active' => true,
+            ]);
+        } finally {
+            if ($localTempPath && file_exists($localTempPath)) {
+                @unlink($localTempPath);
+            }
+
+            if (! $validationPassed) {
+                $this->r2Service->deleteTempObject($tempKey);
+            }
+        }
+    }
+
+    /**
      * Create material from direct R2 upload (after client uploads file)
      * Verifies file exists in R2 before saving metadata
      *

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\MaterialType;
 use App\Livewire\Courses\LessonForm;
 use App\Models\Course;
 use App\Models\Lesson;
@@ -262,6 +263,34 @@ class LessonFormTest extends TestCase
         ]);
     }
 
+    public function test_current_materials_list_only_shows_active_version(): void
+    {
+        $lesson = Lesson::factory()->for($this->module)->create();
+
+        // Same material title, two versions: v1 inactive, v2 active
+        LessonMaterial::factory()
+            ->for($lesson)
+            ->create(['title' => 'Duplicate Guard Test', 'version' => 1, 'is_active' => false]);
+        $activeVersion = LessonMaterial::factory()
+            ->for($lesson)
+            ->create(['title' => 'Duplicate Guard Test', 'version' => 2, 'is_active' => true]);
+
+        $this->instructor->givePermissionTo('lessons.edit');
+
+        $component = Livewire::test(LessonForm::class, [
+            'module' => $this->module,
+            'lesson' => $lesson,
+        ]);
+
+        $materials = $component->instance()->materials;
+
+        // Only the active version should appear in the "Current Materials" list,
+        // not both versions as separate rows.
+        $matching = $materials->where('title', 'Duplicate Guard Test');
+        $this->assertCount(1, $matching);
+        $this->assertSame($activeVersion->id, $matching->first()->id);
+    }
+
     public function test_material_versions_can_be_retrieved(): void
     {
         $lesson = Lesson::factory()->for($this->module)->create();
@@ -347,5 +376,100 @@ class LessonFormTest extends TestCase
             'id' => $v2->id,
             'is_active' => true,
         ]);
+    }
+
+    public function test_generate_version_upload_url_returns_presigned_url(): void
+    {
+        $lesson = Lesson::factory()->for($this->module)->create();
+        $material = LessonMaterial::factory()
+            ->for($lesson)
+            ->withType(MaterialType::PDF)
+            ->create(['title' => 'Replaceable Material']);
+
+        $this->instructor->givePermissionTo('lessons.edit');
+
+        $this->mock(R2StorageService::class, function ($mock) {
+            $mock->shouldReceive('enforceQuotaLimit')->once();
+            $mock->shouldReceive('generatePresignedPutUrl')
+                ->once()
+                ->andReturn(['url' => 'https://r2.example.com/presigned', 'key' => 'temp/lesson/abc-file.pdf']);
+        });
+
+        $component = Livewire::test(LessonForm::class, [
+            'module' => $this->module,
+            'lesson' => $lesson,
+        ]);
+
+        $result = $component->instance()->generateVersionUploadUrl(
+            $material->id,
+            'replacement.pdf',
+            app(R2StorageService::class)
+        );
+
+        $this->assertArrayHasKey('url', $result);
+        $this->assertArrayHasKey('key', $result);
+    }
+
+    public function test_finalize_version_upload_creates_new_version(): void
+    {
+        $lesson = Lesson::factory()->for($this->module)->create();
+        $material = LessonMaterial::factory()
+            ->for($lesson)
+            ->withType(MaterialType::PDF)
+            ->create(['title' => 'Version Upload Test', 'version' => 1, 'is_active' => true]);
+
+        $this->instructor->givePermissionTo('lessons.edit');
+
+        $this->mock(LessonMaterialService::class, function ($mock) use ($material) {
+            $mock->shouldReceive('finalizeVersionUpload')
+                ->once()
+                ->with($material->id, ['temp_key' => 'temp/abc/replacement.pdf'])
+                ->andReturn(
+                    LessonMaterial::factory()->make(['id' => 'new-version-id', 'version' => 2, 'is_active' => true])
+                );
+        });
+
+        $component = Livewire::test(LessonForm::class, [
+            'module' => $this->module,
+            'lesson' => $lesson,
+        ]);
+
+        $result = $component->instance()->finalizeVersionUpload(
+            $material->id,
+            ['temp_key' => 'temp/abc/replacement.pdf'],
+            app(LessonMaterialService::class)
+        );
+
+        $this->assertSame([], $result);
+    }
+
+    public function test_finalize_version_upload_returns_error_on_validation_failure(): void
+    {
+        $lesson = Lesson::factory()->for($this->module)->create();
+        $material = LessonMaterial::factory()
+            ->for($lesson)
+            ->withType(MaterialType::PDF)
+            ->create(['title' => 'Version Upload Fail Test']);
+
+        $this->instructor->givePermissionTo('lessons.edit');
+
+        $this->mock(LessonMaterialService::class, function ($mock) {
+            $mock->shouldReceive('finalizeVersionUpload')
+                ->andThrow(new \Exception('File content does not match PDF format.'));
+        });
+
+        $component = Livewire::test(LessonForm::class, [
+            'module' => $this->module,
+            'lesson' => $lesson,
+        ]);
+
+        $result = $component->instance()->finalizeVersionUpload(
+            $material->id,
+            ['temp_key' => 'temp/abc/fake.pdf'],
+            app(LessonMaterialService::class)
+        );
+
+        $this->assertArrayHasKey('error', $result);
+        $this->assertSame('File content does not match PDF format.', $result['error']);
     }
 }

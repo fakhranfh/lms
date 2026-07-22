@@ -104,7 +104,10 @@
                         <h4 class="text-label-md text-on-surface font-label-md">Current Materials</h4>
                         <div class="space-y-space-xs">
                             @foreach ($materials as $material)
-                                <div x-data="{ showVersions: false }" class="bg-surface-container rounded-lg border border-outline overflow-hidden">
+                                <div
+                                    x-data="materialVersionUploader('{{ $material->id }}', {{ \Illuminate\Support\Js::from($material->type->allowedExtensions()) }})"
+                                    class="bg-surface-container rounded-lg border border-outline overflow-hidden"
+                                >
                                     <!-- Material Header -->
                                     <div class="flex items-center justify-between p-space-md">
                                         <div class="flex items-center gap-space-md flex-1">
@@ -123,7 +126,7 @@
                                                     <span x-show="savingTitle" x-cloak class="inline-block animate-spin text-on-surface-variant flex-shrink-0">⟳</span>
                                                 </div>
                                                 <p class="text-body-sm text-on-surface-variant">
-                                                    {{ $material->type->value }} • {{ $this->formatBytes($material->file_size) }}
+                                                    {{ $material->type->value }} • {{ $this->formatBytes($material->file_size) }} • v{{ $material->version }}
                                                     <span class="ml-space-sm inline-flex items-center px-space-sm py-0.5 rounded-full bg-success/20 text-success text-label-xs font-label-xs">
                                                         ✓ Active
                                                     </span>
@@ -144,6 +147,23 @@
                                                     <span class="ml-space-xs">{{ $allVersions->count() }} versions</span>
                                                 </button>
                                             @endif
+                                            <input
+                                                type="file"
+                                                x-ref="versionFile"
+                                                accept="{{ implode(',', array_map(fn ($ext) => ".{$ext}", $material->type->allowedExtensions())) }}"
+                                                @change="uploadVersion($refs.versionFile.files[0])"
+                                                :disabled="uploading"
+                                                class="hidden"
+                                            />
+                                            <button
+                                                type="button"
+                                                @click="$refs.versionFile.click()"
+                                                :disabled="uploading"
+                                                class="px-space-md py-space-sm text-primary hover:bg-primary/10 rounded transition text-label-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <span x-show="! uploading">Upload New Version</span>
+                                                <span x-show="uploading" x-cloak x-text="statusText + (statusText === 'Uploading...' ? ' (' + progress + '%)' : '')"></span>
+                                            </button>
                                             <button
                                                 type="button"
                                                 wire:click="deleteMaterial('{{ $material->id }}')"
@@ -156,6 +176,10 @@
                                             </button>
                                         </div>
                                     </div>
+
+                                    <template x-if="clientError">
+                                        <div class="mx-space-md mb-space-md p-space-md bg-error/10 border border-error text-error rounded-lg text-body-sm" x-text="clientError"></div>
+                                    </template>
 
                                     <!-- Version History (Collapsible) -->
                                     @if ($allVersions->count() > 1)
@@ -170,35 +194,99 @@
                                                     @endphp
                                                     @foreach ($allVersions as $version)
                                                         <div class="p-space-md bg-surface-container rounded-lg border border-outline">
-                                                            <div class="flex items-start justify-between gap-space-md">
-                                                                <div class="flex-1 min-w-0">
-                                                                    <div class="flex items-center gap-space-md mb-space-xs">
-                                                                        <span class="text-label-sm font-label-sm text-on-surface">
-                                                                            v{{ $version->version }}
-                                                                        </span>
-                                                                        @if ($version->is_active)
-                                                                            <span class="inline-flex items-center px-space-sm py-0.5 rounded-full bg-success/20 text-success text-label-xs font-label-xs">
-                                                                                Current
+                                                            <div class="flex items-start gap-space-md">
+                                                                <!-- File Preview -->
+                                                                <a
+                                                                    href="{{ $version->file_url }}"
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-surface border border-outline flex items-center justify-center hover:opacity-80 transition"
+                                                                    title="Open {{ $version->title }} in new tab"
+                                                                >
+                                                                    @switch($version->type->value)
+                                                                        @case('Image')
+                                                                            <img
+                                                                                src="{{ $version->file_url }}"
+                                                                                alt="{{ $version->title }}"
+                                                                                class="w-full h-full object-cover"
+                                                                                loading="lazy"
+                                                                            />
+                                                                            @break
+
+                                                                        @case('Video')
+                                                                            <video
+                                                                                src="{{ $version->file_url }}#t=0.1"
+                                                                                class="w-full h-full object-cover pointer-events-none"
+                                                                                preload="metadata"
+                                                                                muted
+                                                                            ></video>
+                                                                            @break
+
+                                                                        @case('Audio')
+                                                                            <span class="text-3xl">🎵</span>
+                                                                            @break
+
+                                                                        @case('PDF')
+                                                                            <span class="text-3xl">📄</span>
+                                                                            @break
+
+                                                                        @case('Presentation')
+                                                                            <span class="text-3xl">📊</span>
+                                                                            @break
+
+                                                                        @case('Interactive')
+                                                                            <span class="text-3xl">🎮</span>
+                                                                            @break
+
+                                                                        @case('Markdown')
+                                                                            <span class="text-3xl">📄</span>
+                                                                            @break
+
+                                                                        @default
+                                                                            <span class="text-3xl">📝</span>
+                                                                    @endswitch
+                                                                </a>
+
+                                                                <div class="flex-1 min-w-0 flex items-start justify-between gap-space-md">
+                                                                    <div class="min-w-0">
+                                                                        <div class="flex items-center gap-space-md mb-space-xs">
+                                                                            <span class="text-label-sm font-label-sm text-on-surface">
+                                                                                v{{ $version->version }}
                                                                             </span>
-                                                                        @endif
+                                                                            @if ($version->is_active)
+                                                                                <span class="inline-flex items-center px-space-sm py-0.5 rounded-full bg-success/20 text-success text-label-xs font-label-xs">
+                                                                                    Current
+                                                                                </span>
+                                                                            @endif
+                                                                        </div>
+                                                                        <p class="text-body-sm text-on-surface-variant">
+                                                                            {{ $this->formatBytes($version->file_size) }}
+                                                                            <span class="mx-space-xs">•</span>
+                                                                            {{ $version->created_at->format('M d, Y H:i') }}
+                                                                        </p>
+                                                                        <a
+                                                                            href="{{ $version->file_url }}"
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            class="text-body-sm text-primary hover:underline inline-block mt-space-xs"
+                                                                        >
+                                                                            View file
+                                                                        </a>
                                                                     </div>
-                                                                    <p class="text-body-sm text-on-surface-variant">
-                                                                        {{ $this->formatBytes($version->file_size) }}
-                                                                        <span class="mx-space-xs">•</span>
-                                                                        {{ $version->created_at->format('M d, Y H:i') }}
-                                                                    </p>
-                                                                </div>
                                                                 <div class="flex items-center gap-space-xs flex-shrink-0">
                                                                     @if (! $version->is_active)
                                                                         <button
                                                                             type="button"
                                                                             wire:click="switchToVersion('{{ $version->id }}', {{ $version->version }})"
                                                                             wire:loading.attr="disabled"
-                                                                            wire:target="switchToVersion('{{ $version->id }}')"
-                                                                            class="px-space-md py-space-sm text-primary hover:bg-primary/10 rounded transition text-label-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            wire:target="switchToVersion('{{ $version->id }}', {{ $version->version }})"
+                                                                            class="px-space-md py-space-sm text-primary hover:bg-primary/10 rounded transition text-label-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-space-xs"
                                                                         >
-                                                                            <span wire:loading.remove wire:target="switchToVersion('{{ $version->id }}')">Activate</span>
-                                                                            <span wire:loading wire:target="switchToVersion('{{ $version->id }}')" class="inline-block animate-spin">⟳</span>
+                                                                            <span wire:loading.remove wire:target="switchToVersion('{{ $version->id }}', {{ $version->version }})">Activate</span>
+                                                                            <span wire:loading wire:target="switchToVersion('{{ $version->id }}', {{ $version->version }})" class="inline-flex items-center gap-space-xs">
+                                                                                <span class="inline-block animate-spin">⟳</span>
+                                                                                <span>Activating...</span>
+                                                                            </span>
                                                                         </button>
                                                                     @endif
                                                                     @if ($allVersions->count() > 1)
@@ -206,14 +294,18 @@
                                                                             type="button"
                                                                             wire:click="deleteVersion('{{ $version->id }}', {{ $version->version }})"
                                                                             wire:loading.attr="disabled"
-                                                                            wire:target="deleteVersion('{{ $version->id }}')"
-                                                                            class="px-space-md py-space-sm text-error hover:bg-error/10 rounded transition text-label-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            wire:target="deleteVersion('{{ $version->id }}', {{ $version->version }})"
+                                                                            class="px-space-md py-space-sm text-error hover:bg-error/10 rounded transition text-label-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-space-xs"
                                                                         >
-                                                                            <span wire:loading.remove wire:target="deleteVersion('{{ $version->id }}')">Remove</span>
-                                                                            <span wire:loading wire:target="deleteVersion('{{ $version->id }}')" class="inline-block animate-spin">⟳</span>
+                                                                            <span wire:loading.remove wire:target="deleteVersion('{{ $version->id }}', {{ $version->version }})">Remove</span>
+                                                                            <span wire:loading wire:target="deleteVersion('{{ $version->id }}', {{ $version->version }})" class="inline-flex items-center gap-space-xs">
+                                                                                <span class="inline-block animate-spin">⟳</span>
+                                                                                <span>Removing...</span>
+                                                                            </span>
                                                                         </button>
                                                                     @endif
                                                                 </div>
+                                                            </div>
                                                             </div>
                                                         </div>
                                                     @endforeach
@@ -432,6 +524,86 @@
                         this.uploading = false;
                         this.progress = 0;
                         this.$refs.materialFile.value = '';
+                    }
+                },
+
+                putFile(url, file) {
+                    return new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('PUT', url, true);
+                        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+                        xhr.upload.addEventListener('progress', (event) => {
+                            if (event.lengthComputable) {
+                                this.progress = Math.round((event.loaded / event.total) * 100);
+                            }
+                        });
+
+                        xhr.addEventListener('load', () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                resolve();
+                            } else {
+                                reject(new Error('Upload failed with status ' + xhr.status));
+                            }
+                        });
+
+                        xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
+
+                        xhr.send(file);
+                    });
+                },
+            }));
+
+            Alpine.data('materialVersionUploader', (materialId, allowedExtensions) => ({
+                showVersions: false,
+                uploading: false,
+                progress: 0,
+                statusText: '',
+                clientError: null,
+
+                async uploadVersion(file) {
+                    if (! file) return;
+
+                    this.clientError = null;
+
+                    const extension = file.name.split('.').pop().toLowerCase();
+                    if (! allowedExtensions.includes(extension)) {
+                        this.clientError = 'Unsupported file type: .' + extension;
+                        this.$refs.versionFile.value = '';
+
+                        return;
+                    }
+
+                    this.uploading = true;
+                    this.progress = 0;
+                    this.statusText = 'Preparing upload...';
+
+                    try {
+                        const result = await this.$wire.generateVersionUploadUrl(materialId, file.name);
+
+                        if (result.error) {
+                            this.clientError = result.error;
+
+                            return;
+                        }
+
+                        this.statusText = 'Uploading...';
+                        await this.putFile(result.url, file);
+
+                        this.statusText = 'Finalizing...';
+                        const finalizeResult = await this.$wire.finalizeVersionUpload(materialId, {
+                            temp_key: result.key,
+                        });
+
+                        if (finalizeResult?.error) {
+                            this.clientError = finalizeResult.error;
+                        }
+                    } catch (error) {
+                        this.clientError = error.message || 'Upload failed';
+                    } finally {
+                        this.uploading = false;
+                        this.progress = 0;
+                        this.$refs.versionFile.value = '';
                     }
                 },
 

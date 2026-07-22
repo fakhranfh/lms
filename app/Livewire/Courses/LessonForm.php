@@ -69,7 +69,7 @@ class LessonForm extends Component
     private function loadMaterials(): void
     {
         if ($this->lesson) {
-            $this->materials = $this->lesson->materials()->orderBy('order')->get();
+            $this->materials = $this->lesson->materials()->active()->orderBy('order')->get();
         }
     }
 
@@ -148,6 +148,44 @@ class LessonForm extends Component
             $url = $r2Service->generatePresignedPutUrl($this->lesson->id, $filename, $materialType);
 
             return $url;
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Generate a presigned upload URL for replacing an existing material's file
+     * (creates a new version instead of a brand-new material)
+     *
+     * @return array{url?: string, key?: string, error?: string}
+     */
+    public function generateVersionUploadUrl(string $materialId, string $filename, R2StorageService $r2Service): array
+    {
+        try {
+            $material = LessonMaterial::findOrFail($materialId);
+
+            $r2Service->enforceQuotaLimit($this->getSchoolId());
+
+            return $r2Service->generatePresignedPutUrl($this->lesson->id, $filename, $material->type->value);
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Finalize a new version upload for an existing material
+     *
+     * @return array{error?: string}
+     */
+    public function finalizeVersionUpload(string $materialId, array $data, LessonMaterialService $materialService): array
+    {
+        try {
+            $materialService->finalizeVersionUpload($materialId, $data);
+            $this->loadMaterials();
+            $this->errorMessage = null;
+            $this->dispatch('version-uploaded', materialId: $materialId);
+
+            return [];
         } catch (\Exception $e) {
             return ['error' => $e->getMessage()];
         }

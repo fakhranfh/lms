@@ -729,9 +729,13 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 - [x] `LessonForm::getMaterialVersions()` — retrieve all versions for a material
 - [x] `LessonForm::switchToVersion()` — switch to different version
 - [x] `LessonForm::deleteVersion()` — delete specific version (calls service)
+- [x] `LessonForm::generateVersionUploadUrl()` — presigned URL scoped to existing material's type/quota
+- [x] `LessonForm::finalizeVersionUpload()` — finalizes replacement file as new version (not new material)
+- [x] `LessonMaterialService::finalizeVersionUpload()` — 3-layer validation (extension/magic-bytes/MIME) + version bump, mirrors finalizeR2Upload() but targets existing material
 - [x] UI: Version History section in LessonForm (collapsible per material)
 - [x] UI: List all versions with dates, file sizes, "active" badge
 - [x] UI: Activate/Delete buttons per version
+- [x] UI: "Upload New Version" button per material — replaces file via presigned upload, creates new version
 - [x] UI: Total storage calculation across all versions
 
 **Repository Updates:**
@@ -750,7 +754,22 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 - [x] Material scope filters only active versions
 - [x] Material::getAllVersions() returns all versions ordered by version desc
 - [x] Material::getActiveVersion() returns current active version
-- [x] Total: 11/11 tests passing
+- [x] finalizeVersionUpload creates new version from presigned upload flow (3-layer validation mocked)
+- [x] finalizeVersionUpload throws when temp file not found in R2
+- [x] LessonForm::generateVersionUploadUrl returns presigned URL scoped to material's type + quota
+- [x] LessonForm::finalizeVersionUpload creates new version / returns error on validation failure
+- [x] test_current_materials_list_only_shows_active_version — regression test for duplicate-row bug (see below)
+- [x] Total: 17 tests passing (11 service-level in MaterialVersioningTest, 6 Livewire-level in LessonFormTest)
+
+**Post-implementation fixes (2026-07-21, found via manual testing):**
+- [x] **"Upload New Version" flow was missing entirely** — instructors could edit title or delete a material, but had no way to replace the file itself and trigger a new version. Added:
+  - `LessonMaterialService::finalizeVersionUpload()` — mirrors `finalizeR2Upload()`'s 3-layer validation (extension → magic bytes → MIME) but targets an existing material: deactivates current version(s), inserts next version
+  - `LessonForm::generateVersionUploadUrl()` / `finalizeVersionUpload()` — Livewire wrappers, quota-enforced, material type inferred from the existing row
+  - Alpine `materialVersionUploader(materialId, allowedExtensions)` per material row — hidden file input, "Upload New Version" button, reuses the same presigned-PUT pattern as the main uploader
+- [x] **Bug: duplicate materials shown after uploading a new version** — `loadMaterials()` in both `LessonForm` and `LessonViewer` queried all versions with no `is_active` filter, so every version bump added a new visible row in "Current Materials" (both labeled "Active"). Same gap existed in `LessonCompletionService::isLessonComplete()`/`getLessonProgress()` and `LessonMaterialUserRepository::getAccessedCount()`/`getAccessedMaterials()`/`getNotAccessedMaterials()` — lesson completion was silently requiring access to every version, not just the active one. Fixed by scoping all five queries to `->active()`.
+- [x] **Bug: Alpine `showVersions` toggle stopped working** — replacing `x-data="{ showVersions: false }"` with `x-data="materialVersionUploader(...)"` dropped the `showVersions` property from the reactive scope, so clicking "X versions" no longer expanded the panel. Fixed by adding `showVersions: false` to the `materialVersionUploader` Alpine data function.
+- [x] **Bug: Activate/Remove buttons never showed a loading spinner** — `wire:target="switchToVersion('{{ $version->id }}')"` only matched on one argument while `wire:click` called the method with two (`$version->id`, `$version->version`); Livewire's exact-signature matching never fired the loading state. Fixed by aligning `wire:target` params with `wire:click`, plus added "Activating…"/"Removing…" text next to the spinner.
+- [x] **UI: file preview per version** — added a clickable thumbnail/icon (image thumbnail, muted video frame, or type icon) plus a "View file" link to each row in the version history panel, opening the raw file in a new tab.
 
 ---
 

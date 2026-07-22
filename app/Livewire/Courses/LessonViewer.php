@@ -64,7 +64,7 @@ class LessonViewer extends Component
 
     private function loadMaterials(LessonMaterialService $materialService): void
     {
-        $this->materials = $this->lesson->materials()->orderBy('order')->get();
+        $this->materials = $this->lesson->materials()->active()->orderBy('order')->get();
         $this->totalMaterialCount = $this->materials->count();
 
         if ($this->materials->count() > 0) {

@@ -303,3 +303,77 @@ test('material getActiveVersion returns current active version', function () {
     expect($activeVersion->id)->toBe($v2->id);
     expect($activeVersion->version)->toBe(2);
 });
+
+test('finalizeVersionUpload creates new version from presigned upload flow', function () {
+    $material = LessonMaterial::factory()
+        ->for($this->lesson)
+        ->withType(MaterialType::PDF)
+        ->create([
+            'title' => 'Presigned Upload Test',
+            'version' => 1,
+            'is_active' => true,
+        ]);
+
+    $mockR2Service = Mockery::mock(R2StorageService::class);
+    $mockR2Service->shouldReceive('verifyFileExists')
+        ->once()
+        ->with('temp/abc/replacement.pdf')
+        ->andReturn(['exists' => true, 'size' => 2048, 'mime_type' => 'application/pdf']);
+    $mockR2Service->shouldReceive('downloadToLocalTemp')
+        ->once()
+        ->andReturn(sys_get_temp_dir().'/fake-download.pdf');
+    $mockR2Service->shouldReceive('validateFileContent')->once();
+    $mockR2Service->shouldReceive('validateMimeType')->once();
+    $mockR2Service->shouldReceive('promoteFromTemp')->once();
+    $mockR2Service->shouldReceive('getPublicUrl')
+        ->once()
+        ->andReturn('https://r2.example.com/lessons/'.$this->lesson->id.'/materials/replacement.pdf');
+
+    // Create the fake local temp file so file_exists()/unlink() in finally block don't error
+    file_put_contents(sys_get_temp_dir().'/fake-download.pdf', '%PDF-1.4 fake content');
+
+    $service = new LessonMaterialService(
+        app(LessonRepository::class),
+        app(LessonMaterialRepository::class),
+        app(LessonMaterialUserRepository::class),
+        $mockR2Service,
+    );
+
+    $newVersion = $service->finalizeVersionUpload($material->id, [
+        'temp_key' => 'temp/abc/replacement.pdf',
+    ]);
+
+    expect($newVersion->version)->toBe(2);
+    expect($newVersion->is_active)->toBe(true);
+    expect($newVersion->title)->toBe('Presigned Upload Test');
+
+    $original = LessonMaterial::find($material->id);
+    expect($original->is_active)->toBe(false);
+
+    $allVersions = LessonMaterial::where('lesson_id', $this->lesson->id)
+        ->where('title', 'Presigned Upload Test')
+        ->get();
+    expect($allVersions)->toHaveCount(2);
+});
+
+test('finalizeVersionUpload throws when temp file not found', function () {
+    $material = LessonMaterial::factory()
+        ->for($this->lesson)
+        ->withType(MaterialType::PDF)
+        ->create(['title' => 'Missing Temp File Test']);
+
+    $mockR2Service = Mockery::mock(R2StorageService::class);
+    $mockR2Service->shouldReceive('verifyFileExists')
+        ->once()
+        ->andReturn(['exists' => false]);
+
+    $service = new LessonMaterialService(
+        app(LessonRepository::class),
+        app(LessonMaterialRepository::class),
+        app(LessonMaterialUserRepository::class),
+        $mockR2Service,
+    );
+
+    expect(fn () => $service->finalizeVersionUpload($material->id, ['temp_key' => 'temp/missing.pdf']))
+        ->toThrow(Exception::class, 'Temp file not found in R2');
+});

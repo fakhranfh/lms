@@ -20,7 +20,7 @@ class LessonCompletionService
      */
     public function isLessonComplete(Lesson $lesson, User $user): bool
     {
-        $materials = $lesson->materials;
+        $materials = $lesson->materials()->active()->get();
 
         // If lesson has no materials, it's not completable
         if ($materials->isEmpty()) {
@@ -40,7 +40,7 @@ class LessonCompletionService
      */
     public function getLessonProgress(Lesson $lesson, User $user): array
     {
-        $materials = $lesson->materials;
+        $materials = $lesson->materials()->active()->get();
         $total = $materials->count();
 
         if ($total === 0) {

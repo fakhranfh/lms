@@ -440,8 +440,8 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 - [x] 11.4 Service Layer (LessonMaterialService, LessonCompletionService, R2StorageService)
 - [x] 11.5 Livewire Components (LessonForm & LessonViewer updates)
 - [x] 11.6 R2 Integration & Global Quota Management
-- [ ] 11.7 Material Versioning System
-- [ ] 11.8 Admin Monitoring & Alerts Dashboard
+- [x] 11.7 Material Versioning System
+- [x] 11.8 Admin Monitoring & Alerts Dashboard
 - [ ] 11.9 Data Migration (Video → LessonMaterial)
 - [x] 11.10 Testing (Unit, Feature, Integration)
 - [ ] 11.11 Documentation Updates
@@ -775,56 +775,65 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 
 ### 11.8 Admin Monitoring & Alerts Dashboard
 
+**Status:** ✅ COMPLETE (2026-07-22, follow-up pass) — dashboard, breakdown, materials browser, threshold-alert email, 30-day trend graph, and the global-quota indicator in `LessonForm` are all implemented and tested. Only two low-value items remain deliberately deferred (see notes below).
+
 **Goal:** Real-time visibility into global storage usage, per-school breakdown, and quota alerts.
 
 **Database Changes:**
-- [ ] Create `storage_usage_logs` table (optional, for historical tracking):
-  - [ ] `id`, `timestamp`, `total_used_bytes`, `quota_bytes`, `usage_percent`, `school_id` (nullable for global)
-  - [ ] Log entry every upload/delete for audit trail
+- [x] Create `storage_usage_logs` table (migration `2026_07_22_040334_create_storage_usage_logs_table.php`):
+  - [x] `id`, `school_id` (nullable, FK, null = global row), `total_used_bytes`, `quota_bytes`, `usage_percent`, `last_alert_threshold`, timestamps
+  - [x] `StorageUsageLog` model. One global row is written per `CalculateStorageUsageJob` run (not per upload/delete) — `last_alert_threshold` tracks the highest % band already alerted on, so re-running the job doesn't re-send the same email.
 
 **Admin Dashboard Section (New):**
-- [ ] Add route: `admin.storage.dashboard`
-- [ ] Livewire component: `AdminStorageDashboard`
+- [x] Route: `admin.storage.dashboard` → `GET /storage` on the `admin.*` domain, inside the existing `auth + role:Admin` middleware group (`routes/web/admin.php`)
+- [x] Livewire component: `App\Livewire\Admin\AdminStorageDashboard` (`app/Livewire/Admin/`), gated with `abort_unless(auth()->user()->can('analytics.view'), 403)` in `mount()`, matching the inline-authorization convention used elsewhere in this codebase (see Section 8)
 
 **Dashboard Displays:**
 1. **Global Storage Summary Card:**
-   - [ ] Total used: X GB / 10 GB
-   - [ ] Usage percentage with visual bar
-   - [ ] Trend graph (last 30 days): upload/delete activity
-   - [ ] Alert banner if > 80% (yellow), > 90% (orange), >= 100% (red)
+   - [x] Total used: X GB / 10 GB (via `StorageMonitoringService::globalSummary()`, backed by `SUM(file_size)` over active `lesson_materials`, not a live R2 bucket scan — see Implementation Notes)
+   - [x] Usage percentage with visual bar
+   - [x] Trend graph (last 30 days) — inline SVG line+area chart (single series, no legend needed per the dataviz method) driven by `StorageMonitoringService::usageTrend()`; each point has a native `<title>` tooltip with timestamp + %; shows a "Not enough data yet" placeholder instead of a fake line until at least 2 snapshots exist (the job logs one snapshot per hourly run)
+   - [x] Alert banner if > 80% (yellow), > 90% (orange), >= 100% (red)
 
 2. **Per-School Breakdown Table:**
-   - [ ] Columns: School Name, Storage Used, Material Count, Largest Material, Last Upload
-   - [ ] Sortable by: name, usage, count
-   - [ ] Click row → drill into school's materials
+   - [x] Columns: School Name, Storage Used, Material Count, Largest Material, Last Upload
+   - [x] Sortable by: `used_bytes`, `material_count` (click column header, toggles asc/desc)
+   - [x] Click row → drill into school's materials (opens School Detail Modal)
 
-3. **School Detail Modal:**
-   - [ ] List all materials with: type, size, version count, created date, last accessed
-   - [ ] Sort by: size (descending), date
-   - [ ] Buttons: View in LessonViewer, Delete, Archive (future)
-   - [ ] Delete confirmation: "Frees X MB, reduces school by Y%"
+3. **School Materials Page** (2026-07-22 follow-up: promoted from an in-page modal to its own page per user request, with fuller filtering):
+   - [x] Dedicated route/page `admin.storage.materials` (`App\Livewire\Admin\AdminStorageMaterials`), linked from each school row's "View Materials" action and from a "Browse Materials" button in the dashboard header
+   - [x] Filters: School → Course → Module → Lesson (cascading `<select>`s, each disabled until its parent is chosen; selecting a parent resets its children) plus a debounced Material Name text search — all backed by `StorageMonitoringService::filteredMaterialsQuery()`
+   - [x] `?school=` query string support (via `#[Url(as: 'school')]`) so the dashboard's per-school "View Materials" links pre-filter the page
+   - [x] Sortable columns (title, size, uploaded date), paginated (15/page)
+   - [x] Skeleton loading always shown while any filter/sort/pagination/delete request is in flight (`wire:loading.delay` + `wire:target` covering every action on the page), matching the loading pattern already used in `CoursesIndex`
+   - [x] Delete button per material (`LessonMaterialService::delete()`, same service used by `LessonForm`), confirmed via the project's standard dark-overlay Alpine modal (not `wire:confirm` — see [[delete_modal_pattern]]) showing the material name and bytes freed
+   - [ ] Version count / last-accessed column, "Archive" / "View in LessonViewer" buttons — not shown; only the active version per material is listed (matching how the rest of the app treats "current materials"), and no archive feature exists yet elsewhere in the app
 
 **Email Alerts (Background Job):**
-- [ ] Daily/hourly check: `CalculateStorageUsageJob`
-  - [ ] Calculate total + per-school usage
-  - [ ] Send email if:
-    - [ ] First time crossing 80%: "Storage at 80% (8 GB). Consider archival strategy."
-    - [ ] First time crossing 90%: "⚠️ Storage at 90% (9 GB). Uploads may fail soon."
-    - [ ] At 100%: "❌ Storage quota full. All uploads blocked. Delete materials to resume."
-  - [ ] Recipients: all admins with `settings.school` permission
+- [x] `CalculateStorageUsageJob` (`app/Jobs/CalculateStorageUsageJob.php`), scheduled hourly via `Schedule::job(...)->hourly()` in `routes/console.php`
+  - [x] Calculates global usage via `StorageMonitoringService::logGlobalUsageAndGetNewThreshold()`, which returns the threshold (80/90/100) only the first time it's newly crossed since the last log row
+  - [x] Sends `StorageQuotaAlertMail` (`resources/views/emails/storage-quota-alert.blade.php`) with threshold-specific subject/body for 80%, 90%, 100%
+  - [x] Recipients: `User::permission('settings.school')->get()->unique('id')` — the `unique('id')` was needed because Spatie's `permission()` scope can return duplicate rows per matching role
 
 **School-Level Quota Indicator:**
-- [ ] In LessonForm upload area:
-  - [ ] Display: "Remaining quota: X.X GB (Y% used globally)"
-  - [ ] Warning: "⚠️ Quota at 90%. Upload may fail."
-  - [ ] Error: "❌ Quota full. Uploads blocked."
+- [x] Global-percentage addition to `LessonForm`'s existing per-school quota display — `LessonForm::getQuotaInfo()` now also returns `global_percentage` (from `StorageMonitoringService::globalSummary()`) and the upload area renders "Remaining quota: X of Y GB (Z% used globally)" plus the existing warning line. **Bonus fix found while wiring this up:** `getQuotaInfo()` was never actually called from the Blade view (`app/Livewire/Courses/LessonForm.php` had it as a dead method only exercised by tests) — it's now rendered for real, and its service params were made optional/container-resolved internally since Livewire doesn't autowire method dependencies for plain `$this->method()` calls made directly from a view (only for routed/dispatched actions).
 
-**Tests:**
-- [ ] Dashboard loads without errors (with/without data)
-- [ ] Email triggers at correct thresholds (80%, 90%, 100%)
-- [ ] Storage calculation is accurate
-- [ ] Per-school breakdown sums to global total
-- [ ] Drill-in modal shows correct materials
+**Tests (`tests/Feature/StorageMonitoringServiceTest.php`, `AdminStorageDashboardTest.php`, `AdminStorageMaterialsTest.php`, `CalculateStorageUsageJobTest.php`, plus updates to `LessonFormTest.php`/`LessonFormQuotaTest.php` — 24 tests across the new files):**
+- [x] Dashboard loads without errors (with/without data)
+- [x] Email triggers at correct thresholds (80%, 90%) and doesn't re-fire once already alerted
+- [x] Storage calculation is accurate (DB-based sum, excludes inactive material versions)
+- [x] Per-school breakdown sums to global total
+- [x] Materials page shows correct filtered materials; trend chart shows placeholder vs. real chart correctly
+
+**Implementation Notes:**
+- `R2StorageService::getTotalStorageUsed()`/`getSchoolStorageUsed()` scan the R2 bucket directly and don't attribute objects to a school (all materials sit under a flat `lessons/` prefix), so they can't produce a per-school breakdown. `StorageMonitoringService` instead aggregates `lesson_materials.file_size` from the database, scoped to `->active()` (current version only) and joined through `lesson.module.course.school_id`. This is also what makes "per-school breakdown sums to global total" true by construction and testable without hitting real R2.
+- Global quota is still the legacy flat 10 GB constant (`R2StorageService::GLOBAL_QUOTA_BYTES`, exposed via new `getGlobalQuotaBytes()`), not a sum of per-school tier quotas — matches how quota was already framed pre-11.7.
+- `lesson_materials.file_size` is an `unsignedInteger` column (~4.29 GB row cap); tests simulating near-quota usage split the total across several rows rather than one oversized row.
+
+**Shared UI infra added alongside this section (2026-07-22, used by both admin storage pages and reusable for future ones):**
+- `resources/views/components/livewire-data-table.blade.php` — pre-existing but previously-unused generic table component, updated (not duplicated) with a top+bottom pagination row, a "Per page" selector next to the top pagination, and sort-direction arrows on clickable column headers.
+- `resources/views/components/searchable-select.blade.php` — new Alpine type-to-filter combobox (`<x-searchable-select>`), used for the School/Course/Module/Lesson cascading filters on the materials page in place of plain `<select>`s; each instance is keyed to its own (and its parent's) current value so it resets correctly on cascading changes.
+- `resources/views/vendor/pagination/tailwind.blade.php` — published and restyled Laravel's default pagination view to use this app's design tokens instead of generic Tailwind gray, since it's the shared view every `$paginator->links()` call in the app renders through. The active page uses the same `bg-primary/20 text-primary` treatment as the selected admin-sidebar item; disabled prev/next controls use a plain gray background.
 
 ---
 

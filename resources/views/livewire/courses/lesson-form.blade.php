@@ -82,6 +82,20 @@
                     Lesson Materials
                 </label>
 
+                @php $quotaInfo = $this->getQuotaInfo(); @endphp
+                <div class="mb-space-md p-space-md bg-surface-container rounded-lg border border-outline text-body-sm space-y-space-xs">
+                    <p class="{{ $quotaInfo['color'] }}">
+                        Remaining quota: {{ $quotaInfo['remaining'] }}
+                        @if ($quotaInfo['limit_gb'])
+                            of {{ $quotaInfo['limit_gb'] }} GB
+                        @endif
+                        ({{ $quotaInfo['global_percentage'] }}% used globally)
+                    </p>
+                    @if ($quotaInfo['warning'])
+                        <p class="{{ $quotaInfo['color'] }} font-medium">{{ $quotaInfo['warning'] }}</p>
+                    @endif
+                </div>
+
                 @if ($errorMessage)
                     <div class="mb-space-md p-space-md bg-error/10 border border-error text-error rounded-lg text-body-sm">
                         {{ $errorMessage }}

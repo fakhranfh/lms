@@ -183,6 +183,9 @@ class LessonFormTest extends TestCase
         $this->mock(R2StorageService::class, function ($mock) {
             $mock->shouldReceive('generatePresignedPutUrl')
                 ->andReturn(['url' => 'https://example.com/presigned', 'key' => 'temp/abc/notes.pdf', 'lesson_id' => 'placeholder']);
+            $mock->shouldReceive('checkSchoolQuota')
+                ->andReturn(['used' => 0, 'limit' => 1073741824, 'remaining' => 1073741824, 'percentage' => 0.0, 'limit_gb' => 1]);
+            $mock->shouldReceive('getGlobalQuotaBytes')->andReturn(10737418240);
         });
 
         $component = Livewire::test(LessonForm::class, ['module' => $this->module])
@@ -393,6 +396,9 @@ class LessonFormTest extends TestCase
             $mock->shouldReceive('generatePresignedPutUrl')
                 ->once()
                 ->andReturn(['url' => 'https://r2.example.com/presigned', 'key' => 'temp/lesson/abc-file.pdf']);
+            $mock->shouldReceive('checkSchoolQuota')
+                ->andReturn(['used' => 0, 'limit' => 1073741824, 'remaining' => 1073741824, 'percentage' => 0.0, 'limit_gb' => 1]);
+            $mock->shouldReceive('getGlobalQuotaBytes')->andReturn(10737418240);
         });
 
         $component = Livewire::test(LessonForm::class, [

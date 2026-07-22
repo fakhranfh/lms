@@ -410,6 +410,14 @@ class R2StorageService
         ];
     }
 
+    /**
+     * Get the legacy global storage quota in bytes.
+     */
+    public function getGlobalQuotaBytes(): int
+    {
+        return self::GLOBAL_QUOTA_BYTES;
+    }
+
     public static function formatBytes(int $bytes): string
     {
         $units = ['B', 'KB', 'MB', 'GB'];

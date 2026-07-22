@@ -9,6 +9,7 @@ use App\Models\Module;
 use App\Services\LessonMaterialService;
 use App\Services\LessonService;
 use App\Services\R2StorageService;
+use App\Services\StorageMonitoringService;
 use App\Support\CurrentSchool;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Validate;
@@ -349,13 +350,17 @@ class LessonForm extends Component
      * Shows remaining storage and usage percentage with color coding
      * Based on school's tier limits
      *
-     * @return array{used: string, remaining: string, percentage: float, color: string, warning: string|null, limit_gb: int|null}
+     * @return array{used: string, remaining: string, percentage: float, color: string, warning: string|null, limit_gb: int|null, global_percentage: float}
      */
-    public function getQuotaInfo(R2StorageService $r2Service): array
+    public function getQuotaInfo(?R2StorageService $r2Service = null, ?StorageMonitoringService $monitoringService = null): array
     {
+        $r2Service ??= app(R2StorageService::class);
+        $monitoringService ??= app(StorageMonitoringService::class);
+
         $schoolId = $this->getSchoolId();
         $quota = $r2Service->checkSchoolQuota($schoolId);
         $percentage = $quota['percentage'];
+        $globalPercentage = $monitoringService->globalSummary()['percentage'];
 
         // Determine warning level and color based on usage
         $color = match (true) {
@@ -380,6 +385,7 @@ class LessonForm extends Component
             'warning' => $warning,
             'can_upload' => $percentage < 100,
             'limit_gb' => $quota['limit_gb'] ?? null,
+            'global_percentage' => round($globalPercentage, 1),
         ];
     }
 

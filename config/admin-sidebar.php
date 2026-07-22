@@ -48,6 +48,13 @@ return [
         'active_pattern' => 'admin.schools.*',
     ],
     [
+        'label' => 'Storage',
+        'route' => 'admin.storage.dashboard',
+        'icon' => 'cloud',
+        'active_pattern' => 'admin.storage.*',
+        'requires_permission' => 'analytics.view',
+    ],
+    [
         'label' => 'Demo Credentials',
         'route' => 'admin.demo-credentials',
         'icon' => 'preview',

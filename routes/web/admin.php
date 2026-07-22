@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\GatewayConfigController;
 use App\Http\Controllers\AdminLoginController;
 use App\Http\Controllers\PermissionController;
+use App\Livewire\Admin\AdminStorageDashboard;
+use App\Livewire\Admin\AdminStorageMaterials;
 use App\Livewire\PricingTiers\PricingTierCreate;
 use App\Livewire\PricingTiers\PricingTierEdit;
 use App\Livewire\PricingTiers\PricingTierIndex;
@@ -48,6 +50,9 @@ Route::domain('admin.'.config('app.domain'))->group(function () {
         Route::get('/pricing-tiers', PricingTierIndex::class)->name('admin.pricing-tiers.index');
         Route::get('/pricing-tiers/create', PricingTierCreate::class)->name('admin.pricing-tiers.create');
         Route::get('/pricing-tiers/{tier}/edit', PricingTierEdit::class)->name('admin.pricing-tiers.edit');
+
+        Route::get('/storage', AdminStorageDashboard::class)->name('admin.storage.dashboard');
+        Route::get('/storage/materials', AdminStorageMaterials::class)->name('admin.storage.materials');
 
         Route::get('/schools', SchoolIndex::class)->name('admin.schools.index');
         Route::get('/schools/{school}/edit', SchoolEdit::class)->name('admin.schools.edit');

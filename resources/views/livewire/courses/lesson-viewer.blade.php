@@ -214,6 +214,53 @@
                     </div>
                 @endif
 
+                <!-- Assignments -->
+                @if ($assignments->count() > 0)
+                    <div class="mb-space-xl bg-surface-container rounded-lg p-space-lg">
+                        <h3 class="text-label-lg font-label-md text-on-surface mb-space-md">Assignments</h3>
+
+                        <div class="space-y-space-sm">
+                            @foreach ($assignments as $assignment)
+                                @php $submission = $assignment->submissions->first(); @endphp
+                                <div class="flex items-center justify-between p-space-md bg-surface rounded-lg border border-outline">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-body-md text-on-surface font-medium truncate">{{ $assignment->title }}</p>
+                                        @if ($submission)
+                                            <p class="text-body-sm text-on-surface-variant">
+                                                Status: {{ $submission->status->label() }}
+                                                @if ($submission->isGraded())
+                                                    &middot; Score: {{ $submission->getDisplayScore() }} / {{ $assignment->max_score }}
+                                                @endif
+                                            </p>
+                                        @else
+                                            <p class="text-body-sm text-on-surface-variant">Not submitted yet</p>
+                                        @endif
+                                    </div>
+                                    @auth
+                                        <div class="flex-shrink-0 ml-space-md flex items-center gap-space-sm">
+                                            @if ($submission)
+                                                <a href="{{ route('submissions.show', $submission) }}" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
+                                                    View Submission
+                                                </a>
+                                            @endif
+
+                                            @if (! $submission || ($assignment->allow_multiple_submissions && $submission->status->isTerminal()))
+                                                <a href="{{ route('submissions.create', ['lesson' => $lesson, 'assignment' => $assignment]) }}" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
+                                                    {{ $submission ? 'Submit Another Attempt' : 'Start Assignment' }}
+                                                </a>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <a href="{{ route('login') }}" class="flex-shrink-0 ml-space-md px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
+                                            Login to Submit
+                                        </a>
+                                    @endauth
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Mark Complete Button -->
                 @auth
                     <div class="mb-space-xl">

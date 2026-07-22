@@ -111,86 +111,86 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US1, US3, US4), Section 8 (Core Sy
 
 ## 5. Livewire Components — Submission & Grading
 
-- [ ] Create `AssignmentForm` Livewire component (modal):
-  - [ ] Fields: title, prompt_question (textarea), rubric (JSON editor), max_score, passing_score
-  - [ ] Rich text editor for prompt (TinyMCE or similar)
-  - [ ] JSON schema validation for rubric
-  - [ ] Preview rubric structure
-  - [ ] On submit: create/update assignment
-- [ ] Create `RubricBuilder` Livewire component:
-  - [ ] Visual JSON form builder for rubric (not raw textarea)
-  - [ ] Add/remove rubric items dynamically
-  - [ ] Fields per item: criterion name, weight/percentage, description, max points
-  - [ ] Calculate total weight (should sum to 100)
-  - [ ] Export/import rubric as JSON
-  - [ ] Validate structure before saving
-- [ ] Create `EssaySubmissionForm` Livewire component:
-  - [ ] Show assignment title, prompt, rubric (read-only)
-  - [ ] Large textarea for essay answer
-  - [ ] Character count (optional)
-  - [ ] Submit button (disabled if empty)
-  - [ ] On submit:
-    - [ ] POST /submissions (see Controller)
-    - [ ] Disable form after submit
-    - [ ] Transition to SubmissionStatusChip (pending)
-  - [ ] Rate limit handling: show error toast if 3/min exceeded
-- [ ] Create `SubmissionStatusChip` Livewire component:
-  - [ ] Display status badge (pending/processing/graded/failed)
-  - [ ] Use wire:poll to auto-refresh every 2-3 seconds while pending/processing
-  - [ ] Show timestamp (submitted, graded, failed retry attempts)
-  - [ ] Icons + text (not color-only)
-  - [ ] On transition to graded: show toast, collapse form, expand result
-  - [ ] Show retry info if failed (e.g., "Retrying... attempt 2/5")
-- [ ] Create `SubmissionResultPanel` Livewire component:
-  - [ ] Display score (AI or instructor override)
-  - [ ] Render structured feedback (not raw JSON)
-  - [ ] Show rubric item feedback if available
-  - [ ] Highlight instructor override (badge: "Instructor Override")
-  - [ ] If instructor override: show both AI score and override score
-  - [ ] Allow multiple submissions if assignment allows (show all attempts in tabs)
-- [ ] Create `GradingQueueTable` Livewire component:
-  - [ ] Table of submissions for assignments created by logged-in instructor
-  - [ ] Columns: student name, assignment, status, AI score, submitted date, actions
-  - [ ] Filters: status (pending/processing/graded/failed), assignment, date range
-  - [ ] Actions per submission: View Details, Override Score, Mark as Reviewed
-  - [ ] Batch actions: Mark as Reviewed (multiple), Resend Failed
-  - [ ] Pagination (50 per page)
-- [ ] Create `OverrideScoreModal` Livewire component:
-  - [ ] Show submission details (student name, original AI score, feedback)
-  - [ ] Form: new score (numeric), instructor feedback (textarea)
-  - [ ] On submit: call Submission->overrideScore(), refresh GradingQueueTable
-  - [ ] Show confirmation toast
+- [x] Create `AssignmentForm` Livewire component (full-page, not modal — matches this codebase's convention, see `ModuleForm`):
+  - [x] Fields: title, prompt_question (textarea), rubric (visual builder), max_score, passing_score
+  - [ ] Rich text editor for prompt (TinyMCE or similar) (deferred: no rich text editor used elsewhere in this codebase; plain textarea matches existing conventions)
+  - [x] JSON schema validation for rubric (weights must total 100, blocks save with visible error)
+  - [x] Preview rubric structure (rubric shown read-only on EssaySubmissionForm)
+  - [x] On submit: create/update assignment
+- [x] Create `RubricBuilder` (folded into `AssignmentForm` rather than a separate component, per task-instruction guidance for this run):
+  - [x] Visual JSON form builder for rubric (not raw textarea)
+  - [x] Add/remove rubric items dynamically
+  - [x] Fields per item: criterion name, weight/percentage, description, max points
+  - [x] Calculate total weight (should sum to 100)
+  - [x] Export/import rubric as JSON (serializes rubricItems to `rubric` JSON column; hydrates on edit)
+  - [x] Validate structure before saving
+- [x] Create `EssaySubmissionForm` Livewire component:
+  - [x] Show assignment title, prompt, rubric (read-only)
+  - [x] Large textarea for essay answer
+  - [ ] Character count (optional) (deferred: optional, not implemented)
+  - [ ] Submit button (disabled if empty) (partial: disabled while wire:loading/submitting, not on empty)
+  - [x] On submit:
+    - [x] Calls `SubmissionService::submit()` (POST /submissions endpoint also exists separately for JSON API use, see Controller)
+    - [x] Disable form after submit (via wire:loading during redirect)
+    - [x] Transition to SubmissionStatusChip (pending) (via redirect to SubmissionShow which embeds it)
+  - [ ] Rate limit handling: show error toast if 3/min exceeded (deferred: rate limiting implemented only on the JSON `/submissions` POST controller endpoint with `throttle:3,1`, not on this Livewire form's direct service call)
+- [x] Create `SubmissionStatusChip` Livewire component:
+  - [x] Display status badge (pending/processing/graded/failed)
+  - [x] Use wire:poll to auto-refresh every 3 seconds while pending/processing
+  - [x] Show timestamp (submitted, graded, failed retry attempts) (retry attempt count shown; submitted/graded timestamps shown on SubmissionShow parent view)
+  - [x] Icons + text (not color-only)
+  - [ ] On transition to graded: show toast, collapse form, expand result (deferred: no toast library in this codebase; SubmissionResultPanel already always renders results section, "collapse/expand" not implemented)
+  - [x] Show retry info if failed (e.g., "Retrying... attempt 2/5")
+- [x] Create `SubmissionResultPanel` Livewire component:
+  - [x] Display score (AI or instructor override)
+  - [x] Render structured feedback (not raw JSON)
+  - [x] Show rubric item feedback if available
+  - [x] Highlight instructor override (badge: "Instructor Override")
+  - [x] If instructor override: show both AI score and override score
+  - [x] Allow multiple submissions if assignment allows (shown as simple links list on `SubmissionShow`, not tabs — per this run's plan)
+- [x] Create `GradingQueueTable` Livewire component:
+  - [x] Table of submissions scoped to assignments in the current school (via lesson→module→course→school_id, not solely "created by logged-in instructor" — matches this codebase's multi-instructor-per-school model)
+  - [x] Columns: student name, assignment, status, AI score, submitted date, actions
+  - [x] Filters: status (pending/processing/graded/failed), assignment, date range
+  - [x] Actions per submission: View Details, Override Score (deferred: "Mark as Reviewed" — no such state/field on Submission)
+  - [ ] Batch actions: Mark as Reviewed (multiple), Resend Failed (deferred: `SubmissionService` has no batch-update or resend support; noted in code comment in `GradingQueueTable`)
+  - [x] Pagination (50 per page)
+- [x] Create `OverrideScoreModal` Livewire component (implemented as a full page at `/submissions/{submission}/override`, not a JS modal — matches this codebase's convention):
+  - [x] Show submission details (student name, original AI score, feedback)
+  - [x] Form: new score (numeric), instructor feedback (textarea)
+  - [x] On submit: call `SubmissionService::overrideScore()`, redirect to `SubmissionShow` with success banner
+  - [ ] Show confirmation toast (deferred: no toast library; uses session-flash success banner instead)
 
 ## 6. Routes & Controllers
 
-- [ ] Create `AssignmentController`:
-  - [ ] `store($lesson)` — create assignment (POST /lessons/{lesson_id}/assignments)
-  - [ ] `update($assignment)` — update assignment (PATCH /assignments/{id})
-  - [ ] `destroy($assignment)` — delete assignment (DELETE /assignments/{id})
-  - [ ] `publish($assignment)` — toggle publish (POST /assignments/{id}/publish)
-  - [ ] Require `permission:create-assignment`, `permission:edit-assignment`, etc.
-- [ ] Create `SubmissionController`:
-  - [ ] `store(SubmissionFormRequest $request)` — create submission
-    - [ ] POST /submissions
-    - [ ] Accept: assignment_id, student_answer
-    - [ ] Validate: assignment exists, is published, assignment allows this student, rate limit check
-    - [ ] Create Submission record with status='pending'
-    - [ ] Dispatch `GradeSubmissionJob` (Phase 1.4) to queue
-    - [ ] Return: HTTP 200 with Submission (status=pending) as JSON
-    - [ ] **Must complete in <500ms** (job runs async in Phase 1.4)
-  - [ ] `show($submission)` — GET /submissions/{id} (for polling)
-    - [ ] Return Submission with ai_score, ai_feedback, status
-    - [ ] Respects auth: student can view own, instructor can view all in course
-  - [ ] `override($submission, OverrideScoreFormRequest $request)` — PATCH /submissions/{id}/override
-    - [ ] Require `permission:override-grade`
-    - [ ] Call $submission->overrideScore(...)
-    - [ ] Return: HTTP 200 with updated Submission
-  - [ ] `retry($submission)` — POST /submissions/{id}/retry (admin only)
-    - [ ] If status='failed', reset to pending and redispatch job
-- [ ] Create `GradingQueueController`:
-  - [ ] `index()` — GET /grading-queue
-    - [ ] Return Livewire component (GradingQueueTable)
-    - [ ] Filter by instructor, apply current teacher's assignments
+- [ ] Create `AssignmentController` (deferred: this codebase does not use controllers for CRUD — Livewire components ARE the routes, per this run's plan and matching `ModuleForm`/`CourseForm` convention. `AssignmentForm` Livewire component handles create/update/publish/unpublish/delete directly):
+  - [x] `store` equivalent — `AssignmentForm::save()`, routed at `GET /lessons/{lesson}/assignments/create`
+  - [x] `update` equivalent — `AssignmentForm::save()`, routed at `GET /assignments/{assignment}/edit`
+  - [x] `destroy` equivalent — `AssignmentForm::delete()` via delete-confirm dispatch pattern
+  - [x] `publish` equivalent — `AssignmentForm::publish()` / `unpublish()`
+  - [x] Require `permission:assignments.create`, `permission:assignments.edit`, `permission:assignments.delete` (enforced via route middleware + `abort_unless` in component)
+- [x] Create `SubmissionController`:
+  - [x] `store(SubmissionFormRequest $request)` — create submission
+    - [x] POST /submissions
+    - [x] Accept: assignment_id, user_id, student_answer (per existing `SubmissionFormRequest` rules)
+    - [x] Validate: assignment exists, is published, assignment allows this student, rate limit check (`throttle:3,1` route middleware)
+    - [x] Create Submission record with status='pending' (via `SubmissionService::submit()`)
+    - [ ] Dispatch `GradeSubmissionJob` (Phase 1.4) to queue (deferred: job class does not exist yet, left `// TODO` comment per task instructions)
+    - [x] Return: HTTP 201 with Submission (status=pending) as JSON
+    - [x] **Must complete in <500ms** (no blocking work; synchronous DB insert only)
+  - [x] `show($submission)` — GET /submissions/{id}/status (for polling)
+    - [x] Return Submission with ai_score, ai_feedback, status
+    - [x] Respects auth: student can view own, instructor can view all in school (via `submissions.grade`/`submissions.view` permission)
+  - [x] `override($submission, OverrideScoreFormRequest $request)` — PATCH /submissions/{id}/override
+    - [x] Require `permission:submissions.override-grade` (enforced by `OverrideScoreFormRequest::authorize()` + route middleware)
+    - [x] Call `SubmissionService::overrideScore(...)`
+    - [x] Return: HTTP 200 with updated Submission
+  - [x] `retry($submission)` — POST /submissions/{id}/retry (`permission:submissions.grade` required)
+    - [x] If status='failed', reset to pending (deferred: redispatch of grading job left as `// TODO`, same reason as `store()`)
+- [ ] Create `GradingQueueController` (deferred: `GradingQueueTable` Livewire component is registered directly as the route action at `GET /grading-queue`, matching this codebase's controller-less CRUD convention):
+  - [x] `index()` equivalent — `GradingQueueTable` render()
+    - [x] Return Livewire component (GradingQueueTable)
+    - [x] Filter by current school's submissions (all instructors with `submissions.grade` in the school, not filtered to a single "logged-in instructor's own assignments" — matches this codebase's shared-school-permission model rather than per-instructor ownership)
 
 ## 7. RBAC: Authorization Policies & Middleware
 

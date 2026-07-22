@@ -4,6 +4,7 @@ namespace Tests\Feature\Livewire\Courses;
 
 use App\Enums\MaterialType;
 use App\Livewire\Courses\LessonForm;
+use App\Models\Assignment;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\LessonMaterial;
@@ -477,5 +478,61 @@ class LessonFormTest extends TestCase
 
         $this->assertArrayHasKey('error', $result);
         $this->assertSame('File content does not match PDF format.', $result['error']);
+    }
+
+    public function test_edit_lesson_lists_its_assignments(): void
+    {
+        $this->instructor->givePermissionTo('lessons.edit');
+
+        $lesson = Lesson::factory()->for($this->module)->create();
+        $assignment = Assignment::factory()->for($lesson)->create(['title' => 'Reflection Essay']);
+
+        Livewire::test(LessonForm::class, [
+            'module' => $this->module,
+            'lesson' => $lesson,
+        ])
+            ->assertSee('Reflection Essay')
+            ->assertSee('Assignments');
+    }
+
+    public function test_new_lesson_prompts_to_save_before_adding_assignments(): void
+    {
+        $this->instructor->givePermissionTo('lessons.create');
+
+        Livewire::test(LessonForm::class, ['module' => $this->module])
+            ->assertSee('Save this lesson to add assignments.');
+    }
+
+    public function test_instructor_can_delete_assignment_from_lesson_form(): void
+    {
+        $this->instructor->givePermissionTo(['lessons.edit', 'assignments.delete']);
+
+        $lesson = Lesson::factory()->for($this->module)->create();
+        $assignment = Assignment::factory()->for($lesson)->create();
+
+        Livewire::test(LessonForm::class, [
+            'module' => $this->module,
+            'lesson' => $lesson,
+        ])
+            ->call('deleteAssignment', $assignment->id)
+            ->assertSet('successMessage', 'Assignment deleted successfully.');
+
+        $this->assertDatabaseMissing('assignments', ['id' => $assignment->id]);
+    }
+
+    public function test_deleting_assignment_from_another_lesson_is_ignored(): void
+    {
+        $this->instructor->givePermissionTo(['lessons.edit', 'assignments.delete']);
+
+        $lesson = Lesson::factory()->for($this->module)->create();
+        $otherLesson = Lesson::factory()->for($this->module)->create();
+        $otherAssignment = Assignment::factory()->for($otherLesson)->create();
+
+        Livewire::test(LessonForm::class, [
+            'module' => $this->module,
+            'lesson' => $lesson,
+        ])->call('deleteAssignment', $otherAssignment->id);
+
+        $this->assertDatabaseHas('assignments', ['id' => $otherAssignment->id]);
     }
 }

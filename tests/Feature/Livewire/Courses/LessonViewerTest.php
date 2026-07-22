@@ -2,12 +2,15 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\SubmissionStatus;
 use App\Livewire\Courses\LessonViewer;
+use App\Models\Assignment;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\LessonMaterial;
 use App\Models\Module;
 use App\Models\School;
+use App\Models\Submission;
 use App\Models\User;
 use App\Services\UserLessonService;
 use Livewire\Livewire;
@@ -309,5 +312,63 @@ class LessonViewerTest extends TestCase
             ->assertStatus(200)
             ->assertSee('Loading')
             ->assertSee('window.renderMarkdown');
+    }
+
+    public function test_published_assignment_shows_start_link_when_not_submitted(): void
+    {
+        $assignment = Assignment::factory()
+            ->for($this->publishedLesson)
+            ->create(['title' => 'Reflection Essay', 'is_published' => true]);
+
+        Livewire::test(LessonViewer::class, ['lesson' => $this->publishedLesson])
+            ->assertSee('Reflection Essay')
+            ->assertSee('Not submitted yet')
+            ->assertSee('Start Assignment')
+            ->assertSee(route('submissions.create', ['lesson' => $this->publishedLesson, 'assignment' => $assignment]), false);
+    }
+
+    public function test_unpublished_assignment_is_not_shown_to_student(): void
+    {
+        Assignment::factory()
+            ->for($this->publishedLesson)
+            ->create(['title' => 'Draft Assignment', 'is_published' => false]);
+
+        Livewire::test(LessonViewer::class, ['lesson' => $this->publishedLesson])
+            ->assertDontSee('Draft Assignment');
+    }
+
+    public function test_shows_own_submission_status_and_view_link(): void
+    {
+        $assignment = Assignment::factory()
+            ->for($this->publishedLesson)
+            ->create(['is_published' => true, 'max_score' => 100]);
+
+        $submission = Submission::factory()
+            ->for($assignment)
+            ->for($this->student)
+            ->create(['status' => SubmissionStatus::Graded, 'ai_score' => 88]);
+
+        Livewire::test(LessonViewer::class, ['lesson' => $this->publishedLesson])
+            ->assertSee('Graded')
+            ->assertSee('88')
+            ->assertSee('View Submission')
+            ->assertDontSee('Start Assignment');
+    }
+
+    public function test_does_not_show_another_students_submission(): void
+    {
+        $assignment = Assignment::factory()
+            ->for($this->publishedLesson)
+            ->create(['is_published' => true]);
+
+        $otherStudent = User::factory()->for($this->school)->create();
+        Submission::factory()
+            ->for($assignment)
+            ->for($otherStudent)
+            ->create(['status' => SubmissionStatus::Graded]);
+
+        Livewire::test(LessonViewer::class, ['lesson' => $this->publishedLesson])
+            ->assertSee('Not submitted yet')
+            ->assertSee('Start Assignment');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Assignment;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Models\Module;
@@ -102,7 +103,7 @@ class ContentEngineSeeder extends Seeder
     private function createLessonsForModule(Module $module, array $lessons): void
     {
         foreach ($lessons as $index => $lessonData) {
-            Lesson::create([
+            $lesson = Lesson::create([
                 'id' => (string) Str::uuid(),
                 'module_id' => $module->id,
                 'title' => $lessonData['title'],
@@ -113,7 +114,30 @@ class ContentEngineSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            $this->createAssignmentForLesson($lesson);
         }
+    }
+
+    private function createAssignmentForLesson(Lesson $lesson): void
+    {
+        Assignment::create([
+            'id' => (string) Str::uuid(),
+            'lesson_id' => $lesson->id,
+            'title' => "{$lesson->title} — Reflection Essay",
+            'prompt_question' => "Based on what you learned in \"{$lesson->title}\", write a short essay explaining the key concepts and how you would apply them in a real project.",
+            'rubric' => [
+                ['criterion' => 'Understanding', 'weight' => 40, 'description' => 'Demonstrates clear understanding of the lesson concepts.', 'max_points' => 40],
+                ['criterion' => 'Application', 'weight' => 30, 'description' => 'Explains realistic application of the concepts.', 'max_points' => 30],
+                ['criterion' => 'Clarity', 'weight' => 30, 'description' => 'Writing is clear, organized, and well-structured.', 'max_points' => 30],
+            ],
+            'max_score' => 100.00,
+            'passing_score' => 60.00,
+            'is_published' => $lesson->is_published,
+            'allow_multiple_submissions' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     private function getModulesForCourse(string $courseTitle): array

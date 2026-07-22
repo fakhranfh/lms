@@ -41,6 +41,8 @@ class LessonViewer extends Component
 
     public int $totalMaterialCount = 0;
 
+    public Collection $assignments;
+
     public function mount(
         CurrentSchool $currentSchool,
         Lesson $lesson,
@@ -60,6 +62,18 @@ class LessonViewer extends Component
         $this->loadMaterials($materialService);
         $this->loadProgress($lessonService, $userLessonService, $materialService);
         $this->loadNavigation($lessonService);
+        $this->loadAssignments();
+    }
+
+    private function loadAssignments(): void
+    {
+        $query = $this->lesson->assignments()->where('is_published', true);
+
+        if (auth()->check()) {
+            $query->with(['submissions' => fn ($q) => $q->where('user_id', auth()->id())->latest('submitted_at')]);
+        }
+
+        $this->assignments = $query->get();
     }
 
     private function loadMaterials(LessonMaterialService $materialService): void
@@ -191,6 +205,7 @@ class LessonViewer extends Component
                 : 0,
             'materialService' => app(LessonMaterialService::class),
             'MaterialType' => MaterialType::class,
+            'assignments' => $this->assignments,
         ])
             ->extends('layouts.app', ['topbarTitle' => 'Lesson'])
             ->section('app-content');

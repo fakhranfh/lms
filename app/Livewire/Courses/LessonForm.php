@@ -3,15 +3,18 @@
 namespace App\Livewire\Courses;
 
 use App\Enums\MaterialType;
+use App\Models\Assignment;
 use App\Models\Lesson;
 use App\Models\LessonMaterial;
 use App\Models\Module;
+use App\Services\AssignmentService;
 use App\Services\LessonMaterialService;
 use App\Services\LessonService;
 use App\Services\R2StorageService;
 use App\Services\StorageMonitoringService;
 use App\Support\CurrentSchool;
 use Illuminate\Database\Eloquent\Collection;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -36,7 +39,11 @@ class LessonForm extends Component
 
     public Collection $materialVersions;
 
+    public Collection $assignments;
+
     public ?string $errorMessage = null;
+
+    public ?string $successMessage = null;
 
     public function mount(CurrentSchool $currentSchool, ?Module $module = null, ?Lesson $lesson = null): void
     {
@@ -56,6 +63,7 @@ class LessonForm extends Component
         $this->module = $module;
         $this->materials = new Collection;
         $this->materialVersions = new Collection;
+        $this->assignments = new Collection;
 
         if ($lesson) {
             $this->lesson = $lesson;
@@ -64,7 +72,31 @@ class LessonForm extends Component
             $this->durationMinutes = $lesson->duration_minutes;
             $this->isPublished = $lesson->is_published;
             $this->loadMaterials();
+            $this->loadAssignments();
         }
+    }
+
+    private function loadAssignments(): void
+    {
+        if ($this->lesson) {
+            $this->assignments = $this->lesson->assignments()->latest()->get();
+        }
+    }
+
+    #[On('delete-confirmed')]
+    public function deleteAssignment(string $id, AssignmentService $assignmentService): void
+    {
+        abort_unless(auth()->user()->can('assignments.delete'), 403);
+
+        $assignment = Assignment::find($id);
+
+        if (! $assignment || $assignment->lesson_id !== $this->lesson?->id) {
+            return;
+        }
+
+        $assignmentService->delete($id);
+        $this->assignments = $this->assignments->reject(fn (Assignment $a) => $a->id === $id);
+        $this->successMessage = __('Assignment deleted successfully.');
     }
 
     private function loadMaterials(): void

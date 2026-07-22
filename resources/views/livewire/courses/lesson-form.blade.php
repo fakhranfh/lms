@@ -33,6 +33,13 @@
             </a>
         </div>
 
+        @if ($successMessage)
+            <div class="mb-space-lg px-space-lg py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
+                <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
+                <p class="font-body-md text-body-md text-success">{{ $successMessage }}</p>
+            </div>
+        @endif
+
         <!-- Form -->
         <form wire:submit="save" class="space-y-space-lg">
             <!-- Title -->
@@ -415,6 +422,69 @@
                     <p class="text-body-sm text-error mt-space-sm">{{ $message }}</p>
                 @enderror
             </div>
+
+            <!-- Assignments -->
+            @if ($lesson)
+                <div>
+                    <div class="flex items-center justify-between mb-space-md">
+                        <label class="block text-label-md text-on-surface font-label-md">
+                            Assignments
+                        </label>
+                        @can('assignments.create')
+                            <a
+                                href="{{ route('assignments.create', $lesson) }}"
+                                class="text-body-sm text-primary font-medium hover:underline"
+                            >
+                                + New Assignment
+                            </a>
+                        @endcan
+                    </div>
+
+                    @if ($assignments->isEmpty())
+                        <div class="p-space-lg bg-surface-container rounded-lg border border-dashed border-outline text-center text-body-sm text-on-surface-variant">
+                            No assignments yet for this lesson.
+                        </div>
+                    @else
+                        <div class="space-y-space-sm">
+                            @foreach ($assignments as $assignment)
+                                <div wire:key="assignment-{{ $assignment->id }}" class="flex items-center justify-between p-space-md bg-surface-container rounded-lg border border-outline">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-body-md text-on-surface font-medium truncate">{{ $assignment->title }}</p>
+                                        <p class="text-body-sm text-on-surface-variant">
+                                            @if ($assignment->is_published)
+                                                <span class="text-success">Published</span>
+                                            @else
+                                                <span>Draft</span>
+                                            @endif
+                                            &middot; Max score {{ $assignment->max_score }}
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-space-sm flex-shrink-0 ml-space-md">
+                                        @can('assignments.edit')
+                                            <a href="{{ route('assignments.edit', $assignment) }}" class="px-space-md py-space-sm text-primary hover:bg-primary/10 rounded transition text-label-sm">
+                                                Edit
+                                            </a>
+                                        @endcan
+                                        @can('assignments.delete')
+                                            <button
+                                                type="button"
+                                                @click="$dispatch('open-delete-confirm', { id: '{{ $assignment->id }}', name: @js($assignment->title), type: 'assignments' })"
+                                                class="px-space-md py-space-sm text-error hover:bg-error/10 rounded transition text-label-sm"
+                                            >
+                                                Delete
+                                            </button>
+                                        @endcan
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @else
+                <div class="p-space-lg bg-surface-container rounded-lg border border-dashed border-outline text-center text-body-sm text-on-surface-variant">
+                    Save this lesson to add assignments.
+                </div>
+            @endif
 
             <!-- Publish Status -->
             <div class="flex items-center gap-space-md p-space-lg bg-surface-container rounded-lg">

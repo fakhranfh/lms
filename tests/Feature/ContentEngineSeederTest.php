@@ -120,6 +120,53 @@ test('seeded content belongs to correct school', function () {
     }
 });
 
+test('content engine seeder creates an assignment for every lesson', function () {
+    $school = School::factory()->create();
+    User::factory()->for($school)->create();
+
+    $this->seed(ContentEngineSeeder::class);
+
+    $courses = Course::where('school_id', $school->id)->get();
+    expect($courses->count())->toBeGreaterThan(0);
+
+    foreach ($courses as $course) {
+        foreach ($course->modules as $module) {
+            foreach ($module->lessons as $lesson) {
+                expect($lesson->assignments()->count())->toBe(1);
+            }
+        }
+    }
+});
+
+test('seeded assignments have correct structure and publish state', function () {
+    $school = School::factory()->create();
+    User::factory()->for($school)->create();
+
+    $this->seed(ContentEngineSeeder::class);
+
+    $courses = Course::where('school_id', $school->id)->get();
+
+    foreach ($courses as $course) {
+        foreach ($course->modules as $module) {
+            foreach ($module->lessons as $lesson) {
+                $assignment = $lesson->assignments()->first();
+
+                expect($assignment)->not->toBeNull();
+                expect($assignment->title)->toBeString()->not->toBeEmpty();
+                expect($assignment->prompt_question)->toBeString()->not->toBeEmpty();
+                expect($assignment->max_score)->toEqual(100.00);
+                expect($assignment->passing_score)->toEqual(60.00);
+                expect($assignment->is_published)->toBe($lesson->is_published);
+                expect($assignment->allow_multiple_submissions)->toBeFalse();
+
+                $rubric = $assignment->rubricItems();
+                expect($rubric)->toBeArray()->not->toBeEmpty();
+                expect(collect($rubric)->sum('weight'))->toEqual(100);
+            }
+        }
+    }
+});
+
 test('seeded courses are created by school instructors', function () {
     $school = School::factory()->create();
     $instructor = User::factory()->for($school)->create();

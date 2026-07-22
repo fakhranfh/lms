@@ -35,8 +35,8 @@ class TierChangeController extends Controller
 
         $isDemoMode = $this->isDemoMode($school);
 
-        $currentTier = $school->tier;
-        $availableTiers = PricingTier::where('is_active', true)->get();
+        $currentTier = $school->tier()->with('limits')->first();
+        $availableTiers = PricingTier::with('limits')->where('is_active', true)->get();
 
         $upgradeTiers = $availableTiers->filter(
             fn (PricingTier $tier) => $tier->price > $currentTier->price

@@ -85,6 +85,15 @@
                             <p class="font-label-md text-label-md text-secondary uppercase">Billing Period</p>
                             <p class="font-headline-md text-headline-md text-on-surface">{{ $currentTier->billing_period->label() }}</p>
                         </div>
+                        <div>
+                            <p class="font-label-md text-label-md text-secondary uppercase">Storage</p>
+                            <p class="font-headline-md text-headline-md text-on-surface">
+                                @php
+                                    $currentStorage = $currentTier->limits->firstWhere('limit_key', \App\Enums\TierLimit::MaterialStorageGb->value);
+                                @endphp
+                                {{ $currentStorage?->limit_value !== null ? $currentStorage->limit_value.' GB' : 'Unlimited' }}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
@@ -121,20 +130,12 @@
                                             </div>
                                         @endif
 
-                                        @if ($tier->features->count() > 0)
-                                            <div class="space-y-space-xs">
-                                                <p class="font-label-md text-label-md text-on-surface uppercase">Features:</p>
-                                                <ul class="font-body-sm text-body-sm text-secondary space-y-space-xs">
-                                                    @foreach ($tier->features as $feature)
-                                                        @php
-                                                            $displayLabel = $feature->label ?? str($feature->feature_key)->replace('_', ' ')->title();
-                                                            $displayLabel = preg_replace_callback('/\b(Sso|Api)\b/i', fn($m) => strtoupper($m[0]), $displayLabel);
-                                                        @endphp
-                                                        <li>✓ {{ $displayLabel }}</li>
-                                                    @endforeach
-                                                </ul>
-                                            </div>
-                                        @endif
+                                        @php
+                                            $upgradeStorage = $tier->limits->firstWhere('limit_key', \App\Enums\TierLimit::MaterialStorageGb->value);
+                                        @endphp
+                                        <p class="font-body-sm text-body-sm text-secondary">
+                                            Storage: {{ $upgradeStorage?->limit_value !== null ? $upgradeStorage->limit_value.' GB' : 'Unlimited' }}
+                                        </p>
                                     </div>
 
                                     @if ($isDemoMode)
@@ -203,20 +204,12 @@
                                             </div>
                                         @endif
 
-                                        @if ($tier->features->count() > 0)
-                                            <div class="space-y-space-xs">
-                                                <p class="font-label-md text-label-md text-on-surface uppercase">Features:</p>
-                                                <ul class="font-body-sm text-body-sm text-secondary space-y-space-xs">
-                                                    @foreach ($tier->features as $feature)
-                                                        @php
-                                                            $displayLabel = $feature->label ?? str($feature->feature_key)->replace('_', ' ')->title();
-                                                            $displayLabel = preg_replace_callback('/\b(Sso|Api)\b/i', fn($m) => strtoupper($m[0]), $displayLabel);
-                                                        @endphp
-                                                        <li>✓ {{ $displayLabel }}</li>
-                                                    @endforeach
-                                                </ul>
-                                            </div>
-                                        @endif
+                                        @php
+                                            $downgradeStorage = $tier->limits->firstWhere('limit_key', \App\Enums\TierLimit::MaterialStorageGb->value);
+                                        @endphp
+                                        <p class="font-body-sm text-body-sm text-secondary">
+                                            Storage: {{ $downgradeStorage?->limit_value !== null ? $downgradeStorage->limit_value.' GB' : 'Unlimited' }}
+                                        </p>
                                     </div>
 
                                     @if ($isDemoMode)

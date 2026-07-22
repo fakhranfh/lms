@@ -69,6 +69,16 @@ class Lesson extends Model
         return $this->materials()->orderBy('order')->get();
     }
 
+    /**
+     * Get the assignments for this lesson.
+     *
+     * @return HasMany<Assignment, $this>
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(Assignment::class);
+    }
+
     public function isCompletedBy(User $user): bool
     {
         return $this->users()

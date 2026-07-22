@@ -8,6 +8,8 @@ use App\Http\Responses\CustomVerifyEmailViewResponse;
 use App\Listeners\UpdateUserTimezoneOnLogin;
 use App\Models\User;
 use App\Policies\UserPolicy;
+use App\Repositories\Assignment\AssignmentRepository;
+use App\Repositories\Assignment\AssignmentRepositoryInterface;
 use App\Repositories\Auth\AuthRepository;
 use App\Repositories\Auth\AuthRepositoryInterface;
 use App\Repositories\Course\CourseRepository;
@@ -30,10 +32,13 @@ use App\Repositories\School\SchoolRepository;
 use App\Repositories\School\SchoolRepositoryInterface;
 use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepository;
 use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepositoryInterface;
+use App\Repositories\Submission\SubmissionRepository;
+use App\Repositories\Submission\SubmissionRepositoryInterface;
 use App\Repositories\User\UserRepository;
 use App\Repositories\User\UserRepositoryInterface;
 use App\Repositories\UserLesson\UserLessonRepository;
 use App\Repositories\UserLesson\UserLessonRepositoryInterface;
+use App\Services\AssignmentService;
 use App\Services\CourseService;
 use App\Services\CredentialEncryption;
 use App\Services\FeatureGateService;
@@ -48,6 +53,7 @@ use App\Services\PaymentWebhookService;
 use App\Services\PricingTierService;
 use App\Services\R2StorageService;
 use App\Services\SchoolService;
+use App\Services\SubmissionService;
 use App\Services\SubscriptionPaymentService;
 use App\Services\TierChangeService;
 use App\Services\UserLessonService;
@@ -87,6 +93,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(LessonMaterialRepositoryInterface::class, LessonMaterialRepository::class);
         $this->app->bind(LessonMaterialUserRepositoryInterface::class, LessonMaterialUserRepository::class);
         $this->app->bind(UserLessonRepositoryInterface::class, UserLessonRepository::class);
+        $this->app->bind(AssignmentRepositoryInterface::class, AssignmentRepository::class);
+        $this->app->bind(SubmissionRepositoryInterface::class, SubmissionRepository::class);
 
         $this->app->singleton(CurrentSchool::class);
 
@@ -107,6 +115,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(R2StorageService::class);
         $this->app->singleton(LessonMaterialService::class);
         $this->app->singleton(LessonCompletionService::class);
+        $this->app->singleton(AssignmentService::class);
+        $this->app->singleton(SubmissionService::class);
     }
 
     /**

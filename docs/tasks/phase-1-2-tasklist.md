@@ -442,7 +442,6 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 - [x] 11.6 R2 Integration & Global Quota Management
 - [x] 11.7 Material Versioning System
 - [x] 11.8 Admin Monitoring & Alerts Dashboard
-- [ ] 11.9 Data Migration (Video → LessonMaterial)
 - [x] 11.10 Testing (Unit, Feature, Integration)
 - [ ] 11.11 Documentation Updates
 
@@ -834,19 +833,6 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 - `resources/views/components/livewire-data-table.blade.php` — pre-existing but previously-unused generic table component, updated (not duplicated) with a top+bottom pagination row, a "Per page" selector next to the top pagination, and sort-direction arrows on clickable column headers.
 - `resources/views/components/searchable-select.blade.php` — new Alpine type-to-filter combobox (`<x-searchable-select>`), used for the School/Course/Module/Lesson cascading filters on the materials page in place of plain `<select>`s; each instance is keyed to its own (and its parent's) current value so it resets correctly on cascading changes.
 - `resources/views/vendor/pagination/tailwind.blade.php` — published and restyled Laravel's default pagination view to use this app's design tokens instead of generic Tailwind gray, since it's the shared view every `$paginator->links()` call in the app renders through. The active page uses the same `bg-primary/20 text-primary` treatment as the selected admin-sidebar item; disabled prev/next controls use a plain gray background.
-
----
-
-### 11.9 Data Migration (Video → LessonMaterial)
-
-- [ ] Create migration script (`database/migrations/...create_lesson_materials_migrate_videos.php`):
-  - [ ] Query all lessons with `video_embed_url IS NOT NULL`
-  - [ ] For each: create LessonMaterial record (type='Video', order=1, etc.)
-  - [ ] Log results (X lessons migrated)
-  - [ ] Reversible: down() deletes materials created by this migration
-  
-- [ ] Test on dummy data (ContentEngineSeeder output)
-- [ ] Verify existing videos appear in sidebar after migration
 
 ---
 

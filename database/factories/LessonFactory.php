@@ -26,7 +26,6 @@ class LessonFactory extends Factory
             'module_id' => $module,
             'title' => fake()->sentence(2),
             'content' => fake()->paragraphs(3, true),
-            'video_embed_url' => fake()->boolean(40) ? $this->generateVideoUrl() : null,
             'order' => function ($attributes) {
                 $maxOrder = Lesson::where('module_id', $attributes['module_id'])->max('order') ?? 0;
 
@@ -49,23 +48,5 @@ class LessonFactory extends Factory
         return $this->state(fn () => [
             'is_published' => false,
         ]);
-    }
-
-    public function withVideo(): static
-    {
-        return $this->state(fn () => [
-            'video_embed_url' => $this->generateVideoUrl(),
-        ]);
-    }
-
-    private function generateVideoUrl(): string
-    {
-        $videos = [
-            'https://www.youtube.com/embed/dQw4w9WgXcQ',
-            'https://www.youtube.com/embed/9bZkp7q19f0',
-            'https://vimeo.com/12345678',
-        ];
-
-        return fake()->randomElement($videos);
     }
 }

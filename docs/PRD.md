@@ -278,7 +278,6 @@ interface Lesson {
   moduleId: string;              // FK -> Module, CASCADE
   title: string;
   content?: string;              // text-based material
-  videoEmbedUrl?: string;        // external video (YT/Vimeo)
   createdAt: string;
   updatedAt: string;
 }

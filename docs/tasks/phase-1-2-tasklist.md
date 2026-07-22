@@ -443,7 +443,7 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 - [x] 11.7 Material Versioning System
 - [x] 11.8 Admin Monitoring & Alerts Dashboard
 - [x] 11.10 Testing (Unit, Feature, Integration)
-- [ ] 11.11 Documentation Updates
+- [x] 11.11 Documentation Updates
 
 ---
 
@@ -489,7 +489,7 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
   - [x] Tested: 0 videos currently in database (no demo data with videos yet)
   - [x] Migration file: `2026_07_17_222102_migrate_video_embed_url_to_lesson_materials.php`
 
-- [x] Deprecate `lessons.video_embed_url` (kept for backward compat, not dropped)
+- [x] Deprecate `lessons.video_embed_url` (kept for backward compat initially; dropped 2026-07-22 via `2026_07_22_062544_drop_video_embed_url_from_lessons_table.php` once no longer referenced anywhere)
 
 ---
 
@@ -838,50 +838,54 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 
 ### 11.10 Testing (Unit, Feature, Integration)
 
+**Status:** ✅ COMPLETE (2026-07-22) — coverage already existed from Sections 11.2–11.8; only gap found was the video-embed migration script, closed with a new `MaterialMigrationTest`. Updated 2026-07-22 after `lessons.video_embed_url` was dropped entirely: the test now just asserts the column is gone rather than exercising the (now historical) backfill migration.
+
 ### Unit Tests
-- [ ] `MaterialTypeTest` — enum limits, extensions validation
-- [ ] `LessonMaterialServiceTest` — CRUD, R2 integration (mocked)
-- [ ] `LessonCompletionServiceTest` — completion logic (100% rule)
+- [x] `MaterialTypeTest` — enum limits, extensions validation
+- [x] `LessonMaterialServiceTest` — CRUD, R2 integration (mocked)
+- [x] `LessonCompletionServiceTest` — completion logic (100% rule)
 
 ### Feature Tests
-- [ ] `LessonMaterialRepositoryTest` — CRUD, ordering, filtering
-- [ ] `LessonMaterialUserRepositoryTest` — access tracking
-- [ ] `LessonMaterialManagementTest` (Livewire) — upload, delete, reorder
-- [ ] `LessonViewerMaterialTest` (Livewire) — sidebar, player, mark as read
-- [ ] `R2StorageServiceTest` — file operations (mocked S3)
-- [ ] `QuotaEnforcementTest` — 10 GB limit, error messages
-- [ ] `MaterialMigrationTest` — existing video → lesson_material
+- [x] `LessonMaterialRepositoryTest` — CRUD, ordering, filtering
+- [x] `LessonMaterialUserRepositoryTest` — access tracking
+- [x] `LessonMaterialManagementTest` (Livewire) — upload, delete, reorder — covered by `LessonFormTest` / `LessonFormQuotaTest`
+- [x] `LessonViewerMaterialTest` (Livewire) — sidebar, player, mark as read — covered by `LessonViewerTest`
+- [x] `R2StorageServiceTest` — file operations (mocked S3)
+- [x] `QuotaEnforcementTest` — 10 GB limit, error messages
+- [x] `MaterialMigrationTest` — existing video → lesson_material (new, 2026-07-22)
 
 ### Coverage Areas
-- [ ] Material CRUD (create, read, update, delete)
-- [ ] File upload/delete validation
-- [ ] R2 integration (mocked)
-- [ ] Completion tracking (100% rule, manual mark)
-- [ ] Reordering materials
-- [ ] Video migration
-- [ ] Quota enforcement (global + per-school)
-- [ ] Storage calculation (including all versions)
-- [ ] Responsive UI (sidebar, player)
-- [ ] Material versioning (create, switch, delete versions)
-- [ ] Version history accuracy
-- [ ] Admin dashboard (loads, drill-in, sorting)
-- [ ] Email alerts (80%, 90%, 100% thresholds)
+- [x] Material CRUD (create, read, update, delete)
+- [x] File upload/delete validation
+- [x] R2 integration (mocked)
+- [x] Completion tracking (100% rule, manual mark)
+- [x] Reordering materials
+- [x] Video migration
+- [x] Quota enforcement (global + per-school)
+- [x] Storage calculation (including all versions)
+- [x] Responsive UI (sidebar, player)
+- [x] Material versioning (create, switch, delete versions)
+- [x] Version history accuracy
+- [x] Admin dashboard (loads, drill-in, sorting)
+- [x] Email alerts (80%, 90%, 100% thresholds)
 
 ---
 
 ### 11.11 Documentation Updates
 
-- [ ] Update `docs/CONTENT_ENGINE.md`:
-  - [ ] Multi-material structure (1 lesson → N materials)
-  - [ ] Material types & file limits
-  - [ ] R2 storage & quota management
-  - [ ] Sidebar UI & player types
-  - [ ] Completion flow (manual mark, 100% rule)
-  - [ ] Instructor workflow (upload, reorder, delete)
-  - [ ] Student workflow (navigate, access, download)
+**Status:** ✅ COMPLETE (2026-07-22)
 
-- [ ] Update comments/PHPDoc in models/services
-- [ ] Migration guide: existing single-video lessons → multi-material
+- [x] Update `docs/CONTENT_ENGINE.md`:
+  - [x] Multi-material structure (1 lesson → N materials)
+  - [x] Material types & file limits
+  - [x] R2 storage & quota management
+  - [x] Sidebar UI & player types
+  - [x] Completion flow (manual mark, 100% rule)
+  - [x] Instructor workflow (upload, reorder, delete)
+  - [x] Student workflow (navigate, access, download)
+
+- [x] Update comments/PHPDoc in models/services — existing PHPDoc in `LessonMaterialService`, `LessonCompletionService`, `R2StorageService`, `StorageMonitoringService` reviewed, already accurate and up to date (added in Sections 11.4/11.8)
+- [x] Migration guide: existing single-video lessons → multi-material — documented in new "Migration Guide" subsection of `docs/CONTENT_ENGINE.md`
 
 ---
 
@@ -903,7 +907,7 @@ No `CourseController`/`ModuleController`/`LessonController` exist. Instead, rout
 | Free material ordering | Flexibility, reordering via drag-drop |
 | MaterialType enum | Type safety, centralized validation, extensible |
 | R2 for storage | Scalable, CDN-ready, separation of concerns from application |
-| Keep `lessons.video_embed_url` column | Backward compatibility, can deprecate gradually |
+| Keep `lessons.video_embed_url` column, then drop once unused (2026-07-22) | Backward compatibility during rollout, cleaned up once the whole app moved to `lesson_materials` |
 | Pivot table for access tracking | Flexible for future analytics/reporting features |
 | Sidebar UI vs tabs | YouTube-familiar pattern, scales to many materials |
 

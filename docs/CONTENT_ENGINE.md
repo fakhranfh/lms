@@ -15,6 +15,7 @@ This document explains how the Content Engine works: the hierarchical structure 
 7. [Progress Tracking](#progress-tracking)
 8. [Instructor Content Management](#instructor-content-management)
 9. [Bulk Import (Future)](#bulk-import-future)
+10. [Multi-Material System](#multi-material-system)
 
 ---
 
@@ -73,14 +74,13 @@ A section within a course. Modules group related lessons together.
 
 ### Lesson
 
-The smallest unit of content. A lesson contains text/HTML content, optional video embed, and duration estimate.
+The smallest unit of content. A lesson contains text/HTML content, duration estimate, and one or more attached materials (see [Multi-Material System](#multi-material-system)).
 
 **Database:** `lessons` table
 - `id` (UUID, PK)
 - `module_id` (UUID, FK → modules)
 - `title` (varchar 255)
 - `content` (longtext, nullable) — HTML/markdown body
-- `video_embed_url` (varchar 500, nullable) — external video (YouTube/Vimeo only)
 - `order` (unsigned int) — position within module (1, 2, 3...)
 - `is_published` (boolean, default false)
 - `published_at` (timestamp, nullable) — auto-set when lesson is published
@@ -295,13 +295,6 @@ Shows progress within the current module:
 - **"3 of 5 lessons completed in Module Name"**
 - Helps student understand how much content remains
 
-### Video Embed
-
-If a lesson has a `video_embed_url`:
-- Only YouTube and Vimeo URLs are accepted
-- Embedded as `<iframe>` with autoplay, controls, full-screen
-- Appears above the text content
-
 ### Mark Complete Button
 
 - Visible only if the student has not yet completed the lesson
@@ -500,6 +493,110 @@ These ensure fast queries for:
 - Listing lessons in a module (ordered)
 - Finding a student's completed lessons
 - Cascading deletes
+
+---
+
+## Multi-Material System
+
+A lesson is no longer limited to one video embed — it can hold any number of ordered materials of mixed types (video, PDF, document, audio, presentation, image, interactive, markdown), each independently uploaded, versioned, and tracked for access.
+
+### Structure: 1 Lesson → N Materials
+
+**Database:** `lesson_materials` table
+- `id` (UUID, PK)
+- `lesson_id` (UUID, FK → lessons, CASCADE)
+- `type` (varchar 255) — `App\Enums\MaterialType` value
+- `title`, `description` (nullable)
+- `file_url`, `file_path` (R2 object URL / key)
+- `file_size` (unsigned int, bytes), `mime_type`
+- `order` (unsigned int) — position within the lesson
+- `version` (unsigned int, default 1), `is_active` (bool, default true)
+- **Unique constraint:** `(lesson_id, title, version)`
+
+**Database:** `lesson_material_user` pivot table
+- Composite PK `(lesson_material_id, user_id)`
+- `accessed_at` (nullable) — when the student marked/viewed the material
+
+`Lesson::materials()` returns the `hasMany(LessonMaterial)` relation; `getMaterialsOrdered()` returns them sorted by `order`, scoped to `->active()` (current version only).
+
+### Material Types & File Limits
+
+Defined in `App\Enums\MaterialType`:
+
+| Type | Max size | Extensions |
+|---|---|---|
+| Video | 500 MB | mp4, webm, ogg, mov, avi, mkv |
+| Audio | 100 MB | mp3, wav, ogg, m4a, flac |
+| Interactive | 100 MB | html, htm, json |
+| PDF | 50 MB | pdf |
+| Presentation | 50 MB | ppt, pptx, odp |
+| Document | 25 MB | doc, docx, txt, rtf, odt |
+| Image | 25 MB | jpg, jpeg, png, gif, webp, svg |
+| Markdown | 10 MB | md, markdown |
+
+Uploads are validated with 3 layers before being accepted: file extension → magic bytes (file signature) → declared MIME type. Extension-only checks are not trusted since they're client-supplied.
+
+### R2 Storage & Quota Management
+
+Files are stored in Cloudflare R2 via `R2StorageService`. There is a single global quota (`GLOBAL_QUOTA_BYTES`, 10 GB) shared across all schools — not a per-school allocation:
+- Upload flow: presigned PUT URL generated → client uploads directly to R2 → server finalizes (validates + inserts `lesson_materials` row)
+- Quota is enforced before the presigned URL is issued (`enforceQuotaLimit()`, throws a 413 if exceeded)
+- Transient R2 failures (408/429/5xx) get automatic retry with exponential backoff (max 3 attempts)
+- `StorageMonitoringService` aggregates `SUM(lesson_materials.file_size)` (scoped to `->active()` materials) for the admin dashboard's global/per-school breakdown, rather than scanning the R2 bucket directly — R2 objects sit under a flat prefix and can't be attributed to a school on their own
+- An hourly `CalculateStorageUsageJob` logs a `storage_usage_logs` snapshot and emails users with `settings.school` permission the first time usage newly crosses 80%, 90%, or 100%
+
+**Material versioning:** replacing a material's file creates a new `version` row rather than overwriting the old one; the previous version is deactivated (`is_active = false`) but kept for rollback. Deleting the active version auto-activates the next-most-recent one; the last remaining version cannot be deleted.
+
+### Sidebar UI & Player Types
+
+In the student-facing `LessonViewer`, materials render in a right-hand sidebar (~33% width, stacked below the player on mobile) with a per-type icon, and the main area renders a type-appropriate viewer:
+
+| Type | Viewer |
+|---|---|
+| Video | HTML5 `<video>` player |
+| Audio | HTML5 `<audio>` player |
+| Image | inline `<img>`, max-sized |
+| Interactive | rendered HTML in an iframe |
+| PDF, Presentation, Document | in-browser view where supported, else icon + download button |
+
+### Completion Flow
+
+Unlike the old single-video lesson, completion is now driven by material access rather than a single "Mark Complete" click:
+
+- `LessonCompletionService::isLessonComplete()` — a lesson is complete once the student has accessed **100%** of its active materials
+- Each material can be marked accessed individually (auto-tracked on view for some types, explicit "Mark as Read" button for others)
+- `getLessonProgress()` returns `{total, accessed, percentage, is_complete}`; `getModuleProgress()` / `getCourseProgress()` aggregate this up the hierarchy
+- Once all materials are accessed, `lesson_user.completed_at` is set automatically — the manual "Mark Complete" button from the legacy single-video flow no longer applies once a lesson has materials
+
+### Instructor Workflow
+
+In `LessonForm`:
+1. Upload a file per material (title, type auto-detected from extension, description optional) — a presigned URL is requested, the file is `PUT` directly to R2, then finalized
+2. Reorder materials via up/down controls (`reorderMaterials()`)
+3. Replace a material's file via "Upload New Version" — creates a new version rather than overwriting
+4. View/switch/delete individual versions under a collapsible "Version History" panel per material
+5. Delete a material outright (removes all versions from R2 and the DB)
+6. A quota indicator shows used/remaining storage with green/yellow/orange/red thresholds, and disables uploads once the global quota is exhausted
+
+Admins additionally get a dedicated storage dashboard (`admin.storage.dashboard`) with global usage, a 30-day trend graph, a per-school breakdown table, and a filterable/searchable materials browser (`admin.storage.materials`) with per-material delete.
+
+### Student Workflow
+
+In `LessonViewer`:
+1. Materials for the current lesson list in the sidebar, each showing a type icon and a checkmark once accessed
+2. Clicking a material switches the main-area player/viewer to it
+3. A progress bar shows "X of Y materials accessed"
+4. A "Download" button is available for every material type; a "Mark as Read" button appears for types that aren't auto-tracked on view
+5. Once every material is accessed, the lesson is automatically marked complete and rolls up into module/course progress
+
+### Migration Guide: Single-Video Lessons → Multi-Material (historical)
+
+Lessons created before this system only had `lessons.video_embed_url`. Two migrations handled the transition, in order:
+
+1. `2026_07_17_222102_migrate_video_embed_url_to_lesson_materials.php` — backfilled every lesson where `video_embed_url IS NOT NULL` into a `lesson_materials` row (`type = Video`, `title = lesson title`, `file_url = video_embed_url`, `order = 1`, `file_size = 0` since the URL was an external embed, not an uploaded file)
+2. `2026_07_22_062544_drop_video_embed_url_from_lessons_table.php` — dropped the now-unused `lessons.video_embed_url` column once every lesson's video had a corresponding `lesson_materials` row
+
+Both models, the repository/service layer, and the factory have had all `video_embed_url` references removed; new lessons only ever use `lesson_materials`. Covered by `tests/Feature/MaterialMigrationTest.php` (asserts the column no longer exists).
 
 ---
 

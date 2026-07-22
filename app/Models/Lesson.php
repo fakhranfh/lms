@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 
-#[Fillable(['module_id', 'title', 'content', 'video_embed_url', 'order', 'duration_minutes', 'is_published'])]
+#[Fillable(['module_id', 'title', 'content', 'order', 'duration_minutes', 'is_published'])]
 class Lesson extends Model
 {
     /** @use HasFactory<LessonFactory> */
@@ -123,26 +123,5 @@ class Lesson extends Model
     public function isPublished(): bool
     {
         return $this->is_published;
-    }
-
-    public static function convertToEmbedUrl(?string $url): ?string
-    {
-        if (! $url) {
-            return null;
-        }
-
-        if (preg_match('/youtu\.be\/([a-zA-Z0-9_-]{11})/', $url, $matches)) {
-            return "https://www.youtube.com/embed/{$matches[1]}";
-        }
-
-        if (preg_match('/youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/', $url, $matches)) {
-            return "https://www.youtube.com/embed/{$matches[1]}";
-        }
-
-        if (preg_match('/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/', $url, $matches)) {
-            return "https://www.youtube.com/embed/{$matches[1]}";
-        }
-
-        return $url;
     }
 }

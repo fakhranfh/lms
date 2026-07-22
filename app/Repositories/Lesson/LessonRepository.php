@@ -51,7 +51,6 @@ class LessonRepository implements LessonRepositoryInterface
             'module_id' => $data['module_id'],
             'title' => $data['title'],
             'content' => $data['content'] ?? null,
-            'video_embed_url' => $data['video_embed_url'] ?? null,
             'duration_minutes' => $data['duration_minutes'] ?? null,
             'order' => $data['order'] ?? $this->getNextOrder($data['module_id']),
             'is_published' => $data['is_published'] ?? false,
@@ -68,7 +67,6 @@ class LessonRepository implements LessonRepositoryInterface
         $lesson->update([
             'title' => $data['title'] ?? $lesson->title,
             'content' => $data['content'] ?? $lesson->content,
-            'video_embed_url' => $data['video_embed_url'] ?? $lesson->video_embed_url,
             'duration_minutes' => $data['duration_minutes'] ?? $lesson->duration_minutes,
             'is_published' => $data['is_published'] ?? $lesson->is_published,
         ]);

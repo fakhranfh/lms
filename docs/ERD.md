@@ -91,7 +91,6 @@
 | `module_id` | `UUID` | Foreign Key, Index | `CASCADE ON DELETE` |
 | `title` | `VARCHAR(255)` | Not Null | |
 | `content` | `TEXT` | Nullable | Text-based lesson material |
-| `video_embed_url`| `VARCHAR(255)` | Nullable | Link to external video (YT/Vimeo) |
 | `created_at` | `TIMESTAMP` | | |
 | `updated_at` | `TIMESTAMP` | | |
 

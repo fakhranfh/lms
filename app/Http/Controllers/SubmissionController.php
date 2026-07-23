@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\SubmissionStatus;
 use App\Http\Requests\OverrideScoreFormRequest;
 use App\Http\Requests\SubmissionFormRequest;
+use App\Jobs\GradeSubmissionJob;
 use App\Models\Submission;
 use App\Services\SubmissionService;
 use Illuminate\Http\JsonResponse;
@@ -19,7 +20,7 @@ class SubmissionController extends Controller
     {
         $submission = $this->submissionService->submit($request->validated());
 
-        // TODO: dispatch GradeSubmissionJob (Phase 1.4)
+        GradeSubmissionJob::dispatch($submission->id);
 
         return response()->json([
             'data' => $submission,
@@ -66,13 +67,11 @@ class SubmissionController extends Controller
             ], 422);
         }
 
-        // NOTE: no automatic redispatch to a grading job exists yet (Phase 1.4). This
-        // resets status to pending only; the job dispatch is deferred like store().
         $updated = $this->submissionService->update($submission->id, [
             'status' => SubmissionStatus::Pending,
         ]);
 
-        // TODO: redispatch GradeSubmissionJob (Phase 1.4)
+        GradeSubmissionJob::dispatch($updated->id);
 
         return response()->json([
             'data' => $updated,

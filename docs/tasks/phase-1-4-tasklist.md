@@ -133,26 +133,14 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 
 ## 6. Submission Controller Integration
 
-- [ ] Ensure SubmissionController@store (Phase 1.3) is updated to:
-  - [ ] After creating Submission with status='pending':
-    - [ ] Dispatch `GradeSubmissionJob` onto redis queue
-    - [ ] Use: `GradeSubmissionJob::dispatch($submission->id, $assignment->id, $rubric, $essay, $school_id)`
-    - [ ] Or: create GradingRequest DTO and dispatch
-  - [ ] Return HTTP 200 within 500ms (job runs async)
-  - [ ] Example:
-    ```php
-    $submission = Submission::create([
-      'assignment_id' => $assignment->id,
-      'user_id' => $user->id,
-      'student_answer' => $request->student_answer,
-      'status' => SubmissionStatus::PENDING,
-      'submitted_at' => now(),
-    ]);
-
-    GradeSubmissionJob::dispatch($submission);
-
-    return response()->json($submission->toArray(), 201);
-    ```
+- [x] Ensure SubmissionController@store (Phase 1.3) is updated to:
+  - [x] After creating Submission with status='pending':
+    - [x] Dispatch `GradeSubmissionJob` onto redis queue
+    - [x] Use: `GradeSubmissionJob::dispatch($submission->id)` — job re-fetches submission/assignment fresh in `handle()` (Section 3), so only the id is needed, not a DTO
+  - [x] Return HTTP 201 immediately (job runs async; dispatch is non-blocking)
+  - [x] `SubmissionController::retry()` also redispatches `GradeSubmissionJob::dispatch($submission->id)` after resetting status to pending, so failed submissions can be retried
+  - [x] `EssaySubmissionForm` Livewire component (the actual student-facing submission page, `routes/web/authenticated.php` `submissions.create`) also dispatches `GradeSubmissionJob` after `SubmissionService::submit()`, since it creates submissions independently of `SubmissionController@store`
+  - [x] Tests updated/added in `tests/Feature/SubmissionControllerTest.php` (`Queue::fake()` + `Queue::assertPushed`) — prevents the `QUEUE_CONNECTION=sync` test env from making real AI provider HTTP calls; added a `retry redispatches...` test
 
 ## 7. Error Handling & Resilience
 

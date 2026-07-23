@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\SubmissionStatus;
+use App\Jobs\GradeSubmissionJob;
 use App\Models\Assignment;
 use App\Models\Course;
 use App\Models\Lesson;
@@ -8,6 +9,7 @@ use App\Models\Module;
 use App\Models\School;
 use App\Models\Submission;
 use App\Models\User;
+use Illuminate\Support\Facades\Queue;
 
 function makeAssignmentForSchool(School $school, array $attributes = []): Assignment
 {
@@ -20,7 +22,9 @@ function makeAssignmentForSchool(School $school, array $attributes = []): Assign
     ], $attributes));
 }
 
-test('store creates a pending submission quickly', function () {
+test('store creates a pending submission quickly and dispatches grading job', function () {
+    Queue::fake();
+
     $school = School::factory()->create();
     $student = User::factory()->for($school)->create();
     $assignment = makeAssignmentForSchool($school);
@@ -36,7 +40,10 @@ test('store creates a pending submission quickly', function () {
     $response->assertStatus(201);
     $response->assertJsonPath('data.status', SubmissionStatus::Pending->value);
 
-    expect(Submission::where('assignment_id', $assignment->id)->where('user_id', $student->id)->exists())->toBeTrue();
+    $submission = Submission::where('assignment_id', $assignment->id)->where('user_id', $student->id)->first();
+    expect($submission)->not->toBeNull();
+
+    Queue::assertPushed(GradeSubmissionJob::class, fn ($job) => $job->submissionId === $submission->id);
 });
 
 test('override requires submissions.override-grade permission', function () {
@@ -68,6 +75,8 @@ test('override requires submissions.override-grade permission', function () {
 });
 
 test('rate limit triggers on the 4th rapid submission request', function () {
+    Queue::fake();
+
     $school = School::factory()->create();
     $student = User::factory()->for($school)->create();
     $assignment = makeAssignmentForSchool($school, ['allow_multiple_submissions' => true]);
@@ -90,4 +99,26 @@ test('rate limit triggers on the 4th rapid submission request', function () {
     ]);
 
     $response->assertStatus(429);
+});
+
+test('retry redispatches the grading job for a failed submission', function () {
+    Queue::fake();
+
+    $school = School::factory()->create();
+    $student = User::factory()->for($school)->create();
+    $instructor = User::factory()->for($school)->create();
+    $instructor->givePermissionTo('submissions.grade');
+    $assignment = makeAssignmentForSchool($school);
+    $submission = Submission::factory()->for($assignment)->for($student)->create([
+        'status' => SubmissionStatus::Failed,
+    ]);
+
+    $this->actingAs($instructor);
+
+    $response = $this->postJson("/submissions/{$submission->id}/retry");
+
+    $response->assertStatus(200);
+    $response->assertJsonPath('data.status', SubmissionStatus::Pending->value);
+
+    Queue::assertPushed(GradeSubmissionJob::class, fn ($job) => $job->submissionId === $submission->id);
 });

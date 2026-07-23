@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Submissions;
 
+use App\Jobs\GradeSubmissionJob;
 use App\Models\Assignment;
 use App\Models\Lesson;
 use App\Services\SubmissionService;
@@ -49,6 +50,8 @@ class EssaySubmissionForm extends Component
 
             return;
         }
+
+        GradeSubmissionJob::dispatch($submission->id);
 
         return redirect()->route('submissions.show', $submission);
     }

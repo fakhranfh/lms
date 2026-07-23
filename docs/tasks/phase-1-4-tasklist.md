@@ -1,6 +1,6 @@
 # Phase 1.4 — AI Integration: Task List
 
-**Goal:** Implement asynchronous Redis-based job queue for Anthropic API essay grading, with retry policy and error handling.
+**Goal:** Implement asynchronous Redis-based job queue for DeepSeek API essay grading, with retry policy and error handling.
 
 **Dependency:** Phase 1.0 (Data Architecture), Phase 1.1 (RBAC), Phase 1.2 (Content Engine), Phase 1.3 (Assessment & State Machine) must be complete. Phase 2.0C (Payment Gateways) for reference (similar pattern).
 
@@ -15,21 +15,22 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 - [ ] Update `.env`:
   - [ ] `QUEUE_CONNECTION=redis`
   - [ ] `REDIS_HOST=127.0.0.1`, `REDIS_PORT=6379` (or use `REDIS_URL`)
-  - [ ] `ANTHROPIC_API_KEY=sk-ant-...` (from .env.example)
-  - [ ] `ANTHROPIC_MODEL=claude-3-5-sonnet-20241022` (or latest)
+  - [ ] `DEEPSEEK_API_KEY=sk-...` (from .env.example)
+  - [ ] `DEEPSEEK_MODEL=deepseek-chat` (or latest)
+  - [ ] `DEEPSEEK_BASE_URL=https://api.deepseek.com` (OpenAI-compatible endpoint)
   - [ ] `AI_GRADING_ENABLED=true` (feature flag, default true)
   - [ ] `AI_GRADING_MAX_RETRIES=3`
   - [ ] `AI_GRADING_TIMEOUT_SECONDS=30`
 - [ ] Create `.env.example` entries for new vars
 
-## 2. Anthropic API Integration
+## 2. DeepSeek API Integration
 
-- [ ] Create `app/Services/AnthropicService.php`:
-  - [ ] Wrapper around Anthropic PHP SDK
+- [ ] Create `app/Services/DeepSeekService.php`:
+  - [ ] Wrapper around DeepSeek API (OpenAI-compatible HTTP client, e.g. Laravel `Http` facade)
   - [ ] Methods:
     - [ ] `gradeEssay(string $essay, array $rubric, string $prompt): array`
       - [ ] Build prompt with rubric and essay
-      - [ ] Call Anthropic API (claude-3-5-sonnet or later)
+      - [ ] Call DeepSeek Chat Completions API (deepseek-chat or later)
       - [ ] Parse response JSON
       - [ ] Return structured result: `{ success: bool, score: float, feedback: array, raw_response?: string, error?: string }`
     - [ ] `buildGradingPrompt(Assignment $assignment, string $essay): string`
@@ -63,7 +64,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
     - [ ] Set `CurrentSchool::setTenantId($submission->school_id)` for scoped queries
     - [ ] Fetch Submission, Assignment, verify not already graded
     - [ ] Update Submission: status='processing'
-    - [ ] Call `AnthropicService->gradeEssay()`
+    - [ ] Call `DeepSeekService->gradeEssay()`
     - [ ] On success:
       - [ ] Update Submission: status='graded', ai_score, ai_feedback, graded_at
       - [ ] Log to audit trail
@@ -72,7 +73,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
       - [ ] If retry_count < MAX_RETRIES: re-dispatch job with retry delay
       - [ ] Else: mark as failed permanently, log alert
   - [ ] Exception handling:
-    - [ ] Catch Anthropic API errors and application errors separately
+    - [ ] Catch DeepSeek API errors and application errors separately
     - [ ] Never let exception crash the job without updating submission status
     - [ ] Log full exception for debugging
 - [ ] Configure job middleware in `config/queue.php` or `config/foundation.php` (Laravel 13):
@@ -98,7 +99,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 
 ## 5. Prompting & Structured Output
 
-- [ ] Create `app/Prompts/EssayGradingPrompt.php` (or inline in AnthropicService):
+- [ ] Create `app/Prompts/EssayGradingPrompt.php` (or inline in DeepSeekService):
   - [ ] System message: "You are an expert essay grader. Evaluate essays based on provided rubrics..."
   - [ ] User message template with placeholders for rubric, essay, max_score
   - [ ] Output format instruction (JSON schema):
@@ -197,7 +198,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 ## 9. Testing
 
 - [ ] Create `GradeSubmissionJobTest` (feature/unit):
-  - [ ] Mock Anthropic API responses
+  - [ ] Mock DeepSeek API responses
   - [ ] Test successful grading flow:
     - [ ] Submission status: pending → processing → graded
     - [ ] ai_score and ai_feedback populated
@@ -214,7 +215,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
     - [ ] No cross-tenant data leakage
   - [ ] Test idempotency:
     - [ ] Job can be retried safely (no duplicate updates)
-- [ ] Create `AnthropicServiceTest` (unit):
+- [ ] Create `DeepSeekServiceTest` (unit):
   - [ ] Mock HTTP client responses
   - [ ] Test gradeEssay() with valid rubric
   - [ ] Test parseGradingResponse() with various JSON structures
@@ -239,7 +240,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 ## 10. Documentation & Verification
 
 - [ ] Create docs/AI_GRADING.md:
-  - [ ] Anthropic API key setup
+  - [ ] DeepSeek API key setup
   - [ ] Grading prompt design and examples
   - [ ] Rubric JSON schema documentation
   - [ ] Error scenarios and retry behavior
@@ -292,7 +293,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 **Implementation:**
 - Validate rubric JSON schema in AssignmentFormRequest
 - Never interpolate essay directly into prompt string; use structured format (e.g., XML tags)
-- In AnthropicService, validate parsed JSON response
+- In DeepSeekService, validate parsed JSON response
 - Log suspicious inputs for security review
 
 ### Error Response Structure
@@ -305,7 +306,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 
 **Implementation:**
 - GradingResponse DTO with success flag, error fields
-- On API error: `{ success: false, error_message: "Anthropic API timeout", retry_count: 1 }`
+- On API error: `{ success: false, error_message: "DeepSeek API timeout", retry_count: 1 }`
 - Store error in Submission.error_message for user visibility
 - Log full exception separately for internal debugging
 

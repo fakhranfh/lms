@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Contracts\AiGradingProvider;
 use App\Enums\SubmissionStatus;
 use App\Repositories\Submission\SubmissionRepositoryInterface;
+use App\Services\FailedJobHandler;
 use App\Support\CurrentSchool;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -116,18 +117,12 @@ class GradeSubmissionJob implements ShouldQueue
     {
         $submissions = app(SubmissionRepositoryInterface::class);
 
-        if ($submissions->find($this->submissionId) === null) {
+        $submission = $submissions->find($this->submissionId);
+
+        if ($submission === null) {
             return;
         }
 
-        $submissions->update($this->submissionId, [
-            'status' => SubmissionStatus::Failed,
-            'error_message' => $exception?->getMessage() ?? 'AI grading failed after maximum retries.',
-        ]);
-
-        Log::critical('GradeSubmissionJob: submission permanently failed grading', [
-            'submission_id' => $this->submissionId,
-            'error' => $exception?->getMessage(),
-        ]);
+        app(FailedJobHandler::class)->handle($submission, $exception);
     }
 }

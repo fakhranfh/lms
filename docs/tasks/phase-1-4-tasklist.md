@@ -144,20 +144,20 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 
 ## 7. Error Handling & Resilience
 
-- [ ] Create `FailedJobHandler`:
-  - [ ] Track permanently failed submissions (retry_count >= MAX_RETRIES)
-  - [ ] Send alert/notification to school admin (future integration)
-  - [ ] Update Submission: status='failed' (final, no more retries)
-- [ ] Implement exponential backoff:
-  - [ ] Retry 1: 1 second delay
-  - [ ] Retry 2: 5 seconds delay
-  - [ ] Retry 3: 15 seconds delay
-  - [ ] After: mark as failed, alert
-  - [ ] Use Laravel's retry mechanism: `->delay(exponential delay)` in queue config
-- [ ] Create healthcheck for grading queue:
-  - [ ] Monitor Redis connection health
-  - [ ] Alert if queue depth exceeds threshold (e.g., >1000 jobs)
-  - [ ] Integrate with Horizon dashboard (visual monitoring)
+- [x] Create `FailedJobHandler` (`app/Services/FailedJobHandler.php`):
+  - [x] Track permanently failed submissions (invoked from `GradeSubmissionJob::failed()`, called by the queue once `$tries` is exhausted, i.e. retry_count >= MAX_RETRIES)
+  - [x] Send alert/notification to school admin — no notification channel exists yet in this codebase, so `alertSchoolAdmin()` logs `Log::critical` with submission/assignment/retry context (future integration: swap for a real Notification once a channel exists)
+  - [x] Update Submission: status='failed' (final, no more retries)
+- [x] Implement exponential backoff — already done in `app/Jobs/GradeSubmissionJob.php` (Section 3):
+  - [x] Retry 1: 1 second delay
+  - [x] Retry 2: 5 seconds delay
+  - [x] Retry 3: 15 seconds delay
+  - [x] After: `failed()` → `FailedJobHandler` marks status='failed', logs critical alert
+  - [x] Uses Laravel's native `backoff(): array { return [1, 5, 15]; }` on the job class (queue-level retry mechanism), not a manual `->delay()` call
+- [x] Create healthcheck for grading queue (`app/Services/GradingQueueHealthService.php`, `php artisan grading:health`):
+  - [x] Monitor Redis connection health (`Redis::connection()->ping()`, caught/reported as `redis_connected`)
+  - [x] Alert if queue depth exceeds threshold (`DEPTH_ALERT_THRESHOLD = 1000`; logs `Log::warning` when exceeded)
+  - [ ] ~~Integrate with Horizon dashboard~~ — **skipped**, Horizon is blocked on this Windows dev machine (see Section 4); `grading:health` console command is the substitute until Horizon becomes available
 
 ## 8. Monitoring & Observability
 

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Roles;
 
+use App\Enums\RoleName;
 use App\Services\PermissionService;
 use App\Services\RoleService;
 use Livewire\Component;
@@ -48,7 +49,7 @@ class RoleEdit extends Component
 
         $validated = $this->validate();
 
-        if ($this->role->name === 'Admin') {
+        if ($this->role->name === RoleName::Admin->value) {
             $validated['name'] = $this->role->name;
         }
 

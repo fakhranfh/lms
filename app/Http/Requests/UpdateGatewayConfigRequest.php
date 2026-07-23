@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\RoleName;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateGatewayConfigRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->hasRole('Admin');
+        return auth()->check() && auth()->user()->hasRole(RoleName::Admin);
     }
 
     public function rules(): array

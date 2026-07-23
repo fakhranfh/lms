@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\RoleName;
 use App\Models\DemoLmsAccess;
 use App\Models\Permission;
 use App\Models\Role;
@@ -45,14 +46,13 @@ class DemoLmsAccessService
         );
 
         if (! $user->roles()->exists()) {
-            $roleName = $roleType === 'student' ? 'Student' : 'Instructor';
-            $roleSlug = $roleType === 'student' ? 'student' : 'instructor';
+            $roleName = $roleType === 'student' ? RoleName::Student : RoleName::Instructor;
 
             $role = Role::where('school_id', $school->id)
-                ->where('name', $roleName)
+                ->where('name', $roleName->value)
                 ->firstOrCreate(
-                    ['school_id' => $school->id, 'name' => $roleName],
-                    ['guard_name' => 'web', 'slug' => $roleSlug]
+                    ['school_id' => $school->id, 'name' => $roleName->value],
+                    ['guard_name' => 'web', 'slug' => $roleName->slug()]
                 );
 
             // Sync permissions based on role type

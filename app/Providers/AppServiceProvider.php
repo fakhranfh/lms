@@ -6,7 +6,13 @@ use App\Enums\TierFeature;
 use App\Http\Responses\CustomAuthenticatedSessionResponse;
 use App\Http\Responses\CustomVerifyEmailViewResponse;
 use App\Listeners\UpdateUserTimezoneOnLogin;
+use App\Models\Assignment;
+use App\Models\Role;
+use App\Models\Submission;
 use App\Models\User;
+use App\Policies\AssignmentPolicy;
+use App\Policies\RolePolicy;
+use App\Policies\SubmissionPolicy;
 use App\Policies\UserPolicy;
 use App\Repositories\Assignment\AssignmentRepository;
 use App\Repositories\Assignment\AssignmentRepositoryInterface;
@@ -125,6 +131,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Role::class, RolePolicy::class);
+        Gate::policy(Assignment::class, AssignmentPolicy::class);
+        Gate::policy(Submission::class, SubmissionPolicy::class);
+
+        Gate::define('permission', fn (User $user, string $permission) => $user->hasPermissionTo($permission));
+        Gate::define('role', fn (User $user, string $role) => $user->hasRole($role));
 
         $this->registerFeatureGates();
 

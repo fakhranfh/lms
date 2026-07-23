@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RoleName;
 use App\Models\Concerns\BelongsToSchool;
 use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
@@ -42,7 +43,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return true;
         }
 
-        if ($this->hasRole('Admin')) {
+        if ($this->hasRole(RoleName::Admin)) {
             return true;
         }
 

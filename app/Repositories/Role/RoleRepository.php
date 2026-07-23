@@ -2,9 +2,9 @@
 
 namespace App\Repositories\Role;
 
+use App\Models\Role;
 use Illuminate\Database\Eloquent\Collection;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 class RoleRepository implements RoleRepositoryInterface
 {
@@ -13,6 +13,12 @@ class RoleRepository implements RoleRepositoryInterface
         $query = Role::query();
 
         foreach ($filters as $key => $value) {
+            if ($key === 'school_id') {
+                $query->forSchool($value);
+
+                continue;
+            }
+
             if (is_null($value) || $value === '') {
                 continue;
             }
@@ -43,6 +49,7 @@ class RoleRepository implements RoleRepositoryInterface
         return Role::create([
             'name' => $data['name'],
             'guard_name' => $data['guard_name'] ?? 'web',
+            'school_id' => $data['school_id'] ?? null,
         ]);
     }
 

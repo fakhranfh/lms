@@ -35,7 +35,7 @@ class RoleIndex extends Component
     public function render(RoleService $roleService)
     {
         return view('livewire.roles.role-index', [
-            'roles' => $roleService->get([], ['permissions']),
+            'roles' => $roleService->get(['school_id' => auth()->user()->school_id], ['permissions']),
         ])
             ->extends('layouts.admin', ['topbarTitle' => 'Roles'])
             ->section('admin-content');

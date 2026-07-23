@@ -24,7 +24,7 @@ class UserRoles extends Component
     protected function rules(): array
     {
         return [
-            'roles' => ['array'],
+            'roles' => ['array', 'min:1'],
             'roles.*' => ['integer', 'exists:roles,id'],
         ];
     }
@@ -51,7 +51,7 @@ class UserRoles extends Component
     public function render(RoleService $roleService)
     {
         return view('livewire.users.user-roles', [
-            'allRoles' => $roleService->getAll(),
+            'allRoles' => $roleService->get(['school_id' => $this->user->school_id]),
         ])
             ->extends('layouts.admin', ['topbarTitle' => 'Assign Roles'])
             ->section('admin-content');

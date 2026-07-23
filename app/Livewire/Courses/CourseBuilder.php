@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\RoleName;
 use App\Models\Course;
 use App\Services\LessonService;
 use App\Services\ModuleService;
@@ -30,7 +31,7 @@ class CourseBuilder extends Component
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
         abort_unless(auth()->user()->can('courses.view') && $course->school_id === $schoolId, 403);
         $this->course = $course;
-        $this->isStudent = auth()->user()->hasRole('Student');
+        $this->isStudent = auth()->user()->hasRole(RoleName::Student);
     }
 
     #[On('module-created')]

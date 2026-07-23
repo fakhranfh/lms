@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\RoleName;
 use App\Models\School;
 use App\Models\User;
 use App\Support\CurrentSchool;
@@ -34,11 +35,11 @@ test('a non-admin user is forbidden from the admin domain', function () {
 });
 
 test('an admin user with school_id null can access the admin domain', function () {
-    Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => RoleName::Admin->value, 'guard_name' => 'web']);
 
     app(CurrentSchool::class)->setSchoolId(null);
     $admin = User::factory()->create(['school_id' => null]);
-    $admin->assignRole('Admin');
+    $admin->assignRole(RoleName::Admin);
 
     $this->actingAs($admin)
         ->get('http://admin.'.config('app.domain').'/dashboard')

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\RoleName;
 use App\Mail\PendingEmailVerificationMail;
 use App\Models\User;
 use App\Repositories\User\UserRepositoryInterface;
@@ -67,7 +68,7 @@ class UserService
 
     public function syncRoles(User $user, array $roleIds): void
     {
-        if ($user->hasRole('Admin') && ! in_array($this->adminRoleId(), $roleIds)) {
+        if ($user->hasRole(RoleName::Admin) && ! in_array($this->adminRoleId(), $roleIds)) {
             $this->guardLastAdmin($user);
         }
 
@@ -76,7 +77,7 @@ class UserService
 
     private function guardLastAdmin(User $user): void
     {
-        $otherAdmins = User::role('Admin')->where('id', '!=', $user->id)->exists();
+        $otherAdmins = User::role(RoleName::Admin)->where('id', '!=', $user->id)->exists();
 
         if (! $otherAdmins) {
             throw ValidationException::withMessages([
@@ -87,6 +88,6 @@ class UserService
 
     private function adminRoleId(): ?int
     {
-        return Role::where('name', 'Admin')->value('id');
+        return Role::where('name', RoleName::Admin->value)->value('id');
     }
 }

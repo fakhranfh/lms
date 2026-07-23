@@ -2,10 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\RoleName;
+use App\Models\Role;
 use App\Repositories\Role\RoleRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
-use Spatie\Permission\Models\Role;
 
 class RoleService
 {
@@ -48,7 +49,7 @@ class RoleService
     {
         $role = $this->roleRepository->find($id);
 
-        if ($role && $role->name === 'Admin') {
+        if ($role && $role->name === RoleName::Admin->value) {
             throw ValidationException::withMessages([
                 'role' => __('The admin role cannot be deleted.'),
             ]);

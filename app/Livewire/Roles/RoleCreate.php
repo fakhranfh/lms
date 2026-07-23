@@ -33,6 +33,7 @@ class RoleCreate extends Component
         abort_unless(auth()->user()->can('roles.create'), 403);
 
         $validated = $this->validate();
+        $validated['school_id'] = auth()->user()->school_id;
 
         $roleService->create($validated);
 

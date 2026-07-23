@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\RoleName;
 use App\Livewire\Courses\CourseBuilder;
 use App\Models\Course;
 use App\Models\Lesson;
@@ -264,8 +265,8 @@ class CourseBuilderTest extends TestCase
     public function test_students_do_not_see_unpublished_lessons(): void
     {
         $studentRole = Role::firstOrCreate(
-            ['name' => 'Student', 'guard_name' => 'web', 'school_id' => $this->school->id],
-            ['slug' => 'student']
+            ['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id],
+            ['slug' => RoleName::Student->slug()]
         );
         $studentRole->syncPermissions(
             Permission::whereIn('name', ['courses.view', 'modules.view', 'lessons.view'])->get()

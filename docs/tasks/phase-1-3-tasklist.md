@@ -209,90 +209,77 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US1, US3, US4), Section 8 (Core Sy
 
 **From Phase 1.1 Deferred Tasks:**
 
-- [ ] Create base `BasePolicy` class:
-  - [ ] Add protected method `userHasPermission($user, $permission_slug): bool`
-  - [ ] Add protected method `userHasRole($user, $role_slug): bool`
-  - [ ] All policies inherit from BasePolicy
-- [ ] Generate model policies:
-  - [ ] `RolePolicy` (who can create/view/edit/delete roles)
-    - [ ] `viewAny`: role:admin
-    - [ ] `view`: role:admin
-    - [ ] `create`: role:admin + permission:create-role
-    - [ ] `update`: role:admin + permission:edit-role + author/owner check
-    - [ ] `delete`: role:admin + permission:delete-role + cannot delete system roles
-  - [ ] `UserPolicy` (who can view/assign roles to users)
-    - [ ] `assignRole`: role:admin + permission:assign-roles
-    - [ ] `removeRole`: role:admin + permission:assign-roles
-  - [ ] `AssignmentPolicy` (use permission-based checks)
-    - [ ] `create`: permission:create-assignment
-    - [ ] `update`: permission:edit-assignment
-    - [ ] `delete`: permission:delete-assignment
-  - [ ] `SubmissionPolicy` (use permission-based checks)
-    - [ ] `view`: permission:view-submissions
-    - [ ] `override`: permission:override-grade
-  - [ ] Register policies in `AuthServiceProvider` (or auto-discovery if using Laravel 13)
-- [ ] Create `CheckPermission` middleware:
-  - [ ] Accepts `$permission` parameter (e.g., `middleware('auth', 'permission:edit-course')`)
-  - [ ] Checks: `auth()->user()->hasPermissionTo($permission)` for current school
-  - [ ] Returns 403 if denied
-- [ ] Create `CheckRole` middleware:
-  - [ ] Accepts `$role` parameter (e.g., `middleware('auth', 'role:instructor')`)
-  - [ ] Checks: `auth()->user()->hasRole($role)` for current school
-  - [ ] Returns 403 if denied
-- [ ] Register gates in `AuthServiceProvider`:
-  - [ ] `Gate::define('permission', fn ($user, $permission) => $user->hasPermissionTo($permission))`
-  - [ ] `Gate::define('role', fn ($user, $role) => $user->hasRole($role))`
-  - [ ] Use: `@can('permission', 'edit-course')` in Blade templates
+- [x] Create base `BasePolicy` class (`app/Policies/BasePolicy.php`):
+  - [x] Add protected method `userHasPermission($user, $permission_slug): bool`
+  - [x] Add protected method `userHasRole($user, $role_slug): bool`
+  - [x] All policies inherit from BasePolicy (except `UserPolicy`, pre-existing from before this task and left as-is to avoid touching already-tested behavior)
+- [x] Generate model policies:
+  - [x] `RolePolicy` (who can create/view/edit/delete roles) — permission slugs use this codebase's actual naming (`roles.create`/`roles.edit`/`roles.delete`, not the task list's `create-role`/`edit-role`/`delete-role`)
+    - [x] `viewAny`: role:Admin + permission:roles.view
+    - [x] `view`: role:Admin + permission:roles.view
+    - [x] `create`: role:Admin + permission:roles.create
+    - [x] `update`: role:Admin + permission:roles.edit + same-school check
+    - [x] `delete`: role:Admin + permission:roles.delete + cannot delete `protected` roles (this codebase's flag name for "system role")
+  - [x] `UserPolicy` — already existed prior to this task (`app/Policies/UserPolicy.php`, `create`/`update`/`delete` gated on `hasRole('Admin')` + same-school); role-assignment itself is guarded inline in `UserRoles::updateRoles()` via `permission:users.assign-roles`, not a `UserPolicy::assignRole()` method — left as-is since it's exercised by existing passing tests
+  - [x] `AssignmentPolicy` (permission-based checks; slugs match seeded `assignments.*` permissions)
+    - [x] `create`: permission:assignments.create
+    - [x] `update`: permission:assignments.edit
+    - [x] `delete`: permission:assignments.delete
+  - [x] `SubmissionPolicy` (permission-based checks)
+    - [x] `view`: permission:submissions.view (own submission) or permission:submissions.grade (others')
+    - [x] `override`: permission:submissions.override-grade
+  - [x] Register policies in `AppServiceProvider::boot()` via `Gate::policy(...)` (no `AuthServiceProvider` exists in this Laravel 13 app — `AppServiceProvider` is the convention already used for `UserPolicy`)
+- [x] Custom `CheckPermission`/`CheckRole` middleware — **not created**: Spatie Permission's `PermissionMiddleware`/`RoleMiddleware` are already aliased as `permission`/`role` in `bootstrap/app.php` and used throughout `routes/web/*.php` (`middleware('permission:roles.view')`, `middleware(['auth', 'role:Admin'])`); they do exactly what the task-list middleware would do, so a duplicate wrapper was skipped as redundant.
+- [x] Register gates in `AppServiceProvider::boot()`:
+  - [x] `Gate::define('permission', fn ($user, $permission) => $user->hasPermissionTo($permission))`
+  - [x] `Gate::define('role', fn ($user, $role) => $user->hasRole($role))`
+  - [x] Usable as `@can('permission', 'roles.view')` in Blade templates
+- [x] Tests: `tests/Feature/PolicyRegistrationTest.php` (6 tests) covering RolePolicy/AssignmentPolicy/SubmissionPolicy authorization outcomes and the `permission`/`role` gates
 
 ## 8. RBAC: School Admin Panel (Role & User Management)
 
-**From Phase 1.1 Deferred Tasks:**
+**From Phase 1.1 Deferred Tasks — already implemented (prior to this task run) using this codebase's established convention of full-page Livewire components instead of modals, matching `ModuleForm`/`PricingTierCreate`/`PricingTierEdit`. Component names below map 1:1 to the task list's modal-named equivalents:**
 
-- [ ] Create `RoleManagerTable` Livewire component:
-  - [ ] Display paginated table of school's roles
-  - [ ] Show role name, slug, permission count, system flag
-  - [ ] Actions: Edit, Delete (disabled for system roles), Assign Permissions
-  - [ ] Link to `CreateRoleModal` for new role creation
-- [ ] Create `CreateRoleModal` Livewire component:
-  - [ ] Form fields: Role name, slug (auto-generated from name)
-  - [ ] Submit creates role in database (BelongsToSchool ensures school_id)
-  - [ ] Validation: name required, slug unique per school
-  - [ ] On success: refresh RoleManagerTable, show toast
-- [ ] Create `EditRoleModal` Livewire component:
-  - [ ] Pre-populate with existing role data
-  - [ ] Disable slug editing (immutable)
-  - [ ] Disable editing if `is_system_role = true`
-  - [ ] Submit updates role
-- [ ] Create `PermissionMatrix` Livewire component:
-  - [ ] Display permission grid: rows = permissions (grouped by category), columns = selected role(s)
-  - [ ] Checkbox for each (role, permission) pair
-  - [ ] "Check All" and "Check by Category" quick actions
-  - [ ] Save button syncs role_permission pivot
-  - [ ] Use wire:model to track checked permissions client-side
-  - [ ] Show toast on save success
-- [ ] Create `UserRoleAssigner` Livewire component:
-  - [ ] Display: user email, current roles, role selector
-  - [ ] Dropdown/multi-select for available roles
-  - [ ] Sync button assigns roles via `$user->syncRoles($role_ids)`
-  - [ ] Validation: at least one role required per user
+- [x] `RoleManagerTable` → `App\Livewire\Roles\RoleIndex` (`app/Livewire/Roles/RoleIndex.php`, `resources/views/livewire/roles/role-index.blade.php`):
+  - [x] Paginated table of the school's roles
+  - [x] Shows role name, permission count, `protected` flag (this codebase's "system role" flag)
+  - [x] Actions: Edit link, Delete (disabled/hidden for `protected` roles via Alpine confirm-modal, not `wire:confirm`, per this codebase's established delete-modal pattern)
+  - [x] "+ New Role" links to `RoleCreate` (full page, not a modal)
+- [x] `CreateRoleModal` → `App\Livewire\Roles\RoleCreate` (`app/Livewire/Roles/RoleCreate.php`):
+  - [x] Form field: Role name (no separate slug field — this codebase's `Role` model has no user-facing `slug`; Spatie's `name` is the unique identifier)
+  - [x] Creates role scoped to current school via `RoleService`
+  - [x] Validation: name required, unique per school
+  - [x] On success: flash success banner + redirect to `RoleIndex` (no toast library in this codebase, see §5 deviation note)
+- [x] `EditRoleModal` → `App\Livewire\Roles\RoleEdit` (`app/Livewire/Roles/RoleEdit.php`):
+  - [x] Pre-populated with existing role + permissions
+  - [x] Name editing blocked for the `Admin` role (`if ($this->role->name === 'Admin') { $validated['name'] = $this->role->name; }`)
+  - [x] Submits update via `RoleService`
+- [x] `PermissionMatrix` → folded into `RoleCreate`/`RoleEdit` (checkbox grid of `groupedPermissions` from `PermissionService::getAllGrouped()`, one role at a time) rather than a separate multi-role matrix component — this codebase edits permissions per-role, not per-permission-across-roles; a read-only cross-role view exists at `App\Http\Controllers\PermissionController::index` (`resources/views/app/permission/index.blade.php`)
+  - [x] Checkbox per (role, permission) pair, grouped by category
+  - [ ] "Check All" / "Check by Category" quick actions (deferred: not implemented, checkboxes are set individually)
+  - [x] Save syncs `role_has_permissions` pivot via `RoleService::update()`
+  - [x] `wire:model` tracks checked permission IDs client-side (via `permissionsJson`)
+- [x] `UserRoleAssigner` → `App\Livewire\Users\UserRoles` (`app/Livewire/Users/UserRoles.php`):
+  - [x] Displays user + current roles + all available roles as checkboxes
+  - [x] Sync via `UserService::syncRoles()` (wraps `$user->syncRoles(...)`)
+  - [x] "At least one role required" validation (added `min:1` to the `roles` rule in `UserRoles::rules()`)
 
 ## 9. RBAC: Routes & Controller (Role Management)
 
-**From Phase 1.1 Deferred Tasks:**
+**From Phase 1.1 Deferred Tasks — already implemented (prior to this task run) using this codebase's controller-less convention: Livewire components are registered directly as route actions (same pattern as `CourseForm`/`ModuleForm`/`AssignmentForm`, see §6). A dedicated `RoleController`/`UserRoleController` was intentionally not (re)created since it would just proxy to the same Livewire `save()`/`update()`/`updateRoles()` methods already wired below:**
 
-- [ ] Create `RoleController` with CRUD actions:
-  - [ ] `index()` — list roles (route: GET /admin/roles) → returns `RoleManagerTable` Livewire component
-  - [ ] `store()` — create role (route: POST /admin/roles) → called by `CreateRoleModal`
-  - [ ] `update($role)` — update role (route: PATCH /admin/roles/{id}) → called by `EditRoleModal`
-  - [ ] `destroy($role)` — soft delete role (route: DELETE /admin/roles/{id}) → prevent system role deletion
-  - [ ] All routes require `middleware('auth', 'permission:manage-roles')`
-- [ ] Create role management routes:
-  - [ ] `GET /admin/roles` — role list page
-  - [ ] `GET /admin/roles/{id}/permissions` — show permission matrix modal
-  - [ ] `PATCH /admin/roles/{id}/permissions` — sync permissions
-- [ ] Create `UserRoleController` for user role assignment:
-  - [ ] `assignRole()` — PATCH /admin/users/{id}/roles — assign roles to user
-  - [ ] Require `permission:assign-roles`
+- [x] `RoleController` equivalent — role CRUD is exercised via `RoleIndex::destroy()`, `RoleCreate::store()`, `RoleEdit::update()`:
+  - [x] `index()` — `GET /roles` (tenant, `routes/web/authenticated.php`) and `GET /admin/roles` (platform, `routes/web/admin.php`) → `RoleIndex`
+  - [x] `store()` — handled by `RoleCreate::store()` at `GET/POST /roles/create` (Livewire full-page form, not a separate POST endpoint)
+  - [x] `update($role)` — handled by `RoleEdit::update()` at `GET /roles/{role}/edit`
+  - [x] `destroy($role)` — handled by `RoleIndex::destroy()`, blocked for `protected` roles via `Role::delete()` override (throws)
+  - [x] Routes require `middleware('permission:roles.view')` / `'permission:roles.create'` / `'permission:roles.edit'` (tenant) or the `role:Admin` route-group guard (platform admin) — not a single `manage-roles` permission, since this codebase splits role management into `roles.view/create/edit/delete` per §6/§7's actual seeded slugs
+- [x] Role management routes registered in `routes/web/authenticated.php` (tenant) and `routes/web/admin.php` (platform):
+  - [x] `GET /roles` / `GET /admin/roles` — role list page
+  - [x] Permission editing happens inline on `RoleEdit` (`GET /roles/{role}/edit`) rather than a separate `/permissions` sub-route + modal, per §8's `PermissionMatrix` deviation note
+- [x] `UserRoleController` equivalent — `App\Livewire\Users\UserRoles::updateRoles()`:
+  - [x] `GET /users/{id}/roles` renders the assigner; submitting calls `syncRoles()` in place (no separate PATCH endpoint needed since Livewire posts to itself)
+  - [x] Requires `permission:users.assign-roles` (enforced both by route middleware and an `abort_unless` inside the component)
 
 ## 10. Rate Limiting
 

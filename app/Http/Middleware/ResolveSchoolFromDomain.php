@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\RoleName;
 use App\Support\CurrentSchool;
 use App\Support\SchoolDomainResolver;
 use Closure;
@@ -21,14 +22,14 @@ class ResolveSchoolFromDomain
         $rootDomain = config('app.domain');
         $adminDomain = "admin.{$rootDomain}";
 
-        if ($request->user() && $request->user()->hasRole('Admin') && $request->user()->school_id !== null) {
+        if ($request->user() && $request->user()->hasRole(RoleName::Admin) && $request->user()->school_id !== null) {
             abort(500, 'Invalid state: admin user must not belong to a school.');
         }
 
         if ($host === $adminDomain) {
             $this->currentSchool->setSchoolId(null);
 
-            if ($request->user() && ! $request->user()->hasRole('Admin')) {
+            if ($request->user() && ! $request->user()->hasRole(RoleName::Admin)) {
                 abort(403);
             }
 

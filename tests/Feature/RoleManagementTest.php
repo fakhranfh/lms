@@ -1,12 +1,14 @@
 <?php
 
+use App\Enums\RoleName;
 use App\Livewire\Roles\RoleCreate;
 use App\Livewire\Roles\RoleEdit;
 use App\Livewire\Roles\RoleIndex;
+use App\Models\Role;
+use App\Models\School;
 use App\Models\User;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 function actingAsRoleManager(array $permissionNames): User
 {
@@ -25,10 +27,19 @@ function actingAsRoleManager(array $permissionNames): User
 
 test('roles index lists existing roles', function () {
     $user = actingAsRoleManager(['roles.view']);
-    Role::create(['name' => 'editors', 'guard_name' => 'web']);
+    Role::create(['name' => 'editors', 'guard_name' => 'web', 'school_id' => $user->school_id]);
 
     Livewire::actingAs($user)->test(RoleIndex::class)
         ->assertSee('editors');
+});
+
+test('roles index does not list roles belonging to another school', function () {
+    $user = actingAsRoleManager(['roles.view']);
+    $otherSchool = School::factory()->create();
+    Role::create(['name' => 'other-school-role', 'guard_name' => 'web', 'school_id' => $otherSchool->id]);
+
+    Livewire::actingAs($user)->test(RoleIndex::class)
+        ->assertDontSee('other-school-role');
 });
 
 test('user with roles.create can create a role with permissions', function () {
@@ -76,14 +87,14 @@ test('user with roles.update can update a role and its permissions', function ()
 
 test('admin role name cannot be changed even if submitted', function () {
     $user = actingAsRoleManager(['roles.view', 'roles.update']);
-    $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+    $admin = Role::firstOrCreate(['name' => RoleName::Admin->value, 'guard_name' => 'web']);
 
     Livewire::actingAs($user)->test(RoleEdit::class, ['role' => $admin])
         ->set('name', 'super-admin')
         ->call('update');
 
     $admin->refresh();
-    expect($admin->name)->toBe('Admin');
+    expect($admin->name)->toBe(RoleName::Admin->value);
 });
 
 test('user with roles.delete can delete a non-admin role', function () {
@@ -99,7 +110,7 @@ test('user with roles.delete can delete a non-admin role', function () {
 
 test('admin role cannot be deleted', function () {
     $user = actingAsRoleManager(['roles.view', 'roles.delete']);
-    $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+    $admin = Role::firstOrCreate(['name' => RoleName::Admin->value, 'guard_name' => 'web']);
 
     Livewire::actingAs($user)->test(RoleIndex::class)
         ->call('destroy', $admin->id)

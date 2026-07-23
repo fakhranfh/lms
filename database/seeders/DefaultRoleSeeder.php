@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\RoleName;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\School;
@@ -31,8 +32,8 @@ class DefaultRoleSeeder extends Seeder
     {
         // Admin Role - All permissions except billing
         $adminRole = Role::firstOrCreate(
-            ['name' => 'Admin', 'guard_name' => 'web', 'school_id' => $schoolId],
-            ['slug' => 'admin']
+            ['name' => RoleName::Admin->value, 'guard_name' => 'web', 'school_id' => $schoolId],
+            ['slug' => RoleName::Admin->slug()]
         );
 
         $adminPermissions = Permission::where('name', '!=', 'settings.billing')->get();
@@ -40,30 +41,21 @@ class DefaultRoleSeeder extends Seeder
 
         // Instructor Role - Course/Module/Lesson/Assignment CRUD + grading + analytics
         $instructorRole = Role::firstOrCreate(
-            ['name' => 'Instructor', 'guard_name' => 'web', 'school_id' => $schoolId],
-            ['slug' => 'instructor']
+            ['name' => RoleName::Instructor->value, 'guard_name' => 'web', 'school_id' => $schoolId],
+            ['slug' => RoleName::Instructor->slug()]
         );
 
-        $instructorPermissions = Permission::whereIn('name', [
-            'courses.create', 'courses.view', 'courses.edit', 'courses.delete',
-            'modules.create', 'modules.view', 'modules.edit', 'modules.delete',
-            'lessons.create', 'lessons.view', 'lessons.edit', 'lessons.delete',
-            'assignments.create', 'assignments.view', 'assignments.edit', 'assignments.delete',
-            'submissions.view', 'submissions.grade', 'submissions.override-grade',
-            'analytics.view',
-        ])->get();
+        $instructorPermissions = Permission::whereIn('name', RoleName::Instructor->defaultPermissions())->get();
 
         $instructorRole->syncPermissions($instructorPermissions);
 
         // Student Role - View only
         $studentRole = Role::firstOrCreate(
-            ['name' => 'Student', 'guard_name' => 'web', 'school_id' => $schoolId],
-            ['slug' => 'student']
+            ['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $schoolId],
+            ['slug' => RoleName::Student->slug()]
         );
 
-        $studentPermissions = Permission::whereIn('name', [
-            'courses.view', 'modules.view', 'lessons.view', 'assignments.view', 'submissions.view',
-        ])->get();
+        $studentPermissions = Permission::whereIn('name', RoleName::Student->defaultPermissions())->get();
 
         $studentRole->syncPermissions($studentPermissions);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RoleName;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,7 @@ class AdminLoginController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
 
-            if (! $user->hasRole('Admin')) {
+            if (! $user->hasRole(RoleName::Admin)) {
                 Auth::logout();
                 $request->session()->invalidate();
 

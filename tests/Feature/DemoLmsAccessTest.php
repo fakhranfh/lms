@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\RoleName;
 use App\Models\DemoLmsAccess;
 use App\Models\School;
 use App\Models\User;
@@ -241,7 +242,7 @@ class DemoLmsAccessTest extends TestCase
         $user = $this->demoService->createDemoUser($school, 'instructor');
 
         $this->assertTrue($user->roles()->exists());
-        $this->assertTrue($user->hasRole('Instructor'));
+        $this->assertTrue($user->hasRole(RoleName::Instructor));
 
         // Verify demo user has sidebar menu permissions
         $this->assertTrue($user->can('users.view'));
@@ -338,7 +339,7 @@ class DemoLmsAccessTest extends TestCase
         $user = $this->demoService->createDemoUser($school, 'student');
 
         $this->assertTrue($user->roles()->exists());
-        $this->assertTrue($user->hasRole('Student'));
+        $this->assertTrue($user->hasRole(RoleName::Student));
     }
 
     public function test_demo_instructor_user_has_correct_permissions(): void
@@ -348,6 +349,6 @@ class DemoLmsAccessTest extends TestCase
         $user = $this->demoService->createDemoUser($school, 'instructor');
 
         $this->assertTrue($user->roles()->exists());
-        $this->assertTrue($user->hasRole('Instructor'));
+        $this->assertTrue($user->hasRole(RoleName::Instructor));
     }
 }

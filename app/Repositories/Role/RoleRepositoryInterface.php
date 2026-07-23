@@ -2,8 +2,8 @@
 
 namespace App\Repositories\Role;
 
+use App\Models\Role;
 use Illuminate\Database\Eloquent\Collection;
-use Spatie\Permission\Models\Role;
 
 interface RoleRepositoryInterface
 {

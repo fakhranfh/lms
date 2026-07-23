@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\AiGradingProvider;
 use App\Enums\SubmissionStatus;
 use App\Jobs\GradeSubmissionJob;
 use App\Models\Assignment;
@@ -9,6 +10,7 @@ use App\Models\Module;
 use App\Models\School;
 use App\Models\Submission;
 use App\Models\User;
+use App\Repositories\Submission\SubmissionRepositoryInterface;
 use Illuminate\Support\Facades\Queue;
 
 function makeAssignmentForSchool(School $school, array $attributes = []): Assignment
@@ -99,6 +101,66 @@ test('rate limit triggers on the 4th rapid submission request', function () {
     ]);
 
     $response->assertStatus(429);
+});
+
+test('store responds quickly since grading is dispatched asynchronously', function () {
+    Queue::fake();
+
+    $school = School::factory()->create();
+    $student = User::factory()->for($school)->create();
+    $assignment = makeAssignmentForSchool($school);
+
+    $this->actingAs($student);
+
+    $start = microtime(true);
+
+    $response = $this->postJson('/submissions', [
+        'assignment_id' => $assignment->id,
+        'user_id' => $student->id,
+        'student_answer' => 'My essay answer.',
+    ]);
+
+    $elapsedMs = (microtime(true) - $start) * 1000;
+
+    $response->assertStatus(201);
+    expect($elapsedMs)->toBeLessThan(500);
+});
+
+test('submission transitions to graded once the dispatched job runs', function () {
+    Queue::fake();
+
+    $school = School::factory()->create();
+    $student = User::factory()->for($school)->create();
+    $assignment = makeAssignmentForSchool($school);
+
+    $this->actingAs($student);
+
+    $response = $this->postJson('/submissions', [
+        'assignment_id' => $assignment->id,
+        'user_id' => $student->id,
+        'student_answer' => 'My essay answer.',
+    ]);
+
+    $submission = Submission::where('assignment_id', $assignment->id)->where('user_id', $student->id)->first();
+
+    $mock = Mockery::mock(AiGradingProvider::class);
+    $mock->shouldReceive('buildGradingPrompt')->andReturn('prompt');
+    $mock->shouldReceive('gradeEssay')->andReturn([
+        'success' => true,
+        'score' => 88.0,
+        'feedback' => [],
+    ]);
+    app()->instance(AiGradingProvider::class, $mock);
+
+    (new GradeSubmissionJob($submission->id))->handle(
+        app(AiGradingProvider::class),
+        app(SubmissionRepositoryInterface::class),
+    );
+
+    $submission->refresh();
+
+    expect($submission->status)->toBe(SubmissionStatus::Graded);
+    expect((float) $submission->ai_score)->toBe(88.0);
 });
 
 test('retry redispatches the grading job for a failed submission', function () {

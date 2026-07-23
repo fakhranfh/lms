@@ -98,18 +98,12 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 
 ## 4. Queue Configuration
 
-- [ ] Update `config/queue.php`:
-  - [ ] Default connection: redis
-  - [ ] Redis cluster/connections: default localhost:6379
-  - [ ] Job timeout: 45 seconds
-- [ ] Update `config/horizon.php` (for monitoring):
-  - [ ] Enable Horizon in `config/horizon.php`
-  - [ ] Dashboard path: `/horizon` (Super Admin only)
-  - [ ] Set balance strategy: `simple` or `auto` (default fine)
-  - [ ] Retention: 24 hours
-- [ ] Update `app/Providers/HorizonServiceProvider.php`:
-  - [ ] Gate: only Super Admin can view Horizon
-  - [ ] `Gate::define('viewHorizon', fn ($user) => $user->hasRole('admin'))`
+- [x] Update `config/queue.php`:
+  - [x] Default connection: redis — already env-driven (`QUEUE_CONNECTION=redis` in `.env`), `config/queue.php` needed no code change
+  - [x] Redis cluster/connections: default localhost:6379 — already set via `REDIS_HOST`/`REDIS_PORT` in `.env`
+  - [x] Job timeout: 45 seconds — already set per-job on `GradeSubmissionJob::$timeout` (Section 3), not globally in `config/queue.php`
+- [ ] ~~Update `config/horizon.php` (for monitoring)~~ — **Blocked, skipped by decision:** `laravel/horizon` requires the `ext-pcntl`/`ext-posix` PHP extensions, which do not exist on Windows. `composer require laravel/horizon` fails to resolve on this dev machine. Revisit if/when development or deployment moves to Linux/WSL; until then, queue monitoring should use `php artisan queue:failed`, `php artisan queue:work` console output, or a custom `grading:monitor` command (Section 8) instead.
+- [ ] ~~Update `app/Providers/HorizonServiceProvider.php`~~ — skipped, depends on Horizon above.
 
 ## 5. Prompting & Structured Output
 

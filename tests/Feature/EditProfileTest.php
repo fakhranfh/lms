@@ -2,8 +2,8 @@
 
 use App\Livewire\EditProfile;
 use App\Models\User;
+use App\Services\R2StorageService;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 test('authenticated user can view edit profile page', function () {
@@ -60,7 +60,12 @@ test('user can upload profile photo', function () {
         $this->markTestSkipped('GD extension not installed');
     }
 
-    Storage::fake('public');
+    $this->mock(R2StorageService::class, function ($mock) {
+        $mock->shouldReceive('uploadPublicFile')
+            ->once()
+            ->andReturn('https://r2.example.com/profile-photos/abc-profile.jpg');
+    });
+
     $user = User::factory()->create();
     $file = UploadedFile::fake()->image('profile.jpg', 100, 100);
 
@@ -71,11 +76,17 @@ test('user can upload profile photo', function () {
         ->call('save')
         ->assertHasNoErrors();
 
-    Storage::disk('public')->assertExists('profile-photos/'.$file->hashName());
+    $this->assertDatabaseHas('users', [
+        'id' => $user->id,
+        'profile_photo_path' => 'https://r2.example.com/profile-photos/abc-profile.jpg',
+    ]);
 });
 
 test('user can remove profile photo', function () {
-    Storage::fake('public');
+    $this->mock(R2StorageService::class, function ($mock) {
+        $mock->shouldReceive('delete')->once()->andReturn(true);
+    });
+
     $user = User::factory()->create(['profile_photo_path' => '/storage/profile-photos/test.jpg']);
 
     Livewire::actingAs($user)->test(EditProfile::class)

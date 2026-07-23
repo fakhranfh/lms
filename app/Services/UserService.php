@@ -14,7 +14,10 @@ use Spatie\Permission\Models\Role;
 
 class UserService
 {
-    public function __construct(private UserRepositoryInterface $userRepository) {}
+    public function __construct(
+        private UserRepositoryInterface $userRepository,
+        private R2StorageService $r2Storage,
+    ) {}
 
     public function updateProfile(User $user, array $data): User
     {
@@ -23,13 +26,23 @@ class UserService
 
     public function updateProfilePhoto(User $user, UploadedFile $photo): void
     {
-        $photoUrl = $this->userRepository->updateProfilePhoto($user, $photo);
+        $this->deleteProfilePhotoFile($user);
+
+        $photoUrl = $this->r2Storage->uploadPublicFile($photo, 'profile-photos');
         $user->update(['profile_photo_path' => $photoUrl]);
     }
 
     public function removeProfilePhoto(User $user): void
     {
-        $this->userRepository->removeProfilePhoto($user);
+        $this->deleteProfilePhotoFile($user);
+        $user->update(['profile_photo_path' => null]);
+    }
+
+    private function deleteProfilePhotoFile(User $user): void
+    {
+        if ($user->profile_photo_path) {
+            $this->r2Storage->delete($user->profile_photo_path);
+        }
     }
 
     public function changePassword(User $user, string $password): void

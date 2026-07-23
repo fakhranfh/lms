@@ -88,11 +88,13 @@ class EditProfile extends Component
         if ($this->photo) {
             $userService->updateProfilePhoto($user, $this->photo);
             $this->photoPath = $user->fresh()->profile_photo_path;
+            $this->dispatch('profile-photo-updated', photoUrl: $this->photoPath);
         }
 
         if ($this->removePhoto) {
             $userService->removeProfilePhoto($user);
             $this->photoPath = null;
+            $this->dispatch('profile-photo-updated', photoUrl: null);
         }
 
         $this->photo = null;

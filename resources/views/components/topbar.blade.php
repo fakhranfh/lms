@@ -15,13 +15,16 @@
 
         <div class="relative group" id="user-menu-container">
             <button id="user-menu-toggle" dusk="user-menu-toggle" onclick="(function(){var d=document.getElementById('user-dropdown');var open=d.getAttribute('data-open')==='true';d.setAttribute('data-open',open?'false':'true');if(open){d.classList.add('opacity-0','invisible');d.classList.remove('opacity-100','visible')}else{d.classList.remove('opacity-0','invisible');d.classList.add('opacity-100','visible')}})();return false;" class="flex items-center gap-space-md px-space-md py-space-xs rounded-full hover:bg-surface-container-low transition-colors duration-200 focus:outline-none">
-                @if(auth()->user()->profile_photo_path)
-                    <img src="{{ auth()->user()->profile_photo_path }}" alt="Profile" class="w-10 h-10 rounded-full object-cover border border-outline-variant">
-                @else
-                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-headline-sm text-headline-sm">
-                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                    </div>
-                @endif
+                <div x-data="{ photoUrl: @js(auth()->user()->profile_photo_path) }" x-on:profile-photo-updated.window="photoUrl = $event.detail.photoUrl">
+                    <template x-if="photoUrl">
+                        <img :src="photoUrl" alt="Profile" class="w-10 h-10 rounded-full object-cover border border-outline-variant">
+                    </template>
+                    <template x-if="!photoUrl">
+                        <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-headline-sm text-headline-sm">
+                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                        </div>
+                    </template>
+                </div>
                 <div class="text-left hidden sm:block">
                     <div class="flex items-center gap-space-xs">
                         <p class="font-label-md text-label-md text-on-surface">{{ auth()->user()->name }}</p>

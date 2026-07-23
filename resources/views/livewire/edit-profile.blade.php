@@ -19,6 +19,7 @@
 
     <div class="flex items-center justify-center py-space-xl px-gutter">
         <div class="bg-surface w-full max-w-2xl rounded-xl border border-outline-variant p-space-lg md:p-space-xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-shadow duration-200 profile-card">
+            <div class="absolute inset-0 rounded-xl overflow-hidden pointer-events-none profile-card-backdrop"></div>
             <div class="relative z-10">
                 <h2 class="font-headline-lg text-headline-lg text-on-surface mb-space-xs">Edit Profile</h2>
                 <p class="font-body-md text-body-md text-secondary mb-space-xl">Update your personal information and profile settings.</p>
@@ -108,14 +109,12 @@
                             <div class="flex items-center">
                                 <label class="font-label-md text-label-md text-on-surface" for="timezone">Timezone</label>
                             </div>
-                            <div class="relative">
-                                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary/60 text-[20px]">schedule</span>
-                                <select class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md rounded-lg py-space-sm pl-10 pr-space-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none @error('timezone') border-error @enderror" id="timezone" wire:model="timezone" required>
-                                    @foreach (timezone_identifiers_list() as $timezoneOption)
-                                        <option value="{{ $timezoneOption }}">{{ $timezoneOption }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                            <x-searchable-select
+                                model="timezone"
+                                placeholder="Select timezone"
+                                :options="collect(timezone_identifiers_list())->map(fn ($tz) => ['id' => $tz, 'label' => $tz])"
+                                :selectedLabel="$timezone"
+                            />
                             @error('timezone')
                                 <p class="text-error text-body-sm font-body-sm mt-space-xs">{{ $message }}</p>
                             @enderror
@@ -150,10 +149,9 @@
     <style>
         .profile-card {
             position: relative;
-            overflow: hidden;
         }
 
-        .profile-card::before {
+        .profile-card-backdrop::before {
             content: '';
             position: absolute;
             top: 0;

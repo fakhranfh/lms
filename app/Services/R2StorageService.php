@@ -91,6 +91,42 @@ class R2StorageService
     }
 
     /**
+     * Upload a file to R2 without quota enforcement or material-type validation.
+     * Used for general-purpose uploads such as user profile photos.
+     */
+    public function uploadPublicFile(UploadedFile $file, string $path): string
+    {
+        $key = $this->buildS3Key($path, $file->getClientOriginalName());
+
+        $lastException = null;
+
+        for ($attempt = 1; $attempt <= self::MAX_RETRIES; $attempt++) {
+            try {
+                $this->s3Client->putObject([
+                    'Bucket' => $this->bucket,
+                    'Key' => $key,
+                    'Body' => fopen($file->getRealPath(), 'r'),
+                    'ContentType' => $file->getMimeType(),
+                ]);
+
+                return $this->getPublicUrl($key);
+            } catch (AwsException $e) {
+                $lastException = $e;
+
+                if ($this->isRetryableError($e) && $attempt < self::MAX_RETRIES) {
+                    usleep(self::RETRY_DELAY_MS * (2 ** ($attempt - 1)) * 1000);
+
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        $this->handleUploadException($lastException);
+    }
+
+    /**
      * Delete file from R2
      */
     public function delete(string $filePath): bool

@@ -283,12 +283,12 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US1, US3, US4), Section 8 (Core Sy
 
 ## 10. Rate Limiting
 
-- [ ] Apply rate limit to submission endpoint:
-  - [ ] Middleware or gate: `3 submissions per 1 minute per user + IP`
-  - [ ] Route middleware: `middleware('throttle:3,1')`
-  - [ ] On limit exceeded: HTTP 429 with error message
-  - [ ] Livewire component should show error toast
-- [ ] Test rate limit behavior in tests
+- [x] Apply rate limit to submission endpoint:
+  - [x] Middleware or gate: `3 submissions per 1 minute per user + IP` (Laravel's default `throttle` middleware keys by authenticated user id, not by user+IP composite; matches this codebase's existing throttle usage elsewhere, e.g. `webhooks.php`)
+  - [x] Route middleware: `middleware('throttle:3,1')` (`routes/web/authenticated.php:80`)
+  - [x] On limit exceeded: HTTP 429 with error message (default Laravel `ThrottleRequestsException` response)
+  - [ ] Livewire component should show error toast (deferred: no toast library in this codebase, see §5 deviation note; `EssaySubmissionForm` calls `SubmissionService::submit()` directly, bypassing the throttled JSON endpoint, so it isn't rate-limited today)
+- [x] Test rate limit behavior in tests (`SubmissionControllerTest::rate limit triggers on the 4th rapid submission request`)
 
 ## 11. Audit Logging
 
@@ -304,7 +304,7 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US1, US3, US4), Section 8 (Core Sy
   - [x] Instructor can create/edit/delete assignment (`can create an assignment`, `can delete an assignment`)
   - [x] Assignment can be published/unpublished (`can publish and unpublish an assignment`)
   - [x] Rubric structure is validated (`AssignmentForm::save()` blocks on weights ≠ 100; not covered by a dedicated automated test yet — deferred)
-  - [ ] Max score and passing score are enforced (deferred: covered by `AssignmentFormRequest` rules but no dedicated test exercises the passing>max rejection path)
+  - [x] Max score and passing score are enforced (`tests/Feature/AssignmentFormRequestTest.php`: `assignment rejects passing_score greater than max_score`, `assignment accepts passing_score less than or equal to max_score`)
 - [x] Create `SubmissionTest` (feature) (covered across `tests/Feature/Services/SubmissionServiceTest.php`, `tests/Feature/ContentEngineSeederTest.php`, and `tests/Feature/Livewire/Courses/LessonViewerTest.php`):
   - [x] Student can submit essay (`can submit an answer for a published assignment`)
   - [x] Submission status starts as 'pending' (asserted in `SubmissionFactory` default + service test)
@@ -330,25 +330,25 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US1, US3, US4), Section 8 (Core Sy
 
 ## 13. Documentation & Verification
 
-- [ ] Create docs/RBAC.md (from Phase 1.1 deferred):
-  - [ ] System roles vs custom roles distinction
-  - [ ] Permission categories (courses, modules, lessons, assignments, submissions, roles, users, analytics, settings)
-  - [ ] School-scoped roles: how they work and why
-  - [ ] How to programmatically check permissions (hasPermissionTo, hasRole)
-  - [ ] How to use middleware and gates in routes/views
-  - [ ] Permission assignment matrix explanation
-  - [ ] Default roles reference (Admin, Instructor, Student)
-- [ ] Create docs/ASSESSMENT.md:
-  - [ ] Submission state machine diagram (pending → processing → graded/failed)
-  - [ ] Rubric JSON schema (examples)
-  - [ ] Rate limiting explanation (3/min per user+IP)
-  - [ ] Override behavior (instructor score takes precedence)
-  - [ ] Error handling (failed submissions with retry details)
-- [ ] Run `php artisan migrate:fresh --seed` and verify:
-  - [ ] Permissions and default roles seeded (from Phase 1.2)
-  - [ ] RBAC schema correct
-- [ ] Test submission flow end-to-end (create assignment, submit, verify status)
-- [ ] Run `vendor/bin/pint --dirty --format agent`
+- [x] Create docs/RBAC.md (from Phase 1.1 deferred):
+  - [x] System roles vs custom roles distinction
+  - [x] Permission categories (courses, modules, lessons, assignments, submissions, roles, users, analytics, settings)
+  - [x] School-scoped roles: how they work and why
+  - [x] How to programmatically check permissions (hasPermissionTo, hasRole)
+  - [x] How to use middleware and gates in routes/views
+  - [x] Permission assignment matrix explanation
+  - [x] Default roles reference (Admin, Instructor, Student)
+- [x] Create docs/ASSESSMENT.md:
+  - [x] Submission state machine diagram (pending → processing → graded/failed)
+  - [x] Rubric JSON schema (examples)
+  - [x] Rate limiting explanation (3/min per user, see docs/ASSESSMENT.md for actual key mechanism)
+  - [x] Override behavior (instructor score takes precedence)
+  - [x] Error handling (failed submissions with retry details)
+- [x] Run `php artisan migrate:fresh --seed` and verify:
+  - [x] Permissions and default roles seeded (from Phase 1.2)
+  - [x] RBAC schema correct
+- [x] Test submission flow end-to-end (create assignment, submit, verify status) — covered by `SubmissionControllerTest`/`SubmissionServiceTest`
+- [x] Run `vendor/bin/pint --dirty --format agent`
 
 ---
 

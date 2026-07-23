@@ -1,6 +1,6 @@
 # Phase 1.4 — AI Integration: Task List
 
-**Goal:** Implement asynchronous Redis-based job queue for Gemini API essay grading, with retry policy and error handling.
+**Goal:** Implement asynchronous Redis-based job queue for AI essay grading (Gemini primary, DeepSeek secondary), with retry policy and error handling.
 
 **Dependency:** Phase 1.0 (Data Architecture), Phase 1.1 (RBAC), Phase 1.2 (Content Engine), Phase 1.3 (Assessment & State Machine) must be complete. Phase 2.0C (Payment Gateways) for reference (similar pattern).
 
@@ -15,38 +15,52 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 - [x] Update `.env`:
   - [x] `QUEUE_CONNECTION=redis`
   - [x] `REDIS_HOST=127.0.0.1`, `REDIS_PORT=6379` (or use `REDIS_URL`)
+  - [x] `AI_GRADING_PROVIDER=gemini` (or `deepseek` — selects the active provider)
   - [x] `GEMINI_API_KEY=AIza...` (from .env.example)
-  - [x] `GEMINI_MODEL=gemini-flash-latest` (or latest)
+  - [x] `GEMINI_MODEL=gemini-flash-latest` (or latest; `gemini-2.5-flash` returns 404 for new API keys)
   - [x] `GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai` (OpenAI-compatible endpoint)
+  - [x] `DEEPSEEK_API_KEY=sk-...` (secondary provider, from .env.example)
+  - [x] `DEEPSEEK_MODEL=deepseek-chat`
+  - [x] `DEEPSEEK_BASE_URL=https://api.deepseek.com`
   - [x] `AI_GRADING_ENABLED=true` (feature flag, default true)
   - [x] `AI_GRADING_MAX_RETRIES=3`
   - [x] `AI_GRADING_TIMEOUT_SECONDS=30`
 - [x] Create `.env.example` entries for new vars
 
-## 2. Gemini API Integration
+## 2. AI Provider Integration (Gemini + DeepSeek)
 
-- [x] Create `app/Services/GeminiService.php`:
-  - [x] Wrapper around Gemini API (OpenAI-compatible HTTP client, e.g. Laravel `Http` facade)
-  - [x] Methods:
-    - [x] `gradeEssay(string $essay, array $rubric, string $prompt): array`
-      - [x] Build prompt with rubric and essay
-      - [x] Call Gemini Chat Completions API (gemini-flash-latest or later)
-      - [x] Parse response JSON
-      - [x] Return structured result: `{ success: bool, score: float, feedback: array, raw_response?: string, error?: string }`
-    - [x] `buildGradingPrompt(Assignment $assignment, string $essay): string`
-      - [x] System prompt: "You are an expert essay grader..."
-      - [x] Include rubric criteria
-      - [x] Include essay to grade
-      - [x] Request JSON output format
-    - [x] `parseGradingResponse(string $responseText): array`
-      - [x] Extract JSON from response (handle markdown code blocks)
-      - [x] Validate structure: `{ score: float, feedback: { item: string, points: int } }`
-      - [x] Return parsed data or throw exception
+- [x] Create `app/Contracts/AiGradingProvider.php` (interface):
+  - [x] `gradeEssay(string $essay, array $rubric, string $prompt): array`
+  - [x] `buildGradingPrompt(Assignment $assignment, string $essay): string`
+  - [x] `parseGradingResponse(string $responseText): array`
+  - [x] Lets calling code (job, tests) depend on the contract instead of a concrete provider class
+- [x] Create `app/Services/AiGrading/AbstractOpenAiCompatibleProvider.php` (abstract base):
+  - [x] Shared logic for providers exposing an OpenAI-compatible chat completions endpoint (Gemini, DeepSeek)
+  - [x] `gradeEssay()`:
+    - [x] Build prompt with rubric and essay
+    - [x] Call `{base_url}/chat/completions` via Laravel `Http` facade
+    - [x] Parse response JSON
+    - [x] Return structured result: `{ success: bool, score: float, feedback: array, raw_response?: string, error?: string }`
+  - [x] `buildGradingPrompt(Assignment $assignment, string $essay): string`
+    - [x] System prompt: "You are an expert essay grader..."
+    - [x] Include rubric criteria
+    - [x] Include essay to grade
+    - [x] Request JSON output format
+  - [x] `parseGradingResponse(string $responseText): array`
+    - [x] Extract JSON from response (handle markdown code blocks)
+    - [x] Validate structure: `{ score: float, feedback: { item: string, points: int } }`
+    - [x] Return parsed data or throw exception
   - [x] Error handling:
     - [x] Catch HTTP exceptions (401, 429, 500, timeout)
     - [x] Return structured error response
-    - [x] Log errors for debugging
+    - [x] Log errors for debugging (provider name included in log message)
   - [x] Timeout: 30 seconds max per request
+- [x] Create `app/Services/GeminiService.php` — extends the abstract provider, config from `services.gemini.*`
+- [x] Create `app/Services/DeepSeekService.php` — extends the abstract provider, config from `services.deepseek.*`
+- [x] Create `app/Services/AiGradingProviderFactory.php`:
+  - [x] `make(?string $provider = null): AiGradingProvider` — resolves `gemini`/`deepseek`, defaults to `config('services.ai_grading.provider')`
+  - [x] Throws `InvalidArgumentException` for unknown provider names
+- [x] Bind `AiGradingProvider::class` in `AppServiceProvider` to the factory-resolved active provider (so `app(AiGradingProvider::class)` always returns the currently configured one)
 - [x] Create `app/Dto/GradingRequest` (immutable DTO):
   - [x] Properties: submission_id, assignment_id, student_answer, rubric, max_score, school_id
   - [x] Use for passing grading context to job
@@ -56,31 +70,31 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 
 ## 3. Job Setup
 
-- [ ] Generate job: `php artisan make:job GradeSubmissionJob --no-interaction`
-  - [ ] Class: `app/Jobs/GradeSubmissionJob`
-  - [ ] Implement `Queueable`, `SerializesModels` (if needed for model references)
-  - [ ] Constructor: accept `GradingRequest $request` (or pass submission_id + data)
-  - [ ] `handle()` method:
-    - [ ] Set `CurrentSchool::setTenantId($submission->school_id)` for scoped queries
-    - [ ] Fetch Submission, Assignment, verify not already graded
-    - [ ] Update Submission: status='processing'
-    - [ ] Call `GeminiService->gradeEssay()`
-    - [ ] On success:
-      - [ ] Update Submission: status='graded', ai_score, ai_feedback, graded_at
-      - [ ] Log to audit trail
-    - [ ] On failure:
-      - [ ] Update Submission: status='failed', error_message, retry_count++
-      - [ ] If retry_count < MAX_RETRIES: re-dispatch job with retry delay
-      - [ ] Else: mark as failed permanently, log alert
-  - [ ] Exception handling:
-    - [ ] Catch Gemini API errors and application errors separately
-    - [ ] Never let exception crash the job without updating submission status
-    - [ ] Log full exception for debugging
-- [ ] Configure job middleware in `config/queue.php` or `config/foundation.php` (Laravel 13):
-  - [ ] Timeout: 45 seconds (5s buffer + 30s API call)
-  - [ ] Retry: 3 attempts, exponential backoff (1s, 5s, 15s delays)
-  - [ ] Timeout behavior: if job exceeds 45s, kill it and retry
-- [ ] Create job tests (see Testing section)
+- [x] Generate job: `php artisan make:job GradeSubmissionJob --no-interaction`
+  - [x] Class: `app/Jobs/GradeSubmissionJob`
+  - [x] Implement `Queueable`; constructor accepts `string $submissionId` (re-fetches fresh model in `handle()`, avoiding stale serialized state across retries)
+  - [x] Constructor: accepts `submissionId` (simpler than a full `GradingRequest` DTO — job re-fetches Submission/Assignment fresh each attempt)
+  - [x] `handle()` method:
+    - [x] Set `CurrentSchool::setSchoolId(...)` for scoped queries (note: tasklist referenced `setTenantId`, but the actual method on `App\Support\CurrentSchool` is `setSchoolId`; school id is resolved via `submission->assignment->lesson->module->course->school_id` since Submission/Assignment have no direct `school_id` column)
+    - [x] Fetch Submission with eager-loaded `assignment.lesson.module.course`; skip if missing or already terminal (graded/failed) — idempotent
+    - [x] Update Submission: status='processing'
+    - [x] Call `app(AiGradingProvider::class)->gradeEssay()` (resolves to the configured provider — Gemini or DeepSeek)
+    - [x] On success:
+      - [x] Update Submission: status='graded', ai_score, ai_feedback, graded_at
+      - [x] Log via `Log::info` (no dedicated audit trail infrastructure exists in this codebase yet)
+    - [x] On failure:
+      - [x] Update Submission: error_message, retry_count++, status back to 'pending' for retry visibility
+      - [x] Rethrow exception — Laravel's native `$tries`/`backoff()` queue retry mechanism re-dispatches automatically (idiomatic Laravel 13, avoids manual re-dispatch bookkeeping)
+      - [x] After max tries: `failed()` marks Submission status='failed' (final), logs critical alert
+  - [x] Exception handling:
+    - [x] Provider-level HTTP/parsing errors are already caught and returned as structured `{success: false, error}` by `AbstractOpenAiCompatibleProvider`; job throws `RuntimeException` on that structured failure so the queue's retry/backoff applies uniformly
+    - [x] Job's own catch block never lets an exception crash silently — always updates submission status/error_message first, then rethrows
+    - [x] Log full exception message for debugging (`Log::error` per attempt, `Log::critical` on final failure)
+- [x] Configure job middleware via job properties (simpler than `config/queue.php`/`config/foundation.php` since these are job-specific, not global):
+  - [x] `public $timeout = 45;`
+  - [x] `public $tries = 3;` + `backoff(): array { return [1, 5, 15]; }` — exponential backoff delays
+  - [x] Timeout behavior: default Laravel queue worker behavior kills/retries jobs exceeding `$timeout`
+- [x] Create job tests (see Testing section) — `tests/Feature/GradeSubmissionJobTest.php`, 6 tests: successful grading, tenant school id resolution, provider failure → retry_count/error_message, `failed()` → permanent failure, idempotency on already-graded submissions, graceful no-op on missing submission
 
 ## 4. Queue Configuration
 
@@ -197,30 +211,31 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 
 ## 9. Testing
 
-- [ ] Create `GradeSubmissionJobTest` (feature/unit):
-  - [ ] Mock Gemini API responses
-  - [ ] Test successful grading flow:
-    - [ ] Submission status: pending → processing → graded
-    - [ ] ai_score and ai_feedback populated
-    - [ ] graded_at timestamp set
-  - [ ] Test API error handling:
-    - [ ] API returns 500 → job retries
-    - [ ] API timeout → job retries
-    - [ ] After max retries → status=failed, error_message logged
-  - [ ] Test JSON parsing:
-    - [ ] Valid JSON response → parsed correctly
-    - [ ] Invalid JSON → graceful error, retry
-  - [ ] Test tenant scoping:
-    - [ ] Job uses CurrentSchool correctly
-    - [ ] No cross-tenant data leakage
-  - [ ] Test idempotency:
-    - [ ] Job can be retried safely (no duplicate updates)
-- [ ] Create `GeminiServiceTest` (unit):
-  - [ ] Mock HTTP client responses
-  - [ ] Test gradeEssay() with valid rubric
-  - [ ] Test parseGradingResponse() with various JSON structures
-  - [ ] Test error responses (401, 429, 500)
-  - [ ] Test timeout handling
+- [x] Create `GradeSubmissionJobTest` (feature) — `tests/Feature/GradeSubmissionJobTest.php`, 6 tests, mocks `AiGradingProvider` contract directly (provider-level JSON parsing/HTTP error mocking already covered by `GeminiServiceTest`/`DeepSeekServiceTest`):
+  - [x] Test successful grading flow:
+    - [x] Submission status → graded
+    - [x] ai_score and ai_feedback populated
+    - [x] graded_at timestamp set
+  - [x] Test provider error handling:
+    - [x] Provider returns `{success: false, error}` → job throws, retry_count incremented, error_message recorded
+    - [x] After max retries → `failed()` sets status=failed, error_message logged
+  - [x] Test tenant scoping:
+    - [x] Job resolves and sets `CurrentSchool` school id from submission's assignment→lesson→module→course chain
+  - [x] Test idempotency:
+    - [x] Already-graded submission is skipped, no re-grading, no duplicate updates
+    - [x] Missing submission id → graceful no-op
+- [x] Create `GeminiServiceTest` (unit) (`tests/Unit/Services/GeminiServiceTest.php`, 7 tests):
+  - [x] Mock HTTP client responses
+  - [x] Test gradeEssay() with valid rubric
+  - [x] Test parseGradingResponse() with various JSON structures (plain + markdown-wrapped)
+  - [x] Test error responses (401, 500, malformed JSON)
+  - [ ] Test timeout handling (deferred: not explicitly asserted with a simulated timeout)
+- [x] Create `DeepSeekServiceTest` (unit) (`tests/Unit/Services/DeepSeekServiceTest.php`, 7 tests, mirrors GeminiServiceTest)
+- [x] Create `AiGradingProviderFactoryTest` (unit) (`tests/Unit/Services/AiGradingProviderFactoryTest.php`, 4 tests):
+  - [x] Defaults to Gemini from config
+  - [x] Resolves DeepSeek from config
+  - [x] Explicit argument overrides config
+  - [x] Throws for unknown provider
 - [ ] Create `SubmissionControllerTest` (feature):
   - [ ] Student POSTs essay to /submissions
   - [ ] Job is dispatched to queue
@@ -240,7 +255,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 ## 10. Documentation & Verification
 
 - [ ] Create docs/AI_GRADING.md:
-  - [ ] Gemini API key setup
+  - [ ] Gemini + DeepSeek API key setup, and how to switch providers via `AI_GRADING_PROVIDER`
   - [ ] Grading prompt design and examples
   - [ ] Rubric JSON schema documentation
   - [ ] Error scenarios and retry behavior
@@ -264,6 +279,23 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 ---
 
 ## Resolved Decisions
+
+### AI Provider Abstraction
+**Decision:** `AiGradingProvider` interface + `AbstractOpenAiCompatibleProvider` shared base, with `GeminiService`/`DeepSeekService` as thin config-only subclasses, selected at runtime by `AiGradingProviderFactory` via `AI_GRADING_PROVIDER`.
+
+**Rationale:**
+- Gemini and DeepSeek both expose an OpenAI-compatible chat completions endpoint — request shape, JSON extraction (incl. markdown-fenced), error handling, and system prompt are identical; only `base_url`/`api_key`/`model` differ
+- Interface lets calling code (job, tests) depend on the contract, not a concrete provider — swapping providers is a config change, not a code change
+- Avoids duplicating ~150 lines of HTTP/parsing logic per provider (DRY); a fix or prompt change happens in one place
+- Matches this codebase's existing `PaymentGateway` contract + `PaymentGatewayFactory` pattern (Phase 2.0C)
+
+**Implementation:**
+- `app/Contracts/AiGradingProvider.php`
+- `app/Services/AiGrading/AbstractOpenAiCompatibleProvider.php`
+- `app/Services/GeminiService.php`, `app/Services/DeepSeekService.php`
+- `app/Services/AiGradingProviderFactory.php`
+- Bound in `AppServiceProvider`: `AiGradingProvider::class` → factory-resolved active provider
+- `config('services.ai_grading.provider')` / `AI_GRADING_PROVIDER` env var (default `gemini`)
 
 ### Queue Technology
 **Decision:** Redis + Laravel Queue (vs database, vs other).
@@ -293,7 +325,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 **Implementation:**
 - Validate rubric JSON schema in AssignmentFormRequest
 - Never interpolate essay directly into prompt string; use structured format (e.g., XML tags)
-- In GeminiService, validate parsed JSON response
+- In AbstractOpenAiCompatibleProvider (shared by GeminiService/DeepSeekService), validate parsed JSON response
 - Log suspicious inputs for security review
 
 ### Error Response Structure

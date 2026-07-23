@@ -86,12 +86,12 @@ class SubmissionRepository implements SubmissionRepositoryInterface
         $submission = Submission::findOrFail($id);
 
         $submission->update([
-            'status' => $data['status'] ?? $submission->status,
-            'ai_score' => $data['ai_score'] ?? $submission->ai_score,
-            'ai_feedback' => $data['ai_feedback'] ?? $submission->ai_feedback,
-            'graded_at' => $data['graded_at'] ?? $submission->graded_at,
-            'retry_count' => $data['retry_count'] ?? $submission->retry_count,
-            'error_message' => $data['error_message'] ?? $submission->error_message,
+            'status' => array_key_exists('status', $data) ? $data['status'] : $submission->status,
+            'ai_score' => array_key_exists('ai_score', $data) ? $data['ai_score'] : $submission->ai_score,
+            'ai_feedback' => array_key_exists('ai_feedback', $data) ? $data['ai_feedback'] : $submission->ai_feedback,
+            'graded_at' => array_key_exists('graded_at', $data) ? $data['graded_at'] : $submission->graded_at,
+            'retry_count' => array_key_exists('retry_count', $data) ? $data['retry_count'] : $submission->retry_count,
+            'error_message' => array_key_exists('error_message', $data) ? $data['error_message'] : $submission->error_message,
         ]);
 
         return $submission;

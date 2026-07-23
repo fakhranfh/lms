@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Contracts\AiGradingProvider;
 use App\Enums\TierFeature;
 use App\Http\Responses\CustomAuthenticatedSessionResponse;
 use App\Http\Responses\CustomVerifyEmailViewResponse;
@@ -44,6 +45,7 @@ use App\Repositories\User\UserRepository;
 use App\Repositories\User\UserRepositoryInterface;
 use App\Repositories\UserLesson\UserLessonRepository;
 use App\Repositories\UserLesson\UserLessonRepositoryInterface;
+use App\Services\AiGradingProviderFactory;
 use App\Services\AssignmentService;
 use App\Services\CourseService;
 use App\Services\CredentialEncryption;
@@ -123,6 +125,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(LessonCompletionService::class);
         $this->app->singleton(AssignmentService::class);
         $this->app->singleton(SubmissionService::class);
+        $this->app->singleton(AiGradingProviderFactory::class);
+        $this->app->bind(AiGradingProvider::class, fn ($app) => $app->make(AiGradingProviderFactory::class)->make());
     }
 
     /**

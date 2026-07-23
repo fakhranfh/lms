@@ -35,10 +35,21 @@ return [
         ],
     ],
 
+    'ai_grading' => [
+        'provider' => env('AI_GRADING_PROVIDER', 'gemini'),
+    ],
+
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
         'model' => env('GEMINI_MODEL', 'gemini-flash-latest'),
         'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta/openai'),
+        'timeout' => (int) env('AI_GRADING_TIMEOUT_SECONDS', 30),
+    ],
+
+    'deepseek' => [
+        'api_key' => env('DEEPSEEK_API_KEY'),
+        'model' => env('DEEPSEEK_MODEL', 'deepseek-chat'),
+        'base_url' => env('DEEPSEEK_BASE_URL', 'https://api.deepseek.com'),
         'timeout' => (int) env('AI_GRADING_TIMEOUT_SECONDS', 30),
     ],
 

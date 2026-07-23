@@ -1,7 +1,7 @@
 @section('title', $pageTitle)
 
 <div class="min-h-screen bg-background py-space-xl px-gutter">
-    <div class="max-w-3xl mx-auto">
+    <div class="w-full">
         <!-- Breadcrumb -->
         <div class="mb-space-lg">
             <nav class="flex items-center gap-space-sm text-body-sm text-on-surface-variant">

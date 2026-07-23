@@ -1,7 +1,20 @@
 @section('title', $pageTitle)
 
 <div class="min-h-screen bg-background py-space-xl px-gutter">
-    <div class="w-full max-w-3xl mx-auto space-y-space-lg">
+    <div class="w-full space-y-space-lg">
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-space-sm text-body-sm text-on-surface-variant">
+            <a href="{{ route('courses.index') }}" class="hover:text-on-surface transition">Courses</a>
+            <span>/</span>
+            <a href="{{ route('courses.show', $lesson->module->course) }}" class="hover:text-on-surface transition">{{ $lesson->module->course->title }}</a>
+            <span>/</span>
+            <a href="{{ route('courses.show', $lesson->module->course) }}" class="hover:text-on-surface transition">{{ $lesson->module->title }}</a>
+            <span>/</span>
+            <a href="{{ route('lessons.edit', $lesson) }}" class="hover:text-on-surface transition">{{ $lesson->title }}</a>
+            <span>/</span>
+            <span class="text-on-surface font-medium">{{ $pageTitle }}</span>
+        </nav>
+
         @if ($successMessage)
             <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
                 <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
@@ -16,9 +29,17 @@
             </div>
         @endif
 
-        <div>
-            <h1 class="font-headline-sm text-headline-sm text-on-surface">{{ $pageTitle }}</h1>
-            <p class="text-body-sm text-on-surface-variant mt-1">{{ $lesson->title }}</p>
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="font-headline-sm text-headline-sm text-on-surface">{{ $pageTitle }}</h1>
+                <p class="text-body-sm text-on-surface-variant mt-1">{{ $lesson->title }}</p>
+            </div>
+            <a
+                href="{{ route('lessons.edit', $lesson) }}"
+                class="px-space-md py-space-xs rounded-lg bg-outline-variant text-on-surface font-label-sm text-label-sm hover:bg-outline transition-colors flex-shrink-0"
+            >
+                Back to Lesson
+            </a>
         </div>
 
         <form wire:submit="save" class="space-y-space-lg">

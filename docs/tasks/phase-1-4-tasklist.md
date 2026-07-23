@@ -10,18 +10,18 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 
 ## 1. Environment & Configuration
 
-- [ ] Ensure Redis is running locally (or configured via `REDIS_URL`):
-  - [ ] Test: `redis-cli PING` → `PONG`
-- [ ] Update `.env`:
-  - [ ] `QUEUE_CONNECTION=redis`
-  - [ ] `REDIS_HOST=127.0.0.1`, `REDIS_PORT=6379` (or use `REDIS_URL`)
-  - [ ] `DEEPSEEK_API_KEY=sk-...` (from .env.example)
-  - [ ] `DEEPSEEK_MODEL=deepseek-chat` (or latest)
-  - [ ] `DEEPSEEK_BASE_URL=https://api.deepseek.com` (OpenAI-compatible endpoint)
-  - [ ] `AI_GRADING_ENABLED=true` (feature flag, default true)
-  - [ ] `AI_GRADING_MAX_RETRIES=3`
-  - [ ] `AI_GRADING_TIMEOUT_SECONDS=30`
-- [ ] Create `.env.example` entries for new vars
+- [x] Ensure Redis is running locally (or configured via `REDIS_URL`):
+  - [x] Test: `memurai-cli PING` → `PONG`
+- [x] Update `.env`:
+  - [x] `QUEUE_CONNECTION=redis`
+  - [x] `REDIS_HOST=127.0.0.1`, `REDIS_PORT=6379` (or use `REDIS_URL`)
+  - [x] `DEEPSEEK_API_KEY=sk-...` (from .env.example)
+  - [x] `DEEPSEEK_MODEL=deepseek-chat` (or latest)
+  - [x] `DEEPSEEK_BASE_URL=https://api.deepseek.com` (OpenAI-compatible endpoint)
+  - [x] `AI_GRADING_ENABLED=true` (feature flag, default true)
+  - [x] `AI_GRADING_MAX_RETRIES=3`
+  - [x] `AI_GRADING_TIMEOUT_SECONDS=30`
+- [x] Create `.env.example` entries for new vars
 
 ## 2. DeepSeek API Integration
 

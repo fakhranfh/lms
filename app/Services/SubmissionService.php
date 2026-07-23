@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Repositories\Assignment\AssignmentRepositoryInterface;
 use App\Repositories\Submission\SubmissionRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class SubmissionService
@@ -83,12 +84,20 @@ class SubmissionService
             ]);
         }
 
-        return $this->submissionRepository->create([
+        $submission = $this->submissionRepository->create([
             'assignment_id' => $assignment->id,
             'user_id' => $data['user_id'],
             'student_answer' => $data['student_answer'],
             'status' => SubmissionStatus::Pending,
         ]);
+
+        Log::info('SubmissionService: submission received', [
+            'submission_id' => $submission->id,
+            'assignment_id' => $assignment->id,
+            'status' => SubmissionStatus::Pending->value,
+        ]);
+
+        return $submission;
     }
 
     /**

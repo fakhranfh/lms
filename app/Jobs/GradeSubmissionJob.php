@@ -72,6 +72,12 @@ class GradeSubmissionJob implements ShouldQueue
 
         $submissions->update($submission->id, ['status' => SubmissionStatus::Processing]);
 
+        Log::info('GradeSubmissionJob: grading started', [
+            'submission_id' => $submission->id,
+            'assignment_id' => $assignment->id,
+            'attempt' => $this->attempts(),
+        ]);
+
         try {
             $prompt = $provider->buildGradingPrompt($assignment, $submission->student_answer);
             $result = $provider->gradeEssay($submission->student_answer, $assignment->rubricItems(), $prompt);

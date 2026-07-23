@@ -161,20 +161,20 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 
 ## 8. Monitoring & Observability
 
-- [ ] Create `GradingQueueMonitor` command:
-  - [ ] `php artisan grading:monitor` — show queue stats
-  - [ ] Display: pending submissions, processing count, failed count, avg grade time
-  - [ ] Run on cron for alerts (future)
-- [ ] Log all grading events:
-  - [ ] Submission received, status=pending
-  - [ ] Job started, status=processing
-  - [ ] Job succeeded, status=graded (with score)
-  - [ ] Job failed, status=failed (with error details)
-  - [ ] Job retry attempted (with attempt #)
-- [ ] Integrate with Horizon:
-  - [ ] Dashboard shows queue depth, throughput, failures
-  - [ ] Inspect individual job payloads and results
-  - [ ] Retry failed jobs manually from dashboard
+- [x] Create `GradingQueueMonitor` command (`app/Console/Commands/GradingQueueMonitor.php`):
+  - [x] `php artisan grading:monitor` — show queue stats
+  - [x] Display: pending submissions, processing count, graded count, failed count, avg grade time (avg `graded_at - submitted_at` across graded submissions, computed in PHP via Carbon rather than a DB-specific `TIMESTAMPDIFF` since this app targets pgsql, not MySQL)
+  - [ ] ~~Run on cron for alerts (future)~~ — deferred; no scheduler entry added, command is manual/on-demand for now
+- [x] Log all grading events:
+  - [x] Submission received, status=pending — `Log::info` in `SubmissionService::submit()` (single choke point for controller, retry, and `EssaySubmissionForm` Livewire component)
+  - [x] Job started, status=processing — `Log::info` in `GradeSubmissionJob::handle()` right after the status update
+  - [x] Job succeeded, status=graded (with score) — already logged (Section 3)
+  - [x] Job failed, status=failed (with error details) — already logged via `FailedJobHandler` (Section 7)
+  - [x] Job retry attempted (with attempt #) — already logged via `Log::error` with `attempt` key in `GradeSubmissionJob::handle()` catch block (Section 3)
+- [ ] ~~Integrate with Horizon~~ — **skipped**, Horizon is blocked on this Windows dev machine (see Section 4/7); `grading:monitor` and `grading:health` are the substitute until Horizon becomes available:
+  - [ ] ~~Dashboard shows queue depth, throughput, failures~~
+  - [ ] ~~Inspect individual job payloads and results~~
+  - [ ] ~~Retry failed jobs manually from dashboard~~
 
 ## 9. Testing
 

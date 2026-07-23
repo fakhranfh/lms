@@ -107,27 +107,12 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 
 ## 5. Prompting & Structured Output
 
-- [ ] Create `app/Prompts/EssayGradingPrompt.php` (or inline in GeminiService):
-  - [ ] System message: "You are an expert essay grader. Evaluate essays based on provided rubrics..."
-  - [ ] User message template with placeholders for rubric, essay, max_score
-  - [ ] Output format instruction (JSON schema):
-    ```json
-    {
-      "score": 85.5,
-      "feedback": [
-        {
-          "rubric_item": "Clarity",
-          "points_earned": 18,
-          "points_max": 20,
-          "comment": "Essay is well-structured and easy to follow..."
-        }
-      ],
-      "summary": "Overall strong essay...",
-      "suggestions": ["Consider adding more examples", "...]
-    }
-    ```
-  - [ ] Ensure prompt is deterministic (not random) for testing
-- [ ] Example prompt structure:
+- [x] Create `app/Prompts/EssayGradingPrompt.php` (or inline in GeminiService) — implemented inline in `app/Services/AiGrading/AbstractOpenAiCompatibleProvider.php` (shared by both providers, per the "or inline" alternative):
+  - [x] System message: "You are an expert essay grader. Evaluate the essay strictly according to the provided rubric..." (`systemPrompt()`)
+  - [x] User message template with placeholders for rubric, essay, max_score (`buildUserPrompt()`)
+  - [x] Output format instruction (JSON schema) — system prompt specifies `{score, feedback: [{rubric_item, points_earned, points_max, comment}], summary, suggestions}`; request sets `response_format: {type: json_object}`
+  - [x] Ensure prompt is deterministic (not random) for testing — `temperature: 0` on every request
+- [x] Example prompt structure — matches implementation: rubric/assignment_prompt/essay wrapped in `<rubric>`/`<assignment_prompt>`/`<essay>` XML tags (prompt-injection mitigation: essay content is treated as data, not instructions), followed by explicit "Respond in JSON format only" instruction
   ```
   System: You are an expert essay grader...
   

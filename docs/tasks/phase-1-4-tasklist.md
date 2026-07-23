@@ -1,6 +1,6 @@
 # Phase 1.4 — AI Integration: Task List
 
-**Goal:** Implement asynchronous Redis-based job queue for DeepSeek API essay grading, with retry policy and error handling.
+**Goal:** Implement asynchronous Redis-based job queue for Gemini API essay grading, with retry policy and error handling.
 
 **Dependency:** Phase 1.0 (Data Architecture), Phase 1.1 (RBAC), Phase 1.2 (Content Engine), Phase 1.3 (Assessment & State Machine) must be complete. Phase 2.0C (Payment Gateways) for reference (similar pattern).
 
@@ -15,44 +15,44 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 - [x] Update `.env`:
   - [x] `QUEUE_CONNECTION=redis`
   - [x] `REDIS_HOST=127.0.0.1`, `REDIS_PORT=6379` (or use `REDIS_URL`)
-  - [x] `DEEPSEEK_API_KEY=sk-...` (from .env.example)
-  - [x] `DEEPSEEK_MODEL=deepseek-chat` (or latest)
-  - [x] `DEEPSEEK_BASE_URL=https://api.deepseek.com` (OpenAI-compatible endpoint)
+  - [x] `GEMINI_API_KEY=AIza...` (from .env.example)
+  - [x] `GEMINI_MODEL=gemini-flash-latest` (or latest)
+  - [x] `GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai` (OpenAI-compatible endpoint)
   - [x] `AI_GRADING_ENABLED=true` (feature flag, default true)
   - [x] `AI_GRADING_MAX_RETRIES=3`
   - [x] `AI_GRADING_TIMEOUT_SECONDS=30`
 - [x] Create `.env.example` entries for new vars
 
-## 2. DeepSeek API Integration
+## 2. Gemini API Integration
 
-- [ ] Create `app/Services/DeepSeekService.php`:
-  - [ ] Wrapper around DeepSeek API (OpenAI-compatible HTTP client, e.g. Laravel `Http` facade)
-  - [ ] Methods:
-    - [ ] `gradeEssay(string $essay, array $rubric, string $prompt): array`
-      - [ ] Build prompt with rubric and essay
-      - [ ] Call DeepSeek Chat Completions API (deepseek-chat or later)
-      - [ ] Parse response JSON
-      - [ ] Return structured result: `{ success: bool, score: float, feedback: array, raw_response?: string, error?: string }`
-    - [ ] `buildGradingPrompt(Assignment $assignment, string $essay): string`
-      - [ ] System prompt: "You are an expert essay grader..."
-      - [ ] Include rubric criteria
-      - [ ] Include essay to grade
-      - [ ] Request JSON output format
-    - [ ] `parseGradingResponse(string $responseText): array`
-      - [ ] Extract JSON from response (handle markdown code blocks)
-      - [ ] Validate structure: `{ score: float, feedback: { item: string, points: int } }`
-      - [ ] Return parsed data or throw exception
-  - [ ] Error handling:
-    - [ ] Catch HTTP exceptions (401, 429, 500, timeout)
-    - [ ] Return structured error response
-    - [ ] Log errors for debugging
-  - [ ] Timeout: 30 seconds max per request
-- [ ] Create `app/Dto/GradingRequest` (immutable DTO):
-  - [ ] Properties: submission_id, assignment_id, student_answer, rubric, max_score, school_id
-  - [ ] Use for passing grading context to job
-- [ ] Create `app/Dto/GradingResponse`:
-  - [ ] Properties: success, score, feedback, error_message, retry_count, timestamp
-  - [ ] Serializable for storing in database
+- [x] Create `app/Services/GeminiService.php`:
+  - [x] Wrapper around Gemini API (OpenAI-compatible HTTP client, e.g. Laravel `Http` facade)
+  - [x] Methods:
+    - [x] `gradeEssay(string $essay, array $rubric, string $prompt): array`
+      - [x] Build prompt with rubric and essay
+      - [x] Call Gemini Chat Completions API (gemini-flash-latest or later)
+      - [x] Parse response JSON
+      - [x] Return structured result: `{ success: bool, score: float, feedback: array, raw_response?: string, error?: string }`
+    - [x] `buildGradingPrompt(Assignment $assignment, string $essay): string`
+      - [x] System prompt: "You are an expert essay grader..."
+      - [x] Include rubric criteria
+      - [x] Include essay to grade
+      - [x] Request JSON output format
+    - [x] `parseGradingResponse(string $responseText): array`
+      - [x] Extract JSON from response (handle markdown code blocks)
+      - [x] Validate structure: `{ score: float, feedback: { item: string, points: int } }`
+      - [x] Return parsed data or throw exception
+  - [x] Error handling:
+    - [x] Catch HTTP exceptions (401, 429, 500, timeout)
+    - [x] Return structured error response
+    - [x] Log errors for debugging
+  - [x] Timeout: 30 seconds max per request
+- [x] Create `app/Dto/GradingRequest` (immutable DTO):
+  - [x] Properties: submission_id, assignment_id, student_answer, rubric, max_score, school_id
+  - [x] Use for passing grading context to job
+- [x] Create `app/Dto/GradingResponse`:
+  - [x] Properties: success, score, feedback, error_message, retry_count, timestamp
+  - [x] Serializable for storing in database
 
 ## 3. Job Setup
 
@@ -64,7 +64,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
     - [ ] Set `CurrentSchool::setTenantId($submission->school_id)` for scoped queries
     - [ ] Fetch Submission, Assignment, verify not already graded
     - [ ] Update Submission: status='processing'
-    - [ ] Call `DeepSeekService->gradeEssay()`
+    - [ ] Call `GeminiService->gradeEssay()`
     - [ ] On success:
       - [ ] Update Submission: status='graded', ai_score, ai_feedback, graded_at
       - [ ] Log to audit trail
@@ -73,7 +73,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
       - [ ] If retry_count < MAX_RETRIES: re-dispatch job with retry delay
       - [ ] Else: mark as failed permanently, log alert
   - [ ] Exception handling:
-    - [ ] Catch DeepSeek API errors and application errors separately
+    - [ ] Catch Gemini API errors and application errors separately
     - [ ] Never let exception crash the job without updating submission status
     - [ ] Log full exception for debugging
 - [ ] Configure job middleware in `config/queue.php` or `config/foundation.php` (Laravel 13):
@@ -99,7 +99,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 
 ## 5. Prompting & Structured Output
 
-- [ ] Create `app/Prompts/EssayGradingPrompt.php` (or inline in DeepSeekService):
+- [ ] Create `app/Prompts/EssayGradingPrompt.php` (or inline in GeminiService):
   - [ ] System message: "You are an expert essay grader. Evaluate essays based on provided rubrics..."
   - [ ] User message template with placeholders for rubric, essay, max_score
   - [ ] Output format instruction (JSON schema):
@@ -198,7 +198,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 ## 9. Testing
 
 - [ ] Create `GradeSubmissionJobTest` (feature/unit):
-  - [ ] Mock DeepSeek API responses
+  - [ ] Mock Gemini API responses
   - [ ] Test successful grading flow:
     - [ ] Submission status: pending → processing → graded
     - [ ] ai_score and ai_feedback populated
@@ -215,7 +215,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
     - [ ] No cross-tenant data leakage
   - [ ] Test idempotency:
     - [ ] Job can be retried safely (no duplicate updates)
-- [ ] Create `DeepSeekServiceTest` (unit):
+- [ ] Create `GeminiServiceTest` (unit):
   - [ ] Mock HTTP client responses
   - [ ] Test gradeEssay() with valid rubric
   - [ ] Test parseGradingResponse() with various JSON structures
@@ -240,7 +240,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 ## 10. Documentation & Verification
 
 - [ ] Create docs/AI_GRADING.md:
-  - [ ] DeepSeek API key setup
+  - [ ] Gemini API key setup
   - [ ] Grading prompt design and examples
   - [ ] Rubric JSON schema documentation
   - [ ] Error scenarios and retry behavior
@@ -293,7 +293,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 **Implementation:**
 - Validate rubric JSON schema in AssignmentFormRequest
 - Never interpolate essay directly into prompt string; use structured format (e.g., XML tags)
-- In DeepSeekService, validate parsed JSON response
+- In GeminiService, validate parsed JSON response
 - Log suspicious inputs for security review
 
 ### Error Response Structure
@@ -306,7 +306,7 @@ Reference: [PRD.md](../PRD.md) — Section 8 (Core System Flow: AI Assessment Pi
 
 **Implementation:**
 - GradingResponse DTO with success flag, error fields
-- On API error: `{ success: false, error_message: "DeepSeek API timeout", retry_count: 1 }`
+- On API error: `{ success: false, error_message: "Gemini API timeout", retry_count: 1 }`
 - Store error in Submission.error_message for user visibility
 - Log full exception separately for internal debugging
 

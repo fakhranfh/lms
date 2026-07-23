@@ -37,7 +37,7 @@ Reference: [PRD.md](../PRD.md) — Section 5 (US1, US3, US4), Section 8 (Core Sy
     - [x] `submitted_at` (TIMESTAMP, not null, default NOW) — submission timestamp
     - [x] `graded_at` (TIMESTAMP, nullable) — when AI/instructor finished grading
     - [x] `retry_count` (UNSIGNED INT, default 0) — how many times job has retried
-    - [x] `error_message` (TEXT, nullable) — if status='failed', error details (from Anthropic API)
+    - [x] `error_message` (TEXT, nullable) — if status='failed', error details (from Gemini API)
     - [x] timestamps
     - [x] **Unique constraint:** `(assignment_id, user_id)` if `allow_multiple_submissions = false` — enforced at the application layer (`SubmissionFormRequest`/`SubmissionService`), not as a DB constraint, since it's conditional
     - [x] **Index:** `(assignment_id, status)` for filtering by status

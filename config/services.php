@@ -35,6 +35,13 @@ return [
         ],
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-flash-latest'),
+        'base_url' => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta/openai'),
+        'timeout' => (int) env('AI_GRADING_TIMEOUT_SECONDS', 30),
+    ],
+
     'r2' => [
         'account_id' => env('CLOUDFLARE_R2_ACCOUNT_ID'),
         'access_key_id' => env('CLOUDFLARE_R2_ACCESS_KEY_ID'),

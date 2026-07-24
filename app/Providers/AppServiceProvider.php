@@ -22,6 +22,8 @@ use App\Repositories\Auth\AuthRepository;
 use App\Repositories\Auth\AuthRepositoryInterface;
 use App\Repositories\Course\CourseRepository;
 use App\Repositories\Course\CourseRepositoryInterface;
+use App\Repositories\DemoLmsAccess\DemoLmsAccessRepository;
+use App\Repositories\DemoLmsAccess\DemoLmsAccessRepositoryInterface;
 use App\Repositories\Lesson\LessonRepository;
 use App\Repositories\Lesson\LessonRepositoryInterface;
 use App\Repositories\LessonMaterial\LessonMaterialRepository;
@@ -104,6 +106,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UserLessonRepositoryInterface::class, UserLessonRepository::class);
         $this->app->bind(AssignmentRepositoryInterface::class, AssignmentRepository::class);
         $this->app->bind(SubmissionRepositoryInterface::class, SubmissionRepository::class);
+        $this->app->bind(DemoLmsAccessRepositoryInterface::class, DemoLmsAccessRepository::class);
 
         $this->app->singleton(CurrentSchool::class);
 

@@ -31,9 +31,11 @@
                             Dashboard
                         </a>
                     @else
-                        <a href="{{ route('login') }}" class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors">
-                            Log in
-                        </a>
+                        @if (Route::has('try-demo'))
+                            <a href="{{ route('try-demo') }}" class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors">
+                                Try Demo
+                            </a>
+                        @endif
 
                         @if (Route::has('register'))
                             <a href="{{ route('register') }}" class="flex h-9 items-center rounded bg-primary px-space-md font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
@@ -69,10 +71,12 @@
                         <a href="{{ route('register') }}" class="flex h-11 items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
                             Start your school &rarr;
                         </a>
-                        <a href="{{ route('login') }}" class="group inline-flex items-center gap-space-xs font-label-md text-label-md text-on-surface hover:text-primary transition-colors">
-                            Already have an account?
-                            <span class="transition-transform group-hover:translate-x-0.5" aria-hidden="true">&rarr;</span>
-                        </a>
+                        @if (Route::has('try-demo'))
+                            <a href="{{ route('try-demo') }}" class="group inline-flex items-center gap-space-xs font-label-md text-label-md text-on-surface hover:text-primary transition-colors">
+                                Try Demo
+                                <span class="transition-transform group-hover:translate-x-0.5" aria-hidden="true">&rarr;</span>
+                            </a>
+                        @endif
                     @endauth
                 </div>
 

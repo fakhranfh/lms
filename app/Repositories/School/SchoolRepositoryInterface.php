@@ -27,6 +27,11 @@ interface SchoolRepositoryInterface
     public function find(string $id): ?School;
 
     /**
+     * Find a school by its domain.
+     */
+    public function findByDomain(string $domain): ?School;
+
+    /**
      * Find a school by ID with eager-loaded relationships.
      *
      * @param  array<string>  $with

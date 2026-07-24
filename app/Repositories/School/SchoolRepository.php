@@ -52,6 +52,11 @@ class SchoolRepository implements SchoolRepositoryInterface
         return School::find($id);
     }
 
+    public function findByDomain(string $domain): ?School
+    {
+        return School::where('domain', $domain)->first();
+    }
+
     /**
      * @param  array<string>  $with
      */

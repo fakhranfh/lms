@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\TryDemoController;
 use App\Livewire\SchoolRegister;
 use App\Services\PricingTierService;
 use Illuminate\Support\Facades\Route;
@@ -17,4 +18,9 @@ Route::domain(config('app.domain'))->group(function () {
     })->name('pricing');
 
     Route::get('/register-school', SchoolRegister::class)->name('schools.register');
+
+    Route::get('/try-demo', [TryDemoController::class, 'index'])->name('try-demo');
+    Route::get('/try-demo/{role}', [TryDemoController::class, 'login'])
+        ->whereIn('role', ['instructor', 'student'])
+        ->name('try-demo.login');
 });

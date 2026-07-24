@@ -74,6 +74,5 @@ test('admin login is only reachable on the admin subdomain', function () {
     $adminResponse->assertViewIs('auth.admin-login');
 
     $rootResponse = $this->get("http://{$rootDomain}/login");
-    $rootResponse->assertOk();
-    expect($rootResponse->original->name())->not->toBe('auth.admin-login');
+    $rootResponse->assertRedirect(route('try-demo'));
 });

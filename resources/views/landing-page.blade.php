@@ -37,8 +37,8 @@
                             </a>
                         @endif
 
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="flex h-9 items-center rounded bg-primary px-space-md font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
+                        @if (Route::has('schools.register'))
+                            <a href="{{ route('schools.register') }}" class="flex h-9 items-center rounded bg-primary px-space-md font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
                                 Get Started
                             </a>
                         @endif
@@ -68,7 +68,7 @@
                             Go to Dashboard
                         </a>
                     @else
-                        <a href="{{ route('register') }}" class="flex h-11 items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
+                        <a href="{{ route('schools.register') }}" class="flex h-11 items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
                             Start your school &rarr;
                         </a>
                         @if (Route::has('try-demo'))

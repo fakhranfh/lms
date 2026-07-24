@@ -1,10 +1,17 @@
 <?php
 
+use App\Models\School;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 
-test('login page can be rendered', function () {
-    $this->get('/login')->assertSuccessful();
+test('login page redirects to try demo on the root domain', function () {
+    $this->get('/login')->assertRedirect(route('try-demo'));
+});
+
+test('login page can be rendered on a school subdomain', function () {
+    $school = School::factory()->create(['domain' => 'myschool.'.config('app.domain')]);
+
+    $this->get("http://{$school->domain}/login")->assertSuccessful();
 });
 
 test('user can login with valid credentials', function () {

@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\EditProfile;
+use App\Models\School;
 use App\Models\User;
 use Illuminate\Support\Env;
 use Illuminate\Support\Facades\Mail;
@@ -14,7 +15,9 @@ test('forgot password and email verification routes are registered by default', 
 });
 
 test('login page shows the forgot password link by default', function () {
-    $this->get('/login')->assertSee('Forgot Password?');
+    $school = School::factory()->create(['domain' => 'myschool.'.config('app.domain')]);
+
+    $this->get("http://{$school->domain}/login")->assertSee('Forgot Password?');
 });
 
 describe('when FEATURE_EMAIL_ENABLED is false', function () {
@@ -56,7 +59,9 @@ describe('when FEATURE_EMAIL_ENABLED is false', function () {
     });
 
     test('login page hides the forgot password link', function () {
-        $this->get('/login')->assertDontSee('Forgot Password?');
+        $school = School::factory()->create(['domain' => 'myschool.'.config('app.domain')]);
+
+        $this->get("http://{$school->domain}/login")->assertDontSee('Forgot Password?');
     });
 
     test('unverified user is not blocked by the verified middleware', function () {

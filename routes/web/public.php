@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Route;
 Route::domain(config('app.domain'))->group(function () {
     Route::view('/', 'landing-page')->name('home');
 
+    Route::view('/features', 'features')->name('features');
+
     Route::get('/pricing', function (PricingTierService $pricingTierService) {
         return view('pricing', [
             'tiers' => $pricingTierService->get(['is_active' => true], ['limits']),

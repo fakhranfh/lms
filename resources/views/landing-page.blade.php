@@ -16,6 +16,11 @@
 
             @if (Route::has('login'))
                 <div class="flex items-center gap-space-lg">
+                    @if (Route::has('features'))
+                        <a href="{{ route('features') }}" class="hidden font-label-md text-label-md text-secondary hover:text-on-surface transition-colors sm:inline">
+                            Features
+                        </a>
+                    @endif
                     @if (Route::has('pricing'))
                         <a href="{{ route('pricing') }}" class="hidden font-label-md text-label-md text-secondary hover:text-on-surface transition-colors sm:inline">
                             Pricing

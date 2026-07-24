@@ -61,6 +61,26 @@ return [
         'active_pattern' => 'admin.demo-credentials',
     ],
     [
+        'label' => 'Audit Logs',
+        'route' => 'admin.audit-logs.index',
+        'icon' => 'history',
+        'active_pattern' => 'admin.audit-logs.*',
+    ],
+    [
+        'label' => 'Horizon',
+        'url' => '/horizon',
+        'route' => 'admin.dashboard',
+        'icon' => 'speed',
+        'active_pattern' => 'never-matches',
+    ],
+    [
+        'label' => 'Pulse',
+        'url' => '/pulse',
+        'route' => 'admin.dashboard',
+        'icon' => 'monitoring',
+        'active_pattern' => 'never-matches',
+    ],
+    [
         'label' => 'Settings',
         'route' => 'admin.settings',
         'icon' => 'settings',

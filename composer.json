@@ -13,6 +13,8 @@
         "aws/aws-sdk-php": "^3.388",
         "laravel/fortify": "^1.37",
         "laravel/framework": "^13.8",
+        "laravel/horizon": "^5.48",
+        "laravel/pulse": "^1.7",
         "laravel/tinker": "^3.0",
         "livewire/livewire": "*",
         "spatie/laravel-permission": "^8.3"

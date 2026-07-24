@@ -12,7 +12,7 @@
                 @forelse ($sidebarConfig as $item)
                     @continue(($item['requires_permission'] ?? null) && ! auth()->user()->can($item['requires_permission']))
                     <li>
-                        <a href="{{ route($item['route']) }}" class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-black hover:bg-primary/10 transition-colors duration-150 {{ request()->routeIs($item['active_pattern']) ? 'bg-primary/20 text-primary' : 'hover:text-on-surface' }}">
+                        <a href="{{ $item['url'] ?? route($item['route']) }}" class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-black hover:bg-primary/10 transition-colors duration-150 {{ request()->routeIs($item['active_pattern']) ? 'bg-primary/20 text-primary' : 'hover:text-on-surface' }}">
                             <span class="material-symbols-outlined text-[24px]">{{ $item['icon'] }}</span>
                             <span class="font-body-md text-body-md">{{ $item['label'] }}</span>
                         </a>

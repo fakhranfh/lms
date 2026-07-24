@@ -10,6 +10,8 @@ test('handle marks submission as permanently failed and logs a critical alert', 
         return str_contains($message, 'permanently failed')
             && $context['error'] === 'Gemini API timeout';
     });
+    Log::shouldReceive('channel')->with('audit')->andReturnSelf();
+    Log::shouldReceive('info');
 
     $submission = Submission::factory()->create([
         'status' => SubmissionStatus::Processing,
@@ -26,6 +28,8 @@ test('handle marks submission as permanently failed and logs a critical alert', 
 
 test('handle falls back to a default message when no exception is given', function () {
     Log::shouldReceive('critical')->once();
+    Log::shouldReceive('channel')->with('audit')->andReturnSelf();
+    Log::shouldReceive('info');
 
     $submission = Submission::factory()->create(['status' => SubmissionStatus::Processing]);
 

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Contracts\AiGradingProvider;
+use App\Enums\RoleName;
 use App\Enums\TierFeature;
 use App\Http\Responses\CustomAuthenticatedSessionResponse;
 use App\Http\Responses\CustomVerifyEmailViewResponse;
@@ -141,6 +142,8 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('permission', fn (User $user, string $permission) => $user->hasPermissionTo($permission));
         Gate::define('role', fn (User $user, string $role) => $user->hasRole($role));
+
+        Gate::define('viewPulse', fn (User $user) => $user->hasRole(RoleName::Admin));
 
         $this->registerFeatureGates();
 

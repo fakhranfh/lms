@@ -2,43 +2,45 @@
 
 @section('title', 'Try Demo')
 
-@section('body_class', 'bg-background text-on-background min-h-screen flex items-center justify-center p-gutter font-body-md')
+@section('body_class', 'bg-background text-on-background min-h-screen flex flex-col font-body-md')
 
 @section('content')
-    <div class="w-full max-w-[420px] bg-surface rounded-xl p-space-xl border border-outline-variant shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        <div class="text-center mb-space-xl">
-            <h2 class="font-headline-md text-headline-md text-on-surface mb-space-xxs">Try the demo</h2>
-            <p class="font-body-md text-body-md text-secondary">Explore the LMS instantly with a pre-loaded demo course. No account needed.</p>
-        </div>
 
-        <div class="space-y-space-md">
-            <a href="{{ route('try-demo.login', ['role' => 'instructor']) }}" class="flex items-center justify-between h-[56px] px-space-md rounded-lg border border-outline-variant bg-surface-container-lowest hover:border-primary hover:ring-1 hover:ring-primary transition-colors group">
-                <span class="flex items-center gap-space-md">
-                    <span class="material-symbols-outlined text-primary text-[24px]">school</span>
-                    <span class="text-left">
-                        <span class="block font-label-md text-label-md text-on-surface">Login as Instructor</span>
-                        <span class="block font-body-sm text-body-sm text-secondary">Build courses, grade assignments</span>
+    @include('partials.topbar')
+
+    <main class="flex flex-1 items-center justify-center p-gutter">
+        <div class="w-full max-w-[420px] bg-surface rounded-xl p-space-xl border border-outline-variant shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <div class="text-center mb-space-xl">
+                <h2 class="font-headline-md text-headline-md text-on-surface mb-space-xxs">Try the demo</h2>
+                <p class="font-body-md text-body-md text-secondary">Explore the LMS instantly with a pre-loaded demo course. No account needed.</p>
+            </div>
+
+            <div class="space-y-space-md">
+                <a href="{{ route('try-demo.login', ['role' => 'instructor']) }}" class="flex items-center justify-between h-[56px] px-space-md rounded-lg border border-outline-variant bg-surface-container-lowest hover:border-primary hover:ring-1 hover:ring-primary transition-colors group">
+                    <span class="flex items-center gap-space-md">
+                        <span class="material-symbols-outlined text-primary text-[24px]">school</span>
+                        <span class="text-left">
+                            <span class="block font-label-md text-label-md text-on-surface">Login as Instructor</span>
+                            <span class="block font-body-sm text-body-sm text-secondary">Build courses, grade assignments</span>
+                        </span>
                     </span>
-                </span>
-                <span class="material-symbols-outlined text-secondary/60 text-[20px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
-            </a>
+                    <span class="material-symbols-outlined text-secondary/60 text-[20px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                </a>
 
-            <a href="{{ route('try-demo.login', ['role' => 'student']) }}" class="flex items-center justify-between h-[56px] px-space-md rounded-lg border border-outline-variant bg-surface-container-lowest hover:border-primary hover:ring-1 hover:ring-primary transition-colors group">
-                <span class="flex items-center gap-space-md">
-                    <span class="material-symbols-outlined text-primary text-[24px]">person</span>
-                    <span class="text-left">
-                        <span class="block font-label-md text-label-md text-on-surface">Login as Student</span>
-                        <span class="block font-body-sm text-body-sm text-secondary">Take courses, submit work</span>
+                <a href="{{ route('try-demo.login', ['role' => 'student']) }}" class="flex items-center justify-between h-[56px] px-space-md rounded-lg border border-outline-variant bg-surface-container-lowest hover:border-primary hover:ring-1 hover:ring-primary transition-colors group">
+                    <span class="flex items-center gap-space-md">
+                        <span class="material-symbols-outlined text-primary text-[24px]">person</span>
+                        <span class="text-left">
+                            <span class="block font-label-md text-label-md text-on-surface">Login as Student</span>
+                            <span class="block font-body-sm text-body-sm text-secondary">Take courses, submit work</span>
+                        </span>
                     </span>
-                </span>
-                <span class="material-symbols-outlined text-secondary/60 text-[20px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
-            </a>
+                    <span class="material-symbols-outlined text-secondary/60 text-[20px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                </a>
+            </div>
         </div>
+    </main>
 
-        <div class="text-center mt-space-xl">
-            <a href="{{ route('home') }}" class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors">
-                &larr; Back to home
-            </a>
-        </div>
-    </div>
+    @include('partials.footer')
+
 @endsection

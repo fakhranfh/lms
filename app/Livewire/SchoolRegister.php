@@ -112,7 +112,7 @@ class SchoolRegister extends Component
     public function render()
     {
         return view('livewire.school-register')
-            ->extends('master', ['body_class' => 'bg-background text-on-background min-h-screen flex items-center justify-center p-gutter font-body-md'])
+            ->extends('master', ['body_class' => 'bg-background text-on-background min-h-screen flex flex-col font-body-md'])
             ->section('content');
     }
 }

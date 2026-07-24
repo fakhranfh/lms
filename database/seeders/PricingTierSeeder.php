@@ -13,10 +13,10 @@ class PricingTierSeeder extends Seeder
      */
     public function run(): void
     {
-        $freeTier = PricingTier::updateOrCreate(
-            ['slug' => 'free'],
+        $basicTier = PricingTier::updateOrCreate(
+            ['slug' => 'basic'],
             [
-                'name' => 'Free',
+                'name' => 'Basic',
                 'description' => 'Free tier for getting started',
                 'price' => 0,
                 'currency' => 'IDR',
@@ -25,8 +25,8 @@ class PricingTierSeeder extends Seeder
             ]
         );
 
-        $freeTier->limits()->delete();
-        $freeTier->limits()->create([
+        $basicTier->limits()->delete();
+        $basicTier->limits()->create([
             'limit_key' => 'material_storage_gb',
             'limit_value' => 1,
         ]);
@@ -85,7 +85,7 @@ class PricingTierSeeder extends Seeder
             'limit_value' => null, // Unlimited
         ]);
 
-        School::query()->update(['tier_id' => $freeTier->id]);
-        PricingTier::whereNotIn('id', [$freeTier->id, $plusTier->id, $proTier->id, $maxTier->id])->delete();
+        School::query()->update(['tier_id' => $basicTier->id]);
+        PricingTier::whereNotIn('id', [$basicTier->id, $plusTier->id, $proTier->id, $maxTier->id])->delete();
     }
 }

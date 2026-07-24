@@ -55,7 +55,7 @@ describe('FeatureGateService::can()', function () {
 
     it('handles different tier feature combinations', function () {
         $featureGate = app(FeatureGateService::class);
-        $freeTier = PricingTier::where('slug', 'free')->first();
+        $freeTier = PricingTier::where('slug', 'basic')->first();
         $school = School::factory()->withTier($freeTier)->create();
 
         $liveSessionFeatureEnabled = $featureGate->can($school, TierFeature::LiveSession);
@@ -105,7 +105,7 @@ describe('FeatureGateService::limit()', function () {
 
     it('returns different limits for different tiers', function () {
         $featureGate = app(FeatureGateService::class);
-        $freeTier = PricingTier::where('slug', 'free')->first();
+        $freeTier = PricingTier::where('slug', 'basic')->first();
         $plusTier = PricingTier::where('slug', 'plus')->first();
 
         $freeSchool = School::factory()->withTier($freeTier)->create();
@@ -131,7 +131,7 @@ describe('FeatureGateService::requireFeature()', function () {
 
     it('does not throw exception for any feature', function () {
         $featureGate = app(FeatureGateService::class);
-        $freeTier = PricingTier::where('slug', 'free')->first();
+        $freeTier = PricingTier::where('slug', 'basic')->first();
         $school = School::factory()->withTier($freeTier)->create();
 
         $featureGate->requireFeature($school, TierFeature::LiveSession);
@@ -141,7 +141,7 @@ describe('FeatureGateService::requireFeature()', function () {
 
     it('works with users', function () {
         $featureGate = app(FeatureGateService::class);
-        $freeTier = PricingTier::where('slug', 'free')->first();
+        $freeTier = PricingTier::where('slug', 'basic')->first();
         $school = School::factory()->withTier($freeTier)->create();
         $user = User::factory()->for($school)->create();
 
@@ -233,7 +233,7 @@ describe('Authorization Gates', function () {
     });
 
     it('denies feature access via gate when not available', function () {
-        $freeTier = PricingTier::where('slug', 'free')->first();
+        $freeTier = PricingTier::where('slug', 'basic')->first();
         $school = School::factory()->withTier($freeTier)->create();
         $user = User::factory()->for($school)->create();
 

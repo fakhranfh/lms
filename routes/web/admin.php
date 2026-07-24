@@ -23,6 +23,10 @@ use Illuminate\Support\Facades\Route;
 
 // Admin panel (admin.lms.local): admin-only, school_id must be null.
 Route::domain('admin.'.config('app.domain'))->group(function () {
+    Route::get('/', function () {
+        return redirect()->route(Auth::check() ? 'admin.dashboard' : 'admin.login');
+    })->name('admin.home');
+
     Route::middleware('guest')->group(function () {
         Route::get('/login', function () {
             return view('auth.admin-login');

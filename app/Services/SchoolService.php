@@ -58,7 +58,7 @@ class SchoolService
      */
     public function create(array $data): School
     {
-        $basicTier = PricingTier::where('slug', 'free')->firstOrFail();
+        $basicTier = PricingTier::where('slug', 'basic')->firstOrFail();
 
         $data['tier_id'] = $basicTier->id;
         $school = $this->schoolRepository->create($data);

@@ -22,12 +22,12 @@ class SchoolFactory extends Factory
      */
     public function definition(): array
     {
-        // Get or create the free tier
-        $freeTier = PricingTier::where('slug', 'free')->first();
-        if (! $freeTier) {
-            $freeTier = PricingTier::create([
-                'name' => 'Free',
-                'slug' => 'free',
+        // Get or create the basic tier
+        $basicTier = PricingTier::where('slug', 'basic')->first();
+        if (! $basicTier) {
+            $basicTier = PricingTier::create([
+                'name' => 'Basic',
+                'slug' => 'basic',
                 'description' => 'Free tier for getting started',
                 'price' => 0,
                 'currency' => 'IDR',
@@ -39,7 +39,7 @@ class SchoolFactory extends Factory
         return [
             'name' => fake()->company(),
             'domain' => 'school-'.str()->uuid().'.test',
-            'tier_id' => $freeTier->id,
+            'tier_id' => $basicTier->id,
         ];
     }
 

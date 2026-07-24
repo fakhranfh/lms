@@ -12,13 +12,13 @@ describe('School Tier Assignment', function () {
         $this->seed('PricingTierSeeder');
     });
 
-    test('new school gets default free tier', function () {
+    test('new school gets default basic tier', function () {
         $school = School::factory()->create();
 
-        $basicTier = PricingTier::where('slug', 'free')->first();
+        $basicTier = PricingTier::where('slug', 'basic')->first();
 
         expect($school->tier_id)->toBe($basicTier->id);
-        expect($school->tier->slug)->toBe('free');
+        expect($school->tier->slug)->toBe('basic');
     });
 
     test('school tier subscription is created on school creation', function () {
@@ -46,7 +46,7 @@ describe('School Tier Assignment', function () {
 
     test('school can access current tier via relationship', function () {
         $school = School::factory()->create();
-        $basicTier = PricingTier::where('slug', 'free')->first();
+        $basicTier = PricingTier::where('slug', 'basic')->first();
 
         expect($school->tier)->toBeInstanceOf(PricingTier::class);
         expect($school->tier->id)->toBe($basicTier->id);

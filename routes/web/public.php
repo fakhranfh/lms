@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\SchoolController;
+use App\Livewire\SchoolRegister;
 use App\Services\PricingTierService;
 use Illuminate\Support\Facades\Route;
 
@@ -16,9 +16,5 @@ Route::domain(config('app.domain'))->group(function () {
         ]);
     })->name('pricing');
 
-    Route::get('/register-school', function () {
-        return view('schools.register');
-    })->name('schools.register');
-
-    Route::post('/register-school', [SchoolController::class, 'store'])->name('schools.store');
+    Route::get('/register-school', SchoolRegister::class)->name('schools.register');
 });

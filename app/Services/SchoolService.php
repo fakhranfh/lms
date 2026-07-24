@@ -2,17 +2,22 @@
 
 namespace App\Services;
 
-use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\SchoolTier;
 use App\Models\TierChange;
+use App\Repositories\PricingTier\PricingTierRepositoryInterface;
 use App\Repositories\School\SchoolRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class SchoolService
 {
-    public function __construct(protected SchoolRepositoryInterface $schoolRepository) {}
+    public function __construct(
+        protected SchoolRepositoryInterface $schoolRepository,
+        protected PricingTierRepositoryInterface $pricingTierRepository,
+        protected R2StorageService $r2Storage,
+    ) {}
 
     /**
      * Get paginated schools with filters.
@@ -58,9 +63,15 @@ class SchoolService
      */
     public function create(array $data): School
     {
-        $basicTier = PricingTier::where('slug', 'basic')->firstOrFail();
+        $basicTier = $this->pricingTierRepository->get(['slug' => 'basic'])->firstOrFail();
 
         $data['tier_id'] = $basicTier->id;
+
+        if (($data['logo'] ?? null) instanceof UploadedFile) {
+            $data['logo_path'] = $this->r2Storage->uploadPublicFile($data['logo'], 'school-logos');
+        }
+        unset($data['logo']);
+
         $school = $this->schoolRepository->create($data);
         $this->assignDefaultTier($school);
 

@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'domain', 'tier_id'])]
+#[Fillable(['name', 'domain', 'tier_id', 'logo_path'])]
 class School extends Model
 {
     /** @use HasFactory<SchoolFactory> */

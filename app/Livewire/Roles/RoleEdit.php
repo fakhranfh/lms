@@ -49,7 +49,7 @@ class RoleEdit extends Component
 
         $validated = $this->validate();
 
-        if ($this->role->name === RoleName::Admin->value) {
+        if (in_array($this->role->name, [RoleName::Admin->value, RoleName::SchoolAdmin->value], true)) {
             $validated['name'] = $this->role->name;
         }
 

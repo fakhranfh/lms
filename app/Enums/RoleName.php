@@ -5,6 +5,7 @@ namespace App\Enums;
 enum RoleName: string
 {
     case Admin = 'Admin';
+    case SchoolAdmin = 'School Admin';
     case Instructor = 'Instructor';
     case Student = 'Student';
 
@@ -12,6 +13,7 @@ enum RoleName: string
     {
         return match ($this) {
             self::Admin => 'Admin',
+            self::SchoolAdmin => 'School Admin',
             self::Instructor => 'Instructor',
             self::Student => 'Student',
         };
@@ -21,6 +23,7 @@ enum RoleName: string
     {
         return match ($this) {
             self::Admin => 'admin',
+            self::SchoolAdmin => 'school-admin',
             self::Instructor => 'instructor',
             self::Student => 'student',
         };
@@ -35,6 +38,7 @@ enum RoleName: string
     {
         return match ($this) {
             self::Admin => [], // resolved by the seeder as "all permissions except settings.billing"
+            self::SchoolAdmin => [], // resolved by the seeder as "all permissions except settings.billing", scoped to the school
             self::Instructor => [
                 'courses.create', 'courses.view', 'courses.edit', 'courses.delete',
                 'modules.create', 'modules.view', 'modules.edit', 'modules.delete',

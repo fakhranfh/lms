@@ -31,9 +31,15 @@ class DemoLmsAccessService
      */
     public function createDemoUser(School $school, string $roleType = 'instructor'): User
     {
-        $suffix = $roleType === 'student' ? '-student' : '';
+        $roleName = match ($roleType) {
+            'student' => RoleName::Student,
+            'school-admin' => RoleName::SchoolAdmin,
+            default => RoleName::Instructor,
+        };
+
+        $suffix = '-'.$roleType;
         $email = 'demo'.$suffix.'-'.$school->id.'@demo.'.$school->domain;
-        $name = $roleType === 'student' ? 'Demo Student' : 'Demo Instructor';
+        $name = 'Demo '.$roleName->label();
 
         $user = User::firstOrCreate(
             ['email' => $email],
@@ -46,8 +52,6 @@ class DemoLmsAccessService
         );
 
         if (! $user->roles()->exists()) {
-            $roleName = $roleType === 'student' ? RoleName::Student : RoleName::Instructor;
-
             $role = Role::where('school_id', $school->id)
                 ->where('name', $roleName->value)
                 ->firstOrCreate(
@@ -57,13 +61,12 @@ class DemoLmsAccessService
 
             // Sync permissions based on role type
             if (! $role->permissions()->exists()) {
-                if ($roleType === 'student') {
-                    $permissions = Permission::where('name', 'like', 'courses.%')
+                $permissions = match ($roleType) {
+                    'student' => Permission::where('name', 'like', 'courses.%')
                         ->where('name', 'like', '%view')
-                        ->get();
-                } else {
-                    $permissions = Permission::where('name', '!=', 'settings.billing')->get();
-                }
+                        ->get(),
+                    default => Permission::where('name', '!=', 'settings.billing')->get(),
+                };
                 $role->syncPermissions($permissions);
             }
 

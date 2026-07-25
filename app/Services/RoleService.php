@@ -49,7 +49,7 @@ class RoleService
     {
         $role = $this->roleRepository->find($id);
 
-        if ($role && $role->name === RoleName::Admin->value) {
+        if ($role && in_array($role->name, [RoleName::Admin->value, RoleName::SchoolAdmin->value], true)) {
             throw ValidationException::withMessages([
                 'role' => __('The admin role cannot be deleted.'),
             ]);

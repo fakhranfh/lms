@@ -15,7 +15,7 @@ class Dashboard extends Component
         $user = Auth::user();
         $school = $user?->school;
 
-        if ($school && $user->hasRole(['Admin', 'Instructor'])) {
+        if ($school && $user->hasRole(['Admin', 'School Admin', 'Instructor'])) {
             $storageService = new R2StorageService;
             $this->storageQuota = $storageService->checkSchoolQuota($school->id);
         }

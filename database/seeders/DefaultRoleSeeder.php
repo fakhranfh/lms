@@ -30,14 +30,14 @@ class DefaultRoleSeeder extends Seeder
      */
     private function createDefaultRoles(string $schoolId): void
     {
-        // Admin Role - All permissions except billing
-        $adminRole = Role::firstOrCreate(
-            ['name' => RoleName::Admin->value, 'guard_name' => 'web', 'school_id' => $schoolId],
-            ['slug' => RoleName::Admin->slug()]
+        // School Admin Role - All permissions except billing, scoped to this school
+        $schoolAdminRole = Role::firstOrCreate(
+            ['name' => RoleName::SchoolAdmin->value, 'guard_name' => 'web', 'school_id' => $schoolId],
+            ['slug' => RoleName::SchoolAdmin->slug()]
         );
 
-        $adminPermissions = Permission::where('name', '!=', 'settings.billing')->get();
-        $adminRole->syncPermissions($adminPermissions);
+        $schoolAdminPermissions = Permission::where('name', '!=', 'settings.billing')->get();
+        $schoolAdminRole->syncPermissions($schoolAdminPermissions);
 
         // Instructor Role - Course/Module/Lesson/Assignment CRUD + grading + analytics
         $instructorRole = Role::firstOrCreate(

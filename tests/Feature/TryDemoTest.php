@@ -12,6 +12,7 @@ test('the try demo page is reachable on the root domain', function () {
     $response->assertOk();
     $response->assertSee('Login as Instructor');
     $response->assertSee('Login as Student');
+    $response->assertSee('Login as School Admin');
 });
 
 test('trying the demo as instructor generates access and logs the user in', function () {
@@ -23,6 +24,20 @@ test('trying the demo as instructor generates access and logs the user in', func
     $response = $this->get("http://{$rootDomain}/try-demo/instructor");
 
     $access = DemoLmsAccess::where('school_id', $school->id)->where('role', 'instructor')->first();
+
+    expect($access)->not->toBeNull();
+    $response->assertRedirect($access->getLoginUrl());
+});
+
+test('trying the demo as school admin generates access and logs the user in', function () {
+    $this->seed(PricingTierSeeder::class);
+
+    $rootDomain = config('app.domain');
+    $school = School::where('domain', $rootDomain)->first() ?? School::factory()->create(['domain' => $rootDomain]);
+
+    $response = $this->get("http://{$rootDomain}/try-demo/school-admin");
+
+    $access = DemoLmsAccess::where('school_id', $school->id)->where('role', 'school-admin')->first();
 
     expect($access)->not->toBeNull();
     $response->assertRedirect($access->getLoginUrl());

@@ -21,6 +21,6 @@ Route::domain(config('app.domain'))->group(function () {
 
     Route::get('/try-demo', [TryDemoController::class, 'index'])->name('try-demo');
     Route::get('/try-demo/{role}', [TryDemoController::class, 'login'])
-        ->whereIn('role', ['instructor', 'student'])
+        ->whereIn('role', ['instructor', 'student', 'school-admin'])
         ->name('try-demo.login');
 });

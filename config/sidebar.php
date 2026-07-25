@@ -67,7 +67,7 @@ return [
         'route' => 'tier-management.show',
         'icon' => 'layers',
         'active_pattern' => 'tier-management.*',
-        'exclude_role' => 'Student',
+        'exclude_role' => ['Student', 'Instructor'],
         'requires_school' => true,
     ],
 ];

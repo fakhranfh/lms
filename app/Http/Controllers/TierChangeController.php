@@ -28,8 +28,15 @@ class TierChangeController extends Controller
             ->exists();
     }
 
+    private function denyUnlessCanManageTier(): void
+    {
+        abort_if(auth()->user()->hasRole(['Instructor', 'Student']), 403);
+    }
+
     public function show(): View
     {
+        $this->denyUnlessCanManageTier();
+
         $schoolId = auth()->user()->school_id ?? $this->currentSchool->getSchoolId();
         $school = School::findOrFail($schoolId);
 
@@ -72,6 +79,8 @@ class TierChangeController extends Controller
 
     public function initiate(InitiateTierChangeRequest $request): RedirectResponse
     {
+        $this->denyUnlessCanManageTier();
+
         $schoolId = auth()->user()->school_id ?? $this->currentSchool->getSchoolId();
         $school = School::findOrFail($schoolId);
 
@@ -100,6 +109,8 @@ class TierChangeController extends Controller
 
     public function cancel(): RedirectResponse
     {
+        $this->denyUnlessCanManageTier();
+
         $schoolId = auth()->user()->school_id ?? $this->currentSchool->getSchoolId();
         $school = School::findOrFail($schoolId);
 

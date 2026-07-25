@@ -161,10 +161,17 @@
                                                     @php
                                                         $schoolAdminLoginUrl = $schoolAdminAccess?->getLoginUrl() ?? 'N/A';
                                                     @endphp
-                                                    <code
-                                                        class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-gray-800 break-all">
-                                                        {{ $schoolAdminLoginUrl }}
-                                                    </code>
+                                                    @if ($schoolAdminAccess)
+                                                        <a href="{{ $schoolAdminLoginUrl }}" target="_blank" rel="noopener noreferrer"
+                                                            class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-blue-700 break-all hover:underline">
+                                                            {{ $schoolAdminLoginUrl }}
+                                                        </a>
+                                                    @else
+                                                        <code
+                                                            class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-gray-800 break-all">
+                                                            {{ $schoolAdminLoginUrl }}
+                                                        </code>
+                                                    @endif
                                                     @if ($schoolAdminAccess)
                                                         <button type="button"
                                                             onclick="copyToClipboard(this, '{{ $schoolAdminLoginUrl }}')"
@@ -250,10 +257,10 @@
                                                     @php
                                                         $loginUrl = $instructorAccess->getLoginUrl();
                                                     @endphp
-                                                    <code
-                                                        class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-gray-800 break-all">
+                                                    <a href="{{ $loginUrl }}" target="_blank" rel="noopener noreferrer"
+                                                        class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-blue-700 break-all hover:underline">
                                                         {{ $loginUrl }}
-                                                    </code>
+                                                    </a>
                                                     <button type="button"
                                                         onclick="copyToClipboard(this, '{{ $loginUrl }}')"
                                                         class="p-2 hover:bg-gray-100 rounded transition flex-shrink-0">
@@ -341,10 +348,17 @@
                                                     @php
                                                         $studentLoginUrl = $studentAccess?->getLoginUrl() ?? 'N/A';
                                                     @endphp
-                                                    <code
-                                                        class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-gray-800 break-all">
-                                                        {{ $studentLoginUrl }}
-                                                    </code>
+                                                    @if ($studentAccess)
+                                                        <a href="{{ $studentLoginUrl }}" target="_blank" rel="noopener noreferrer"
+                                                            class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-blue-700 break-all hover:underline">
+                                                            {{ $studentLoginUrl }}
+                                                        </a>
+                                                    @else
+                                                        <code
+                                                            class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-gray-800 break-all">
+                                                            {{ $studentLoginUrl }}
+                                                        </code>
+                                                    @endif
                                                     @if ($studentAccess)
                                                         <button type="button"
                                                             onclick="copyToClipboard(this, '{{ $studentLoginUrl }}')"

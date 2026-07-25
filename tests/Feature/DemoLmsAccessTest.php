@@ -3,11 +3,14 @@
 namespace Tests\Feature;
 
 use App\Enums\RoleName;
+use App\Livewire\Admin\DemoCredentials;
 use App\Models\DemoLmsAccess;
+use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
 use App\Services\DemoLmsAccessService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class DemoLmsAccessTest extends TestCase
@@ -350,5 +353,33 @@ class DemoLmsAccessTest extends TestCase
 
         $this->assertTrue($user->roles()->exists());
         $this->assertTrue($user->hasRole(RoleName::Instructor));
+    }
+
+    public function test_demo_school_admin_user_has_correct_role(): void
+    {
+        $school = School::factory()->create();
+
+        $user = $this->demoService->createDemoUser($school, 'school-admin');
+
+        $this->assertTrue($user->roles()->exists());
+        $this->assertTrue($user->hasRole(RoleName::SchoolAdmin));
+    }
+
+    public function test_demo_credentials_admin_panel_generates_school_admin_access(): void
+    {
+        $admin = User::factory()->create(['school_id' => null]);
+        $admin->assignRole(Role::firstOrCreate(['name' => RoleName::Admin->value, 'guard_name' => 'web']));
+
+        $school = School::factory()->create();
+
+        Livewire::actingAs($admin)->test(DemoCredentials::class)
+            ->set('selectedSchoolId', $school->id)
+            ->call('generateCredentials')
+            ->assertSet('schoolAdminAccess.role', 'school-admin');
+
+        $this->assertDatabaseHas('demo_lms_accesses', [
+            'school_id' => $school->id,
+            'role' => 'school-admin',
+        ]);
     }
 }

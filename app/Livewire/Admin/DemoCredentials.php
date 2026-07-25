@@ -11,6 +11,8 @@ class DemoCredentials extends Component
 {
     public ?string $selectedSchoolId = null;
 
+    public ?DemoLmsAccess $schoolAdminAccess = null;
+
     public ?DemoLmsAccess $instructorAccess = null;
 
     public ?DemoLmsAccess $studentAccess = null;
@@ -32,11 +34,18 @@ class DemoCredentials extends Component
     public function loadDemoAccess()
     {
         if (! $this->selectedSchoolId) {
+            $this->schoolAdminAccess = null;
             $this->instructorAccess = null;
             $this->studentAccess = null;
 
             return;
         }
+
+        $this->schoolAdminAccess = DemoLmsAccess::where('school_id', $this->selectedSchoolId)
+            ->where('role', 'school-admin')
+            ->where('expires_at', '>', now())
+            ->latest('created_at')
+            ->first();
 
         $this->instructorAccess = DemoLmsAccess::where('school_id', $this->selectedSchoolId)
             ->where('role', 'instructor')
@@ -64,6 +73,7 @@ class DemoCredentials extends Component
 
         $demoService = app(DemoLmsAccessService::class);
 
+        $this->schoolAdminAccess = $demoService->regenerateDemoAccess($school, 'school-admin');
         $this->instructorAccess = $demoService->regenerateDemoAccess($school, 'instructor');
         $this->studentAccess = $demoService->regenerateDemoAccess($school, 'student');
     }

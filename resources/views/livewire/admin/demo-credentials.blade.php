@@ -23,7 +23,29 @@
             @if ($selectedSchool)
                 <!-- Loading Skeleton -->
                 <div wire:loading wire:target="generateCredentials,selectedSchoolId" class="w-full mb-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="w-full bg-green-50 border border-green-200 rounded-lg p-4 animate-pulse">
+                            <div class="flex items-start gap-3">
+                                <div class="w-5 h-5 bg-green-300 rounded-full flex-shrink-0"></div>
+                                <div class="flex-1 w-full">
+                                    <div class="h-6 bg-green-300 rounded w-40 mb-4"></div>
+                                    <div class="space-y-3">
+                                        <div class="w-full bg-white rounded p-3 border border-green-100">
+                                            <div class="h-3 bg-gray-300 rounded w-12 mb-2"></div>
+                                            <div class="h-10 bg-gray-200 rounded w-full"></div>
+                                        </div>
+                                        <div class="w-full bg-white rounded p-3 border border-green-100">
+                                            <div class="h-3 bg-gray-300 rounded w-20 mb-2"></div>
+                                            <div class="h-10 bg-gray-200 rounded w-full"></div>
+                                        </div>
+                                        <div class="w-full bg-white rounded p-3 border border-green-100">
+                                            <div class="h-3 bg-gray-300 rounded w-16 mb-2"></div>
+                                            <div class="h-10 bg-gray-200 rounded w-full"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="w-full bg-green-50 border border-green-200 rounded-lg p-4 animate-pulse">
                             <div class="flex items-start gap-3">
                                 <div class="w-5 h-5 bg-green-300 rounded-full flex-shrink-0"></div>
@@ -75,7 +97,100 @@
                 <!-- Content -->
                 <div wire:loading.remove wire:target="generateCredentials,selectedSchoolId">
                     @if ($instructorAccess && $instructorAccess->expires_at->isFuture())
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <!-- School Admin Demo Access -->
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <div class="flex items-start gap-3">
+                                    <svg class="w-5 h-5 text-green-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                            clip-rule="evenodd"></path>
+                                    </svg>
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-green-900 mb-3">School Admin Access</h3>
+                                        <div class="space-y-3">
+                                            <div class="bg-white rounded p-3 border border-green-100">
+                                                <label class="text-xs font-medium text-gray-600 block mb-1">Email</label>
+                                                <div class="flex items-center gap-2">
+                                                    <code
+                                                        class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-gray-800 break-all">
+                                                        {{ $schoolAdminAccess?->user->email ?? 'N/A' }}
+                                                    </code>
+                                                    @if ($schoolAdminAccess)
+                                                        <button type="button"
+                                                            onclick="copyToClipboard(this, '{{ $schoolAdminAccess->user->email }}')"
+                                                            class="p-2 hover:bg-gray-100 rounded transition flex-shrink-0">
+                                                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                                                </path>
+                                                            </svg>
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            <div class="bg-white rounded p-3 border border-green-100">
+                                                <label class="text-xs font-medium text-gray-600 block mb-1">Access Token</label>
+                                                <div class="flex items-center gap-2">
+                                                    <code
+                                                        class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-gray-800 break-all">
+                                                        {{ $schoolAdminAccess?->access_token ?? 'N/A' }}
+                                                    </code>
+                                                    @if ($schoolAdminAccess)
+                                                        <button type="button"
+                                                            onclick="copyToClipboard(this, '{{ $schoolAdminAccess->access_token }}')"
+                                                            class="p-2 hover:bg-gray-100 rounded transition flex-shrink-0">
+                                                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                                                </path>
+                                                            </svg>
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            <div class="bg-white rounded p-3 border border-green-100">
+                                                <label class="text-xs font-medium text-gray-600 block mb-1">Login URL</label>
+                                                <div class="flex items-center gap-2">
+                                                    @php
+                                                        $schoolAdminLoginUrl = $schoolAdminAccess?->getLoginUrl() ?? 'N/A';
+                                                    @endphp
+                                                    <code
+                                                        class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-gray-800 break-all">
+                                                        {{ $schoolAdminLoginUrl }}
+                                                    </code>
+                                                    @if ($schoolAdminAccess)
+                                                        <button type="button"
+                                                            onclick="copyToClipboard(this, '{{ $schoolAdminLoginUrl }}')"
+                                                            class="p-2 hover:bg-gray-100 rounded transition flex-shrink-0">
+                                                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                                                </path>
+                                                            </svg>
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3 pt-3 border-t border-green-100">
+                                            <p class="text-xs text-green-700">
+                                                <strong>Expires:</strong> {{ $schoolAdminAccess?->expires_at_display?->format('M d, Y H:i A') ?? 'N/A' }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Instructor Demo Access -->
                             <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                                 <div class="flex items-start gap-3">

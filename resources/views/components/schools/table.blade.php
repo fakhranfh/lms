@@ -100,6 +100,11 @@
                                 <a href="{{ route('admin.schools.tier-history', $school) }}" class="px-space-md py-space-xs rounded-lg bg-outline-variant text-on-surface font-label-sm text-label-sm hover:bg-outline transition-colors">
                                     History
                                 </a>
+                                @unless ($school->domain === config('app.domain'))
+                                    <button type="button" @click="deleteId = '{{ $school->id }}'; showModal = true" class="px-space-md py-space-xs rounded-lg bg-error text-on-error font-label-sm text-label-sm hover:opacity-90 transition-opacity">
+                                        Delete
+                                    </button>
+                                @endunless
                             </div>
                         </td>
                     </tr>

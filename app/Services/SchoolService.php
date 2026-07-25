@@ -10,6 +10,7 @@ use App\Repositories\School\SchoolRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\ValidationException;
 
 class SchoolService
 {
@@ -101,6 +102,26 @@ class SchoolService
             'prorated_amount' => 0,
             'changed_at' => now(),
         ]);
+    }
+
+    /**
+     * Delete a school.
+     */
+    public function delete(string $id): int
+    {
+        $school = $this->schoolRepository->find($id);
+
+        if ($school && $school->domain === config('app.domain')) {
+            throw ValidationException::withMessages([
+                'school' => __('The root domain school cannot be deleted.'),
+            ]);
+        }
+
+        if ($school && $school->logo_path) {
+            $this->r2Storage->delete($school->logo_path);
+        }
+
+        return $this->schoolRepository->delete($id);
     }
 
     /**

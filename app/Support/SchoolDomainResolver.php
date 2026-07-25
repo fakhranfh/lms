@@ -3,12 +3,15 @@
 namespace App\Support;
 
 use App\Models\School;
+use App\Services\SchoolService;
 use Illuminate\Http\Request;
 
 class SchoolDomainResolver
 {
+    public function __construct(private SchoolService $schoolService) {}
+
     public function resolve(Request $request): ?School
     {
-        return School::where('domain', $request->getHost())->first();
+        return $this->schoolService->findByDomain($request->getHost());
     }
 }

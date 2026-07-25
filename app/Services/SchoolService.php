@@ -2,12 +2,17 @@
 
 namespace App\Services;
 
+use App\Enums\RoleName;
+use App\Models\Role;
 use App\Models\School;
 use App\Models\SchoolTier;
 use App\Models\TierChange;
+use App\Models\User;
 use App\Repositories\PricingTier\PricingTierRepositoryInterface;
+use App\Repositories\Role\RoleRepositoryInterface;
 use App\Repositories\School\SchoolRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
@@ -17,7 +22,9 @@ class SchoolService
     public function __construct(
         protected SchoolRepositoryInterface $schoolRepository,
         protected PricingTierRepositoryInterface $pricingTierRepository,
+        protected RoleRepositoryInterface $roleRepository,
         protected R2StorageService $r2Storage,
+        protected RoleService $roleService,
     ) {}
 
     /**
@@ -48,6 +55,14 @@ class SchoolService
     }
 
     /**
+     * Find a school by its domain.
+     */
+    public function findByDomain(string $domain): ?School
+    {
+        return $this->schoolRepository->findByDomain($domain);
+    }
+
+    /**
      * Find a school by ID with eager-loaded relationships.
      *
      * @param  array<string>  $with
@@ -75,8 +90,38 @@ class SchoolService
 
         $school = $this->schoolRepository->create($data);
         $this->assignDefaultTier($school);
+        $this->roleService->createDefaultRolesForSchool($school->id);
 
         return $school;
+    }
+
+    /**
+     * Attach a School Admin to a school: creates the school_admins pivot row
+     * and grants that school's School Admin role.
+     */
+    public function attachAdmin(School $school, User $user): void
+    {
+        $this->schoolRepository->attachAdmin($school, $user->id);
+
+        $schoolAdminRole = $this->roleRepository->get([
+            'school_id' => $school->id,
+            'name' => RoleName::SchoolAdmin->value,
+        ])->first();
+
+        if (! $schoolAdminRole) {
+            throw (new ModelNotFoundException)->setModel(Role::class);
+        }
+
+        $user->assignRole($schoolAdminRole);
+    }
+
+    /**
+     * Determine whether the given user administers the given school
+     * (i.e. has a school_admins pivot row for it).
+     */
+    public function administers(User $user, School $school): bool
+    {
+        return $user->schools()->whereKey($school->id)->exists();
     }
 
     /**
@@ -122,19 +167,5 @@ class SchoolService
         }
 
         return $this->schoolRepository->delete($id);
-    }
-
-    /**
-     * Build the registration URL for a school.
-     */
-    public function buildRegisterUrl(School $school, string $scheme = 'http', ?int $port = null): string
-    {
-        $url = "{$scheme}://{$school->domain}/register";
-
-        if ($port && ! in_array($port, [80, 443])) {
-            $url = "{$scheme}://{$school->domain}:{$port}/register";
-        }
-
-        return $url;
     }
 }

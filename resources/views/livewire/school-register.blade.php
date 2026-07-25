@@ -5,31 +5,9 @@
 
     <main class="flex flex-1 items-center justify-center p-gutter">
         <div class="w-full max-w-[480px] bg-surface rounded-xl p-space-xl border border-outline-variant shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-    @if ($registeredUrl)
-        <div class="text-center mb-space-lg">
-            <span class="material-symbols-outlined text-success text-[40px]" data-weight="fill">check_circle</span>
-            <h2 class="font-headline-md text-headline-md text-on-surface mt-space-xs mb-space-xxs">School registered!</h2>
-            <p class="font-body-md text-body-md text-secondary">Your school domain is <strong>{{ $registeredDomain }}</strong>.</p>
-        </div>
-
-        @if ($domainType === 'custom')
-            <div class="mb-space-lg rounded-lg border border-outline-variant bg-surface-container-lowest p-space-md space-y-space-sm">
-                <p class="font-label-md text-label-md text-on-surface">Connect your domain</p>
-                <p class="font-body-sm text-body-sm text-secondary">Before {{ $registeredDomain }} works, point it to this application using one of the following DNS records at your domain registrar:</p>
-                <ul class="font-body-sm text-body-sm text-on-surface list-disc list-inside space-y-space-xxs">
-                    <li><strong>CNAME</strong> record: host <code>{{ $registeredDomain }}</code> &rarr; <code>{{ config('app.domain') }}</code></li>
-                    <li>or an <strong>A</strong> record pointing to your server's IP address</li>
-                </ul>
-                <p class="font-body-sm text-body-sm text-secondary">DNS changes can take a few minutes to a few hours to propagate. Once it resolves, visit the link below to create your admin account.</p>
-            </div>
-        @endif
-
-        <a href="{{ $registeredUrl }}" class="w-full h-[44px] flex items-center justify-center bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-on-primary-fixed-variant active:scale-[0.98] transition-all">
-            Go to {{ $registeredUrl }}
-        </a>
-    @else
         <div class="text-center mb-space-xl">
             <h2 class="font-headline-md text-headline-md text-on-surface mb-space-xxs">Register your school</h2>
+            <p class="font-body-md text-body-md text-secondary">Step 2 of 2</p>
         </div>
 
         <form wire:submit="save" class="space-y-space-md">
@@ -112,7 +90,6 @@
                 <span wire:loading wire:target="save">Registering...</span>
             </button>
         </form>
-    @endif
         </div>
     </main>
 

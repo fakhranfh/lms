@@ -50,7 +50,7 @@
                                 @endif
                             </div>
 
-                            <a href="{{ route('schools.register') }}" class="mt-space-lg flex min-h-[44px] items-center justify-center rounded font-label-md text-label-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary {{ $isFeatured ? 'bg-primary text-on-primary hover:bg-primary-container' : 'border border-outline-variant text-on-surface hover:border-primary hover:text-primary' }}">
+                            <a href="{{ route('get-started') }}" class="mt-space-lg flex min-h-[44px] items-center justify-center rounded font-label-md text-label-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary {{ $isFeatured ? 'bg-primary text-on-primary hover:bg-primary-container' : 'border border-outline-variant text-on-surface hover:border-primary hover:text-primary' }}">
                                 Get started
                             </a>
 
@@ -83,7 +83,7 @@
                 <h2 class="font-headline-md text-headline-md text-on-surface">Not sure which plan fits?</h2>
                 <p class="mx-auto mt-space-xs max-w-md font-body-md text-body-md text-on-surface-variant">Start on any tier and change later as your school grows &mdash; no lock-in.</p>
                 <div class="mt-space-lg flex justify-center">
-                    <a href="{{ route('schools.register') }}" class="flex min-h-[44px] items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
+                    <a href="{{ route('get-started') }}" class="flex min-h-[44px] items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
                         Register your school &rarr;
                     </a>
                 </div>

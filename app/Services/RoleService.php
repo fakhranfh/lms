@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\RoleName;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Repositories\Role\RoleRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
@@ -56,5 +57,38 @@ class RoleService
         }
 
         return $this->roleRepository->delete($id);
+    }
+
+    /**
+     * Create the default School Admin / Instructor / Student roles for a
+     * school, if they don't already exist. Used both by DefaultRoleSeeder
+     * and automatically when a school is self-registered.
+     */
+    public function createDefaultRolesForSchool(string $schoolId): void
+    {
+        $schoolAdminRole = Role::firstOrCreate(
+            ['name' => RoleName::SchoolAdmin->value, 'guard_name' => 'web', 'school_id' => $schoolId],
+            ['slug' => RoleName::SchoolAdmin->slug()]
+        );
+
+        $schoolAdminRole->syncPermissions(Permission::where('name', '!=', 'settings.billing')->get());
+
+        $instructorRole = Role::firstOrCreate(
+            ['name' => RoleName::Instructor->value, 'guard_name' => 'web', 'school_id' => $schoolId],
+            ['slug' => RoleName::Instructor->slug()]
+        );
+
+        $instructorRole->syncPermissions(
+            Permission::whereIn('name', RoleName::Instructor->defaultPermissions())->get()
+        );
+
+        $studentRole = Role::firstOrCreate(
+            ['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $schoolId],
+            ['slug' => RoleName::Student->slug()]
+        );
+
+        $studentRole->syncPermissions(
+            Permission::whereIn('name', RoleName::Student->defaultPermissions())->get()
+        );
     }
 }

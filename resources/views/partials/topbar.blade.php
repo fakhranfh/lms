@@ -28,8 +28,8 @@
                     </a>
                 @endif
 
-                @if (Route::has('schools.register'))
-                    <a href="{{ route('schools.register') }}" class="flex h-9 items-center rounded bg-primary px-space-md font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
+                @if (Route::has('get-started'))
+                    <a href="{{ route('get-started') }}" class="flex h-9 items-center rounded bg-primary px-space-md font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
                         Get Started
                     </a>
                 @endif

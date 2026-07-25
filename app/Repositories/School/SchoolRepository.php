@@ -88,4 +88,9 @@ class SchoolRepository implements SchoolRepositoryInterface
     {
         return School::destroy($id);
     }
+
+    public function attachAdmin(School $school, string $userId): void
+    {
+        $school->admins()->syncWithoutDetaching([$userId]);
+    }
 }

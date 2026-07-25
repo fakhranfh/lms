@@ -28,7 +28,7 @@
                             Go to Dashboard
                         </a>
                     @else
-                        <a href="{{ route('schools.register') }}" class="flex h-11 items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
+                        <a href="{{ route('get-started') }}" class="flex h-11 items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
                             Start your school &rarr;
                         </a>
                         @if (Route::has('try-demo'))

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\RoleName;
+use App\Services\SchoolService;
 use App\Support\CurrentSchool;
 use App\Support\SchoolDomainResolver;
 use Closure;
@@ -14,6 +15,7 @@ class ResolveSchoolFromDomain
     public function __construct(
         private CurrentSchool $currentSchool,
         private SchoolDomainResolver $schoolDomainResolver,
+        private SchoolService $schoolService,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -46,6 +48,12 @@ class ResolveSchoolFromDomain
 
         if (! $school) {
             abort(404);
+        }
+
+        if ($request->user() && $request->user()->school_id === null
+            && ! $request->user()->hasRole(RoleName::Admin)
+            && ! $this->schoolService->administers($request->user(), $school)) {
+            abort(403);
         }
 
         $this->currentSchool->setSchoolId($school->id);

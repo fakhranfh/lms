@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -58,5 +59,15 @@ class User extends Authenticatable implements MustVerifyEmail
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    /**
+     * Get the schools this user administers as a School Admin.
+     *
+     * @return BelongsToMany<School, $this>
+     */
+    public function schools(): BelongsToMany
+    {
+        return $this->belongsToMany(School::class, 'school_admins')->withTimestamps();
     }
 }

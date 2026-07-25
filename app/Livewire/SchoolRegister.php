@@ -22,9 +22,12 @@ class SchoolRegister extends Component
 
     public $logo = null;
 
-    public ?string $registeredUrl = null;
-
-    public ?string $registeredDomain = null;
+    public function mount(): void
+    {
+        if (! auth()->check()) {
+            $this->redirectRoute('get-started');
+        }
+    }
 
     public function updatedSubdomain(): void
     {
@@ -100,13 +103,9 @@ class SchoolRegister extends Component
         }
 
         $school = $schoolService->create($data);
+        $schoolService->attachAdmin($school, auth()->user());
 
-        $this->registeredUrl = $schoolService->buildRegisterUrl(
-            $school,
-            request()->getScheme(),
-            request()->getPort()
-        );
-        $this->registeredDomain = $school->domain;
+        $this->redirectRoute('manage.schools.index');
     }
 
     public function render()

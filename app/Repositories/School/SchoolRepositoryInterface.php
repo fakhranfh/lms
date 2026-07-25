@@ -56,4 +56,9 @@ interface SchoolRepositoryInterface
      * Delete a school.
      */
     public function delete(string $id): int;
+
+    /**
+     * Attach a user to a school as a School Admin (school_admins pivot).
+     */
+    public function attachAdmin(School $school, string $userId): void;
 }

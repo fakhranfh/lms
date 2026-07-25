@@ -6,45 +6,7 @@
 
 @section('content')
 
-    <!-- Navbar -->
-    <header class="sticky top-0 z-40 border-b border-outline-variant bg-background/90 backdrop-blur">
-        <nav class="mx-auto flex max-w-6xl items-center justify-between px-gutter py-space-md lg:px-space-xl" aria-label="Global">
-            <a href="{{ route('home') }}" class="flex items-center gap-space-sm font-headline-sm text-headline-sm text-on-surface">
-                <img src="{{ asset('logo.png') }}" alt="{{ config('app.name', 'Laravel') }}" class="h-7 w-auto" />
-                {{ config('app.name', 'Laravel') }}
-            </a>
-
-            @if (Route::has('login'))
-                <div class="flex items-center gap-space-lg">
-                    @if (Route::has('features'))
-                        <a href="{{ route('features') }}" class="hidden font-label-md text-label-md text-secondary hover:text-on-surface transition-colors sm:inline">
-                            Features
-                        </a>
-                    @endif
-                    @if (Route::has('pricing'))
-                        <a href="{{ route('pricing') }}" class="hidden font-label-md text-label-md text-secondary hover:text-on-surface transition-colors sm:inline">
-                            Pricing
-                        </a>
-                    @endif
-                    @auth
-                        <a href="{{ url('/dashboard') }}" class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors">
-                            Dashboard
-                        </a>
-                    @else
-                        <a href="{{ route('login') }}" class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors">
-                            Log in
-                        </a>
-
-                        @if (Route::has('schools.register'))
-                            <a href="{{ route('schools.register') }}" class="flex min-h-[44px] items-center rounded bg-primary px-space-md font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
-                                Get Started
-                            </a>
-                        @endif
-                    @endauth
-                </div>
-            @endif
-        </nav>
-    </header>
+    @include('partials.topbar')
 
     <main class="flex-1">
         <section class="mx-auto max-w-6xl px-gutter pb-space-xl pt-space-xl text-center lg:px-space-xl lg:pt-16">

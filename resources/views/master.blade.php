@@ -122,7 +122,7 @@
     @livewireStyles
 </head>
 
-<body class="@yield('body_class', 'bg-background text-on-background min-h-screen p-gutter font-body-md') flex flex-col">
+<body class="@yield('body_class', $body_class ?? 'bg-background text-on-background min-h-screen p-gutter font-body-md') flex flex-col">
     @yield('content')
     @stack('scripts')
     @livewireScripts

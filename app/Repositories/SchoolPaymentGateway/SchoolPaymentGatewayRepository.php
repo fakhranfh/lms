@@ -68,4 +68,27 @@ class SchoolPaymentGatewayRepository implements SchoolPaymentGatewayRepositoryIn
             ->where('gateway_type_id', $gatewayTypeId)
             ->first();
     }
+
+    public function getEnabledForSchool(string $schoolId, array $with = [])
+    {
+        return SchoolPaymentGateway::where('school_id', $schoolId)
+            ->where('is_enabled', true)
+            ->with($with)
+            ->get();
+    }
+
+    public function findEnabledForSchoolByGatewayName(string $schoolId, string $gatewayName)
+    {
+        return SchoolPaymentGateway::where('school_id', $schoolId)
+            ->where('is_enabled', true)
+            ->whereHas('paymentGatewayType', fn ($q) => $q->where('name', $gatewayName))
+            ->first();
+    }
+
+    public function findFirstEnabledForSchool(string $schoolId)
+    {
+        return SchoolPaymentGateway::where('school_id', $schoolId)
+            ->where('is_enabled', true)
+            ->first();
+    }
 }

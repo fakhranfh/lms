@@ -2,16 +2,19 @@
 
 namespace App\Services;
 
-use App\Models\PaymentGatewayCredential;
-use App\Models\PaymentGatewayType;
 use App\Models\SchoolPaymentGateway;
+use App\Repositories\PaymentGatewayCredential\PaymentGatewayCredentialRepositoryInterface;
+use App\Repositories\PaymentGatewayType\PaymentGatewayTypeRepositoryInterface;
 use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepositoryInterface;
+use Illuminate\Support\Facades\DB;
 
 class PaymentGatewayConfigService
 {
     public function __construct(
         private readonly SchoolPaymentGatewayRepositoryInterface $repository,
-        private readonly PaymentGatewayFactory $gatewayFactory
+        private readonly PaymentGatewayFactory $gatewayFactory,
+        private readonly PaymentGatewayTypeRepositoryInterface $gatewayTypeRepository,
+        private readonly PaymentGatewayCredentialRepositoryInterface $credentialRepository,
     ) {}
 
     public function getAllGateways(array $with = [])
@@ -26,7 +29,7 @@ class PaymentGatewayConfigService
 
     public function getAvailableGatewayTypes()
     {
-        return PaymentGatewayType::where('is_active', true)->get();
+        return $this->gatewayTypeRepository->getActive();
     }
 
     public function createGateway(array $data): SchoolPaymentGateway
@@ -38,10 +41,13 @@ class PaymentGatewayConfigService
             'webhook_secret' => $data['webhook_secret'] ?? null,
         ];
 
-        $gateway = $this->repository->create($gatewayData);
+        $gateway = DB::transaction(function () use ($gatewayData, $data) {
+            $gateway = $this->repository->create($gatewayData);
 
-        // Store credentials
-        $this->storeCredentials($gateway->id, $data['credentials'] ?? []);
+            $this->storeCredentials($gateway->id, $data['credentials'] ?? []);
+
+            return $gateway;
+        });
 
         return $gateway->load(['paymentGatewayType', 'credentials']);
     }
@@ -54,11 +60,15 @@ class PaymentGatewayConfigService
             'webhook_secret' => $data['webhook_secret'] ?? null,
         ];
 
-        $gateway = $this->repository->update($id, $gatewayData);
+        $gateway = DB::transaction(function () use ($id, $gatewayData, $data) {
+            $gateway = $this->repository->update($id, $gatewayData);
 
-        // Delete old credentials and store new ones
-        $gateway->credentials()->delete();
-        $this->storeCredentials($gateway->id, $data['credentials'] ?? []);
+            // Delete old credentials and store new ones
+            $this->credentialRepository->deleteForGateway($gateway->id);
+            $this->storeCredentials($gateway->id, $data['credentials'] ?? []);
+
+            return $gateway;
+        });
 
         return $gateway->load(['paymentGatewayType', 'credentials']);
     }
@@ -70,9 +80,11 @@ class PaymentGatewayConfigService
             return false;
         }
 
-        $gateway->credentials()->delete();
+        return DB::transaction(function () use ($gateway, $id) {
+            $this->credentialRepository->deleteForGateway($gateway->id);
 
-        return $this->repository->delete($id) > 0;
+            return $this->repository->delete($id) > 0;
+        });
     }
 
     public function testConnection(SchoolPaymentGateway $gateway): array
@@ -110,7 +122,7 @@ class PaymentGatewayConfigService
     {
         foreach ($credentials as $key => $value) {
             if ($value !== null && $value !== '') {
-                PaymentGatewayCredential::create([
+                $this->credentialRepository->create([
                     'school_payment_gateway_id' => $gatewayId,
                     'credential_key' => $key,
                     'credential_value' => $value,

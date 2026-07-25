@@ -28,7 +28,7 @@ describe('LessonForm Quota Display', function () {
     });
 
     test('R2StorageService returns quota structure with all required keys', function () {
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         if (! config('services.r2.access_key_id')) {
             $this->markTestSkipped('R2 credentials not configured');
@@ -45,7 +45,7 @@ describe('LessonForm Quota Display', function () {
     });
 
     test('quota values are human-readable after formatting', function () {
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         $formatted = R2StorageService::formatBytes(1024 * 1024 * 1024); // 1 GB
 
@@ -53,7 +53,7 @@ describe('LessonForm Quota Display', function () {
     });
 
     test('quota percentage is between 0 and 100', function () {
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         if (! config('services.r2.access_key_id')) {
             $this->markTestSkipped('R2 credentials not configured');
@@ -69,7 +69,7 @@ describe('LessonForm Quota Display', function () {
 
     test('school storage quota is retrieved from tier', function () {
         $user = User::factory()->create();
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         if (! config('services.r2.access_key_id')) {
             $this->markTestSkipped('R2 credentials not configured');
@@ -95,7 +95,7 @@ describe('LessonForm Quota Display', function () {
         });
 
         test('quota percentage calculation is accurate', function () {
-            $service = new R2StorageService;
+            $service = app(R2StorageService::class);
 
             if (! config('services.r2.access_key_id')) {
                 $this->markTestSkipped('R2 credentials not configured');
@@ -112,7 +112,7 @@ describe('LessonForm Quota Display', function () {
         });
 
         test('enforce quota limit with school id', function () {
-            $service = new R2StorageService;
+            $service = app(R2StorageService::class);
 
             if (! config('services.r2.access_key_id')) {
                 $this->markTestSkipped('R2 credentials not configured');
@@ -152,7 +152,7 @@ describe('LessonForm Quota Display', function () {
                 $this->markTestSkipped('School without tier configuration');
             }
 
-            $service = new R2StorageService;
+            $service = app(R2StorageService::class);
 
             $quota = $service->checkSchoolQuota($user->school->id);
 
@@ -164,7 +164,7 @@ describe('LessonForm Quota Display', function () {
 
     describe('quota warning messages', function () {
         test('quota info includes all display fields', function () {
-            $service = new R2StorageService;
+            $service = app(R2StorageService::class);
 
             if (! config('services.r2.access_key_id')) {
                 $this->markTestSkipped('R2 credentials not configured');
@@ -177,7 +177,7 @@ describe('LessonForm Quota Display', function () {
         });
 
         test('per-school quota different from global quota', function () {
-            $service = new R2StorageService;
+            $service = app(R2StorageService::class);
 
             if (! config('services.r2.access_key_id')) {
                 $this->markTestSkipped('R2 credentials not configured');

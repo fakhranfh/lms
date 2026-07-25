@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\PaymentGatewayType;
 use App\Models\School;
+use App\Repositories\PaymentGatewayType\PaymentGatewayTypeRepositoryInterface;
+use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -13,19 +14,21 @@ class PaymentGatewayRegistry
 
     private const CACHE_TTL = 3600; // 1 hour
 
+    public function __construct(
+        private readonly PaymentGatewayTypeRepositoryInterface $gatewayTypeRepository,
+        private readonly SchoolPaymentGatewayRepositoryInterface $gatewayRepository,
+    ) {}
+
     public function getGatewayTypes(): Collection
     {
         return Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function () {
-            return PaymentGatewayType::where('is_active', true)->get();
+            return $this->gatewayTypeRepository->getActive();
         });
     }
 
     public function getSchoolGateways(School $school): Collection
     {
-        return $school->paymentGateways()
-            ->where('is_enabled', true)
-            ->with('paymentGatewayType', 'credentials')
-            ->get();
+        return $this->gatewayRepository->getEnabledForSchool($school->id, ['paymentGatewayType', 'credentials']);
     }
 
     public function clearCache(): void

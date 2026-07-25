@@ -93,4 +93,14 @@ class SchoolRepository implements SchoolRepositoryInterface
     {
         $school->admins()->syncWithoutDetaching([$userId]);
     }
+
+    public function administers(School $school, string $userId): bool
+    {
+        return $school->admins()->whereKey($userId)->exists();
+    }
+
+    public function getAllWithUserCounts(): Collection
+    {
+        return School::withCount('users')->get();
+    }
 }

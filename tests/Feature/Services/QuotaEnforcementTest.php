@@ -5,7 +5,7 @@ use Aws\S3\S3Client;
 
 describe('Quota Enforcement', function () {
     test('allows upload when quota is available', function () {
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         // Should not throw when quota is available
         $service->enforceQuotaLimit();
@@ -19,14 +19,14 @@ describe('Quota Enforcement', function () {
 
         // This test would require mocking S3Client, which is complex
         // For now, we verify the method exists and returns proper structure
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
         $quota = $service->checkSchoolQuota('test-school');
 
         expect($quota)->toHaveKeys(['used', 'limit', 'remaining', 'percentage']);
     });
 
     test('error message mentions 10GB quota limit', function () {
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         $reflection = new ReflectionClass($service);
         $quotaConstant = $reflection->getConstant('GLOBAL_QUOTA_BYTES');
@@ -35,7 +35,7 @@ describe('Quota Enforcement', function () {
     });
 
     test('returns quota info with correct structure', function () {
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         if (! config('services.r2.access_key_id')) {
             $this->markTestSkipped('R2 credentials not configured');
@@ -57,7 +57,7 @@ describe('Quota Enforcement', function () {
             $this->markTestSkipped('R2 credentials not configured');
         }
 
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
         $quota = $service->checkSchoolQuota('school-123');
 
         // In real scenario, remaining should be at most limit
@@ -69,7 +69,7 @@ describe('Quota Enforcement', function () {
             $this->markTestSkipped('R2 credentials not configured');
         }
 
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
         $quota = $service->checkSchoolQuota('school-123');
 
         expect($quota['percentage'])->toBeLessThanOrEqual(100.0);
@@ -82,7 +82,7 @@ describe('Quota Enforcement', function () {
     });
 
     test('getTotalStorageUsed returns integer', function () {
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         if (! config('services.r2.access_key_id')) {
             $this->markTestSkipped('R2 credentials not configured');
@@ -99,7 +99,7 @@ describe('Quota Enforcement', function () {
             $this->markTestSkipped('R2 credentials not configured');
         }
 
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
         $quota = $service->checkSchoolQuota('');
 
         $sum = $quota['used'] + $quota['remaining'];
@@ -141,7 +141,7 @@ describe('Quota Enforcement', function () {
             $this->markTestSkipped('R2 credentials not configured');
         }
 
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         // The enforceQuotaLimit is called first, so if quota is 0 remaining,
         // it should throw before attempting upload

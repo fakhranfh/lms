@@ -2,7 +2,6 @@
 
 use App\Models\PricingTier;
 use App\Models\School;
-use App\Services\SubscriptionPaymentService;
 use App\Services\TierChangeService;
 
 beforeEach(function () {
@@ -14,9 +13,7 @@ it('can determine if an upgrade is possible', function () {
     $basicTier = $school->tier;
     $plusTier = PricingTier::where('slug', 'plus')->first();
 
-    $service = new TierChangeService(
-        app(SubscriptionPaymentService::class)
-    );
+    $service = app(TierChangeService::class);
 
     expect($service->canUpgrade($school, $plusTier))->toBeTrue();
     expect($service->canUpgrade($school, $basicTier))->toBeFalse();
@@ -29,9 +26,7 @@ it('can determine if a downgrade is possible', function () {
     $basicTier = PricingTier::where('slug', 'basic')->first();
     $plusTier = $school->tier;
 
-    $service = new TierChangeService(
-        app(SubscriptionPaymentService::class)
-    );
+    $service = app(TierChangeService::class);
 
     expect($service->canDowngrade($school, $basicTier))->toBeTrue();
     expect($service->canDowngrade($school, $plusTier))->toBeFalse();
@@ -41,9 +36,7 @@ it('calculates zero proration for free tiers with no active subscription', funct
     $school = School::factory()->create();
     $newTier = PricingTier::where('slug', 'basic')->first();
 
-    $service = new TierChangeService(
-        app(SubscriptionPaymentService::class)
-    );
+    $service = app(TierChangeService::class);
 
     $proration = $service->calculateProration($school, $newTier);
     expect($proration)->toBe(0.0);
@@ -59,9 +52,7 @@ it('calculates proration for monthly upgrades', function () {
         'expires_at' => now()->addDays(15),
     ]);
 
-    $service = new TierChangeService(
-        app(SubscriptionPaymentService::class)
-    );
+    $service = app(TierChangeService::class);
 
     $proration = $service->calculateProration($school, $newTier);
 
@@ -85,9 +76,7 @@ it('calculates negative proration (credit) for downgrades', function () {
         'expires_at' => now()->addDays(20),
     ]);
 
-    $service = new TierChangeService(
-        app(SubscriptionPaymentService::class)
-    );
+    $service = app(TierChangeService::class);
 
     $proration = $service->calculateProration($school, $newTier);
 
@@ -101,9 +90,7 @@ it('calculates zero proration when current tier has no expiration', function () 
     $schoolTier = $school->schoolTiers()->first();
     $schoolTier->update(['expires_at' => null]);
 
-    $service = new TierChangeService(
-        app(SubscriptionPaymentService::class)
-    );
+    $service = app(TierChangeService::class);
 
     $proration = $service->calculateProration($school, $newTier);
     expect($proration)->toBe(0.0);

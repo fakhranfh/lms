@@ -117,4 +117,11 @@ class PricingTierRepository implements PricingTierRepositoryInterface
 
         TierLimit::insert($limitsToInsert);
     }
+
+    public function findLimit(int $tierId, string $limitKey): ?TierLimit
+    {
+        return TierLimit::where('pricing_tier_id', $tierId)
+            ->where('limit_key', $limitKey)
+            ->first();
+    }
 }

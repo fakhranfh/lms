@@ -3,6 +3,7 @@
 namespace App\Repositories\PricingTier;
 
 use App\Models\PricingTier;
+use App\Models\TierLimit;
 use Illuminate\Database\Eloquent\Collection;
 
 interface PricingTierRepositoryInterface
@@ -50,4 +51,9 @@ interface PricingTierRepositoryInterface
      * @param  array<int, array{limit_key: string, limit_value: int|null}>  $limits
      */
     public function syncLimits(PricingTier $tier, array $limits): void;
+
+    /**
+     * Find a tier's limit row by key, if set.
+     */
+    public function findLimit(int $tierId, string $limitKey): ?TierLimit;
 }

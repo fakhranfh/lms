@@ -14,4 +14,21 @@ interface PermissionRepositoryInterface
     public function getAll(): Collection;
 
     public function find(int $id): ?Permission;
+
+    /**
+     * All permissions except the given one (e.g. excluding billing).
+     */
+    public function getAllExcept(string $name): Collection;
+
+    /**
+     * Permissions matching the given set of names.
+     *
+     * @param  array<int, string>  $names
+     */
+    public function getByNames(array $names): Collection;
+
+    /**
+     * View-only permissions under a namespace (e.g. "courses.%view").
+     */
+    public function getViewPermissionsFor(string $namespace): Collection;
 }

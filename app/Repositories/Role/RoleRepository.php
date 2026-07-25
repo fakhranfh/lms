@@ -3,6 +3,7 @@
 namespace App\Repositories\Role;
 
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Spatie\Permission\Models\Permission;
 
@@ -72,5 +73,28 @@ class RoleRepository implements RoleRepositoryInterface
     {
         $permissions = Permission::whereIn('id', $permissionIds)->get();
         $role->syncPermissions($permissions);
+    }
+
+    public function firstOrCreateForSchool(string $schoolId, string $name, array $extra = []): Role
+    {
+        return Role::firstOrCreate(
+            ['name' => $name, 'guard_name' => 'web', 'school_id' => $schoolId],
+            $extra
+        );
+    }
+
+    public function hasPermissions(Role $role): bool
+    {
+        return $role->permissions()->exists();
+    }
+
+    public function findIdByName(string $name): ?int
+    {
+        return Role::where('name', $name)->value('id');
+    }
+
+    public function otherUsersHaveRole(string $name, string $excludingUserId): bool
+    {
+        return User::role($name)->where('id', '!=', $excludingUserId)->exists();
     }
 }

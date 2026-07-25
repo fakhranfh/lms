@@ -19,4 +19,19 @@ interface SchoolPaymentGatewayRepositoryInterface
     public function delete($id);
 
     public function findBySchoolAndGatewayType(string $schoolId, int $gatewayTypeId);
+
+    /**
+     * Enabled gateways for a school, eager-loaded with type + credentials.
+     */
+    public function getEnabledForSchool(string $schoolId, array $with = []);
+
+    /**
+     * The first enabled gateway for a school whose type has the given name.
+     */
+    public function findEnabledForSchoolByGatewayName(string $schoolId, string $gatewayName);
+
+    /**
+     * The first enabled gateway for a school, regardless of type.
+     */
+    public function findFirstEnabledForSchool(string $schoolId);
 }

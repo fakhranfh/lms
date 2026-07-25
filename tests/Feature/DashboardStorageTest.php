@@ -25,7 +25,7 @@ test('storage quota displays correct limit and percentage', function () {
         ->create();
     $user->assignRole('Instructor');
 
-    $service = new R2StorageService;
+    $service = app(R2StorageService::class);
     $quota = $service->checkSchoolQuota($school->id);
 
     $this->actingAs($user)

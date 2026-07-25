@@ -10,6 +10,7 @@ use App\Repositories\LessonMaterial\LessonMaterialRepository;
 use App\Repositories\LessonMaterialUser\LessonMaterialUserRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 
 class LessonMaterialService
 {
@@ -157,7 +158,7 @@ class LessonMaterialService
      */
     public function finalizeVersionUpload(string $materialId, array $data): LessonMaterial
     {
-        $material = LessonMaterial::findOrFail($materialId);
+        $material = $this->materialRepository->findOrFail($materialId);
         $type = $material->type;
 
         $tempKey = $data['temp_key'] ?? '';
@@ -193,15 +194,10 @@ class LessonMaterialService
 
             $fileUrl = $this->r2Service->getPublicUrl($finalKey);
 
-            $nextVersion = LessonMaterial::where('lesson_id', $material->lesson_id)
-                ->where('title', $material->title)
-                ->max('version') + 1;
+            $nextVersion = $this->materialRepository->getMaxVersion($material->lesson_id, $material->title) + 1;
 
             // Deactivate all current versions of this material
-            LessonMaterial::where('lesson_id', $material->lesson_id)
-                ->where('title', $material->title)
-                ->where('is_active', true)
-                ->update(['is_active' => false]);
+            $this->materialRepository->deactivateVersions($material->lesson_id, $material->title);
 
             return $this->materialRepository->create([
                 'lesson_id' => $material->lesson_id,
@@ -332,7 +328,7 @@ class LessonMaterialService
      */
     public function update(string $materialId, array $data): LessonMaterial
     {
-        $material = LessonMaterial::findOrFail($materialId);
+        $material = $this->materialRepository->findOrFail($materialId);
 
         // If new file provided, create a new version
         if (isset($data['file']) && $data['file'] instanceof UploadedFile) {
@@ -379,7 +375,7 @@ class LessonMaterialService
      */
     public function delete(string $materialId): int
     {
-        $material = LessonMaterial::findOrFail($materialId);
+        $material = $this->materialRepository->findOrFail($materialId);
 
         // Delete from R2
         if ($material->file_path) {
@@ -426,7 +422,7 @@ class LessonMaterialService
      */
     public function markMaterialAsAccessed(string $materialId, User $user): void
     {
-        $material = LessonMaterial::findOrFail($materialId);
+        $material = $this->materialRepository->findOrFail($materialId);
 
         // Record access
         $this->accessRepository->markAccessed($materialId, $user);
@@ -483,12 +479,9 @@ class LessonMaterialService
      */
     public function getAllVersions(string $materialId): Collection
     {
-        $material = LessonMaterial::findOrFail($materialId);
+        $material = $this->materialRepository->findOrFail($materialId);
 
-        return LessonMaterial::where('lesson_id', $material->lesson_id)
-            ->where('title', $material->title)
-            ->orderBy('version', 'desc')
-            ->get();
+        return $this->materialRepository->getVersions($material->lesson_id, $material->title);
     }
 
     /**
@@ -497,24 +490,20 @@ class LessonMaterialService
      */
     public function switchVersion(string $materialId, int $targetVersion): LessonMaterial
     {
-        $material = LessonMaterial::findOrFail($materialId);
+        $material = $this->materialRepository->findOrFail($materialId);
 
         // Find target version
-        $targetMaterial = LessonMaterial::where('lesson_id', $material->lesson_id)
-            ->where('title', $material->title)
-            ->where('version', $targetVersion)
-            ->firstOrFail();
+        $targetMaterial = $this->materialRepository->findVersion($material->lesson_id, $material->title, $targetVersion);
 
-        // Deactivate current active version
-        LessonMaterial::where('lesson_id', $material->lesson_id)
-            ->where('title', $material->title)
-            ->where('is_active', true)
-            ->update(['is_active' => false]);
+        DB::transaction(function () use ($material, $targetMaterial): void {
+            // Deactivate current active version
+            $this->materialRepository->deactivateVersions($material->lesson_id, $material->title);
 
-        // Activate target version
-        $targetMaterial->update(['is_active' => true]);
+            // Activate target version
+            $this->materialRepository->update($targetMaterial->id, ['is_active' => true]);
+        });
 
-        return $targetMaterial;
+        return $targetMaterial->refresh();
     }
 
     /**
@@ -523,33 +512,26 @@ class LessonMaterialService
      */
     public function deleteVersion(string $materialId, int $versionToDelete): void
     {
-        $material = LessonMaterial::findOrFail($materialId);
+        $material = $this->materialRepository->findOrFail($materialId);
 
         // Check how many versions exist for this material
-        $versionCount = LessonMaterial::where('lesson_id', $material->lesson_id)
-            ->where('title', $material->title)
-            ->count();
+        $versionCount = $this->materialRepository->countVersions($material->lesson_id, $material->title);
 
         if ($versionCount <= 1) {
             throw new \InvalidArgumentException('Cannot delete the last version. Use delete() to remove the material entirely.');
         }
 
         // Find the version to delete
-        $versionToDeleteRecord = LessonMaterial::where('lesson_id', $material->lesson_id)
-            ->where('title', $material->title)
-            ->where('version', $versionToDelete)
-            ->firstOrFail();
+        $versionToDeleteRecord = $this->materialRepository->findVersion($material->lesson_id, $material->title, $versionToDelete);
 
         // If this is the active version, activate the most recent other version
         if ($versionToDeleteRecord->is_active) {
-            $nextVersion = LessonMaterial::where('lesson_id', $material->lesson_id)
-                ->where('title', $material->title)
-                ->where('version', '!=', $versionToDelete)
-                ->orderBy('version', 'desc')
-                ->first();
+            $nextVersion = $this->materialRepository->findMostRecentOtherVersion(
+                $material->lesson_id, $material->title, $versionToDelete
+            );
 
             if ($nextVersion) {
-                $nextVersion->update(['is_active' => true]);
+                $this->materialRepository->update($nextVersion->id, ['is_active' => true]);
             }
         }
 

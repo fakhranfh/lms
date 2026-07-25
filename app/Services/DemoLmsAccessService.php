@@ -4,14 +4,24 @@ namespace App\Services;
 
 use App\Enums\RoleName;
 use App\Models\DemoLmsAccess;
-use App\Models\Permission;
-use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
+use App\Repositories\DemoLmsAccess\DemoLmsAccessRepositoryInterface;
+use App\Repositories\Permission\PermissionRepositoryInterface;
+use App\Repositories\Role\RoleRepositoryInterface;
+use App\Repositories\User\UserRepositoryInterface;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class DemoLmsAccessService
 {
+    public function __construct(
+        protected DemoLmsAccessRepositoryInterface $demoLmsAccessRepository,
+        protected UserRepositoryInterface $userRepository,
+        protected RoleRepositoryInterface $roleRepository,
+        protected PermissionRepositoryInterface $permissionRepository,
+    ) {}
+
     /**
      * Generate a unique access token for demo LMS.
      */
@@ -19,7 +29,7 @@ class DemoLmsAccessService
     {
         $token = Str::random(32);
 
-        while (DemoLmsAccess::where('access_token', $token)->exists()) {
+        while ($this->demoLmsAccessRepository->tokenExists($token)) {
             $token = Str::random(32);
         }
 
@@ -41,7 +51,7 @@ class DemoLmsAccessService
         $email = 'demo'.$suffix.'-'.$school->id.'@demo.'.$school->domain;
         $name = 'Demo '.$roleName->label();
 
-        $user = User::firstOrCreate(
+        $user = $this->userRepository->firstOrCreate(
             ['email' => $email],
             [
                 'name' => $name.' - '.$school->name,
@@ -51,26 +61,23 @@ class DemoLmsAccessService
             ]
         );
 
-        if (! $user->roles()->exists()) {
-            $role = Role::where('school_id', $school->id)
-                ->where('name', $roleName->value)
-                ->firstOrCreate(
-                    ['school_id' => $school->id, 'name' => $roleName->value],
-                    ['guard_name' => 'web', 'slug' => $roleName->slug()]
+        if (! $this->userRepository->hasAnyRole($user)) {
+            DB::transaction(function () use ($school, $roleName, $roleType, $user): void {
+                $role = $this->roleRepository->firstOrCreateForSchool(
+                    $school->id, $roleName->value, ['guard_name' => 'web', 'slug' => $roleName->slug()]
                 );
 
-            // Sync permissions based on role type
-            if (! $role->permissions()->exists()) {
-                $permissions = match ($roleType) {
-                    'student' => Permission::where('name', 'like', 'courses.%')
-                        ->where('name', 'like', '%view')
-                        ->get(),
-                    default => Permission::where('name', '!=', 'settings.billing')->get(),
-                };
-                $role->syncPermissions($permissions);
-            }
+                // Sync permissions based on role type
+                if (! $this->roleRepository->hasPermissions($role)) {
+                    $permissions = match ($roleType) {
+                        'student' => $this->permissionRepository->getViewPermissionsFor('courses'),
+                        default => $this->permissionRepository->getAllExcept('settings.billing'),
+                    };
+                    $this->roleRepository->syncPermissions($role, $permissions->pluck('id')->all());
+                }
 
-            $user->assignRole($role);
+                $this->userRepository->assignRole($user, $role);
+            });
         }
 
         return $user;
@@ -84,7 +91,7 @@ class DemoLmsAccessService
         $token = $this->generateAccessToken($school);
         $expiresAt = now()->addDays(14);
 
-        return DemoLmsAccess::create([
+        return $this->demoLmsAccessRepository->create([
             'school_id' => $school->id,
             'user_id' => $user->id,
             'access_token' => $token,
@@ -110,11 +117,7 @@ class DemoLmsAccessService
      */
     public function getOrCreateDemoAccess(School $school, string $roleType = 'instructor'): DemoLmsAccess
     {
-        $validAccess = DemoLmsAccess::where('school_id', $school->id)
-            ->where('role', $roleType)
-            ->where('expires_at', '>', now())
-            ->latest('created_at')
-            ->first();
+        $validAccess = $this->demoLmsAccessRepository->findValidForSchoolAndRole($school->id, $roleType);
 
         if ($validAccess) {
             return $validAccess;

@@ -61,4 +61,14 @@ interface SchoolRepositoryInterface
      * Attach a user to a school as a School Admin (school_admins pivot).
      */
     public function attachAdmin(School $school, string $userId): void;
+
+    /**
+     * Determine whether the given user has a school_admins pivot row for the school.
+     */
+    public function administers(School $school, string $userId): bool;
+
+    /**
+     * All schools with their users_count eager-loaded, for storage reporting.
+     */
+    public function getAllWithUserCounts(): Collection;
 }

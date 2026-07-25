@@ -4,7 +4,7 @@ use App\Services\R2StorageService;
 
 describe('R2StorageService', function () {
     test('configuration is properly set from env', function () {
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         // Verify configuration is loaded
         expect($service)->toBeInstanceOf(R2StorageService::class);
@@ -19,7 +19,7 @@ describe('R2StorageService', function () {
     });
 
     test('methods exist and are callable', function () {
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         $methods = ['upload', 'delete', 'getSignedUrl', 'checkSchoolQuota', 'enforceQuotaLimit', 'getTotalStorageUsed'];
         foreach ($methods as $method) {
@@ -34,7 +34,7 @@ describe('R2StorageService', function () {
                 $this->markTestSkipped('R2 credentials not configured');
             }
 
-            $service = new R2StorageService;
+            $service = app(R2StorageService::class);
             $quota = $service->checkSchoolQuota('test-school');
 
             expect($quota)->toHaveKeys(['used', 'limit', 'remaining', 'percentage', 'limit_gb'])
@@ -47,7 +47,7 @@ describe('R2StorageService', function () {
 
     describe('validateFileContent', function () {
         test('accepts a real MP4 file whose ftyp signature is offset by a box-size prefix', function () {
-            $service = new R2StorageService;
+            $service = app(R2StorageService::class);
             $path = storage_path('dummy-materials/file_example_MP4_480_1_5MG.mp4');
 
             if (! file_exists($path)) {
@@ -62,7 +62,7 @@ describe('R2StorageService', function () {
         });
 
         test('rejects a file with no matching signature for the given type', function () {
-            $service = new R2StorageService;
+            $service = app(R2StorageService::class);
             $path = tempnam(sys_get_temp_dir(), 'not-a-video');
             file_put_contents($path, 'plain text content, not a real video file');
 
@@ -78,7 +78,7 @@ describe('R2StorageService', function () {
     describe('getPublicUrl', function () {
         test('uses the configured custom domain', function () {
             config(['services.r2.custom_domain' => 'https://cdn.example.com']);
-            $service = new R2StorageService;
+            $service = app(R2StorageService::class);
 
             expect($service->getPublicUrl('lessons/abc/materials/file.pdf'))
                 ->toBe('https://cdn.example.com/lessons/abc/materials/file.pdf');
@@ -86,7 +86,7 @@ describe('R2StorageService', function () {
 
         test('falls back to the raw R2 domain when no custom domain is set', function () {
             config(['services.r2.custom_domain' => '']);
-            $service = new R2StorageService;
+            $service = app(R2StorageService::class);
 
             expect($service->getPublicUrl('lessons/abc/materials/file.pdf'))
                 ->toContain('r2.cloudflarestorage.com/lessons/abc/materials/file.pdf');

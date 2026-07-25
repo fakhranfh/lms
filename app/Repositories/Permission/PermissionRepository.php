@@ -36,4 +36,21 @@ class PermissionRepository implements PermissionRepositoryInterface
     {
         return Permission::find($id);
     }
+
+    public function getAllExcept(string $name): Collection
+    {
+        return Permission::where('name', '!=', $name)->get();
+    }
+
+    public function getByNames(array $names): Collection
+    {
+        return Permission::whereIn('name', $names)->get();
+    }
+
+    public function getViewPermissionsFor(string $namespace): Collection
+    {
+        return Permission::where('name', 'like', "{$namespace}.%")
+            ->where('name', 'like', '%view')
+            ->get();
+    }
 }

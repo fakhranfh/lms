@@ -4,6 +4,7 @@ namespace App\Repositories\LessonMaterial;
 
 use App\Enums\MaterialType;
 use App\Models\LessonMaterial;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 
@@ -146,5 +147,87 @@ class LessonMaterialRepository implements LessonMaterialRepositoryInterface
                 array_merge([$lessonId], $materialIds)
             );
         });
+    }
+
+    public function findOrFail(string $id): LessonMaterial
+    {
+        return LessonMaterial::findOrFail($id);
+    }
+
+    public function sumActiveFileSize(): int
+    {
+        return (int) LessonMaterial::active()->sum('file_size');
+    }
+
+    public function getActiveForSchool(string $schoolId): EloquentCollection
+    {
+        return LessonMaterial::active()
+            ->whereHas('lesson.module.course', fn ($q) => $q->where('school_id', $schoolId))
+            ->get();
+    }
+
+    public function getMaxVersion(string $lessonId, string $title): int
+    {
+        return (int) LessonMaterial::where('lesson_id', $lessonId)
+            ->where('title', $title)
+            ->max('version');
+    }
+
+    public function getVersions(string $lessonId, string $title): EloquentCollection
+    {
+        return LessonMaterial::where('lesson_id', $lessonId)
+            ->where('title', $title)
+            ->orderBy('version', 'desc')
+            ->get();
+    }
+
+    public function deactivateVersions(string $lessonId, string $title): void
+    {
+        LessonMaterial::where('lesson_id', $lessonId)
+            ->where('title', $title)
+            ->where('is_active', true)
+            ->update(['is_active' => false]);
+    }
+
+    public function findVersion(string $lessonId, string $title, int $version): LessonMaterial
+    {
+        return LessonMaterial::where('lesson_id', $lessonId)
+            ->where('title', $title)
+            ->where('version', $version)
+            ->firstOrFail();
+    }
+
+    public function countVersions(string $lessonId, string $title): int
+    {
+        return LessonMaterial::where('lesson_id', $lessonId)
+            ->where('title', $title)
+            ->count();
+    }
+
+    public function findMostRecentOtherVersion(string $lessonId, string $title, int $excludingVersion): ?LessonMaterial
+    {
+        return LessonMaterial::where('lesson_id', $lessonId)
+            ->where('title', $title)
+            ->where('version', '!=', $excludingVersion)
+            ->orderBy('version', 'desc')
+            ->first();
+    }
+
+    public function filteredQuery(array $filters, string $sortBy = 'created_at', string $sortDirection = 'desc'): Builder
+    {
+        return LessonMaterial::active()
+            ->when($filters['school_id'] ?? null, fn (Builder $q, string $v) => $q->whereHas(
+                'lesson.module.course', fn ($qq) => $qq->where('school_id', $v)
+            ))
+            ->when($filters['course_id'] ?? null, fn (Builder $q, string $v) => $q->whereHas(
+                'lesson.module', fn ($qq) => $qq->where('course_id', $v)
+            ))
+            ->when($filters['module_id'] ?? null, fn (Builder $q, string $v) => $q->whereHas(
+                'lesson', fn ($qq) => $qq->where('module_id', $v)
+            ))
+            ->when($filters['lesson_id'] ?? null, fn (Builder $q, string $v) => $q->where('lesson_id', $v))
+            ->when($filters['title'] ?? null, fn (Builder $q, string $v) => $q->whereLike('title', "%{$v}%", caseSensitive: false))
+            ->with('lesson.module.course.school')
+            ->orderBy($sortBy, $sortDirection);
     }
 }

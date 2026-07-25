@@ -3,7 +3,8 @@
 namespace App\Services;
 
 use App\Enums\MaterialType;
-use App\Models\School;
+use App\Repositories\PricingTier\PricingTierRepositoryInterface;
+use App\Repositories\School\SchoolRepositoryInterface;
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use Illuminate\Http\UploadedFile;
@@ -26,8 +27,10 @@ class R2StorageService
 
     protected const RETRY_DELAY_MS = 1000;
 
-    public function __construct()
-    {
+    public function __construct(
+        protected SchoolRepositoryInterface $schoolRepository,
+        protected PricingTierRepositoryInterface $pricingTierRepository,
+    ) {
         $this->accountId = config('services.r2.account_id');
         $this->bucket = config('services.r2.bucket');
         $this->customDomain = config('services.r2.custom_domain', '');
@@ -502,16 +505,14 @@ class R2StorageService
         }
 
         try {
-            $school = School::find($schoolId);
+            $school = $this->schoolRepository->find($schoolId);
             if (! $school || ! $school->tier) {
                 // Default to Basic tier (1 GB) if no tier found
                 return 1 * 1024 * 1024 * 1024;
             }
 
             // Get material_storage_gb limit from tier
-            $limit = $school->tier->limits()
-                ->where('limit_key', 'material_storage_gb')
-                ->first();
+            $limit = $this->pricingTierRepository->findLimit($school->tier->id, 'material_storage_gb');
 
             if (! $limit) {
                 // Default to Basic tier (1 GB)

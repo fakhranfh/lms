@@ -13,7 +13,7 @@ it('loads active gateway types from database', function () {
     PaymentGatewayType::factory()->create(['name' => 'midtrans', 'is_active' => true]);
     PaymentGatewayType::factory()->create(['name' => 'xendit', 'is_active' => false]);
 
-    $registry = new PaymentGatewayRegistry;
+    $registry = app(PaymentGatewayRegistry::class);
     $types = $registry->getGatewayTypes();
 
     expect($types)->toHaveCount(1);
@@ -23,7 +23,7 @@ it('loads active gateway types from database', function () {
 it('caches gateway types for performance', function () {
     PaymentGatewayType::factory()->create(['name' => 'midtrans', 'is_active' => true]);
 
-    $registry = new PaymentGatewayRegistry;
+    $registry = app(PaymentGatewayRegistry::class);
 
     $types1 = $registry->getGatewayTypes();
     PaymentGatewayType::factory()->create(['name' => 'xendit', 'is_active' => true]);
@@ -37,7 +37,7 @@ it('caches gateway types for performance', function () {
 it('can clear cache', function () {
     PaymentGatewayType::factory()->create(['name' => 'midtrans', 'is_active' => true]);
 
-    $registry = new PaymentGatewayRegistry;
+    $registry = app(PaymentGatewayRegistry::class);
 
     $types1 = $registry->getGatewayTypes();
     expect($types1)->toHaveCount(1);

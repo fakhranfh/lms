@@ -5,16 +5,17 @@ namespace App\Services;
 use App\Enums\RoleName;
 use App\Models\Role;
 use App\Models\School;
-use App\Models\SchoolTier;
-use App\Models\TierChange;
 use App\Models\User;
 use App\Repositories\PricingTier\PricingTierRepositoryInterface;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Repositories\School\SchoolRepositoryInterface;
+use App\Repositories\SchoolTier\SchoolTierRepositoryInterface;
+use App\Repositories\TierChange\TierChangeRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SchoolService
@@ -23,6 +24,8 @@ class SchoolService
         protected SchoolRepositoryInterface $schoolRepository,
         protected PricingTierRepositoryInterface $pricingTierRepository,
         protected RoleRepositoryInterface $roleRepository,
+        protected SchoolTierRepositoryInterface $schoolTierRepository,
+        protected TierChangeRepositoryInterface $tierChangeRepository,
         protected R2StorageService $r2Storage,
         protected RoleService $roleService,
     ) {}
@@ -121,7 +124,7 @@ class SchoolService
      */
     public function administers(User $user, School $school): bool
     {
-        return $user->schools()->whereKey($school->id)->exists();
+        return $this->schoolRepository->administers($school, $user->id);
     }
 
     /**
@@ -131,22 +134,24 @@ class SchoolService
     {
         $basicTier = $school->tier;
 
-        $schoolTier = SchoolTier::create([
-            'school_id' => $school->id,
-            'tier_id' => $basicTier->id,
-            'status' => 'active',
-            'started_at' => now(),
-            'expires_at' => null,
-        ]);
+        DB::transaction(function () use ($school, $basicTier): void {
+            $schoolTier = $this->schoolTierRepository->create([
+                'school_id' => $school->id,
+                'tier_id' => $basicTier->id,
+                'status' => 'active',
+                'started_at' => now(),
+                'expires_at' => null,
+            ]);
 
-        TierChange::create([
-            'school_tier_id' => $schoolTier->id,
-            'from_tier_id' => null,
-            'to_tier_id' => $basicTier->id,
-            'change_type' => 'initial',
-            'prorated_amount' => 0,
-            'changed_at' => now(),
-        ]);
+            $this->tierChangeRepository->create([
+                'school_tier_id' => $schoolTier->id,
+                'from_tier_id' => null,
+                'to_tier_id' => $basicTier->id,
+                'change_type' => 'initial',
+                'prorated_amount' => 0,
+                'changed_at' => now(),
+            ]);
+        });
     }
 
     /**

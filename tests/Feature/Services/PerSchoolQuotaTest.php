@@ -24,7 +24,7 @@ describe('Per-School Quota Management', function () {
 
         $school = School::factory()->create(['tier_id' => $tier->id]);
 
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
         $quotaBytes = $service->getSchoolStorageQuotaBytes($school->id);
         $quotaGb = $quotaBytes / (1024 * 1024 * 1024);
 
@@ -49,7 +49,7 @@ describe('Per-School Quota Management', function () {
 
         $school = School::factory()->create(['tier_id' => $tier->id]);
 
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
         $quotaBytes = $service->getSchoolStorageQuotaBytes($school->id);
         $quotaGb = $quotaBytes / (1024 * 1024 * 1024);
 
@@ -74,7 +74,7 @@ describe('Per-School Quota Management', function () {
 
         $school = School::factory()->create(['tier_id' => $tier->id]);
 
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
         $quotaBytes = $service->getSchoolStorageQuotaBytes($school->id);
         $quotaGb = $quotaBytes / (1024 * 1024 * 1024);
 
@@ -99,7 +99,7 @@ describe('Per-School Quota Management', function () {
 
         $school = School::factory()->create(['tier_id' => $tier->id]);
 
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
         $quotaBytes = $service->getSchoolStorageQuotaBytes($school->id);
         $quotaGb = $quotaBytes / (1024 * 1024 * 1024);
 
@@ -124,7 +124,7 @@ describe('Per-School Quota Management', function () {
 
         $school = School::factory()->create(['tier_id' => $tier->id]);
 
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         if (! config('services.r2.access_key_id')) {
             $this->markTestSkipped('R2 credentials not configured');
@@ -154,7 +154,7 @@ describe('Per-School Quota Management', function () {
 
         $school = School::factory()->create(['tier_id' => $tier->id]);
 
-        $service = new R2StorageService;
+        $service = app(R2StorageService::class);
 
         if (! config('services.r2.access_key_id')) {
             $this->markTestSkipped('R2 credentials not configured');

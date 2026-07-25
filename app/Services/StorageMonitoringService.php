@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\LessonMaterial;
 use App\Models\School;
 use App\Models\StorageUsageLog;
+use App\Repositories\LessonMaterial\LessonMaterialRepositoryInterface;
+use App\Repositories\School\SchoolRepositoryInterface;
+use App\Repositories\StorageUsageLog\StorageUsageLogRepositoryInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -13,7 +15,12 @@ class StorageMonitoringService
     /** @var array<int, int> Thresholds checked in descending order for alerting */
     public const ALERT_THRESHOLDS = [100, 90, 80];
 
-    public function __construct(protected R2StorageService $r2Service) {}
+    public function __construct(
+        protected R2StorageService $r2Service,
+        protected LessonMaterialRepositoryInterface $materialRepository,
+        protected StorageUsageLogRepositoryInterface $usageLogRepository,
+        protected SchoolRepositoryInterface $schoolRepository,
+    ) {}
 
     /**
      * Global storage summary across all schools, based on active materials in the database.
@@ -22,7 +29,7 @@ class StorageMonitoringService
      */
     public function globalSummary(): array
     {
-        $usedBytes = (int) LessonMaterial::active()->sum('file_size');
+        $usedBytes = $this->materialRepository->sumActiveFileSize();
         $quotaBytes = $this->r2Service->getGlobalQuotaBytes();
         $percentage = $quotaBytes > 0 ? round(($usedBytes / $quotaBytes) * 100, 2) : 0.0;
 
@@ -42,10 +49,7 @@ class StorageMonitoringService
      */
     public function usageTrend(int $days = 30): Collection
     {
-        return StorageUsageLog::whereNull('school_id')
-            ->where('created_at', '>=', now()->subDays($days))
-            ->orderBy('created_at')
-            ->get();
+        return $this->usageLogRepository->getGlobalTrend($days);
     }
 
     /**
@@ -55,13 +59,9 @@ class StorageMonitoringService
      */
     public function perSchoolBreakdown(string $sortBy = 'used_bytes', string $direction = 'desc'): Collection
     {
-        $rows = School::query()
-            ->withCount(['users'])
-            ->get()
+        $rows = $this->schoolRepository->getAllWithUserCounts()
             ->map(function (School $school) {
-                $materials = LessonMaterial::active()
-                    ->whereHas('lesson.module.course', fn ($q) => $q->where('school_id', $school->id))
-                    ->get();
+                $materials = $this->materialRepository->getActiveForSchool($school->id);
 
                 return [
                     'school' => $school,
@@ -82,20 +82,7 @@ class StorageMonitoringService
      */
     public function filteredMaterialsQuery(array $filters, string $sortBy = 'created_at', string $sortDirection = 'desc'): Builder
     {
-        return LessonMaterial::active()
-            ->when($filters['school_id'] ?? null, fn (Builder $q, string $v) => $q->whereHas(
-                'lesson.module.course', fn ($qq) => $qq->where('school_id', $v)
-            ))
-            ->when($filters['course_id'] ?? null, fn (Builder $q, string $v) => $q->whereHas(
-                'lesson.module', fn ($qq) => $qq->where('course_id', $v)
-            ))
-            ->when($filters['module_id'] ?? null, fn (Builder $q, string $v) => $q->whereHas(
-                'lesson', fn ($qq) => $qq->where('module_id', $v)
-            ))
-            ->when($filters['lesson_id'] ?? null, fn (Builder $q, string $v) => $q->where('lesson_id', $v))
-            ->when($filters['title'] ?? null, fn (Builder $q, string $v) => $q->whereLike('title', "%{$v}%", caseSensitive: false))
-            ->with('lesson.module.course.school')
-            ->orderBy($sortBy, $sortDirection);
+        return $this->materialRepository->filteredQuery($filters, $sortBy, $sortDirection);
     }
 
     /**
@@ -105,7 +92,7 @@ class StorageMonitoringService
     {
         $summary = $this->globalSummary();
 
-        $lastLog = StorageUsageLog::whereNull('school_id')->latest('id')->first();
+        $lastLog = $this->usageLogRepository->findLatestGlobal();
         $lastThreshold = $lastLog?->last_alert_threshold ?? 0;
 
         $crossedThreshold = null;
@@ -116,7 +103,7 @@ class StorageMonitoringService
             }
         }
 
-        StorageUsageLog::create([
+        $this->usageLogRepository->create([
             'school_id' => null,
             'total_used_bytes' => $summary['used_bytes'],
             'quota_bytes' => $summary['quota_bytes'],

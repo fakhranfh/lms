@@ -3,15 +3,19 @@
 namespace App\Services;
 
 use App\Enums\RoleName;
-use App\Models\Permission;
 use App\Models\Role;
+use App\Repositories\Permission\PermissionRepositoryInterface;
 use App\Repositories\Role\RoleRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class RoleService
 {
-    public function __construct(protected RoleRepositoryInterface $roleRepository) {}
+    public function __construct(
+        protected RoleRepositoryInterface $roleRepository,
+        protected PermissionRepositoryInterface $permissionRepository,
+    ) {}
 
     public function get(array $filters = [], array $with = []): Collection
     {
@@ -66,29 +70,25 @@ class RoleService
      */
     public function createDefaultRolesForSchool(string $schoolId): void
     {
-        $schoolAdminRole = Role::firstOrCreate(
-            ['name' => RoleName::SchoolAdmin->value, 'guard_name' => 'web', 'school_id' => $schoolId],
-            ['slug' => RoleName::SchoolAdmin->slug()]
-        );
+        DB::transaction(function () use ($schoolId): void {
+            $schoolAdminRole = $this->roleRepository->firstOrCreateForSchool(
+                $schoolId, RoleName::SchoolAdmin->value, ['slug' => RoleName::SchoolAdmin->slug()]
+            );
+            $schoolAdminRole->syncPermissions($this->permissionRepository->getAllExcept('settings.billing'));
 
-        $schoolAdminRole->syncPermissions(Permission::where('name', '!=', 'settings.billing')->get());
+            $instructorRole = $this->roleRepository->firstOrCreateForSchool(
+                $schoolId, RoleName::Instructor->value, ['slug' => RoleName::Instructor->slug()]
+            );
+            $instructorRole->syncPermissions(
+                $this->permissionRepository->getByNames(RoleName::Instructor->defaultPermissions())
+            );
 
-        $instructorRole = Role::firstOrCreate(
-            ['name' => RoleName::Instructor->value, 'guard_name' => 'web', 'school_id' => $schoolId],
-            ['slug' => RoleName::Instructor->slug()]
-        );
-
-        $instructorRole->syncPermissions(
-            Permission::whereIn('name', RoleName::Instructor->defaultPermissions())->get()
-        );
-
-        $studentRole = Role::firstOrCreate(
-            ['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $schoolId],
-            ['slug' => RoleName::Student->slug()]
-        );
-
-        $studentRole->syncPermissions(
-            Permission::whereIn('name', RoleName::Student->defaultPermissions())->get()
-        );
+            $studentRole = $this->roleRepository->firstOrCreateForSchool(
+                $schoolId, RoleName::Student->value, ['slug' => RoleName::Student->slug()]
+            );
+            $studentRole->syncPermissions(
+                $this->permissionRepository->getByNames(RoleName::Student->defaultPermissions())
+            );
+        });
     }
 }

@@ -44,4 +44,19 @@ class UserRepository implements UserRepositoryInterface
         $roles = Role::whereIn('id', $roleIds)->get();
         $user->syncRoles($roles);
     }
+
+    public function firstOrCreate(array $attributes, array $values = []): User
+    {
+        return User::firstOrCreate($attributes, $values);
+    }
+
+    public function hasAnyRole(User $user): bool
+    {
+        return $user->roles()->exists();
+    }
+
+    public function assignRole(User $user, \App\Models\Role $role): void
+    {
+        $user->assignRole($role);
+    }
 }

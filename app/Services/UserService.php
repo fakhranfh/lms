@@ -5,17 +5,18 @@ namespace App\Services;
 use App\Enums\RoleName;
 use App\Mail\PendingEmailVerificationMail;
 use App\Models\User;
+use App\Repositories\Role\RoleRepositoryInterface;
 use App\Repositories\User\UserRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
-use Spatie\Permission\Models\Role;
 
 class UserService
 {
     public function __construct(
         private UserRepositoryInterface $userRepository,
+        private RoleRepositoryInterface $roleRepository,
         private R2StorageService $r2Storage,
     ) {}
 
@@ -29,13 +30,13 @@ class UserService
         $this->deleteProfilePhotoFile($user);
 
         $photoUrl = $this->r2Storage->uploadPublicFile($photo, 'profile-photos');
-        $user->update(['profile_photo_path' => $photoUrl]);
+        $this->userRepository->update($user, ['profile_photo_path' => $photoUrl]);
     }
 
     public function removeProfilePhoto(User $user): void
     {
         $this->deleteProfilePhotoFile($user);
-        $user->update(['profile_photo_path' => null]);
+        $this->userRepository->update($user, ['profile_photo_path' => null]);
     }
 
     private function deleteProfilePhotoFile(User $user): void
@@ -90,7 +91,7 @@ class UserService
 
     private function guardLastAdmin(User $user): void
     {
-        $otherAdmins = User::role(RoleName::Admin)->where('id', '!=', $user->id)->exists();
+        $otherAdmins = $this->roleRepository->otherUsersHaveRole(RoleName::Admin->value, $user->id);
 
         if (! $otherAdmins) {
             throw ValidationException::withMessages([
@@ -101,6 +102,6 @@ class UserService
 
     private function adminRoleId(): ?int
     {
-        return Role::where('name', RoleName::Admin->value)->value('id');
+        return $this->roleRepository->findIdByName(RoleName::Admin->value);
     }
 }

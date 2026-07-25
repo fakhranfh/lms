@@ -5,6 +5,7 @@ namespace App\Livewire\Roles;
 use App\Http\Requests\Role\StoreRoleRequest;
 use App\Services\PermissionService;
 use App\Services\RoleService;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class RoleCreate extends Component
@@ -32,7 +33,12 @@ class RoleCreate extends Component
     {
         abort_unless(auth()->user()->can('roles.create'), 403);
 
-        $validated = $this->validate();
+        try {
+            $validated = $this->validate();
+        } catch (ValidationException $e) {
+            $this->dispatch('show-error-modal', message: $e->validator->errors()->first());
+            throw $e;
+        }
         $validated['school_id'] = auth()->user()->school_id;
 
         $roleService->create($validated);

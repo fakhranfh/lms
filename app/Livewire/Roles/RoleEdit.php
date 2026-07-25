@@ -5,6 +5,8 @@ namespace App\Livewire\Roles;
 use App\Enums\RoleName;
 use App\Services\PermissionService;
 use App\Services\RoleService;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Spatie\Permission\Models\Role;
 
@@ -30,7 +32,14 @@ class RoleEdit extends Component
     protected function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', 'unique:roles,name,'.$this->role->id],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('roles', 'name')
+                    ->where(fn ($query) => $query->where('school_id', $this->role->school_id))
+                    ->ignore($this->role->id),
+            ],
             'permissions' => ['array'],
             'permissions.*' => ['integer', 'exists:permissions,id'],
         ];
@@ -47,7 +56,12 @@ class RoleEdit extends Component
     {
         abort_unless(auth()->user()->can('roles.update'), 403);
 
-        $validated = $this->validate();
+        try {
+            $validated = $this->validate();
+        } catch (ValidationException $e) {
+            $this->dispatch('show-error-modal', message: $e->validator->errors()->first());
+            throw $e;
+        }
 
         if (in_array($this->role->name, [RoleName::Admin->value, RoleName::SchoolAdmin->value], true)) {
             $validated['name'] = $this->role->name;

@@ -60,12 +60,24 @@ test('user with roles.create can create a role with permissions', function () {
 
 test('role name is required and must be unique on create', function () {
     $user = actingAsRoleManager(['roles.view', 'roles.create']);
-    Role::create(['name' => 'duplicate-role', 'guard_name' => 'web']);
+    Role::create(['name' => 'duplicate-role', 'guard_name' => 'web', 'school_id' => $user->school_id]);
 
     Livewire::actingAs($user)->test(RoleCreate::class)
         ->set('name', 'duplicate-role')
         ->call('store')
         ->assertHasErrors('name');
+});
+
+test('role name can be reused across different schools on create', function () {
+    $user = actingAsRoleManager(['roles.view', 'roles.create']);
+    $otherSchool = School::factory()->create();
+    Role::create(['name' => 'shared-name', 'guard_name' => 'web', 'school_id' => $otherSchool->id]);
+
+    Livewire::actingAs($user)->test(RoleCreate::class)
+        ->set('name', 'shared-name')
+        ->call('store')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('roles.index'));
 });
 
 test('user with roles.update can update a role and its permissions', function () {
@@ -83,6 +95,29 @@ test('user with roles.update can update a role and its permissions', function ()
     $role->refresh();
     expect($role->name)->toBe('support-team');
     expect($role->permissions->pluck('id')->all())->toBe([$permission->id]);
+});
+
+test('updating a role without changing its name does not error', function () {
+    $user = actingAsRoleManager(['roles.view', 'roles.update']);
+    $role = Role::create(['name' => 'billing', 'guard_name' => 'web', 'school_id' => $user->school_id]);
+
+    Livewire::actingAs($user)->test(RoleEdit::class, ['role' => $role])
+        ->call('update')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('roles.index'));
+});
+
+test('updating a role can reuse a name already used by another school', function () {
+    $user = actingAsRoleManager(['roles.view', 'roles.update']);
+    $role = Role::create(['name' => 'billing', 'guard_name' => 'web', 'school_id' => $user->school_id]);
+    $otherSchool = School::factory()->create();
+    Role::create(['name' => 'instructor', 'guard_name' => 'web', 'school_id' => $otherSchool->id]);
+
+    Livewire::actingAs($user)->test(RoleEdit::class, ['role' => $role])
+        ->set('name', 'instructor')
+        ->call('update')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('roles.index'));
 });
 
 test('admin role name cannot be changed even if submitted', function () {

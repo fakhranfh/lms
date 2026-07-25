@@ -79,6 +79,31 @@ class Role extends SpatieRole
     }
 
     /**
+     * Override Spatie's create to scope the duplicate-name check by school_id,
+     * since teams are not enabled and Spatie's own check would otherwise treat
+     * roles with the same name in different schools as duplicates.
+     */
+    public static function create(array $attributes = [])
+    {
+        $attributes['guard_name'] ??= config('auth.defaults.guard');
+
+        $exists = static::where('name', $attributes['name'])
+            ->where('guard_name', $attributes['guard_name'])
+            ->when(
+                $attributes['school_id'] ?? null,
+                fn ($query, $schoolId) => $query->where('school_id', $schoolId),
+                fn ($query) => $query->whereNull('school_id'),
+            )
+            ->exists();
+
+        if ($exists) {
+            throw RoleAlreadyExists::create($attributes['name'], $attributes['guard_name']);
+        }
+
+        return static::query()->create($attributes);
+    }
+
+    /**
      * Override Spatie's findByName to support school-scoped roles.
      * Only find global roles (school_id = null) by name to allow same role names per school.
      */

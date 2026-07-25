@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\AuditLogFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -16,7 +17,7 @@ use RuntimeException;
 class AuditLog extends Model
 {
     /** @use HasFactory<AuditLogFactory> */
-    use HasFactory, HasUuid;
+    use HasFactory, HasUuid, HasViewerTimezoneDates;
 
     public const UPDATED_AT = null;
 

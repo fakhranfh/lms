@@ -28,14 +28,30 @@ class AuditLogTable extends Component
 
     public ?string $selectedAuditLogId = null;
 
+    public int $perPage = 15;
+
+    public string $sort = 'created_at';
+
+    public string $direction = 'desc';
+
     public function mount(): void
     {
         abort_unless(auth()->user()->hasRole(RoleName::Admin), 403);
     }
 
+    public function sortBy(string $field): void
+    {
+        if ($this->sort === $field) {
+            $this->direction = $this->direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sort = $field;
+            $this->direction = 'asc';
+        }
+    }
+
     public function updating(string $property): void
     {
-        if (in_array($property, ['dateFrom', 'dateTo', 'userId', 'modelType', 'event', 'search'], true)) {
+        if (in_array($property, ['dateFrom', 'dateTo', 'userId', 'modelType', 'event', 'search', 'perPage'], true)) {
             $this->resetPage();
         }
     }
@@ -62,7 +78,7 @@ class AuditLogTable extends Component
 
             foreach ($logs as $log) {
                 fputcsv($handle, [
-                    $log->created_at?->toDateTimeString(),
+                    $log->created_at_display?->toDateTimeString(),
                     $log->user?->email ?? 'system',
                     $log->event,
                     class_basename($log->auditable_type),
@@ -92,17 +108,19 @@ class AuditLogTable extends Component
                         ->orWhereHas('user', fn ($u) => $u->where('email', 'like', "%{$this->search}%"));
                 });
             })
-            ->latest('created_at');
+            ->orderBy($this->sort, $this->direction);
     }
 
     public function render()
     {
         /** @var LengthAwarePaginator $auditLogs */
-        $auditLogs = $this->query()->paginate(100);
+        $auditLogs = $this->query()->paginate($this->perPage);
 
         return view('livewire.admin.audit-log-table', [
             'auditLogs' => $auditLogs,
             'selectedAuditLog' => $this->selectedAuditLogId ? AuditLog::with('user')->find($this->selectedAuditLogId) : null,
+            'sort' => $this->sort,
+            'direction' => $this->direction,
         ])
             ->extends('layouts.admin', ['topbarTitle' => 'Audit Logs'])
             ->section('admin-content');

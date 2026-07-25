@@ -29,40 +29,7 @@
         <input type="text" wire:model.live.debounce.400ms="modelType" placeholder="Model type (e.g. App\Models\Course)" class="px-space-md py-space-sm border border-outline rounded-lg" />
     </div>
 
-    <div class="overflow-x-auto border border-outline rounded-lg">
-        <table class="w-full text-left">
-            <thead class="bg-surface-container text-label-sm text-on-surface-variant">
-                <tr>
-                    <th class="px-space-md py-space-sm">Timestamp</th>
-                    <th class="px-space-md py-space-sm">User</th>
-                    <th class="px-space-md py-space-sm">Event</th>
-                    <th class="px-space-md py-space-sm">Model</th>
-                    <th class="px-space-md py-space-sm">Description</th>
-                    <th class="px-space-md py-space-sm">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($auditLogs as $log)
-                    <tr class="border-t border-outline/30">
-                        <td class="px-space-md py-space-sm text-body-sm">{{ $log->created_at?->format('M j, Y g:i A') }}</td>
-                        <td class="px-space-md py-space-sm text-body-sm">{{ $log->user?->email ?? 'system' }}</td>
-                        <td class="px-space-md py-space-sm text-body-sm capitalize">{{ $log->event }}</td>
-                        <td class="px-space-md py-space-sm text-body-sm">{{ class_basename($log->auditable_type) }}</td>
-                        <td class="px-space-md py-space-sm text-body-sm">{{ $log->description }}</td>
-                        <td class="px-space-md py-space-sm text-body-sm">
-                            <button type="button" wire:click="show('{{ $log->id }}')" class="text-primary hover:underline">View</button>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="px-space-md py-space-lg text-center text-body-sm text-on-surface-variant">No audit logs found.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    {{ $auditLogs->links() }}
+    <x-audit-logs.table :auditLogs="$auditLogs" :perPage="$perPage" :sort="$sort" :direction="$direction" />
 
     @if ($selectedAuditLog)
         <div class="fixed inset-0 z-50">
@@ -80,7 +47,7 @@
                             <div><span class="text-on-surface-variant">User:</span> {{ $selectedAuditLog->user?->email ?? 'system' }}</div>
                             <div><span class="text-on-surface-variant">Event:</span> {{ $selectedAuditLog->event }}</div>
                             <div><span class="text-on-surface-variant">Model:</span> {{ class_basename($selectedAuditLog->auditable_type) }} ({{ $selectedAuditLog->auditable_id }})</div>
-                            <div><span class="text-on-surface-variant">Timestamp:</span> {{ $selectedAuditLog->created_at?->toDateTimeString() }}</div>
+                            <div><span class="text-on-surface-variant">Timestamp:</span> {{ $selectedAuditLog->created_at_display?->toDateTimeString() }}</div>
                             <div><span class="text-on-surface-variant">IP:</span> {{ $selectedAuditLog->ip_address ?? '—' }}</div>
                             <div class="truncate"><span class="text-on-surface-variant">User agent:</span> {{ $selectedAuditLog->user_agent ?? '—' }}</div>
                         </div>

@@ -37,7 +37,7 @@ describe('FeatureGateService::can()', function () {
         $featureGate = app(FeatureGateService::class);
         $plusTier = PricingTier::where('slug', 'plus')->first();
         $school = School::factory()->withTier($plusTier)->create();
-        $user = User::factory()->for($school)->create();
+        $user = User::factory()->forSchool($school)->create();
 
         $result = $featureGate->can($user, TierFeature::Analytics);
 
@@ -96,7 +96,7 @@ describe('FeatureGateService::limit()', function () {
     it('checks limit for users via their school', function () {
         $featureGate = app(FeatureGateService::class);
         $school = School::factory()->create();
-        $user = User::factory()->for($school)->create();
+        $user = User::factory()->forSchool($school)->create();
 
         $limit = $featureGate->limit($user, TierLimit::MaterialStorageGb);
 
@@ -143,7 +143,7 @@ describe('FeatureGateService::requireFeature()', function () {
         $featureGate = app(FeatureGateService::class);
         $freeTier = PricingTier::where('slug', 'basic')->first();
         $school = School::factory()->withTier($freeTier)->create();
-        $user = User::factory()->for($school)->create();
+        $user = User::factory()->forSchool($school)->create();
 
         $featureGate->requireFeature($user, TierFeature::LiveSession);
 
@@ -225,7 +225,7 @@ describe('Authorization Gates', function () {
     it('authorizes feature access via gate', function () {
         $plusTier = PricingTier::where('slug', 'plus')->first();
         $school = School::factory()->withTier($plusTier)->create();
-        $user = User::factory()->for($school)->create();
+        $user = User::factory()->forSchool($school)->create();
 
         $authorized = Gate::forUser($user)->allows('use-analytics');
 
@@ -235,7 +235,7 @@ describe('Authorization Gates', function () {
     it('denies feature access via gate when not available', function () {
         $freeTier = PricingTier::where('slug', 'basic')->first();
         $school = School::factory()->withTier($freeTier)->create();
-        $user = User::factory()->for($school)->create();
+        $user = User::factory()->forSchool($school)->create();
 
         $authorized = Gate::forUser($user)->allows('use-live-session');
 

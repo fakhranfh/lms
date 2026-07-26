@@ -8,7 +8,7 @@ use App\Models\User;
 
 test('course can be created and associated with school', function () {
     $school = School::factory()->create();
-    $user = User::factory()->for($school)->create();
+    $user = User::factory()->forSchool($school)->create();
 
     $course = Course::factory()
         ->for($school)

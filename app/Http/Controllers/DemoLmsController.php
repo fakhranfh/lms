@@ -18,7 +18,7 @@ class DemoLmsController extends Controller
      */
     public function show(Request $request): View
     {
-        $school = auth()->user()->school;
+        $school = auth()->user()->school();
 
         $validAccess = DemoLmsAccess::where('school_id', $school->id)
             ->where('expires_at', '>', now())
@@ -36,7 +36,7 @@ class DemoLmsController extends Controller
      */
     public function generate(Request $request): RedirectResponse
     {
-        $school = auth()->user()->school;
+        $school = auth()->user()->school();
 
         $demoAccess = $this->demoService->getOrCreateDemoAccess($school);
 

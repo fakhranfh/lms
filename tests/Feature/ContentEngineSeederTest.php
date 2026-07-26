@@ -10,8 +10,8 @@ test('content engine seeder creates courses for all schools', function () {
     $school1 = School::factory()->create();
     $school2 = School::factory()->create();
 
-    User::factory()->for($school1)->create();
-    User::factory()->for($school2)->create();
+    User::factory()->forSchool($school1)->create();
+    User::factory()->forSchool($school2)->create();
 
     $this->seed(ContentEngineSeeder::class);
 
@@ -21,7 +21,7 @@ test('content engine seeder creates courses for all schools', function () {
 
 test('content engine seeder creates courses with modules', function () {
     $school = School::factory()->create();
-    User::factory()->for($school)->create();
+    User::factory()->forSchool($school)->create();
 
     $this->seed(ContentEngineSeeder::class);
 
@@ -35,7 +35,7 @@ test('content engine seeder creates courses with modules', function () {
 
 test('content engine seeder creates modules with lessons', function () {
     $school = School::factory()->create();
-    User::factory()->for($school)->create();
+    User::factory()->forSchool($school)->create();
 
     $this->seed(ContentEngineSeeder::class);
 
@@ -49,7 +49,7 @@ test('content engine seeder creates modules with lessons', function () {
 
 test('seeded courses have correct structure', function () {
     $school = School::factory()->create();
-    $instructor = User::factory()->for($school)->create();
+    $instructor = User::factory()->forSchool($school)->create();
 
     $this->seed(ContentEngineSeeder::class);
 
@@ -86,7 +86,7 @@ test('seeded courses have correct structure', function () {
 
 test('seeded courses have published and unpublished variants', function () {
     $school = School::factory()->create();
-    User::factory()->for($school)->create();
+    User::factory()->forSchool($school)->create();
 
     $this->seed(ContentEngineSeeder::class);
 
@@ -101,7 +101,7 @@ test('seeded courses have published and unpublished variants', function () {
 
 test('seeded content belongs to correct school', function () {
     $school = School::factory()->create();
-    User::factory()->for($school)->create();
+    User::factory()->forSchool($school)->create();
 
     $this->seed(ContentEngineSeeder::class);
 
@@ -122,7 +122,7 @@ test('seeded content belongs to correct school', function () {
 
 test('content engine seeder creates an assignment for every lesson', function () {
     $school = School::factory()->create();
-    User::factory()->for($school)->create();
+    User::factory()->forSchool($school)->create();
 
     $this->seed(ContentEngineSeeder::class);
 
@@ -140,7 +140,7 @@ test('content engine seeder creates an assignment for every lesson', function ()
 
 test('seeded assignments have correct structure and publish state', function () {
     $school = School::factory()->create();
-    User::factory()->for($school)->create();
+    User::factory()->forSchool($school)->create();
 
     $this->seed(ContentEngineSeeder::class);
 
@@ -169,7 +169,7 @@ test('seeded assignments have correct structure and publish state', function () 
 
 test('seeded courses are created by school instructors', function () {
     $school = School::factory()->create();
-    $instructor = User::factory()->for($school)->create();
+    $instructor = User::factory()->forSchool($school)->create();
 
     $this->seed(ContentEngineSeeder::class);
 

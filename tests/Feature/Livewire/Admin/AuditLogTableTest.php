@@ -27,7 +27,7 @@ class AuditLogTableTest extends TestCase
     public function test_non_admin_gets_403(): void
     {
         $school = School::factory()->create();
-        $user = User::factory()->for($school, 'school')->create();
+        $user = User::factory()->forSchool($school)->create();
 
         $response = $this->actingAs($user)->get('http://admin.lms.local/audit-logs');
 

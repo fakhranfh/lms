@@ -23,11 +23,11 @@ class School extends Model
     /**
      * Get the users belonging to the school.
      *
-     * @return HasMany<User, $this>
+     * @return BelongsToMany<User, $this>
      */
-    public function users(): HasMany
+    public function users(): BelongsToMany
     {
-        return $this->hasMany(User::class);
+        return $this->belongsToMany(User::class, 'school_user')->withTimestamps();
     }
 
     /**

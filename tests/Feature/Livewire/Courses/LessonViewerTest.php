@@ -36,7 +36,7 @@ class LessonViewerTest extends TestCase
 
         $this->school = School::factory()->create();
         $this->student = User::factory()
-            ->for($this->school)
+            ->forSchool($this->school)
             ->create();
 
         $this->course = Course::factory()
@@ -361,7 +361,7 @@ class LessonViewerTest extends TestCase
             ->for($this->publishedLesson)
             ->create(['is_published' => true]);
 
-        $otherStudent = User::factory()->for($this->school)->create();
+        $otherStudent = User::factory()->forSchool($this->school)->create();
         Submission::factory()
             ->for($assignment)
             ->for($otherStudent)

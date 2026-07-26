@@ -13,7 +13,7 @@ class Dashboard extends Component
     public function mount(): void
     {
         $user = Auth::user();
-        $school = $user?->school;
+        $school = $user?->school();
 
         if ($school && $user->hasRole(['Admin', 'School Admin', 'Instructor'])) {
             $this->storageQuota = app(R2StorageService::class)->checkSchoolQuota($school->id);

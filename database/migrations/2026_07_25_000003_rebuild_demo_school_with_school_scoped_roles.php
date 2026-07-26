@@ -60,7 +60,6 @@ return new class extends Migration
             'id' => (string) Str::uuid(),
             'name' => 'Demo Instructor',
             'email' => 'demo-instructor@demo.'.$rootDomain,
-            'school_id' => $school->id,
             'password' => Hash::make('demo-password'),
             'email_verified_at' => now(),
             'timezone' => 'UTC',
@@ -71,12 +70,16 @@ return new class extends Migration
             'id' => (string) Str::uuid(),
             'name' => 'Demo Student',
             'email' => 'demo-student@demo.'.$rootDomain,
-            'school_id' => $school->id,
             'password' => Hash::make('demo-password'),
             'email_verified_at' => now(),
             'timezone' => 'UTC',
         ]);
         $studentUser->assignRole($studentRole);
+
+        // Set the school_id column directly, bypassing the User model's
+        // school_user pivot write-through since that table does not exist yet
+        // at this point in migration history.
+        DB::table('users')->whereIn('id', [$instructorUser->id, $studentUser->id])->update(['school_id' => $school->id]);
 
         DemoLmsAccess::create([
             'id' => (string) Str::uuid(),

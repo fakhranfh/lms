@@ -38,7 +38,6 @@ class SchoolAdminRegister extends Component
         $this->validate();
 
         $user = User::create([
-            'school_id' => null,
             'name' => $this->name,
             'email' => $this->email,
             'password' => Hash::make($this->password),

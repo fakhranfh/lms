@@ -76,7 +76,7 @@ class FeatureGateService
         }
 
         if ($entity instanceof User) {
-            return $entity->school;
+            return $entity->school();
         }
 
         return null;

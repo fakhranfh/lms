@@ -23,7 +23,7 @@ class CoursesIndexTest extends TestCase
 
         $this->school = School::factory()->create();
         $this->instructor = User::factory()
-            ->for($this->school)
+            ->forSchool($this->school)
             ->create();
 
         $this->actingAs($this->instructor);
@@ -281,7 +281,7 @@ class CoursesIndexTest extends TestCase
         $lesson = Lesson::factory()->for($module)->create();
 
         $student = User::factory()
-            ->for($this->school)
+            ->forSchool($this->school)
             ->create();
         $lesson->markCompleteFor($student);
 

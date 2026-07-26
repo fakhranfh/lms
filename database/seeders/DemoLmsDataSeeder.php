@@ -45,7 +45,7 @@ class DemoLmsDataSeeder extends Seeder
 
             $studentCount = random_int(10, 15);
             $students = User::factory()
-                ->school($school)
+                ->forSchool($school)
                 ->count($studentCount)
                 ->create();
 

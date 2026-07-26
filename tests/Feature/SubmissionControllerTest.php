@@ -28,7 +28,7 @@ test('store creates a pending submission quickly and dispatches grading job', fu
     Queue::fake();
 
     $school = School::factory()->create();
-    $student = User::factory()->for($school)->create();
+    $student = User::factory()->forSchool($school)->create();
     $assignment = makeAssignmentForSchool($school);
 
     $this->actingAs($student);
@@ -50,8 +50,8 @@ test('store creates a pending submission quickly and dispatches grading job', fu
 
 test('override requires submissions.override-grade permission', function () {
     $school = School::factory()->create();
-    $student = User::factory()->for($school)->create();
-    $instructor = User::factory()->for($school)->create();
+    $student = User::factory()->forSchool($school)->create();
+    $instructor = User::factory()->forSchool($school)->create();
     $assignment = makeAssignmentForSchool($school);
     $submission = Submission::factory()->for($assignment)->for($student)->create();
 
@@ -80,7 +80,7 @@ test('rate limit triggers on the 4th rapid submission request', function () {
     Queue::fake();
 
     $school = School::factory()->create();
-    $student = User::factory()->for($school)->create();
+    $student = User::factory()->forSchool($school)->create();
     $assignment = makeAssignmentForSchool($school, ['allow_multiple_submissions' => true]);
 
     $this->actingAs($student);
@@ -107,7 +107,7 @@ test('store responds quickly since grading is dispatched asynchronously', functi
     Queue::fake();
 
     $school = School::factory()->create();
-    $student = User::factory()->for($school)->create();
+    $student = User::factory()->forSchool($school)->create();
     $assignment = makeAssignmentForSchool($school);
 
     $this->actingAs($student);
@@ -130,7 +130,7 @@ test('submission transitions to graded once the dispatched job runs', function (
     Queue::fake();
 
     $school = School::factory()->create();
-    $student = User::factory()->for($school)->create();
+    $student = User::factory()->forSchool($school)->create();
     $assignment = makeAssignmentForSchool($school);
 
     $this->actingAs($student);
@@ -167,8 +167,8 @@ test('retry redispatches the grading job for a failed submission', function () {
     Queue::fake();
 
     $school = School::factory()->create();
-    $student = User::factory()->for($school)->create();
-    $instructor = User::factory()->for($school)->create();
+    $student = User::factory()->forSchool($school)->create();
+    $instructor = User::factory()->forSchool($school)->create();
     $instructor->givePermissionTo('submissions.grade');
     $assignment = makeAssignmentForSchool($school);
     $submission = Submission::factory()->for($assignment)->for($student)->create([

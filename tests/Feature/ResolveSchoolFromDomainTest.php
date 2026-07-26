@@ -27,7 +27,7 @@ test('a known school subdomain resolves its school', function () {
 
 test('a non-admin user is forbidden from the admin domain', function () {
     $school = School::factory()->create();
-    $user = User::factory()->for($school, 'school')->create();
+    $user = User::factory()->forSchool($school)->create();
 
     $this->actingAs($user)
         ->get('http://admin.'.config('app.domain').'/dashboard')

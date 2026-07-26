@@ -26,7 +26,9 @@ class RealisticCoursesSeeder extends Seeder
 
     private function seedSchoolCourses(School $school): void
     {
-        $instructors = User::where('school_id', $school->id)
+        $instructors = User::whereHas('memberSchools', function ($q) use ($school) {
+            $q->where('schools.id', $school->id);
+        })
             ->whereHas('roles', function ($q) {
                 $q->where('name', 'Instructor');
             })
@@ -34,7 +36,7 @@ class RealisticCoursesSeeder extends Seeder
 
         if ($instructors->isEmpty()) {
             $instructors = User::factory()
-                ->for($school)
+                ->forSchool($school)
                 ->count(2)
                 ->create();
             $instructors->each(fn ($user) => $user->assignRole('Instructor'));

@@ -12,7 +12,7 @@ describe('LessonForm Quota Display', function () {
         $user->givePermissionTo('lessons.create');
 
         $course = Course::factory()
-            ->for($user->school)
+            ->for($user->school())
             ->for($user, 'creator')
             ->create();
 
@@ -75,7 +75,7 @@ describe('LessonForm Quota Display', function () {
             $this->markTestSkipped('R2 credentials not configured');
         }
 
-        $quotaBytes = $service->getSchoolStorageQuotaBytes($user->school->id);
+        $quotaBytes = $service->getSchoolStorageQuotaBytes($user->school()->id);
 
         // Should return a positive integer in bytes
         expect($quotaBytes)->toBeInt()
@@ -130,7 +130,7 @@ describe('LessonForm Quota Display', function () {
             $user->givePermissionTo('lessons.create');
 
             $course = Course::factory()
-                ->for($user->school)
+                ->for($user->school())
                 ->for($user, 'creator')
                 ->create();
 
@@ -148,13 +148,13 @@ describe('LessonForm Quota Display', function () {
         test('school tier determines storage quota', function () {
             $user = User::factory()->create();
 
-            if (! $user->school || ! $user->school->tier) {
+            if (! $user->school() || ! $user->school()->tier) {
                 $this->markTestSkipped('School without tier configuration');
             }
 
             $service = app(R2StorageService::class);
 
-            $quota = $service->checkSchoolQuota($user->school->id);
+            $quota = $service->checkSchoolQuota($user->school()->id);
 
             // Should have a valid limit_gb based on tier
             expect($quota['limit_gb'])->toBeInt()

@@ -9,8 +9,8 @@ test('a query run under school A never returns rows belonging to school B', func
     $schoolA = School::factory()->create();
     $schoolB = School::factory()->create();
 
-    User::factory()->for($schoolA, 'school')->create();
-    User::factory()->for($schoolB, 'school')->create();
+    User::factory()->forSchool($schoolA)->create();
+    User::factory()->forSchool($schoolB)->create();
 
     app(CurrentSchool::class)->setSchoolId($schoolA->id);
 
@@ -38,8 +38,8 @@ test('withoutGlobalScope bypasses school scoping for cross-school console operat
     $schoolA = School::factory()->create();
     $schoolB = School::factory()->create();
 
-    $userA = User::factory()->for($schoolA, 'school')->create();
-    $userB = User::factory()->for($schoolB, 'school')->create();
+    $userA = User::factory()->forSchool($schoolA)->create();
+    $userB = User::factory()->forSchool($schoolB)->create();
 
     app(CurrentSchool::class)->setSchoolId($schoolA->id);
 
@@ -52,8 +52,8 @@ test('no school context means queries are unscoped', function () {
     $schoolA = School::factory()->create();
     $schoolB = School::factory()->create();
 
-    $userA = User::factory()->for($schoolA, 'school')->create();
-    $userB = User::factory()->for($schoolB, 'school')->create();
+    $userA = User::factory()->forSchool($schoolA)->create();
+    $userB = User::factory()->forSchool($schoolB)->create();
 
     app(CurrentSchool::class)->setSchoolId(null);
 

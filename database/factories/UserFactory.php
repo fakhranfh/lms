@@ -27,30 +27,7 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
-        // Get or create the basic tier
-        $basicTier = PricingTier::where('slug', 'basic')->first();
-        if (! $basicTier) {
-            $basicTier = PricingTier::create([
-                'name' => 'Basic',
-                'slug' => 'basic',
-                'description' => 'Free tier for getting started',
-                'price' => 0,
-                'currency' => 'IDR',
-                'billing_period' => BillingPeriod::Monthly->value,
-                'is_active' => true,
-            ]);
-        }
-
-        // Create school directly to avoid factory trait closure issues
-        $school = School::create([
-            'id' => (string) Str::uuid(),
-            'name' => fake()->company(),
-            'domain' => fake()->unique()->domainName(),
-            'tier_id' => $basicTier->id,
-        ]);
-
         return [
-            'school_id' => $school->id,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
@@ -60,12 +37,50 @@ class UserFactory extends Factory
     }
 
     /**
+     * Configure the model factory to attach the user to a school after creation.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            if (! $user->schoolIdWasExplicitlySet() && ! $user->memberSchools()->exists()) {
+                $school = School::create([
+                    'id' => (string) Str::uuid(),
+                    'name' => fake()->company(),
+                    'domain' => fake()->unique()->domainName(),
+                    'tier_id' => PricingTier::where('slug', 'basic')->first()?->id
+                        ?? PricingTier::create([
+                            'name' => 'Basic',
+                            'slug' => 'basic',
+                            'description' => 'Free tier for getting started',
+                            'price' => 0,
+                            'currency' => 'IDR',
+                            'billing_period' => BillingPeriod::Monthly->value,
+                            'is_active' => true,
+                        ])->id,
+                ]);
+
+                $user->memberSchools()->attach($school);
+            }
+        });
+    }
+
+    /**
      * Indicate that the model's email address should be unverified.
      */
     public function unverified(): static
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Attach the created user to the given school via the school_user pivot.
+     */
+    public function forSchool(School $school): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'school_id' => $school->id,
         ]);
     }
 }

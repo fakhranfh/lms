@@ -33,7 +33,7 @@ class LessonFormTest extends TestCase
 
         $this->school = School::factory()->create();
         $this->instructor = User::factory()
-            ->for($this->school)
+            ->forSchool($this->school)
             ->create();
         $this->course = Course::factory()
             ->for($this->school)

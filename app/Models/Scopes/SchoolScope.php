@@ -16,28 +16,28 @@ class SchoolScope implements Scope
             return;
         }
 
-        $column = $model->qualifyColumn('school_id');
-
-        // School Admin users have no fixed school_id (they may manage several
-        // schools via the school_admins pivot), so they must remain visible
-        // under the specific school(s) they actually administer.
+        // Users belong to schools via the school_user pivot, and School Admins
+        // may additionally (or instead) manage several schools via the
+        // school_admins pivot, so they must remain visible under any school
+        // they are either a member of or an admin for.
         if ($model instanceof User) {
-            $builder->where(function (Builder $query) use ($column, $schoolId): void {
-                $query->where($column, $schoolId)
-                    ->orWhere(function (Builder $adminQuery) use ($column, $schoolId): void {
-                        $adminQuery->whereNull($column)
-                            ->whereExists(function ($subQuery) use ($schoolId): void {
-                                $subQuery->selectRaw('1')
-                                    ->from('school_admins')
-                                    ->whereColumn('school_admins.user_id', 'users.id')
-                                    ->where('school_admins.school_id', $schoolId);
-                            });
-                    });
+            $builder->where(function (Builder $query) use ($schoolId): void {
+                $query->whereExists(function ($subQuery) use ($schoolId): void {
+                    $subQuery->selectRaw('1')
+                        ->from('school_user')
+                        ->whereColumn('school_user.user_id', 'users.id')
+                        ->where('school_user.school_id', $schoolId);
+                })->orWhereExists(function ($subQuery) use ($schoolId): void {
+                    $subQuery->selectRaw('1')
+                        ->from('school_admins')
+                        ->whereColumn('school_admins.user_id', 'users.id')
+                        ->where('school_admins.school_id', $schoolId);
+                });
             });
 
             return;
         }
 
-        $builder->where($column, $schoolId);
+        $builder->where($model->qualifyColumn('school_id'), $schoolId);
     }
 }

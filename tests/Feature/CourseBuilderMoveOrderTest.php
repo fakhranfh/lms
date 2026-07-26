@@ -9,7 +9,7 @@ use Livewire\Livewire;
 
 test('clicking move up on bottom module moves it up by one position only', function () {
     $school = School::factory()->create();
-    $instructor = User::factory()->for($school)->create();
+    $instructor = User::factory()->forSchool($school)->create();
     $instructor->givePermissionTo(['courses.view', 'modules.edit']);
     $this->actingAs($instructor);
 

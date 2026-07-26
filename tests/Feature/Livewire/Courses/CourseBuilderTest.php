@@ -28,7 +28,7 @@ class CourseBuilderTest extends TestCase
 
         $this->school = School::factory()->create();
         $this->instructor = User::factory()
-            ->for($this->school)
+            ->forSchool($this->school)
             ->create();
         $this->course = Course::factory()
             ->for($this->school)
@@ -272,7 +272,7 @@ class CourseBuilderTest extends TestCase
             Permission::whereIn('name', ['courses.view', 'modules.view', 'lessons.view'])->get()
         );
 
-        $student = User::factory()->for($this->school)->create();
+        $student = User::factory()->forSchool($this->school)->create();
         $student->assignRole($studentRole);
 
         $module = Module::factory()->for($this->course)->published()->create();

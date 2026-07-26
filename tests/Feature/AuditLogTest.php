@@ -8,7 +8,7 @@ use App\Support\CurrentSchool;
 
 beforeEach(function () {
     $this->school = School::factory()->create();
-    $this->user = User::factory()->for($this->school, 'school')->create();
+    $this->user = User::factory()->forSchool($this->school)->create();
     app(CurrentSchool::class)->setSchoolId($this->school->id);
     $this->actingAs($this->user);
 });

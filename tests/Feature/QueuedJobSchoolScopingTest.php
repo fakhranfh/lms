@@ -29,8 +29,8 @@ test('a queued job scopes queries to the school_id carried in its payload', func
     $schoolA = School::factory()->create();
     $schoolB = School::factory()->create();
 
-    User::factory()->for($schoolA, 'school')->count(2)->create();
-    User::factory()->for($schoolB, 'school')->count(3)->create();
+    User::factory()->forSchool($schoolA)->count(2)->create();
+    User::factory()->forSchool($schoolB)->count(3)->create();
 
     $job = new CountSchoolUsersJob($schoolA->id);
     $job->handle();

@@ -21,7 +21,7 @@ class CourseFormTest extends TestCase
 
         $this->school = School::factory()->create();
         $this->instructor = User::factory()
-            ->for($this->school)
+            ->forSchool($this->school)
             ->create();
 
         $this->actingAs($this->instructor);

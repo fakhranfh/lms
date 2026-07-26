@@ -5,6 +5,7 @@ use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -38,12 +39,16 @@ return new class extends Migration
             [
                 'id' => Str::uuid(),
                 'name' => 'Demo Instructor',
-                'school_id' => $school->id,
                 'password' => Hash::make('demo-password'),
                 'email_verified_at' => now(),
                 'timezone' => 'UTC',
             ]
         );
+
+        // Set the school_id column directly, bypassing the User model's
+        // school_user pivot write-through since that table does not exist yet
+        // at this point in migration history.
+        DB::table('users')->where('id', $user->id)->update(['school_id' => $school->id]);
 
         // Create/assign instructor role
         $instructorRole = Role::firstOrCreate(

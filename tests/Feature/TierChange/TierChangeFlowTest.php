@@ -69,6 +69,8 @@ it('applies immediate downgrade without payment', function () {
     $basicTier = PricingTier::where('slug', 'basic')->first();
     expect((float) $basicTier->price)->toEqual(0.0);
 
+    $existingSchoolTierIds = $school->schoolTiers()->pluck('id');
+
     $service = app(TierChangeService::class);
     $result = $service->initiateTierChange($school, $basicTier);
 
@@ -77,8 +79,8 @@ it('applies immediate downgrade without payment', function () {
     $school->refresh();
     expect($school->tier_id)->toBe($basicTier->id);
 
-    // Get the tier change from the new school tier (skip the initial one from factory)
-    $newSchoolTier = $school->schoolTiers()->orderBy('created_at', 'desc')->skip(1)->first();
+    // Get the tier change from the new school tier (excluding the one seeded by the factory)
+    $newSchoolTier = $school->schoolTiers()->whereNotIn('id', $existingSchoolTierIds)->first();
     expect($newSchoolTier)->not->toBeNull();
 
     $tierChange = TierChange::where('school_tier_id', $newSchoolTier->id)->first();
@@ -205,12 +207,14 @@ it('creates tier change record on immediate change', function () {
     $school->update(['tier_id' => $plusTier->id]);
     $school->refresh();
 
+    $existingSchoolTierIds = $school->schoolTiers()->pluck('id');
+
     $service = app(TierChangeService::class);
     $result = $service->initiateTierChange($school, $basicTier);
     expect($result)->toBeNull();
 
-    // Get the new tier change (skip the initial one from factory)
-    $newSchoolTier = $school->schoolTiers()->orderBy('created_at', 'desc')->skip(1)->first();
+    // Get the new tier change (excluding the one seeded by the factory)
+    $newSchoolTier = $school->schoolTiers()->whereNotIn('id', $existingSchoolTierIds)->first();
     expect($newSchoolTier)->not->toBeNull();
 
     $tierChange = TierChange::where('school_tier_id', $newSchoolTier->id)->first();

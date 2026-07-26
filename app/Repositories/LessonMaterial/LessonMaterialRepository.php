@@ -124,7 +124,9 @@ class LessonMaterialRepository implements LessonMaterialRepositoryInterface
         // so a single CASE update can collide mid-statement on other drivers
         // (e.g. sqlite in CI). Shift into a negative, non-colliding range first,
         // then apply the final positive order in a second pass.
-        DB::transaction(function () use ($orderMap, $lessonId, $materialIds, $placeholders): void {
+        $orderColumn = DB::getQueryGrammar()->wrap('order');
+
+        DB::transaction(function () use ($orderMap, $lessonId, $materialIds, $placeholders, $orderColumn): void {
             $tempCaseWhen = 'CASE id';
             foreach ($orderMap as $materialId => $order) {
                 $tempCaseWhen .= " WHEN '$materialId' THEN ".(-$order);
@@ -132,7 +134,7 @@ class LessonMaterialRepository implements LessonMaterialRepositoryInterface
             $tempCaseWhen .= ' END';
 
             DB::update(
-                "UPDATE lesson_materials SET \"order\" = $tempCaseWhen WHERE lesson_id = ? AND id IN ($placeholders)",
+                "UPDATE lesson_materials SET $orderColumn = $tempCaseWhen WHERE lesson_id = ? AND id IN ($placeholders)",
                 array_merge([$lessonId], $materialIds)
             );
 
@@ -143,7 +145,7 @@ class LessonMaterialRepository implements LessonMaterialRepositoryInterface
             $finalCaseWhen .= ' END';
 
             DB::update(
-                "UPDATE lesson_materials SET \"order\" = $finalCaseWhen WHERE lesson_id = ? AND id IN ($placeholders)",
+                "UPDATE lesson_materials SET $orderColumn = $finalCaseWhen WHERE lesson_id = ? AND id IN ($placeholders)",
                 array_merge([$lessonId], $materialIds)
             );
         });

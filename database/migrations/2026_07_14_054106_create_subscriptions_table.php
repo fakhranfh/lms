@@ -16,9 +16,9 @@ return new class extends Migration
             $table->foreignUuid('school_id')->constrained('schools')->cascadeOnDelete();
             $table->foreignId('tier_id')->constrained('subscription_tiers');
             $table->string('status');
-            $table->timestamp('started_at');
-            $table->timestamp('expires_at');
-            $table->timestamp('renewal_date')->nullable();
+            $table->dateTime('started_at');
+            $table->dateTime('expires_at');
+            $table->dateTime('renewal_date')->nullable();
             $table->boolean('auto_renew')->default(true);
             $table->string('payment_method')->nullable();
             $table->timestamps();

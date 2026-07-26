@@ -20,6 +20,21 @@ return new class extends Migration
             $table->dropUnique(['lesson_id', 'order']);
         });
 
+        // MySQL/MariaDB have no partial index support, so the "active rows
+        // only" scoping is emulated with a generated column that collapses to
+        // NULL (excluded from uniqueness) for inactive rows.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement(
+                'ALTER TABLE lesson_materials ADD COLUMN active_order INT GENERATED ALWAYS AS (IF(is_active, `order`, NULL)) VIRTUAL'
+            );
+
+            DB::statement(
+                'CREATE UNIQUE INDEX lesson_materials_active_lesson_id_order_unique ON lesson_materials (lesson_id, active_order)'
+            );
+
+            return;
+        }
+
         DB::statement(
             'CREATE UNIQUE INDEX lesson_materials_active_lesson_id_order_unique ON lesson_materials (lesson_id, "order") WHERE is_active'
         );
@@ -30,7 +45,15 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('DROP INDEX lesson_materials_active_lesson_id_order_unique');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('DROP INDEX lesson_materials_active_lesson_id_order_unique ON lesson_materials');
+
+            Schema::table('lesson_materials', function (Blueprint $table) {
+                $table->dropColumn('active_order');
+            });
+        } else {
+            DB::statement('DROP INDEX lesson_materials_active_lesson_id_order_unique');
+        }
 
         Schema::table('lesson_materials', function (Blueprint $table) {
             $table->unique(['lesson_id', 'order']);

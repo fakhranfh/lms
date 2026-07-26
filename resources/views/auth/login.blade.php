@@ -2,26 +2,14 @@
 
 @section('title', 'Login')
 
-@section('body_class', 'bg-background text-on-background min-h-screen flex items-center justify-center p-gutter font-body-md')
-
-@push('styles')
-    <style>
-        #logo {
-            width: 50px;
-            height: auto;
-        }
-    </style>
-@endpush
+@section('body_class', 'bg-background text-on-background min-h-screen flex flex-col font-body-md')
 
 @section('content')
+
+    @include('partials.topbar')
+
+    <main class="flex flex-1 items-center justify-center p-gutter">
     <div class="w-full max-w-[400px] bg-surface rounded-xl p-space-xl border border-outline-variant shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        <!-- Header -->
-        <div class="text-center mb-space-xl">
-            <a href="{{ url('/') }}">
-                <img id="logo" class="mx-auto mb-space-sm" src="{{ asset('logo.png') }}" alt="Logo">
-            </a>
-        </div>
-        
         @if (session('status') || session('success'))
             <div class="mb-space-md rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-700 text-body-sm font-body-sm">
                 {{ session('status') ?? session('success') }}
@@ -78,14 +66,13 @@
         <div class="mt-space-xl text-center">
             <p class="font-body-sm text-body-sm text-secondary">
                 Don't have an account?
-                <a class="text-primary font-medium hover:underline transition-colors" href="{{ route('register') }}">Register</a>
+                <a class="text-primary font-medium hover:underline transition-colors" href="{{ route('get-started') }}">Register</a>
             </p>
         </div>
     </div>
-    <!-- Footer Component Execution -->
-    <div class="fixed bottom-0 w-full py-space-xl border-t border-outline-variant bg-background flex flex-col items-center gap-space-sm px-gutter">
-        <p class="font-body-sm text-body-sm text-secondary opacity-80">© {{ date('Y') }} {{ config('app.name') }}</p>
-    </div>
+    </main>
+
+    @include('partials.footer')
 @endsection
 
 @push('scripts')

@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Laravel\Dusk\Browser;
@@ -18,33 +17,6 @@ test('capture landing page screenshot', function () {
         $browser->visit('/')
             ->pause(500)
             ->screenshot('landing-page');
-    });
-});
-
-test('capture register page screenshot', function () {
-    Http::fake(['api.pwnedpasswords.com/*' => Http::response('', 200)]);
-
-    $this->browse(function (Browser $browser) {
-        $browser->visit('/register')
-            ->pause(500)
-            ->screenshot('register-page');
-    });
-});
-
-test('capture register error screenshot', function () {
-    Http::fake(['api.pwnedpasswords.com/*' => Http::response('', 200)]);
-
-    User::factory()->create(['email' => 'taken@example.com']);
-
-    $this->browse(function (Browser $browser) {
-        $browser->visit('/register')
-            ->type('name', 'John Doe')
-            ->type('email', 'taken@example.com')
-            ->type('password', 'Secret!Pass123#Secure')
-            ->type('password_confirmation', 'Secret!Pass123#Secure')
-            ->press('Register')
-            ->pause(1000)
-            ->screenshot('register-error');
     });
 });
 

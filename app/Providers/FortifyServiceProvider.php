@@ -41,15 +41,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
-        Fortify::registerView(function () {
-            return view('auth.register');
-        });
-
         Fortify::loginView(function (Request $request) {
-            if ($request->getHost() === config('app.domain')) {
-                return redirect()->route('try-demo');
-            }
-
             return view('auth.login');
         });
 

@@ -38,7 +38,7 @@ test('guest users can navigate to register from landing page', function () {
     $this->browse(function (Browser $browser) {
         $browser->visit('/')
             ->clickLink('Get Started')
-            ->assertPathIs('/register');
+            ->assertPathIs('/get-started');
     });
 });
 

@@ -70,7 +70,7 @@ test('login page has link to register page', function () {
             ->waitForLocation('/login')
             ->clickLink('Register')
             ->pause(500)
-            ->assertPathIs('/register');
+            ->assertPathIs('/get-started');
     });
 });
 

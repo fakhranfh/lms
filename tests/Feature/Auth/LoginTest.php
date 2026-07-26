@@ -4,8 +4,8 @@ use App\Models\School;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 
-test('login page redirects to try demo on the root domain', function () {
-    $this->get('/login')->assertRedirect(route('try-demo'));
+test('login page can be rendered on the root domain', function () {
+    $this->get('/login')->assertSuccessful();
 });
 
 test('login page can be rendered on a school subdomain', function () {

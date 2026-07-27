@@ -112,11 +112,9 @@ class TierChangeService
                 'amount' => $amount,
                 'currency' => $newTier->currency,
                 'status' => 'pending',
-                'metadata' => [
-                    'from_tier_id' => $oldTierId,
-                    'change_type' => TierChangeType::Upgrade->value,
-                    'proration_amount' => $proration,
-                ],
+                'from_tier_id' => $oldTierId,
+                'change_type' => TierChangeType::Upgrade,
+                'proration_amount' => $proration,
             ]);
 
             return $schoolTier;
@@ -163,13 +161,8 @@ class TierChangeService
         $oldTierId = $school->tier_id;
         $newTierId = $schoolTier->tier_id;
 
-        // Extract proration from metadata
-        $proration = $transaction->metadata['proration_amount'] ?? 0;
-        $changeType = match ($transaction->metadata['change_type'] ?? null) {
-            TierChangeType::Upgrade->value => TierChangeType::Upgrade,
-            TierChangeType::Downgrade->value => TierChangeType::Downgrade,
-            default => TierChangeType::Upgrade,
-        };
+        $proration = (float) ($transaction->proration_amount ?? 0);
+        $changeType = $transaction->change_type ?? TierChangeType::Upgrade;
 
         DB::transaction(function () use ($school, $schoolTier, $oldTierId, $newTierId, $proration, $changeType): void {
             // Update school tier

@@ -23,8 +23,8 @@
 
                 <div class="rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3">
                     <p class="font-body-sm text-body-sm text-secondary mb-space-xs">Plan</p>
-                    <p class="font-headline-sm text-headline-sm text-on-surface">{{ $transaction->metadata['tier_name'] }}</p>
-                    <p class="font-body-sm text-body-sm text-secondary">Billed {{ $transaction->metadata['billing_period'] }}</p>
+                    <p class="font-headline-sm text-headline-sm text-on-surface">{{ $transaction->tier_name }}</p>
+                    <p class="font-body-sm text-body-sm text-secondary">Billed {{ $transaction->billing_period }}</p>
 
                     <dl class="mt-space-md space-y-space-xxs">
                         <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\PaymentStatus;
+use App\Enums\TransactionType;
 use App\Models\PaymentGateway;
 use App\Models\PaymentTransaction;
 use App\Models\School;
@@ -29,7 +30,7 @@ class PaymentTransactionFactory extends Factory
             'amount' => $this->faker->numberBetween(100000, 500000),
             'currency' => 'IDR',
             'status' => PaymentStatus::Pending,
-            'metadata' => [],
+            'transaction_type' => TransactionType::TierPurchase,
         ];
     }
 }

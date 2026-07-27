@@ -55,7 +55,7 @@ it('initiates an upgrade with pending tier and invoice', function () {
     $transaction = PaymentTransaction::whereHas('detail', fn ($query) => $query->where('subscription_id', $pendingTier->id))->first();
     expect($transaction)->not->toBeNull();
     expect($transaction->status)->toBe(PaymentStatus::Pending);
-    expect($transaction->metadata['change_type'])->toBe(TierChangeType::Upgrade->value);
+    expect($transaction->change_type)->toBe(TierChangeType::Upgrade);
 });
 
 it('applies immediate downgrade without payment', function () {
@@ -175,11 +175,9 @@ it('finalizes tier change on successful payment', function () {
         'amount' => 100000,
         'currency' => 'IDR',
         'status' => PaymentStatus::Completed,
-        'metadata' => [
-            'from_tier_id' => (int) $basicTier->id,
-            'change_type' => TierChangeType::Upgrade->value,
-            'proration_amount' => 50000,
-        ],
+        'from_tier_id' => (int) $basicTier->id,
+        'change_type' => TierChangeType::Upgrade,
+        'proration_amount' => 50000,
     ]);
 
     $service = app(TierChangeService::class);

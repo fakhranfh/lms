@@ -70,7 +70,7 @@ class SubscriptionPaymentService
             ]);
 
             // Dispatch TierChangeJob if this is a tier change
-            if (isset($transaction->metadata['change_type'])) {
+            if ($transaction->change_type !== null) {
                 TierChangeJob::dispatch($transaction);
             }
         }

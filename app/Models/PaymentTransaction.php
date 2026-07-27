@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\AdminFeeType;
 use App\Enums\PaymentStatus;
+use App\Enums\TierChangeType;
+use App\Enums\TransactionType;
 use App\Traits\HasUuid;
 use Database\Factories\PaymentTransactionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -12,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['initiated_by', 'payment_gateway_id', 'transaction_id', 'amount', 'currency', 'status', 'subtotal', 'vat_rate', 'vat_amount', 'admin_fee_rate', 'admin_fee_type', 'admin_fee_amount', 'registration_data'])]
+#[Fillable(['initiated_by', 'payment_gateway_id', 'transaction_id', 'amount', 'currency', 'status', 'transaction_type', 'subtotal', 'vat_rate', 'vat_amount', 'admin_fee_rate', 'admin_fee_type', 'admin_fee_amount', 'registration_data'])]
 class PaymentTransaction extends Model
 {
     /** @use HasFactory<PaymentTransactionFactory> */
@@ -20,9 +22,9 @@ class PaymentTransaction extends Model
 
     /**
      * Keys that no longer live on this table and are instead stored on the
-     * related PaymentTransactionDetail record.
+     * related TierSubscriptionDetail record.
      */
-    private const DETAIL_KEYS = ['school_id', 'subscription_id', 'metadata'];
+    private const DETAIL_KEYS = ['school_id', 'subscription_id', 'tier_name', 'billing_period', 'from_tier_id', 'change_type', 'proration_amount'];
 
     /**
      * @var array<string, mixed>
@@ -35,6 +37,7 @@ class PaymentTransaction extends Model
     protected $casts = [
         'amount' => 'decimal:2',
         'status' => PaymentStatus::class,
+        'transaction_type' => TransactionType::class,
         'subtotal' => 'decimal:2',
         'vat_rate' => 'decimal:4',
         'vat_amount' => 'decimal:2',
@@ -60,9 +63,9 @@ class PaymentTransaction extends Model
     }
 
     /**
-     * Intercept `school_id`, `subscription_id` and `metadata` so callers can keep
-     * writing them like regular attributes even though they now live on the
-     * related `PaymentTransactionDetail` record.
+     * Intercept the tier-purchase-specific keys so callers can keep writing
+     * them like regular attributes even though they now live on the related
+     * `TierSubscriptionDetail` record.
      *
      * @param  array<string, mixed>  $attributes
      * @return $this
@@ -100,13 +103,13 @@ class PaymentTransaction extends Model
     }
 
     /**
-     * Get the transaction's contextual detail record (school, subscription, misc metadata).
+     * Get the transaction's tier subscription detail record (school, subscription, misc metadata).
      *
-     * @return HasOne<PaymentTransactionDetail, $this>
+     * @return HasOne<TierSubscriptionDetail, $this>
      */
     public function detail(): HasOne
     {
-        return $this->hasOne(PaymentTransactionDetail::class);
+        return $this->hasOne(TierSubscriptionDetail::class);
     }
 
     public function getSchoolIdAttribute(): ?string
@@ -129,11 +132,28 @@ class PaymentTransaction extends Model
         return $this->detail?->subscription;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function getMetadataAttribute(): array
+    public function getTierNameAttribute(): ?string
     {
-        return $this->detail?->metadata ?? [];
+        return $this->detail?->tier_name;
+    }
+
+    public function getBillingPeriodAttribute(): ?string
+    {
+        return $this->detail?->billing_period;
+    }
+
+    public function getFromTierIdAttribute(): ?int
+    {
+        return $this->detail?->from_tier_id;
+    }
+
+    public function getChangeTypeAttribute(): ?TierChangeType
+    {
+        return $this->detail?->change_type;
+    }
+
+    public function getProrationAmountAttribute(): ?string
+    {
+        return $this->detail?->proration_amount;
     }
 }

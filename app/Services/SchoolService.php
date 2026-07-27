@@ -139,10 +139,8 @@ class SchoolService
             'admin_fee_rate' => $adminFeeRate,
             'admin_fee_type' => AdminFeeType::Percentage,
             'admin_fee_amount' => $adminFeeAmount,
-            'metadata' => [
-                'tier_name' => $tier->name,
-                'billing_period' => strtolower($tier->billing_period->label()),
-            ],
+            'tier_name' => $tier->name,
+            'billing_period' => strtolower($tier->billing_period->label()),
         ]);
     }
 

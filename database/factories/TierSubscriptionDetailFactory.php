@@ -3,15 +3,15 @@
 namespace Database\Factories;
 
 use App\Models\PaymentTransaction;
-use App\Models\PaymentTransactionDetail;
 use App\Models\School;
 use App\Models\SchoolTier;
+use App\Models\TierSubscriptionDetail;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<PaymentTransactionDetail>
+ * @extends Factory<TierSubscriptionDetail>
  */
-class PaymentTransactionDetailFactory extends Factory
+class TierSubscriptionDetailFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -24,7 +24,6 @@ class PaymentTransactionDetailFactory extends Factory
             'payment_transaction_id' => PaymentTransaction::factory(),
             'school_id' => School::factory(),
             'subscription_id' => SchoolTier::factory(),
-            'metadata' => [],
         ];
     }
 }

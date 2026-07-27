@@ -13,6 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('payment_transactions', function (Blueprint $table) {
+            $table->string('transaction_type')->default('tier_purchase')->after('status');
             $table->decimal('subtotal', 15, 2)->nullable()->after('amount');
             $table->decimal('vat_rate', 8, 4)->nullable()->after('subtotal');
             $table->decimal('vat_amount', 15, 2)->nullable()->after('vat_rate');
@@ -56,6 +57,7 @@ return new class extends Migration
 
         Schema::table('payment_transactions', function (Blueprint $table) {
             $table->dropColumn([
+                'transaction_type',
                 'subtotal',
                 'vat_rate',
                 'vat_amount',

@@ -2,24 +2,26 @@
 
 namespace App\Models;
 
+use App\Enums\TierChangeType;
 use App\Traits\HasUuid;
-use Database\Factories\PaymentTransactionDetailFactory;
+use Database\Factories\TierSubscriptionDetailFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['payment_transaction_id', 'school_id', 'subscription_id', 'metadata'])]
-class PaymentTransactionDetail extends Model
+#[Fillable(['payment_transaction_id', 'school_id', 'subscription_id', 'tier_name', 'billing_period', 'from_tier_id', 'change_type', 'proration_amount'])]
+class TierSubscriptionDetail extends Model
 {
-    /** @use HasFactory<PaymentTransactionDetailFactory> */
+    /** @use HasFactory<TierSubscriptionDetailFactory> */
     use HasFactory, HasUuid;
 
     /**
      * @var array<string, string>
      */
     protected $casts = [
-        'metadata' => 'array',
+        'change_type' => TierChangeType::class,
+        'proration_amount' => 'decimal:2',
     ];
 
     /**
@@ -50,5 +52,15 @@ class PaymentTransactionDetail extends Model
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(SchoolTier::class, 'subscription_id');
+    }
+
+    /**
+     * Get the tier this subscription is changing from.
+     *
+     * @return BelongsTo<PricingTier, $this>
+     */
+    public function fromTier(): BelongsTo
+    {
+        return $this->belongsTo(PricingTier::class, 'from_tier_id');
     }
 }

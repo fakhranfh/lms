@@ -1,6 +1,11 @@
+@extends('master')
+
 @section('title', 'Complete Your Payment')
 
-<div class="flex min-h-screen flex-col">
+@section('body_class', 'bg-background text-on-background min-h-screen flex flex-col font-body-md')
+
+@section('content')
+
     @include('partials.topbar')
 
     <main class="flex flex-1 items-center justify-center p-gutter">
@@ -21,14 +26,14 @@
                     <p class="font-headline-sm text-headline-sm text-on-surface">{{ $school->tier->name }}</p>
 
                     @if ((float) $school->tier->price > 0)
-                        <?php
+                        @php
                             $subtotal = (float) $school->tier->price;
                             $vat = $subtotal * config('billing.vat_rate');
                             $adminFee = $subtotal * config('billing.admin_fee_rate');
                             $total = $subtotal + $vat + $adminFee;
                             $vatPercent = config('billing.vat_rate') * 100;
                             $adminFeePercent = config('billing.admin_fee_rate') * 100;
-                        ?>
+                        @endphp
                         <dl class="mt-space-md space-y-space-xxs">
                             <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
                                 <dt>Subtotal</dt>
@@ -64,4 +69,5 @@
     </main>
 
     @include('partials.footer')
-</div>
+
+@endsection

@@ -28,7 +28,7 @@ use App\Livewire\Users\UserIndex;
 use App\Livewire\Users\UserRoles;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function () {
     Route::get('/edit-profile', EditProfile::class)->name('edit-profile');
     Route::get('/edit-profile/verify-email', [ProfileController::class, 'verifyEmailChange'])->name('profile.verify-email-change');
 

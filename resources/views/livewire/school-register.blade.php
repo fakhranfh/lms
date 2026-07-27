@@ -10,6 +10,12 @@
             <p class="font-body-md text-body-md text-secondary">Step 2 of 2</p>
         </div>
 
+        @if (session('status'))
+            <div class="mb-space-md rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-700 text-body-sm font-body-sm">
+                {{ session('status') }}
+            </div>
+        @endif
+
         <form wire:submit="save" class="space-y-space-md">
             <div class="space-y-space-xs">
                 <label class="block font-label-md text-label-md text-on-surface" for="name">School Name</label>

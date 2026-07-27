@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\PaymentStatus;
 use App\Enums\RoleName;
 use App\Livewire\SchoolRegister;
+use App\Models\PaymentTransaction;
 use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\User;
@@ -75,27 +77,6 @@ test('a school registers with the basic tier by default', function () {
     $school = School::query()->where('domain', $schoolDomain)->firstOrFail();
 
     expect($school->tier->slug)->toBe('basic');
-});
-
-test('a school registers with the tier selected from the pricing page', function () {
-    $this->seed(PricingTierSeeder::class);
-    $this->actingAs(User::factory()->create(['school_id' => null]));
-
-    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
-    $schoolDomain = 'myschool.'.config('app.domain');
-
-    Livewire::withQueryParams(['tier' => $plusTier->id])
-        ->test(SchoolRegister::class)
-        ->assertSet('tierId', (string) $plusTier->id)
-        ->set('name', 'My School')
-        ->set('domainType', 'subdomain')
-        ->set('subdomain', 'myschool')
-        ->call('save')
-        ->assertHasNoErrors();
-
-    $school = School::query()->where('domain', $schoolDomain)->firstOrFail();
-
-    expect($school->tier->id)->toBe($plusTier->id);
 });
 
 test('registration is rejected for an unknown tier', function () {
@@ -176,12 +157,13 @@ test('registration is rejected for an invalid subdomain label', function (string
     'has slash' => 'my/school',
 ]);
 
-test('registering with a free tier redirects to dashboard', function () {
+test('registering with a free tier creates the school immediately and redirects to dashboard', function () {
     $this->seed(PricingTierSeeder::class);
     $user = User::factory()->create(['school_id' => null]);
     $this->actingAs($user);
 
     $basicTier = PricingTier::query()->where('slug', 'basic')->firstOrFail();
+    $schoolDomain = 'myschool.'.config('app.domain');
 
     Livewire::withQueryParams(['tier' => $basicTier->id])
         ->test(SchoolRegister::class)
@@ -190,9 +172,12 @@ test('registering with a free tier redirects to dashboard', function () {
         ->set('subdomain', 'myschool')
         ->call('save')
         ->assertRedirect(route('manage.schools.index'));
+
+    expect(School::query()->where('domain', $schoolDomain)->exists())->toBeTrue()
+        ->and(PaymentTransaction::query()->count())->toBe(0);
 });
 
-test('registering with a paid tier creates school and redirects to payment', function () {
+test('registering with a paid tier records a pending transaction instead of creating the school', function () {
     $this->seed(PricingTierSeeder::class);
     $user = User::factory()->create(['school_id' => null]);
     $this->actingAs($user);
@@ -208,6 +193,13 @@ test('registering with a paid tier creates school and redirects to payment', fun
         ->call('save')
         ->assertHasNoErrors();
 
-    $school = School::query()->where('domain', $schoolDomain)->firstOrFail();
-    expect($school->tier->id)->toBe($plusTier->id);
+    expect(School::query()->where('domain', $schoolDomain)->exists())->toBeFalse();
+
+    $transaction = PaymentTransaction::query()->where('initiated_by', $user->id)->firstOrFail();
+
+    expect($transaction->status)->toBe(PaymentStatus::Pending)
+        ->and($transaction->school_id)->toBeNull()
+        ->and($transaction->registration_data['name'])->toBe('My School')
+        ->and($transaction->registration_data['domain'])->toBe($schoolDomain)
+        ->and($transaction->registration_data['tier_id'])->toBe($plusTier->id);
 });

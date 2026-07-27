@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['school_id', 'subscription_id', 'school_payment_gateway_id', 'transaction_id', 'amount', 'currency', 'status', 'metadata'])]
+#[Fillable(['school_id', 'initiated_by', 'subscription_id', 'school_payment_gateway_id', 'transaction_id', 'amount', 'currency', 'status', 'metadata', 'registration_data'])]
 class PaymentTransaction extends Model
 {
     /** @use HasFactory<PaymentTransactionFactory> */
@@ -24,6 +24,7 @@ class PaymentTransaction extends Model
         'amount' => 'decimal:2',
         'status' => PaymentStatus::class,
         'metadata' => 'array',
+        'registration_data' => 'array',
     ];
 
     /**
@@ -34,6 +35,16 @@ class PaymentTransaction extends Model
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    /**
+     * Get the user who initiated this transaction (e.g. registering a new school).
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function initiatedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'initiated_by');
     }
 
     /**

@@ -116,14 +116,18 @@ class SchoolRegister extends Component
             $data['logo'] = $this->logo;
         }
 
-        $school = $schoolService->create($data);
-        $schoolService->attachAdmin($school, auth()->user());
-
         if ((float) $tier->price === 0.0) {
+            $school = $schoolService->create($data);
+            $schoolService->attachAdmin($school, auth()->user());
+
             $this->redirectRoute('manage.schools.index');
-        } else {
-            $this->redirectRoute('school.payment.index', ['school' => $school]);
+
+            return;
         }
+
+        $transaction = $schoolService->createRegistrationTransaction(auth()->user(), $tier, $data);
+
+        $this->redirectRoute('school.payment.index', ['transaction' => $transaction]);
     }
 
     public function render(PricingTierService $pricingTierService)

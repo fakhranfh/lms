@@ -2,10 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\PaymentStatus;
 use App\Enums\RoleName;
+use App\Models\PaymentTransaction;
+use App\Models\PricingTier;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
+use App\Repositories\PaymentTransaction\PaymentTransactionRepositoryInterface;
 use App\Repositories\PricingTier\PricingTierRepositoryInterface;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Repositories\School\SchoolRepositoryInterface;
@@ -16,6 +20,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class SchoolService
@@ -26,6 +31,7 @@ class SchoolService
         protected RoleRepositoryInterface $roleRepository,
         protected SchoolTierRepositoryInterface $schoolTierRepository,
         protected TierChangeRepositoryInterface $tierChangeRepository,
+        protected PaymentTransactionRepositoryInterface $paymentTransactionRepository,
         protected R2StorageService $r2Storage,
         protected RoleService $roleService,
     ) {}
@@ -96,6 +102,70 @@ class SchoolService
         $this->roleService->createDefaultRolesForSchool($school->id);
 
         return $school;
+    }
+
+    /**
+     * Record a pending payment transaction for a paid-tier school registration,
+     * deferring the actual school creation until the payment is confirmed.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createRegistrationTransaction(User $user, PricingTier $tier, array $data): PaymentTransaction
+    {
+        if (($data['logo'] ?? null) instanceof UploadedFile) {
+            $data['logo_path'] = $this->r2Storage->uploadPublicFile($data['logo'], 'school-logos');
+        }
+        unset($data['logo']);
+
+        $data['tier_id'] = $tier->id;
+
+        $subtotal = (float) $tier->price;
+        $vatRate = (float) config('billing.vat_rate');
+        $adminFeeRate = (float) config('billing.admin_fee_rate');
+        $vatAmount = $subtotal * $vatRate;
+        $adminFeeAmount = $subtotal * $adminFeeRate;
+
+        return $this->paymentTransactionRepository->create([
+            'initiated_by' => $user->id,
+            'transaction_id' => (string) Str::uuid(),
+            'amount' => $subtotal + $vatAmount + $adminFeeAmount,
+            'currency' => 'IDR',
+            'status' => PaymentStatus::Pending,
+            'registration_data' => $data,
+            'metadata' => [
+                'tier_name' => $tier->name,
+                'billing_period' => strtolower($tier->billing_period->label()),
+                'subtotal' => $subtotal,
+                'vat_rate' => $vatRate,
+                'vat_amount' => $vatAmount,
+                'admin_fee_rate' => $adminFeeRate,
+                'admin_fee_amount' => $adminFeeAmount,
+            ],
+        ]);
+    }
+
+    /**
+     * Finalize a paid-tier registration once its payment transaction has been
+     * confirmed: creates the school from the stored registration data and
+     * attaches the initiating user as its admin.
+     */
+    public function completeRegistrationTransaction(PaymentTransaction $transaction): School
+    {
+        if ($transaction->status === PaymentStatus::Completed && $transaction->school) {
+            return $transaction->school;
+        }
+
+        return DB::transaction(function () use ($transaction): School {
+            $school = $this->create($transaction->registration_data);
+            $this->attachAdmin($school, $transaction->initiatedBy);
+
+            $this->paymentTransactionRepository->update($transaction->id, [
+                'school_id' => $school->id,
+                'status' => PaymentStatus::Completed,
+            ]);
+
+            return $school;
+        });
     }
 
     /**

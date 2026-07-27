@@ -30,7 +30,8 @@ use App\Livewire\Users\UserRoles;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/schools/{school}/payment', [SchoolPaymentController::class, 'index'])->name('school.payment.index');
+    Route::get('/payment/{transaction}', [SchoolPaymentController::class, 'index'])->name('school.payment.index');
+    Route::post('/payment/{transaction}/confirm', [SchoolPaymentController::class, 'confirm'])->name('school.payment.confirm');
 });
 
 Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function () {

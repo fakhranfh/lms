@@ -31,16 +31,6 @@ class School extends Model
     }
 
     /**
-     * Get the payment gateways.
-     *
-     * @return HasMany<PaymentGateway, $this>
-     */
-    public function paymentGateways(): HasMany
-    {
-        return $this->hasMany(PaymentGateway::class);
-    }
-
-    /**
      * Get the pricing tier for this school.
      *
      * @return BelongsTo<PricingTier, $this>

@@ -88,7 +88,7 @@ class TierChangeService
         }
 
         // Payment-gated upgrade
-        $gateway = $this->resolveGateway($school, $gatewayName);
+        $gateway = $this->resolveGateway($gatewayName);
 
         $amount = max(0, $proration);
 
@@ -233,10 +233,10 @@ class TierChangeService
         return null;
     }
 
-    private function resolveGateway(School $school, ?string $gatewayName): PaymentGateway
+    private function resolveGateway(?string $gatewayName): PaymentGateway
     {
         if ($gatewayName) {
-            $gateway = $this->gatewayRepository->findEnabledForSchoolByGatewayName($school->id, $gatewayName);
+            $gateway = $this->gatewayRepository->findEnabledByGatewayName($gatewayName);
 
             if ($gateway) {
                 return $gateway;
@@ -244,10 +244,10 @@ class TierChangeService
         }
 
         // Fall back to first enabled gateway
-        $gateway = $this->gatewayRepository->findFirstEnabledForSchool($school->id);
+        $gateway = $this->gatewayRepository->findFirstEnabled();
 
         if (! $gateway) {
-            throw new \RuntimeException('No payment gateway configured for school.');
+            throw new \RuntimeException('No payment gateway configured.');
         }
 
         return $gateway;

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\BelongsToSchool;
 use App\Traits\HasUuid;
 use Database\Factories\PaymentGatewayFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -11,11 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['school_id', 'gateway_type_id', 'is_enabled', 'is_sandbox_mode', 'webhook_secret'])]
+#[Fillable(['gateway_type_id', 'is_enabled', 'is_sandbox_mode', 'webhook_secret'])]
 class PaymentGateway extends Model
 {
     /** @use HasFactory<PaymentGatewayFactory> */
-    use BelongsToSchool, HasFactory, HasUuid;
+    use HasFactory, HasUuid;
 
     protected $table = 'payment_gateways';
 
@@ -23,16 +22,6 @@ class PaymentGateway extends Model
         'is_enabled' => 'boolean',
         'is_sandbox_mode' => 'boolean',
     ];
-
-    /**
-     * Get the school.
-     *
-     * @return BelongsTo<School, $this>
-     */
-    public function school(): BelongsTo
-    {
-        return $this->belongsTo(School::class);
-    }
 
     /**
      * Get the payment gateway type.

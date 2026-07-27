@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Jobs\ProcessPaymentWebhook;
-use App\Models\PaymentGatewayType;
 use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
 use App\Repositories\PaymentGatewayType\PaymentGatewayTypeRepositoryInterface;
 use App\Repositories\PaymentWebhook\PaymentWebhookRepositoryInterface;
@@ -45,11 +44,11 @@ class PaymentWebhookService
             ];
         }
 
-        $paymentGateway = $this->findSchoolGateway($payload, $gatewayType);
+        $paymentGateway = $this->gatewayRepository->findByGatewayType($gatewayType->id);
         if (! $paymentGateway) {
             return [
                 'status' => Response::HTTP_NOT_FOUND,
-                'message' => 'School gateway not found',
+                'message' => 'Gateway not found',
             ];
         }
 
@@ -78,31 +77,6 @@ class PaymentWebhookService
             if (isset($payload['status'])) {
                 return 'invoice.'.strtolower($payload['status']);
             }
-        }
-
-        return null;
-    }
-
-    private function findSchoolGateway(array $payload, PaymentGatewayType $gatewayType)
-    {
-        $schoolId = $this->extractSchoolId($payload);
-        if (! $schoolId) {
-            return null;
-        }
-
-        return $this->gatewayRepository->findBySchoolAndGatewayType($schoolId, $gatewayType->id);
-    }
-
-    private function extractSchoolId(array $payload): ?string
-    {
-        if (isset($payload['custom_field1'])) {
-            $metadata = json_decode($payload['custom_field1'], true);
-
-            return $metadata['school_id'] ?? null;
-        }
-
-        if (isset($payload['metadata']['school_id'])) {
-            return $payload['metadata']['school_id'];
         }
 
         return null;

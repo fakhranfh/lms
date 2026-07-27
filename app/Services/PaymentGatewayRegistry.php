@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\School;
 use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
 use App\Repositories\PaymentGatewayType\PaymentGatewayTypeRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
@@ -26,9 +25,9 @@ class PaymentGatewayRegistry
         });
     }
 
-    public function getSchoolGateways(School $school): Collection
+    public function getEnabledGateways(): Collection
     {
-        return $this->gatewayRepository->getEnabledForSchool($school->id, ['paymentGatewayType', 'credentials']);
+        return $this->gatewayRepository->getEnabled(['paymentGatewayType', 'credentials']);
     }
 
     public function clearCache(): void

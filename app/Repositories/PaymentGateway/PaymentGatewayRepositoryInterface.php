@@ -18,20 +18,20 @@ interface PaymentGatewayRepositoryInterface
 
     public function delete($id);
 
-    public function findBySchoolAndGatewayType(string $schoolId, int $gatewayTypeId);
+    public function findByGatewayType(int $gatewayTypeId);
 
     /**
-     * Enabled gateways for a school, eager-loaded with type + credentials.
+     * Enabled gateways, eager-loaded with type + credentials.
      */
-    public function getEnabledForSchool(string $schoolId, array $with = []);
+    public function getEnabled(array $with = []);
 
     /**
-     * The first enabled gateway for a school whose type has the given name.
+     * The first enabled gateway whose type has the given name.
      */
-    public function findEnabledForSchoolByGatewayName(string $schoolId, string $gatewayName);
+    public function findEnabledByGatewayName(string $gatewayName);
 
     /**
-     * The first enabled gateway for a school, regardless of type.
+     * The first enabled gateway, regardless of type.
      */
-    public function findFirstEnabledForSchool(string $schoolId);
+    public function findFirstEnabled();
 }

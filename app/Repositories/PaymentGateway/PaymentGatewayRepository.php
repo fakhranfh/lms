@@ -3,7 +3,6 @@
 namespace App\Repositories\PaymentGateway;
 
 use App\Models\PaymentGateway;
-use Illuminate\Support\Str;
 
 class PaymentGatewayRepository implements PaymentGatewayRepositoryInterface
 {
@@ -57,38 +56,29 @@ class PaymentGatewayRepository implements PaymentGatewayRepositoryInterface
         return PaymentGateway::destroy($id);
     }
 
-    public function findBySchoolAndGatewayType(string $schoolId, int $gatewayTypeId)
+    public function findByGatewayType(int $gatewayTypeId)
     {
-        if (! Str::isUuid($schoolId)) {
-            return null;
-        }
-
         return $this->query()
-            ->where('school_id', $schoolId)
             ->where('gateway_type_id', $gatewayTypeId)
             ->first();
     }
 
-    public function getEnabledForSchool(string $schoolId, array $with = [])
+    public function getEnabled(array $with = [])
     {
-        return PaymentGateway::where('school_id', $schoolId)
-            ->where('is_enabled', true)
+        return PaymentGateway::where('is_enabled', true)
             ->with($with)
             ->get();
     }
 
-    public function findEnabledForSchoolByGatewayName(string $schoolId, string $gatewayName)
+    public function findEnabledByGatewayName(string $gatewayName)
     {
-        return PaymentGateway::where('school_id', $schoolId)
-            ->where('is_enabled', true)
+        return PaymentGateway::where('is_enabled', true)
             ->whereHas('paymentGatewayType', fn ($q) => $q->where('name', $gatewayName))
             ->first();
     }
 
-    public function findFirstEnabledForSchool(string $schoolId)
+    public function findFirstEnabled()
     {
-        return PaymentGateway::where('school_id', $schoolId)
-            ->where('is_enabled', true)
-            ->first();
+        return PaymentGateway::where('is_enabled', true)->first();
     }
 }

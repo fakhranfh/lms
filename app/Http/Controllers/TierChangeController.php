@@ -6,6 +6,7 @@ use App\Http\Requests\TierChange\InitiateTierChangeRequest;
 use App\Models\DemoLmsAccess;
 use App\Models\PricingTier;
 use App\Models\School;
+use App\Services\PaymentGatewayRegistry;
 use App\Services\TierChangeService;
 use App\Support\CurrentSchool;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +16,8 @@ class TierChangeController extends Controller
 {
     public function __construct(
         private readonly TierChangeService $tierChangeService,
-        private readonly CurrentSchool $currentSchool
+        private readonly CurrentSchool $currentSchool,
+        private readonly PaymentGatewayRegistry $gatewayRegistry,
     ) {}
 
     private function isDemoMode(School $school): bool
@@ -58,7 +60,7 @@ class TierChangeController extends Controller
             $prorations[$tier->id] = $this->tierChangeService->calculateProration($school, $tier);
         }
 
-        $enabledGateways = $school->paymentGateways()->where('is_enabled', true)->get();
+        $enabledGateways = $this->gatewayRegistry->getEnabledGateways();
 
         $pendingTier = $school->schoolTiers()
             ->where('status', 'pending')

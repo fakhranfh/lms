@@ -17,7 +17,7 @@ it('creates a payment invoice for subscription', function () {
     $subscription = SchoolTier::factory()->create(['school_id' => $school->id, 'tier_id' => $tier->id]);
 
     $gatewayType = PaymentGatewayType::factory()->create(['name' => 'test_gateway']);
-    $gateway = PaymentGatewayModel::factory()->create(['school_id' => $school->id, 'gateway_type_id' => $gatewayType->id]);
+    $gateway = PaymentGatewayModel::factory()->create(['gateway_type_id' => $gatewayType->id]);
 
     $mockGateway = Mockery::mock(PaymentGateway::class);
     $mockGateway->shouldReceive('createInvoice')->andReturn(['invoice_id' => 'inv_123']);
@@ -37,7 +37,7 @@ it('handles failed payments by expiring subscription', function () {
     $subscription = SchoolTier::factory()->create(['school_id' => $school->id, 'tier_id' => $tier->id, 'status' => 'active']);
 
     $gatewayType = PaymentGatewayType::factory()->create();
-    $gateway = PaymentGatewayModel::factory()->create(['school_id' => $school->id, 'gateway_type_id' => $gatewayType->id]);
+    $gateway = PaymentGatewayModel::factory()->create(['gateway_type_id' => $gatewayType->id]);
 
     $transaction = PaymentTransaction::factory()->create([
         'school_id' => $school->id,

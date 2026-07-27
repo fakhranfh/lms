@@ -29,7 +29,6 @@ it('initiates an upgrade with pending tier and invoice', function () {
 
     $gatewayType = PaymentGatewayType::where('name', 'midtrans')->first();
     PaymentGatewayModel::factory()
-        ->for($school)
         ->for($gatewayType)
         ->create(['is_enabled' => true]);
 
@@ -97,7 +96,6 @@ it('throws exception when tier change is already in progress', function () {
 
     $gatewayType = PaymentGatewayType::where('name', 'midtrans')->first();
     PaymentGatewayModel::factory()
-        ->for($school)
         ->for($gatewayType)
         ->create(['is_enabled' => true]);
 
@@ -125,7 +123,6 @@ it('cancels pending tier change', function () {
 
     $gatewayType = PaymentGatewayType::where('name', 'midtrans')->first();
     PaymentGatewayModel::factory()
-        ->for($school)
         ->for($gatewayType)
         ->create(['is_enabled' => true]);
 
@@ -170,7 +167,7 @@ it('finalizes tier change on successful payment', function () {
     $transaction = PaymentTransaction::create([
         'school_id' => $school->id,
         'subscription_id' => $schoolTier->id,
-        'payment_gateway_id' => PaymentGatewayModel::factory()->for($school)->create()->id,
+        'payment_gateway_id' => PaymentGatewayModel::factory()->create()->id,
         'transaction_id' => 'txn-123',
         'amount' => 100000,
         'currency' => 'IDR',

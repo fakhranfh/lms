@@ -23,7 +23,7 @@ test('instructor does not see tier management in the sidebar', function () {
     $school = School::factory()->create();
     $user = actingAsSchoolUser($school, RoleName::Instructor);
 
-    $this->actingAs($user)->get(route('dashboard'))
+    $this->actingAs($user)->get("http://{$school->domain}/dashboard")
         ->assertDontSee('Tier Management');
 });
 
@@ -31,7 +31,7 @@ test('school admin sees tier management in the sidebar', function () {
     $school = School::factory()->create();
     $user = actingAsSchoolUser($school, RoleName::SchoolAdmin);
 
-    $this->actingAs($user)->get(route('dashboard'))
+    $this->actingAs($user)->get("http://{$school->domain}/dashboard")
         ->assertSee('Tier Management');
 });
 
@@ -39,7 +39,7 @@ test('instructor cannot access tier management page directly', function () {
     $school = School::factory()->create();
     $user = actingAsSchoolUser($school, RoleName::Instructor);
 
-    $this->actingAs($user)->get(route('tier-management.show'))
+    $this->actingAs($user)->get("http://{$school->domain}/tier-management")
         ->assertForbidden();
 });
 
@@ -47,6 +47,6 @@ test('school admin can access tier management page directly', function () {
     $school = School::factory()->create();
     $user = actingAsSchoolUser($school, RoleName::SchoolAdmin);
 
-    $this->actingAs($user)->get(route('tier-management.show'))
+    $this->actingAs($user)->get("http://{$school->domain}/tier-management")
         ->assertOk();
 });

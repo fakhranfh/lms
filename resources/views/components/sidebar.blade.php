@@ -1,6 +1,6 @@
 <!-- Sidebar Navigation -->
 @php
-    $isAdminUser = auth()->user() && auth()->user()->school_id === null;
+    $isAdminUser = auth()->user() && app(\App\Support\CurrentSchool::class)->getSchoolId() === null;
     $sidebarConfig = $isAdminUser ? config('admin-sidebar') : config('sidebar');
 @endphp
 
@@ -25,7 +25,7 @@
                     @php
                         $hasPermission = !($item['requires_permission'] ?? null) || auth()->user()->can($item['requires_permission']);
                         $hasRole = !($item['requires_role'] ?? null) || auth()->user()->hasRole($item['requires_role']);
-                        $hasSchool = !($item['requires_school'] ?? null) || auth()->user()->school_id !== null;
+                        $hasSchool = !($item['requires_school'] ?? null) || app(\App\Support\CurrentSchool::class)->getSchoolId() !== null;
                         $notExcludedRole = !($item['exclude_role'] ?? null) || !auth()->user()->hasRole($item['exclude_role']);
                         $canAccess = $hasPermission && $hasRole && $hasSchool && $notExcludedRole;
                     @endphp

@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('payment_transaction_tier_subscriptions', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('payment_transaction_id')->constrained('payment_transactions')->cascadeOnDelete();
+            $table->foreignUuid('payment_transaction_id')->constrained('payment_transactions', 'id', 'ptts_payment_transaction_id_foreign')->cascadeOnDelete();
             $table->uuid('school_id')->nullable();
             $table->uuid('subscription_id')->nullable();
             $table->string('tier_name')->nullable();

@@ -19,7 +19,7 @@
         <form wire:submit="save" class="space-y-space-md">
             <div class="space-y-space-xs">
                 <label class="block font-label-md text-label-md text-on-surface" for="name">School Name</label>
-                <input class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('name') border-error @enderror" id="name" wire:model="name" placeholder="My School" required>
+                <input class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('name') border-error @enderror" id="name" name="name" wire:model="name" placeholder="My School" required>
                 @error('name')
                     <p class="text-error text-body-sm font-body-sm mt-space-xs">{{ $message }}</p>
                 @enderror
@@ -58,7 +58,7 @@
                 x-init="if (@js($tierId)) load(@js($tierId))"
             >
                 <label class="block font-label-md text-label-md text-on-surface" for="tierId">Plan</label>
-                <select class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('tierId') border-error @enderror" id="tierId" wire:model="tierId" x-on:change="load($event.target.value)" x-on:livewire:updated="load(document.getElementById('tierId').value)" required>
+                <select class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('tierId') border-error @enderror" id="tierId" name="tierId" wire:model="tierId" x-on:change="load($event.target.value)" x-on:livewire:updated="load(document.getElementById('tierId').value)" required>
                     <option value="" disabled>Select a plan</option>
                     @foreach ($tiers as $tier)
                         <option value="{{ $tier->id }}">
@@ -148,7 +148,7 @@
                     <div class="space-y-space-xs">
                         <label class="block font-label-md text-label-md text-on-surface" for="subdomain">Subdomain</label>
                         <div class="flex items-center">
-                            <input class="w-full h-[44px] px-3 rounded-l-lg border border-r-0 border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('subdomain') border-error @enderror" id="subdomain" wire:model.live.debounce.500ms="subdomain" placeholder="myschool" required>
+                            <input class="w-full h-[44px] px-3 rounded-l-lg border border-r-0 border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('subdomain') border-error @enderror" id="subdomain" name="subdomain" wire:model.live.debounce.500ms="subdomain" placeholder="myschool" required>
                             <span class="h-[44px] flex items-center px-3 rounded-r-lg border border-outline-variant bg-surface-container-low text-secondary font-body-md text-body-md whitespace-nowrap">.{{ config('app.domain') }}</span>
                         </div>
                         @error('subdomain')
@@ -163,7 +163,7 @@
                 <div x-show="domainType === 'custom'" x-cloak>
                     <div class="space-y-space-xs">
                         <label class="block font-label-md text-label-md text-on-surface" for="customDomain">Your Domain</label>
-                        <input class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('customDomain') border-error @enderror" id="customDomain" wire:model.live.debounce.500ms="customDomain" placeholder="lms.yourschool.com" required>
+                        <input class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('customDomain') border-error @enderror" id="customDomain" name="customDomain" wire:model.live.debounce.500ms="customDomain" placeholder="lms.yourschool.com" required>
                         @error('customDomain')
                             <p class="text-error text-body-sm font-body-sm mt-space-xs">{{ $message }}</p>
                         @enderror

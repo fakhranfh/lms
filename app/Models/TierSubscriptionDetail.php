@@ -10,11 +10,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['payment_transaction_id', 'school_id', 'subscription_id', 'tier_name', 'billing_period', 'from_tier_id', 'change_type', 'proration_amount'])]
+#[Fillable(['payment_transaction_id', 'school_id', 'subscription_id', 'tier_name', 'billing_period', 'from_tier_id', 'change_type', 'proration_amount', 'registration_data'])]
 class TierSubscriptionDetail extends Model
 {
     /** @use HasFactory<TierSubscriptionDetailFactory> */
     use HasFactory, HasUuid;
+
+    protected $table = 'payment_transaction_tier_subscriptions';
 
     /**
      * @var array<string, string>
@@ -22,6 +24,7 @@ class TierSubscriptionDetail extends Model
     protected $casts = [
         'change_type' => TierChangeType::class,
         'proration_amount' => 'decimal:2',
+        'registration_data' => 'array',
     ];
 
     /**

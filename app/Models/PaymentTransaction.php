@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['initiated_by', 'payment_gateway_id', 'transaction_id', 'amount', 'currency', 'status', 'transaction_type', 'subtotal', 'vat_rate', 'vat_amount', 'admin_fee_rate', 'admin_fee_type', 'admin_fee_amount', 'registration_data'])]
+#[Fillable(['initiated_by', 'payment_gateway_id', 'transaction_id', 'amount', 'currency', 'status', 'transaction_type', 'subtotal', 'vat_rate', 'vat_amount', 'admin_fee_rate', 'admin_fee_type', 'admin_fee_amount'])]
 class PaymentTransaction extends Model
 {
     /** @use HasFactory<PaymentTransactionFactory> */
@@ -24,7 +24,7 @@ class PaymentTransaction extends Model
      * Keys that no longer live on this table and are instead stored on the
      * related TierSubscriptionDetail record.
      */
-    private const DETAIL_KEYS = ['school_id', 'subscription_id', 'tier_name', 'billing_period', 'from_tier_id', 'change_type', 'proration_amount'];
+    private const DETAIL_KEYS = ['school_id', 'subscription_id', 'tier_name', 'billing_period', 'from_tier_id', 'change_type', 'proration_amount', 'registration_data'];
 
     /**
      * @var array<string, mixed>
@@ -44,7 +44,6 @@ class PaymentTransaction extends Model
         'admin_fee_rate' => 'decimal:4',
         'admin_fee_type' => AdminFeeType::class,
         'admin_fee_amount' => 'decimal:2',
-        'registration_data' => 'array',
     ];
 
     protected static function booted(): void
@@ -155,5 +154,13 @@ class PaymentTransaction extends Model
     public function getProrationAmountAttribute(): ?string
     {
         return $this->detail?->proration_amount;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getRegistrationDataAttribute(): ?array
+    {
+        return $this->detail?->registration_data;
     }
 }

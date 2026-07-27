@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tier_subscription_details', function (Blueprint $table) {
+        Schema::create('payment_transaction_tier_subscriptions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('payment_transaction_id')->constrained('payment_transactions')->cascadeOnDelete();
             $table->uuid('school_id')->nullable();
@@ -23,6 +23,7 @@ return new class extends Migration
             $table->unsignedBigInteger('from_tier_id')->nullable();
             $table->string('change_type')->nullable();
             $table->decimal('proration_amount', 15, 2)->nullable();
+            $table->json('registration_data')->nullable();
             $table->timestamps();
 
             $table->foreign('school_id')->references('id')->on('schools')->nullOnDelete();
@@ -36,11 +37,11 @@ return new class extends Migration
             $metadata = json_decode($row->metadata ?? '[]', true) ?? [];
             $metadata = array_diff_key($metadata, array_flip($promotedKeys));
 
-            if (! $row->school_id && ! $row->subscription_id && $metadata === []) {
+            if (! $row->school_id && ! $row->subscription_id && $metadata === [] && ! $row->registration_data) {
                 return;
             }
 
-            DB::table('tier_subscription_details')->insert([
+            DB::table('payment_transaction_tier_subscriptions')->insert([
                 'id' => (string) Str::uuid(),
                 'payment_transaction_id' => $row->id,
                 'school_id' => $row->school_id,
@@ -50,6 +51,7 @@ return new class extends Migration
                 'from_tier_id' => $metadata['from_tier_id'] ?? null,
                 'change_type' => $metadata['change_type'] ?? null,
                 'proration_amount' => $metadata['proration_amount'] ?? null,
+                'registration_data' => $row->registration_data,
                 'created_at' => $row->created_at,
                 'updated_at' => $row->updated_at,
             ]);
@@ -61,6 +63,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tier_subscription_details');
+        Schema::dropIfExists('payment_transaction_tier_subscriptions');
     }
 };

@@ -50,9 +50,15 @@
                 @enderror
             </div>
 
-            <div class="space-y-space-xs">
+            <div
+                class="space-y-space-xs"
+                x-data="tierBreakdown({
+                    breakdownUrlTemplate: @js(route('pricing-tiers.breakdown', ['pricingTier' => '__ID__'])),
+                })"
+                x-init="if (@js($tierId)) load(@js($tierId))"
+            >
                 <label class="block font-label-md text-label-md text-on-surface" for="tierId">Plan</label>
-                <select class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('tierId') border-error @enderror" id="tierId" wire:model.live="tierId" required>
+                <select class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('tierId') border-error @enderror" id="tierId" wire:model="tierId" x-on:change="load($event.target.value)" x-on:livewire:updated="load(document.getElementById('tierId').value)" required>
                     <option value="" disabled>Select a plan</option>
                     @foreach ($tiers as $tier)
                         <option value="{{ $tier->id }}">
@@ -64,6 +70,65 @@
                     <p class="text-error text-body-sm font-body-sm mt-space-xs">{{ $message }}</p>
                 @enderror
                 <p class="font-body-sm text-body-sm text-secondary">You can change your plan anytime after registering.</p>
+
+                <div class="rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3" x-show="loading || breakdown" x-cloak>
+                    <template x-if="loading">
+                        <div class="animate-pulse space-y-space-sm">
+                            <div class="flex items-center justify-between">
+                                <div class="h-4 w-24 rounded bg-outline-variant"></div>
+                                <div class="h-4 w-16 rounded bg-outline-variant"></div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="h-3 w-20 rounded bg-outline-variant"></div>
+                                <div class="h-3 w-14 rounded bg-outline-variant"></div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="h-3 w-20 rounded bg-outline-variant"></div>
+                                <div class="h-3 w-14 rounded bg-outline-variant"></div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="h-3 w-20 rounded bg-outline-variant"></div>
+                                <div class="h-3 w-14 rounded bg-outline-variant"></div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template x-if="!loading && breakdown">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <p class="font-label-md text-label-md text-on-surface" x-text="breakdown.name + ' plan'"></p>
+                                <p class="font-body-sm text-body-sm text-secondary" x-show="breakdown.subtotal > 0" x-text="'Billed ' + breakdown.billing_period"></p>
+                            </div>
+
+                            <template x-if="breakdown.subtotal === 0">
+                                <p class="mt-space-sm font-headline-sm text-headline-sm text-on-surface">Free</p>
+                            </template>
+
+                            <template x-if="breakdown.subtotal > 0">
+                                <div>
+                                    <dl class="mt-space-sm space-y-space-xxs">
+                                        <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
+                                            <dt>Subtotal</dt>
+                                            <dd x-text="formatRp(breakdown.subtotal)"></dd>
+                                        </div>
+                                        <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
+                                            <dt x-text="'VAT (' + formatPercent(breakdown.vat_rate) + '%)'"></dt>
+                                            <dd x-text="formatRp(breakdown.vat_amount)"></dd>
+                                        </div>
+                                        <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
+                                            <dt x-text="'Admin fee (' + formatPercent(breakdown.admin_fee_rate) + '%)'"></dt>
+                                            <dd x-text="formatRp(breakdown.admin_fee_amount)"></dd>
+                                        </div>
+                                    </dl>
+                                    <div class="mt-space-sm flex items-center justify-between border-t border-outline-variant pt-space-sm">
+                                        <p class="font-label-md text-label-md text-on-surface">Total</p>
+                                        <p class="font-headline-sm text-headline-sm text-on-surface" x-text="formatRp(breakdown.total)"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
             </div>
 
             <div class="space-y-space-xs" x-data="{ domainType: @entangle('domainType').defer }">
@@ -107,48 +172,6 @@
                 </div>
             </div>
 
-            @php
-                $selectedTier = $tiers->firstWhere('id', (int) $tierId);
-                $subtotal = $selectedTier ? (float) $selectedTier->price : 0.0;
-                $vatRate = config('billing.vat_rate');
-                $adminFeeRate = config('billing.admin_fee_rate');
-                $vatAmount = $subtotal * $vatRate;
-                $adminFeeAmount = $subtotal * $adminFeeRate;
-                $total = $subtotal + $vatAmount + $adminFeeAmount;
-                $formatRp = fn (float $amount) => 'Rp '.number_format($amount, 0, '.', '.');
-            @endphp
-            @if ($selectedTier)
-                <div class="rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3">
-                    <div class="flex items-center justify-between">
-                        <p class="font-label-md text-label-md text-on-surface">{{ $selectedTier->name }} plan</p>
-                        <p class="font-body-sm text-body-sm text-secondary">Billed {{ strtolower($selectedTier->billing_period->label()) }}</p>
-                    </div>
-
-                    @if ($subtotal === 0.0)
-                        <p class="mt-space-sm font-headline-sm text-headline-sm text-on-surface">Free</p>
-                    @else
-                        <dl class="mt-space-sm space-y-space-xxs">
-                            <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
-                                <dt>Subtotal</dt>
-                                <dd>{{ $formatRp($subtotal) }}</dd>
-                            </div>
-                            <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
-                                <dt>VAT ({{ rtrim(rtrim(number_format($vatRate * 100, 2), '0'), '.') }}%)</dt>
-                                <dd>{{ $formatRp($vatAmount) }}</dd>
-                            </div>
-                            <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
-                                <dt>Admin fee ({{ rtrim(rtrim(number_format($adminFeeRate * 100, 2), '0'), '.') }}%)</dt>
-                                <dd>{{ $formatRp($adminFeeAmount) }}</dd>
-                            </div>
-                        </dl>
-                        <div class="mt-space-sm flex items-center justify-between border-t border-outline-variant pt-space-sm">
-                            <p class="font-label-md text-label-md text-on-surface">Total</p>
-                            <p class="font-headline-sm text-headline-sm text-on-surface">{{ $formatRp($total) }}</p>
-                        </div>
-                    @endif
-                </div>
-            @endif
-
             <button wire:loading.attr="disabled" wire:target="save" class="w-full h-[44px] mt-space-lg bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-on-primary-fixed-variant active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed" type="submit">
                 <span wire:loading.remove wire:target="save">Register School</span>
                 <span wire:loading wire:target="save">Registering...</span>
@@ -159,3 +182,43 @@
 
     @include('partials.footer')
 </div>
+
+@push('scripts')
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('tierBreakdown', (config) => ({
+                loading: false,
+                breakdown: null,
+
+                async load(tierId) {
+                    if (! tierId) {
+                        this.breakdown = null;
+
+                        return;
+                    }
+
+                    this.loading = true;
+
+                    try {
+                        const url = config.breakdownUrlTemplate.replace('__ID__', tierId);
+                        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+
+                        this.breakdown = response.ok ? await response.json() : null;
+                    } catch (e) {
+                        this.breakdown = null;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                formatRp(amount) {
+                    return 'Rp ' + Math.round(amount).toLocaleString('id-ID');
+                },
+
+                formatPercent(rate) {
+                    return (rate * 100).toFixed(2).replace(/\.?0+$/, '');
+                },
+            }));
+        });
+    </script>
+@endpush

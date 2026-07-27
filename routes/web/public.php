@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PricingTierBreakdownController;
 use App\Http\Controllers\TryDemoController;
 use App\Livewire\MySchools;
 use App\Livewire\SchoolAdminRegister;
@@ -18,6 +19,8 @@ Route::domain(config('app.domain'))->group(function () {
             'tiers' => $pricingTierService->get(['is_active' => true], ['limits']),
         ]);
     })->name('pricing');
+
+    Route::get('/pricing-tiers/{pricingTier}/breakdown', [PricingTierBreakdownController::class, 'show'])->name('pricing-tiers.breakdown');
 
     Route::get('/get-started', SchoolAdminRegister::class)->name('get-started');
     Route::get('/get-started/school', SchoolRegister::class)->name('get-started.school');

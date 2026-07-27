@@ -3,6 +3,7 @@
 use App\Http\Controllers\DemoLmsController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SchoolPaymentController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\TierChangeController;
 use App\Livewire\Assignments\AssignmentForm;
@@ -27,6 +28,10 @@ use App\Livewire\Submissions\SubmissionShow;
 use App\Livewire\Users\UserIndex;
 use App\Livewire\Users\UserRoles;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/schools/{school}/payment', [SchoolPaymentController::class, 'index'])->name('school.payment.index');
+});
 
 Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function () {
     Route::get('/edit-profile', EditProfile::class)->name('edit-profile');

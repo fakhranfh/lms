@@ -175,3 +175,39 @@ test('registration is rejected for an invalid subdomain label', function (string
     'has dot' => 'my.school',
     'has slash' => 'my/school',
 ]);
+
+test('registering with a free tier redirects to dashboard', function () {
+    $this->seed(PricingTierSeeder::class);
+    $user = User::factory()->create(['school_id' => null]);
+    $this->actingAs($user);
+
+    $basicTier = PricingTier::query()->where('slug', 'basic')->firstOrFail();
+
+    Livewire::withQueryParams(['tier' => $basicTier->id])
+        ->test(SchoolRegister::class)
+        ->set('name', 'My School')
+        ->set('domainType', 'subdomain')
+        ->set('subdomain', 'myschool')
+        ->call('save')
+        ->assertRedirect(route('manage.schools.index'));
+});
+
+test('registering with a paid tier creates school and redirects to payment', function () {
+    $this->seed(PricingTierSeeder::class);
+    $user = User::factory()->create(['school_id' => null]);
+    $this->actingAs($user);
+
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $schoolDomain = 'myschool.'.config('app.domain');
+
+    Livewire::withQueryParams(['tier' => $plusTier->id])
+        ->test(SchoolRegister::class)
+        ->set('name', 'My School')
+        ->set('domainType', 'subdomain')
+        ->set('subdomain', 'myschool')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $school = School::query()->where('domain', $schoolDomain)->firstOrFail();
+    expect($school->tier->id)->toBe($plusTier->id);
+});

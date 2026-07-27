@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\PricingTier;
 use App\Models\School;
 use App\Services\PricingTierService;
 use App\Services\SchoolService;
@@ -104,6 +105,7 @@ class SchoolRegister extends Component
     {
         $this->validate();
 
+        $tier = PricingTier::findOrFail($this->tierId);
         $domain = $this->domainType === 'subdomain'
             ? $this->computeSubdomain()
             : $this->customDomain;
@@ -117,7 +119,11 @@ class SchoolRegister extends Component
         $school = $schoolService->create($data);
         $schoolService->attachAdmin($school, auth()->user());
 
-        $this->redirectRoute('manage.schools.index');
+        if ((float) $tier->price === 0.0) {
+            $this->redirectRoute('manage.schools.index');
+        } else {
+            $this->redirectRoute('school.payment.index', ['school' => $school]);
+        }
     }
 
     public function render(PricingTierService $pricingTierService)

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('payment_gateways', function (Blueprint $table) {
-            $table->dropForeign('school_payment_gateways_school_id_foreign');
+            $table->dropForeign(['school_id']);
             $table->dropColumn('school_id');
         });
     }

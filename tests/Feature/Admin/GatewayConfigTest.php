@@ -1,8 +1,8 @@
 <?php
 
+use App\Models\PaymentGateway;
 use App\Models\PaymentGatewayCredential;
 use App\Models\PaymentGatewayType;
-use App\Models\SchoolPaymentGateway;
 
 beforeEach(function () {
     PaymentGatewayType::query()->delete();
@@ -18,17 +18,17 @@ test('gateway type exists in database', function () {
 test('admin can create gateway with credentials', function () {
     PaymentGatewayType::factory()->create(['name' => 'midtrans', 'label' => 'Midtrans']);
 
-    $gateway = SchoolPaymentGateway::factory()->create();
+    $gateway = PaymentGateway::factory()->create();
 
-    expect(SchoolPaymentGateway::count())->toBe(1);
+    expect(PaymentGateway::count())->toBe(1);
     expect($gateway->gateway_type_id)->toBeGreaterThan(0);
 });
 
 test('gateway credentials are created with proper factory', function () {
-    $gateway = SchoolPaymentGateway::factory()->create();
+    $gateway = PaymentGateway::factory()->create();
 
     $credential = PaymentGatewayCredential::factory()
-        ->for($gateway, 'schoolPaymentGateway')
+        ->for($gateway, 'paymentGateway')
         ->create([
             'credential_key' => 'server_key',
             'credential_value' => 'test-secret-123',
@@ -40,14 +40,14 @@ test('gateway credentials are created with proper factory', function () {
 });
 
 test('multiple credentials can be stored for one gateway', function () {
-    $gateway = SchoolPaymentGateway::factory()->create();
+    $gateway = PaymentGateway::factory()->create();
 
     $cred1 = PaymentGatewayCredential::factory()
-        ->for($gateway, 'schoolPaymentGateway')
+        ->for($gateway, 'paymentGateway')
         ->create(['credential_key' => 'server_key']);
 
     $cred2 = PaymentGatewayCredential::factory()
-        ->for($gateway, 'schoolPaymentGateway')
+        ->for($gateway, 'paymentGateway')
         ->create(['credential_key' => 'client_key']);
 
     expect(PaymentGatewayCredential::count())->toBe(2);

@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\PaymentGateway;
 use App\Models\PaymentGatewayCredential;
-use App\Models\SchoolPaymentGateway;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,7 +19,7 @@ class PaymentGatewayCredentialFactory extends Factory
     public function definition(): array
     {
         return [
-            'school_payment_gateway_id' => SchoolPaymentGateway::factory(),
+            'payment_gateway_id' => PaymentGateway::factory(),
             'credential_key' => $this->faker->word(),
             'credential_value' => $this->faker->sha256(),
             'is_sensitive' => true,

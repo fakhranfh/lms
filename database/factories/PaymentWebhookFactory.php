@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\PaymentGateway;
 use App\Models\PaymentWebhook;
-use App\Models\SchoolPaymentGateway;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,7 +19,7 @@ class PaymentWebhookFactory extends Factory
     public function definition(): array
     {
         return [
-            'school_payment_gateway_id' => SchoolPaymentGateway::factory(),
+            'payment_gateway_id' => PaymentGateway::factory(),
             'event_type' => $this->faker->word(),
             'payload' => json_encode(['test' => 'data']),
             'processed' => false,

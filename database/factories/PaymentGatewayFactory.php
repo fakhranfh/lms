@@ -4,13 +4,13 @@ namespace Database\Factories;
 
 use App\Models\PaymentGatewayType;
 use App\Models\School;
-use App\Models\SchoolPaymentGateway;
+use App\Models\PaymentGateway;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<SchoolPaymentGateway>
+ * @extends Factory<PaymentGateway>
  */
-class SchoolPaymentGatewayFactory extends Factory
+class PaymentGatewayFactory extends Factory
 {
     /**
      * Define the model's default state.

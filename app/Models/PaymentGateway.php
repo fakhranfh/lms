@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToSchool;
 use App\Traits\HasUuid;
-use Database\Factories\SchoolPaymentGatewayFactory;
+use Database\Factories\PaymentGatewayFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,12 +12,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['school_id', 'gateway_type_id', 'is_enabled', 'is_sandbox_mode', 'webhook_secret'])]
-class SchoolPaymentGateway extends Model
+class PaymentGateway extends Model
 {
-    /** @use HasFactory<SchoolPaymentGatewayFactory> */
+    /** @use HasFactory<PaymentGatewayFactory> */
     use BelongsToSchool, HasFactory, HasUuid;
 
-    protected $table = 'school_payment_gateways';
+    protected $table = 'payment_gateways';
 
     protected $casts = [
         'is_enabled' => 'boolean',
@@ -51,6 +51,6 @@ class SchoolPaymentGateway extends Model
      */
     public function credentials(): HasMany
     {
-        return $this->hasMany(PaymentGatewayCredential::class, 'school_payment_gateway_id');
+        return $this->hasMany(PaymentGatewayCredential::class, 'payment_gateway_id');
     }
 }

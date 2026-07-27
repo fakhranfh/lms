@@ -2,20 +2,32 @@
 
 namespace App\Models;
 
+use App\Enums\AdminFeeType;
 use App\Enums\PaymentStatus;
-use App\Models\Concerns\BelongsToSchool;
 use App\Traits\HasUuid;
 use Database\Factories\PaymentTransactionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['school_id', 'initiated_by', 'subscription_id', 'school_payment_gateway_id', 'transaction_id', 'amount', 'currency', 'status', 'metadata', 'registration_data'])]
+#[Fillable(['initiated_by', 'payment_gateway_id', 'transaction_id', 'amount', 'currency', 'status', 'subtotal', 'vat_rate', 'vat_amount', 'admin_fee_rate', 'admin_fee_type', 'admin_fee_amount', 'registration_data'])]
 class PaymentTransaction extends Model
 {
     /** @use HasFactory<PaymentTransactionFactory> */
-    use BelongsToSchool, HasFactory, HasUuid;
+    use HasFactory, HasUuid;
+
+    /**
+     * Keys that no longer live on this table and are instead stored on the
+     * related PaymentTransactionDetail record.
+     */
+    private const DETAIL_KEYS = ['school_id', 'subscription_id', 'metadata'];
+
+    /**
+     * @var array<string, mixed>
+     */
+    private array $pendingDetailAttributes = [];
 
     /**
      * @var array<string, string>
@@ -23,18 +35,48 @@ class PaymentTransaction extends Model
     protected $casts = [
         'amount' => 'decimal:2',
         'status' => PaymentStatus::class,
-        'metadata' => 'array',
+        'subtotal' => 'decimal:2',
+        'vat_rate' => 'decimal:4',
+        'vat_amount' => 'decimal:2',
+        'admin_fee_rate' => 'decimal:4',
+        'admin_fee_type' => AdminFeeType::class,
+        'admin_fee_amount' => 'decimal:2',
         'registration_data' => 'array',
     ];
 
-    /**
-     * Get the school.
-     *
-     * @return BelongsTo<School, $this>
-     */
-    public function school(): BelongsTo
+    protected static function booted(): void
     {
-        return $this->belongsTo(School::class);
+        static::saved(function (self $transaction): void {
+            if ($transaction->pendingDetailAttributes === []) {
+                return;
+            }
+
+            $attributes = $transaction->pendingDetailAttributes;
+            $transaction->pendingDetailAttributes = [];
+
+            $transaction->detail()->updateOrCreate([], $attributes);
+            $transaction->unsetRelation('detail');
+        });
+    }
+
+    /**
+     * Intercept `school_id`, `subscription_id` and `metadata` so callers can keep
+     * writing them like regular attributes even though they now live on the
+     * related `PaymentTransactionDetail` record.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @return $this
+     */
+    public function fill(array $attributes)
+    {
+        foreach (self::DETAIL_KEYS as $key) {
+            if (array_key_exists($key, $attributes)) {
+                $this->pendingDetailAttributes[$key] = $attributes[$key];
+                unset($attributes[$key]);
+            }
+        }
+
+        return parent::fill($attributes);
     }
 
     /**
@@ -48,22 +90,50 @@ class PaymentTransaction extends Model
     }
 
     /**
-     * Get the school tier.
+     * Get the payment gateway used for this transaction.
      *
-     * @return BelongsTo<SchoolTier, $this>
+     * @return BelongsTo<PaymentGateway, $this>
      */
-    public function subscription(): BelongsTo
+    public function paymentGateway(): BelongsTo
     {
-        return $this->belongsTo(SchoolTier::class, 'subscription_id');
+        return $this->belongsTo(PaymentGateway::class, 'payment_gateway_id');
     }
 
     /**
-     * Get the school payment gateway.
+     * Get the transaction's contextual detail record (school, subscription, misc metadata).
      *
-     * @return BelongsTo<SchoolPaymentGateway, $this>
+     * @return HasOne<PaymentTransactionDetail, $this>
      */
-    public function schoolPaymentGateway(): BelongsTo
+    public function detail(): HasOne
     {
-        return $this->belongsTo(SchoolPaymentGateway::class, 'school_payment_gateway_id');
+        return $this->hasOne(PaymentTransactionDetail::class);
+    }
+
+    public function getSchoolIdAttribute(): ?string
+    {
+        return $this->detail?->school_id;
+    }
+
+    public function getSubscriptionIdAttribute(): ?string
+    {
+        return $this->detail?->subscription_id;
+    }
+
+    public function getSchoolAttribute(): ?School
+    {
+        return $this->detail?->school;
+    }
+
+    public function getSubscriptionAttribute(): ?SchoolTier
+    {
+        return $this->detail?->subscription;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getMetadataAttribute(): array
+    {
+        return $this->detail?->metadata ?? [];
     }
 }

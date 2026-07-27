@@ -22,14 +22,18 @@ class PaymentTransactionRepository implements PaymentTransactionRepositoryInterf
 
     public function findPendingBySubscriptionId(string $subscriptionId): ?PaymentTransaction
     {
-        return PaymentTransaction::where('subscription_id', $subscriptionId)
+        return PaymentTransaction::whereHas('detail', function ($query) use ($subscriptionId) {
+            $query->where('subscription_id', $subscriptionId);
+        })
             ->where('status', PaymentStatus::Pending)
             ->first();
     }
 
     public function findLatestCompletedForSchool(string $schoolId): ?PaymentTransaction
     {
-        return PaymentTransaction::where('school_id', $schoolId)
+        return PaymentTransaction::whereHas('detail', function ($query) use ($schoolId) {
+            $query->where('school_id', $schoolId);
+        })
             ->where('status', PaymentStatus::Completed)
             ->latest('created_at')
             ->first();

@@ -3,12 +3,12 @@
 use App\Contracts\PaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Jobs\ProcessPaymentWebhook;
+use App\Models\PaymentGateway as PaymentGatewayModel;
 use App\Models\PaymentGatewayType;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentWebhook;
 use App\Models\PricingTier;
 use App\Models\School;
-use App\Models\SchoolPaymentGateway;
 use App\Models\SchoolTier;
 use App\Services\PaymentGatewayFactory;
 use App\Services\SubscriptionPaymentService;
@@ -30,14 +30,13 @@ test('webhook controller stores midtrans webhook', function () {
         ->create(['tier_id' => $tier->id]);
 
     $gatewayType = PaymentGatewayType::factory()->create(['name' => 'midtrans']);
-    $gateway = SchoolPaymentGateway::factory()
+    $gateway = PaymentGatewayModel::factory()
         ->for($school, 'school')
         ->create(['gateway_type_id' => $gatewayType->id]);
 
     $transaction = PaymentTransaction::factory()
-        ->for($school, 'school')
-        ->for($gateway, 'schoolPaymentGateway')
-        ->create(['subscription_id' => $subscription->id]);
+        ->for($gateway, 'paymentGateway')
+        ->create(['school_id' => $school->id, 'subscription_id' => $subscription->id]);
 
     $payload = [
         'transaction_id' => $transaction->transaction_id,
@@ -62,7 +61,7 @@ test('webhook controller stores xendit webhook', function () {
 
     $school = School::factory()->create();
     $xenditType = PaymentGatewayType::factory()->create(['name' => 'xendit']);
-    $xenditGateway = SchoolPaymentGateway::factory()
+    $xenditGateway = PaymentGatewayModel::factory()
         ->for($school, 'school')
         ->create(['gateway_type_id' => $xenditType->id]);
 
@@ -121,14 +120,13 @@ test('webhook stores encrypted payload', function () {
         ->create(['tier_id' => $tier->id]);
 
     $gatewayType = PaymentGatewayType::factory()->create(['name' => 'midtrans']);
-    $gateway = SchoolPaymentGateway::factory()
+    $gateway = PaymentGatewayModel::factory()
         ->for($school, 'school')
         ->create(['gateway_type_id' => $gatewayType->id]);
 
     $transaction = PaymentTransaction::factory()
-        ->for($school, 'school')
-        ->for($gateway, 'schoolPaymentGateway')
-        ->create(['subscription_id' => $subscription->id]);
+        ->for($gateway, 'paymentGateway')
+        ->create(['school_id' => $school->id, 'subscription_id' => $subscription->id]);
 
     $payload = [
         'transaction_id' => $transaction->transaction_id,
@@ -155,14 +153,13 @@ test('webhook controller dispatches processing job', function () {
         ->create(['tier_id' => $tier->id]);
 
     $gatewayType = PaymentGatewayType::factory()->create(['name' => 'midtrans']);
-    $gateway = SchoolPaymentGateway::factory()
+    $gateway = PaymentGatewayModel::factory()
         ->for($school, 'school')
         ->create(['gateway_type_id' => $gatewayType->id]);
 
     $transaction = PaymentTransaction::factory()
-        ->for($school, 'school')
-        ->for($gateway, 'schoolPaymentGateway')
-        ->create(['subscription_id' => $subscription->id]);
+        ->for($gateway, 'paymentGateway')
+        ->create(['school_id' => $school->id, 'subscription_id' => $subscription->id]);
 
     $payload = [
         'transaction_id' => $transaction->transaction_id,
@@ -178,17 +175,16 @@ test('webhook controller dispatches processing job', function () {
 test('webhook processing job marks webhook as processed', function () {
     $school = School::factory()->create();
     $gatewayType = PaymentGatewayType::factory()->create(['name' => 'midtrans']);
-    $gateway = SchoolPaymentGateway::factory()
+    $gateway = PaymentGatewayModel::factory()
         ->for($school, 'school')
         ->create(['gateway_type_id' => $gatewayType->id]);
 
     $transaction = PaymentTransaction::factory()
-        ->for($school, 'school')
-        ->for($gateway, 'schoolPaymentGateway')
-        ->create(['status' => 'pending']);
+        ->for($gateway, 'paymentGateway')
+        ->create(['school_id' => $school->id, 'status' => 'pending']);
 
     $webhook = PaymentWebhook::factory()
-        ->for($gateway, 'schoolPaymentGateway')
+        ->for($gateway, 'paymentGateway')
         ->create([
             'event_type' => 'transaction.capture',
             'payload' => json_encode([
@@ -217,17 +213,16 @@ test('webhook processing job marks webhook as processed', function () {
 test('webhook processing job updates transaction status', function () {
     $school = School::factory()->create();
     $gatewayType = PaymentGatewayType::factory()->create(['name' => 'midtrans']);
-    $gateway = SchoolPaymentGateway::factory()
+    $gateway = PaymentGatewayModel::factory()
         ->for($school, 'school')
         ->create(['gateway_type_id' => $gatewayType->id]);
 
     $transaction = PaymentTransaction::factory()
-        ->for($school, 'school')
-        ->for($gateway, 'schoolPaymentGateway')
-        ->create();
+        ->for($gateway, 'paymentGateway')
+        ->create(['school_id' => $school->id]);
 
     $webhook = PaymentWebhook::factory()
-        ->for($gateway, 'schoolPaymentGateway')
+        ->for($gateway, 'paymentGateway')
         ->create([
             'event_type' => 'transaction.capture',
             'payload' => json_encode([
@@ -247,17 +242,16 @@ test('webhook processing job updates transaction status', function () {
 test('webhook processing job skips if already processed', function () {
     $school = School::factory()->create();
     $gatewayType = PaymentGatewayType::factory()->create(['name' => 'midtrans']);
-    $gateway = SchoolPaymentGateway::factory()
+    $gateway = PaymentGatewayModel::factory()
         ->for($school, 'school')
         ->create(['gateway_type_id' => $gatewayType->id]);
 
     $transaction = PaymentTransaction::factory()
-        ->for($school, 'school')
-        ->for($gateway, 'schoolPaymentGateway')
-        ->create();
+        ->for($gateway, 'paymentGateway')
+        ->create(['school_id' => $school->id]);
 
     $webhook = PaymentWebhook::factory()
-        ->for($gateway, 'schoolPaymentGateway')
+        ->for($gateway, 'paymentGateway')
         ->create([
             'event_type' => 'transaction.capture',
             'payload' => json_encode([
@@ -283,7 +277,7 @@ test('webhook applies rate limiting', function () {
 
     $school = School::factory()->create();
     $gatewayType = PaymentGatewayType::factory()->create(['name' => 'midtrans']);
-    SchoolPaymentGateway::factory()
+    PaymentGatewayModel::factory()
         ->for($school, 'school')
         ->create(['gateway_type_id' => $gatewayType->id]);
 

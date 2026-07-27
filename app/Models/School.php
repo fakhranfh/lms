@@ -33,11 +33,11 @@ class School extends Model
     /**
      * Get the payment gateways.
      *
-     * @return HasMany<SchoolPaymentGateway, $this>
+     * @return HasMany<PaymentGateway, $this>
      */
     public function paymentGateways(): HasMany
     {
-        return $this->hasMany(SchoolPaymentGateway::class);
+        return $this->hasMany(PaymentGateway::class);
     }
 
     /**

@@ -5,11 +5,11 @@ use App\Enums\PaymentStatus;
 use App\Enums\SubscriptionStatus;
 use App\Enums\TierChangeType;
 use App\Exceptions\TierChangeInProgressException;
+use App\Models\PaymentGateway as PaymentGatewayModel;
 use App\Models\PaymentGatewayType;
 use App\Models\PaymentTransaction;
 use App\Models\PricingTier;
 use App\Models\School;
-use App\Models\SchoolPaymentGateway;
 use App\Models\SchoolTier;
 use App\Models\TierChange;
 use App\Services\PaymentGatewayFactory;
@@ -28,7 +28,7 @@ it('initiates an upgrade with pending tier and invoice', function () {
     $plusTier = PricingTier::where('slug', 'plus')->first();
 
     $gatewayType = PaymentGatewayType::where('name', 'midtrans')->first();
-    SchoolPaymentGateway::factory()
+    PaymentGatewayModel::factory()
         ->for($school)
         ->for($gatewayType)
         ->create(['is_enabled' => true]);
@@ -52,7 +52,7 @@ it('initiates an upgrade with pending tier and invoice', function () {
     expect($pendingTier)->not->toBeNull();
     expect($pendingTier->tier_id)->toBe($plusTier->id);
 
-    $transaction = PaymentTransaction::where('subscription_id', $pendingTier->id)->first();
+    $transaction = PaymentTransaction::whereHas('detail', fn ($query) => $query->where('subscription_id', $pendingTier->id))->first();
     expect($transaction)->not->toBeNull();
     expect($transaction->status)->toBe(PaymentStatus::Pending);
     expect($transaction->metadata['change_type'])->toBe(TierChangeType::Upgrade->value);
@@ -96,7 +96,7 @@ it('throws exception when tier change is already in progress', function () {
     $proTier = PricingTier::where('slug', 'pro')->first();
 
     $gatewayType = PaymentGatewayType::where('name', 'midtrans')->first();
-    SchoolPaymentGateway::factory()
+    PaymentGatewayModel::factory()
         ->for($school)
         ->for($gatewayType)
         ->create(['is_enabled' => true]);
@@ -124,7 +124,7 @@ it('cancels pending tier change', function () {
     $plusTier = PricingTier::where('slug', 'plus')->first();
 
     $gatewayType = PaymentGatewayType::where('name', 'midtrans')->first();
-    SchoolPaymentGateway::factory()
+    PaymentGatewayModel::factory()
         ->for($school)
         ->for($gatewayType)
         ->create(['is_enabled' => true]);
@@ -170,7 +170,7 @@ it('finalizes tier change on successful payment', function () {
     $transaction = PaymentTransaction::create([
         'school_id' => $school->id,
         'subscription_id' => $schoolTier->id,
-        'school_payment_gateway_id' => SchoolPaymentGateway::factory()->for($school)->create()->id,
+        'payment_gateway_id' => PaymentGatewayModel::factory()->for($school)->create()->id,
         'transaction_id' => 'txn-123',
         'amount' => 100000,
         'currency' => 'IDR',

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['school_payment_gateway_id', 'credential_key', 'credential_value', 'is_sensitive'])]
+#[Fillable(['payment_gateway_id', 'credential_key', 'credential_value', 'is_sensitive'])]
 class PaymentGatewayCredential extends Model
 {
     /** @use HasFactory<PaymentGatewayCredentialFactory> */
@@ -26,10 +26,10 @@ class PaymentGatewayCredential extends Model
     /**
      * Get the school payment gateway.
      *
-     * @return BelongsTo<SchoolPaymentGateway, $this>
+     * @return BelongsTo<PaymentGateway, $this>
      */
-    public function schoolPaymentGateway(): BelongsTo
+    public function paymentGateway(): BelongsTo
     {
-        return $this->belongsTo(SchoolPaymentGateway::class, 'school_payment_gateway_id');
+        return $this->belongsTo(PaymentGateway::class, 'payment_gateway_id');
     }
 }

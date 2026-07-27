@@ -3,7 +3,7 @@
 namespace App\Services\PaymentGateways;
 
 use App\Contracts\PaymentGateway;
-use App\Models\SchoolPaymentGateway;
+use App\Models\PaymentGateway as PaymentGatewayModel;
 use App\Services\CredentialEncryption;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -16,7 +16,7 @@ class XenditGateway implements PaymentGateway
     private string $baseUrl = 'https://api.xendit.co';
 
     public function __construct(
-        private readonly SchoolPaymentGateway $config,
+        private readonly PaymentGatewayModel $config,
         private readonly array $credentials,
         private readonly CredentialEncryption $credentialEncryption,
     ) {

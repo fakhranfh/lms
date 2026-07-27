@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreGatewayConfigRequest;
 use App\Http\Requests\UpdateGatewayConfigRequest;
-use App\Models\SchoolPaymentGateway;
+use App\Models\PaymentGateway;
 use App\Services\PaymentGatewayConfigService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -40,7 +40,7 @@ class GatewayConfigController extends Controller
             ->with('success', 'Payment gateway configured successfully.');
     }
 
-    public function edit(SchoolPaymentGateway $gateway): View
+    public function edit(PaymentGateway $gateway): View
     {
         $gateway->load(['paymentGatewayType', 'credentials']);
         $allGateways = $this->gatewayConfigService->getAvailableGatewayTypes();
@@ -57,7 +57,7 @@ class GatewayConfigController extends Controller
         ]);
     }
 
-    public function update(UpdateGatewayConfigRequest $request, SchoolPaymentGateway $gateway): RedirectResponse
+    public function update(UpdateGatewayConfigRequest $request, PaymentGateway $gateway): RedirectResponse
     {
         $this->gatewayConfigService->updateGateway($gateway->id, $request->validated());
 
@@ -65,7 +65,7 @@ class GatewayConfigController extends Controller
             ->with('success', 'Payment gateway updated successfully.');
     }
 
-    public function destroy(SchoolPaymentGateway $gateway): RedirectResponse
+    public function destroy(PaymentGateway $gateway): RedirectResponse
     {
         $this->gatewayConfigService->deleteGateway($gateway->id);
 
@@ -73,7 +73,7 @@ class GatewayConfigController extends Controller
             ->with('success', 'Payment gateway removed successfully.');
     }
 
-    public function testConnection(SchoolPaymentGateway $gateway): RedirectResponse
+    public function testConnection(PaymentGateway $gateway): RedirectResponse
     {
         $result = $this->gatewayConfigService->testConnection($gateway);
 

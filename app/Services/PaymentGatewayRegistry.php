@@ -3,8 +3,8 @@
 namespace App\Services;
 
 use App\Models\School;
+use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
 use App\Repositories\PaymentGatewayType\PaymentGatewayTypeRepositoryInterface;
-use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -16,7 +16,7 @@ class PaymentGatewayRegistry
 
     public function __construct(
         private readonly PaymentGatewayTypeRepositoryInterface $gatewayTypeRepository,
-        private readonly SchoolPaymentGatewayRepositoryInterface $gatewayRepository,
+        private readonly PaymentGatewayRepositoryInterface $gatewayRepository,
     ) {}
 
     public function getGatewayTypes(): Collection

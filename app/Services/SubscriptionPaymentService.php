@@ -5,9 +5,9 @@ namespace App\Services;
 use App\Enums\PaymentStatus;
 use App\Enums\SubscriptionStatus;
 use App\Jobs\TierChangeJob;
+use App\Models\PaymentGateway;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentWebhook;
-use App\Models\SchoolPaymentGateway;
 use App\Models\SchoolTier;
 
 class SubscriptionPaymentService
@@ -16,7 +16,7 @@ class SubscriptionPaymentService
         private readonly PaymentGatewayFactory $factory
     ) {}
 
-    public function createPaymentInvoice(SchoolTier $subscription, SchoolPaymentGateway $gateway, ?float $amountOverride = null): array
+    public function createPaymentInvoice(SchoolTier $subscription, PaymentGateway $gateway, ?float $amountOverride = null): array
     {
         $gatewayInstance = $this->factory->make(
             $gateway->paymentGatewayType->name,
@@ -36,7 +36,7 @@ class SubscriptionPaymentService
 
     public function processWebhook(PaymentWebhook $webhook): bool
     {
-        $schoolGateway = $webhook->schoolPaymentGateway;
+        $schoolGateway = $webhook->paymentGateway;
         $gatewayInstance = $this->factory->make(
             $schoolGateway->paymentGatewayType->name,
             $schoolGateway
@@ -85,7 +85,7 @@ class SubscriptionPaymentService
 
     public function refundTransaction(PaymentTransaction $transaction, ?float $amount = null): bool
     {
-        $schoolGateway = $transaction->schoolPaymentGateway;
+        $schoolGateway = $transaction->paymentGateway;
         $gatewayInstance = $this->factory->make(
             $schoolGateway->paymentGatewayType->name,
             $schoolGateway

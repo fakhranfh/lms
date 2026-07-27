@@ -2,16 +2,16 @@
 
 namespace App\Services;
 
-use App\Models\SchoolPaymentGateway;
+use App\Models\PaymentGateway;
+use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
 use App\Repositories\PaymentGatewayCredential\PaymentGatewayCredentialRepositoryInterface;
 use App\Repositories\PaymentGatewayType\PaymentGatewayTypeRepositoryInterface;
-use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 
 class PaymentGatewayConfigService
 {
     public function __construct(
-        private readonly SchoolPaymentGatewayRepositoryInterface $repository,
+        private readonly PaymentGatewayRepositoryInterface $repository,
         private readonly PaymentGatewayFactory $gatewayFactory,
         private readonly PaymentGatewayTypeRepositoryInterface $gatewayTypeRepository,
         private readonly PaymentGatewayCredentialRepositoryInterface $credentialRepository,
@@ -32,7 +32,7 @@ class PaymentGatewayConfigService
         return $this->gatewayTypeRepository->getActive();
     }
 
-    public function createGateway(array $data): SchoolPaymentGateway
+    public function createGateway(array $data): PaymentGateway
     {
         $gatewayData = [
             'gateway_type_id' => $data['gateway_type_id'],
@@ -52,7 +52,7 @@ class PaymentGatewayConfigService
         return $gateway->load(['paymentGatewayType', 'credentials']);
     }
 
-    public function updateGateway($id, array $data): SchoolPaymentGateway
+    public function updateGateway($id, array $data): PaymentGateway
     {
         $gatewayData = [
             'is_enabled' => $data['is_enabled'] ?? false,
@@ -87,7 +87,7 @@ class PaymentGatewayConfigService
         });
     }
 
-    public function testConnection(SchoolPaymentGateway $gateway): array
+    public function testConnection(PaymentGateway $gateway): array
     {
         try {
             $gateway->load(['paymentGatewayType', 'credentials']);
@@ -123,7 +123,7 @@ class PaymentGatewayConfigService
         foreach ($credentials as $key => $value) {
             if ($value !== null && $value !== '') {
                 $this->credentialRepository->create([
-                    'school_payment_gateway_id' => $gatewayId,
+                    'payment_gateway_id' => $gatewayId,
                     'credential_key' => $key,
                     'credential_value' => $value,
                     'is_sensitive' => true,

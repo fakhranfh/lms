@@ -1,7 +1,7 @@
 <?php
 
+use App\Models\PaymentGateway;
 use App\Models\PaymentGatewayType;
-use App\Models\SchoolPaymentGateway;
 use App\Services\CredentialEncryption;
 use App\Services\PaymentGateways\XenditGateway;
 use Illuminate\Support\Facades\Http;
@@ -12,7 +12,7 @@ describe('XenditGateway', function () {
             ['name' => 'xendit'],
             ['label' => 'Xendit', 'is_active' => true]
         );
-        $this->config = SchoolPaymentGateway::factory()
+        $this->config = PaymentGateway::factory()
             ->for($gatewayType)
             ->state(['is_sandbox_mode' => true])
             ->create();
@@ -172,7 +172,7 @@ describe('XenditGateway', function () {
             ['name' => 'xendit'],
             ['label' => 'Xendit', 'is_active' => true]
         );
-        $config = SchoolPaymentGateway::factory()
+        $config = PaymentGateway::factory()
             ->for($gatewayType)
             ->state(['is_sandbox_mode' => false])
             ->create();

@@ -29,15 +29,15 @@
                     <dl class="mt-space-md space-y-space-xxs">
                         <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
                             <dt>Subtotal</dt>
-                            <dd>Rp {{ number_format($transaction->metadata['subtotal'], 0, '.', '.') }}</dd>
+                            <dd>Rp {{ number_format($transaction->subtotal, 0, '.', '.') }}</dd>
                         </div>
                         <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
-                            <dt>VAT ({{ number_format($transaction->metadata['vat_rate'] * 100, 2) }}%)</dt>
-                            <dd>Rp {{ number_format($transaction->metadata['vat_amount'], 0, '.', '.') }}</dd>
+                            <dt>VAT ({{ number_format($transaction->vat_rate * 100, 2) }}%)</dt>
+                            <dd>Rp {{ number_format($transaction->vat_amount, 0, '.', '.') }}</dd>
                         </div>
                         <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
-                            <dt>Admin fee ({{ number_format($transaction->metadata['admin_fee_rate'] * 100, 2) }}%)</dt>
-                            <dd>Rp {{ number_format($transaction->metadata['admin_fee_amount'], 0, '.', '.') }}</dd>
+                            <dt>Admin fee ({{ number_format($transaction->admin_fee_rate * ($transaction->admin_fee_type === \App\Enums\AdminFeeType::Percentage ? 100 : 1), 2) }}{{ $transaction->admin_fee_type === \App\Enums\AdminFeeType::Percentage ? '%' : '' }})</dt>
+                            <dd>Rp {{ number_format($transaction->admin_fee_amount, 0, '.', '.') }}</dd>
                         </div>
                     </dl>
                     <div class="mt-space-md flex items-center justify-between border-t border-outline-variant pt-space-md">

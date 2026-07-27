@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Contracts\PaymentGateway;
-use App\Models\SchoolPaymentGateway;
+use App\Models\PaymentGateway as PaymentGatewayModel;
 use App\Services\PaymentGateways\MidtransGateway;
 use App\Services\PaymentGateways\XenditGateway;
 
@@ -13,7 +13,7 @@ class PaymentGatewayFactory
         private readonly CredentialEncryption $credentialEncryption
     ) {}
 
-    public function make(string $gatewayName, SchoolPaymentGateway $config): PaymentGateway
+    public function make(string $gatewayName, PaymentGatewayModel $config): PaymentGateway
     {
         $credentials = $this->loadCredentials($config);
 
@@ -24,7 +24,7 @@ class PaymentGatewayFactory
         };
     }
 
-    private function loadCredentials(SchoolPaymentGateway $config): array
+    private function loadCredentials(PaymentGatewayModel $config): array
     {
         $credentials = [];
 

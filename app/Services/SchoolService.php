@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AdminFeeType;
 use App\Enums\PaymentStatus;
 use App\Enums\RoleName;
 use App\Models\PaymentTransaction;
@@ -132,14 +133,15 @@ class SchoolService
             'currency' => 'IDR',
             'status' => PaymentStatus::Pending,
             'registration_data' => $data,
+            'subtotal' => $subtotal,
+            'vat_rate' => $vatRate,
+            'vat_amount' => $vatAmount,
+            'admin_fee_rate' => $adminFeeRate,
+            'admin_fee_type' => AdminFeeType::Percentage,
+            'admin_fee_amount' => $adminFeeAmount,
             'metadata' => [
                 'tier_name' => $tier->name,
                 'billing_period' => strtolower($tier->billing_period->label()),
-                'subtotal' => $subtotal,
-                'vat_rate' => $vatRate,
-                'vat_amount' => $vatAmount,
-                'admin_fee_rate' => $adminFeeRate,
-                'admin_fee_amount' => $adminFeeAmount,
             ],
         ]);
     }

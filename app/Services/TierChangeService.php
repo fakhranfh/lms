@@ -5,14 +5,14 @@ namespace App\Services;
 use App\Enums\SubscriptionStatus;
 use App\Enums\TierChangeType;
 use App\Exceptions\TierChangeInProgressException;
+use App\Models\PaymentGateway;
 use App\Models\PaymentTransaction;
 use App\Models\PricingTier;
 use App\Models\School;
-use App\Models\SchoolPaymentGateway;
+use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
 use App\Repositories\PaymentTransaction\PaymentTransactionRepositoryInterface;
 use App\Repositories\PricingTier\PricingTierRepositoryInterface;
 use App\Repositories\School\SchoolRepositoryInterface;
-use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepositoryInterface;
 use App\Repositories\SchoolTier\SchoolTierRepositoryInterface;
 use App\Repositories\TierChange\TierChangeRepositoryInterface;
 use Carbon\Carbon;
@@ -27,7 +27,7 @@ class TierChangeService
         private readonly SchoolTierRepositoryInterface $schoolTierRepository,
         private readonly TierChangeRepositoryInterface $tierChangeRepository,
         private readonly PaymentTransactionRepositoryInterface $paymentTransactionRepository,
-        private readonly SchoolPaymentGatewayRepositoryInterface $gatewayRepository,
+        private readonly PaymentGatewayRepositoryInterface $gatewayRepository,
     ) {}
 
     public function canUpgrade(School $school, PricingTier $newTier): bool
@@ -107,7 +107,7 @@ class TierChangeService
             $this->paymentTransactionRepository->create([
                 'school_id' => $school->id,
                 'subscription_id' => $schoolTier->id,
-                'school_payment_gateway_id' => $gateway->id,
+                'payment_gateway_id' => $gateway->id,
                 'transaction_id' => 'temp-'.uniqid(),
                 'amount' => $amount,
                 'currency' => $newTier->currency,
@@ -240,7 +240,7 @@ class TierChangeService
         return null;
     }
 
-    private function resolveGateway(School $school, ?string $gatewayName): SchoolPaymentGateway
+    private function resolveGateway(School $school, ?string $gatewayName): PaymentGateway
     {
         if ($gatewayName) {
             $gateway = $this->gatewayRepository->findEnabledForSchoolByGatewayName($school->id, $gatewayName);

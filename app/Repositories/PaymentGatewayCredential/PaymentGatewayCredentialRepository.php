@@ -13,6 +13,6 @@ class PaymentGatewayCredentialRepository implements PaymentGatewayCredentialRepo
 
     public function deleteForGateway(string $gatewayId): int
     {
-        return PaymentGatewayCredential::where('school_payment_gateway_id', $gatewayId)->delete();
+        return PaymentGatewayCredential::where('payment_gateway_id', $gatewayId)->delete();
     }
 }

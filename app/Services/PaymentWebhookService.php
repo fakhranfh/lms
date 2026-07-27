@@ -4,16 +4,16 @@ namespace App\Services;
 
 use App\Jobs\ProcessPaymentWebhook;
 use App\Models\PaymentGatewayType;
+use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
 use App\Repositories\PaymentGatewayType\PaymentGatewayTypeRepositoryInterface;
 use App\Repositories\PaymentWebhook\PaymentWebhookRepositoryInterface;
-use App\Repositories\SchoolPaymentGateway\SchoolPaymentGatewayRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class PaymentWebhookService
 {
     public function __construct(
-        private readonly SchoolPaymentGatewayRepositoryInterface $gatewayRepository,
+        private readonly PaymentGatewayRepositoryInterface $gatewayRepository,
         private readonly PaymentGatewayTypeRepositoryInterface $gatewayTypeRepository,
         private readonly PaymentWebhookRepositoryInterface $webhookRepository,
     ) {}
@@ -45,8 +45,8 @@ class PaymentWebhookService
             ];
         }
 
-        $schoolPaymentGateway = $this->findSchoolGateway($payload, $gatewayType);
-        if (! $schoolPaymentGateway) {
+        $paymentGateway = $this->findSchoolGateway($payload, $gatewayType);
+        if (! $paymentGateway) {
             return [
                 'status' => Response::HTTP_NOT_FOUND,
                 'message' => 'School gateway not found',
@@ -54,7 +54,7 @@ class PaymentWebhookService
         }
 
         $webhook = $this->webhookRepository->create([
-            'school_payment_gateway_id' => $schoolPaymentGateway->id,
+            'payment_gateway_id' => $paymentGateway->id,
             'event_type' => $eventType,
             'payload' => json_encode($payload),
             'processed' => false,

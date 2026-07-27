@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Repositories\SchoolPaymentGateway;
+namespace App\Repositories\PaymentGateway;
 
-interface SchoolPaymentGatewayRepositoryInterface
+interface PaymentGatewayRepositoryInterface
 {
     public function query(array $filters = []);
 

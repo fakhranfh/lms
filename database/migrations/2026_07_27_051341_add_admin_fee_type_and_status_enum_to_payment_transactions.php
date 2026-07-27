@@ -43,9 +43,11 @@ return new class extends Migration
             ->whereNotIn('status', ['pending', 'completed', 'failed', 'refunded'])
             ->update(['status' => 'pending']);
 
-        DB::statement(
-            "ALTER TABLE payment_transactions ADD CONSTRAINT payment_transactions_status_check CHECK (status IN ('pending', 'completed', 'failed', 'refunded'))"
-        );
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement(
+                "ALTER TABLE payment_transactions ADD CONSTRAINT payment_transactions_status_check CHECK (status IN ('pending', 'completed', 'failed', 'refunded'))"
+            );
+        }
     }
 
     /**
@@ -53,7 +55,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('ALTER TABLE payment_transactions DROP CONSTRAINT payment_transactions_status_check');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE payment_transactions DROP CONSTRAINT payment_transactions_status_check');
+        }
 
         Schema::table('payment_transactions', function (Blueprint $table) {
             $table->dropColumn([

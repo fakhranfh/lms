@@ -148,7 +148,7 @@
                     <div class="space-y-space-xs">
                         <label class="block font-label-md text-label-md text-on-surface" for="subdomain">Subdomain</label>
                         <div class="flex items-center">
-                            <input class="w-full h-[44px] px-3 rounded-l-lg border border-r-0 border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('subdomain') border-error @enderror" id="subdomain" name="subdomain" wire:model.live.debounce.500ms="subdomain" placeholder="myschool" required>
+                            <input class="w-full h-[44px] px-3 rounded-l-lg border border-r-0 border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('subdomain') border-error @enderror" id="subdomain" name="subdomain" wire:model.live.debounce.500ms="subdomain" placeholder="myschool" :required="domainType === 'subdomain'">
                             <span class="h-[44px] flex items-center px-3 rounded-r-lg border border-outline-variant bg-surface-container-low text-secondary font-body-md text-body-md whitespace-nowrap">.{{ config('app.domain') }}</span>
                         </div>
                         @error('subdomain')
@@ -163,7 +163,7 @@
                 <div x-show="domainType === 'custom'" x-cloak>
                     <div class="space-y-space-xs">
                         <label class="block font-label-md text-label-md text-on-surface" for="customDomain">Your Domain</label>
-                        <input class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('customDomain') border-error @enderror" id="customDomain" name="customDomain" wire:model.live.debounce.500ms="customDomain" placeholder="lms.yourschool.com" required>
+                        <input class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('customDomain') border-error @enderror" id="customDomain" name="customDomain" wire:model.live.debounce.500ms="customDomain" placeholder="lms.yourschool.com" :required="domainType === 'custom'">
                         @error('customDomain')
                             <p class="text-error text-body-sm font-body-sm mt-space-xs">{{ $message }}</p>
                         @enderror

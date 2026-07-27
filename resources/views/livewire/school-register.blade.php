@@ -7,7 +7,7 @@
         <div class="w-full max-w-[480px] bg-surface rounded-xl p-space-xl border border-outline-variant shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div class="text-center mb-space-xl">
             <h2 class="font-headline-md text-headline-md text-on-surface mb-space-xxs">Register your school</h2>
-            <p class="font-body-md text-body-md text-secondary">Step 2 of 2</p>
+            <p class="font-body-md text-body-md text-secondary">Step 2 of 3</p>
         </div>
 
         @if (session('status'))

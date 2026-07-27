@@ -82,9 +82,9 @@ class SchoolService
      */
     public function create(array $data): School
     {
-        $basicTier = $this->pricingTierRepository->get(['slug' => 'basic'])->firstOrFail();
-
-        $data['tier_id'] = $basicTier->id;
+        if (empty($data['tier_id'])) {
+            $data['tier_id'] = $this->pricingTierRepository->get(['slug' => 'basic'])->firstOrFail()->id;
+        }
 
         if (($data['logo'] ?? null) instanceof UploadedFile) {
             $data['logo_path'] = $this->r2Storage->uploadPublicFile($data['logo'], 'school-logos');

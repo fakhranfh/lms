@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 class SchoolAdminRegister extends Component
@@ -20,6 +21,9 @@ class SchoolAdminRegister extends Component
     public string $password = '';
 
     public string $password_confirmation = '';
+
+    #[Url(as: 'tier')]
+    public string $tierId = '';
 
     /**
      * @return array<string, mixed>
@@ -45,7 +49,7 @@ class SchoolAdminRegister extends Component
 
         Auth::login($user);
 
-        $this->redirectRoute('get-started.school');
+        $this->redirectRoute('get-started.school', $this->tierId !== '' ? ['tier' => $this->tierId] : []);
     }
 
     public function render()

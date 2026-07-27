@@ -50,6 +50,22 @@
                 @enderror
             </div>
 
+            <div class="space-y-space-xs">
+                <label class="block font-label-md text-label-md text-on-surface" for="tierId">Plan</label>
+                <select class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('tierId') border-error @enderror" id="tierId" wire:model.live="tierId" required>
+                    <option value="" disabled>Select a plan</option>
+                    @foreach ($tiers as $tier)
+                        <option value="{{ $tier->id }}">
+                            {{ $tier->name }} &mdash; {{ (float) $tier->price === 0.0 ? 'Free' : 'Rp '.number_format($tier->price, 0, '.', '.').' / '.strtolower($tier->billing_period->label()) }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('tierId')
+                    <p class="text-error text-body-sm font-body-sm mt-space-xs">{{ $message }}</p>
+                @enderror
+                <p class="font-body-sm text-body-sm text-secondary">You can change your plan anytime after registering.</p>
+            </div>
+
             <div class="space-y-space-xs" x-data="{ domainType: @entangle('domainType').defer }">
                 <span class="block font-label-md text-label-md text-on-surface">Domain</span>
                 <div class="grid grid-cols-2 gap-space-sm">
@@ -90,6 +106,48 @@
                     </div>
                 </div>
             </div>
+
+            @php
+                $selectedTier = $tiers->firstWhere('id', (int) $tierId);
+                $subtotal = $selectedTier ? (float) $selectedTier->price : 0.0;
+                $vatRate = config('billing.vat_rate');
+                $adminFeeRate = config('billing.admin_fee_rate');
+                $vatAmount = $subtotal * $vatRate;
+                $adminFeeAmount = $subtotal * $adminFeeRate;
+                $total = $subtotal + $vatAmount + $adminFeeAmount;
+                $formatRp = fn (float $amount) => 'Rp '.number_format($amount, 0, '.', '.');
+            @endphp
+            @if ($selectedTier)
+                <div class="rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3">
+                    <div class="flex items-center justify-between">
+                        <p class="font-label-md text-label-md text-on-surface">{{ $selectedTier->name }} plan</p>
+                        <p class="font-body-sm text-body-sm text-secondary">Billed {{ strtolower($selectedTier->billing_period->label()) }}</p>
+                    </div>
+
+                    @if ($subtotal === 0.0)
+                        <p class="mt-space-sm font-headline-sm text-headline-sm text-on-surface">Free</p>
+                    @else
+                        <dl class="mt-space-sm space-y-space-xxs">
+                            <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
+                                <dt>Subtotal</dt>
+                                <dd>{{ $formatRp($subtotal) }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
+                                <dt>VAT ({{ rtrim(rtrim(number_format($vatRate * 100, 2), '0'), '.') }}%)</dt>
+                                <dd>{{ $formatRp($vatAmount) }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
+                                <dt>Admin fee ({{ rtrim(rtrim(number_format($adminFeeRate * 100, 2), '0'), '.') }}%)</dt>
+                                <dd>{{ $formatRp($adminFeeAmount) }}</dd>
+                            </div>
+                        </dl>
+                        <div class="mt-space-sm flex items-center justify-between border-t border-outline-variant pt-space-sm">
+                            <p class="font-label-md text-label-md text-on-surface">Total</p>
+                            <p class="font-headline-sm text-headline-sm text-on-surface">{{ $formatRp($total) }}</p>
+                        </div>
+                    @endif
+                </div>
+            @endif
 
             <button wire:loading.attr="disabled" wire:target="save" class="w-full h-[44px] mt-space-lg bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-on-primary-fixed-variant active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed" type="submit">
                 <span wire:loading.remove wire:target="save">Register School</span>

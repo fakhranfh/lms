@@ -74,9 +74,7 @@ return new class extends Migration
         ]);
 
         DB::table('tier_limits')->insert([
-            ['pricing_tier_id' => $basicTier, 'limit_key' => 'student_capacity_per_course', 'limit_value' => 500, 'created_at' => now(), 'updated_at' => now()],
-            ['pricing_tier_id' => $basicTier, 'limit_key' => 'video_storage_gb', 'limit_value' => 100, 'created_at' => now(), 'updated_at' => now()],
-            ['pricing_tier_id' => $basicTier, 'limit_key' => 'live_session_duration_minutes', 'limit_value' => 0, 'created_at' => now(), 'updated_at' => now()],
+            'pricing_tier_id' => $basicTier, 'limit_key' => 'material_storage_gb', 'limit_value' => 1, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
         $plusTier = DB::table('pricing_tiers')->insertGetId([
@@ -97,9 +95,7 @@ return new class extends Migration
         ]);
 
         DB::table('tier_limits')->insert([
-            ['pricing_tier_id' => $plusTier, 'limit_key' => 'student_capacity_per_course', 'limit_value' => 1000, 'created_at' => now(), 'updated_at' => now()],
-            ['pricing_tier_id' => $plusTier, 'limit_key' => 'video_storage_gb', 'limit_value' => 500, 'created_at' => now(), 'updated_at' => now()],
-            ['pricing_tier_id' => $plusTier, 'limit_key' => 'live_session_duration_minutes', 'limit_value' => 120, 'created_at' => now(), 'updated_at' => now()],
+            'pricing_tier_id' => $plusTier, 'limit_key' => 'material_storage_gb', 'limit_value' => 10, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
         $proTier = DB::table('pricing_tiers')->insertGetId([
@@ -122,9 +118,7 @@ return new class extends Migration
         ]);
 
         DB::table('tier_limits')->insert([
-            ['pricing_tier_id' => $proTier, 'limit_key' => 'student_capacity_per_course', 'limit_value' => 5000, 'created_at' => now(), 'updated_at' => now()],
-            ['pricing_tier_id' => $proTier, 'limit_key' => 'video_storage_gb', 'limit_value' => 2000, 'created_at' => now(), 'updated_at' => now()],
-            ['pricing_tier_id' => $proTier, 'limit_key' => 'live_session_duration_minutes', 'limit_value' => null, 'created_at' => now(), 'updated_at' => now()],
+            'pricing_tier_id' => $proTier, 'limit_key' => 'material_storage_gb', 'limit_value' => 50, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
         $maxTier = DB::table('pricing_tiers')->insertGetId([
@@ -150,9 +144,7 @@ return new class extends Migration
         ]);
 
         DB::table('tier_limits')->insert([
-            ['pricing_tier_id' => $maxTier, 'limit_key' => 'student_capacity_per_course', 'limit_value' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['pricing_tier_id' => $maxTier, 'limit_key' => 'video_storage_gb', 'limit_value' => null, 'created_at' => now(), 'updated_at' => now()],
-            ['pricing_tier_id' => $maxTier, 'limit_key' => 'live_session_duration_minutes', 'limit_value' => null, 'created_at' => now(), 'updated_at' => now()],
+            'pricing_tier_id' => $maxTier, 'limit_key' => 'material_storage_gb', 'limit_value' => null, 'created_at' => now(), 'updated_at' => now(),
         ]);
     }
 

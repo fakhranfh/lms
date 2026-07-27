@@ -50,26 +50,19 @@
                                 @endif
                             </div>
 
-                            <a href="{{ route('get-started') }}" class="mt-space-lg flex min-h-[44px] items-center justify-center rounded font-label-md text-label-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary {{ $isFeatured ? 'bg-primary text-on-primary hover:bg-primary-container' : 'border border-outline-variant text-on-surface hover:border-primary hover:text-primary' }}">
+                            <a href="{{ auth()->check() ? route('get-started.school', ['tier' => $tier->id]) : route('get-started', ['tier' => $tier->id]) }}" class="mt-space-lg flex min-h-[44px] items-center justify-center rounded font-label-md text-label-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary {{ $isFeatured ? 'bg-primary text-on-primary hover:bg-primary-container' : 'border border-outline-variant text-on-surface hover:border-primary hover:text-primary' }}">
                                 Get started
                             </a>
 
-                            @if ($tier->limits->isNotEmpty())
+                            @php
+                                $storageLimit = $tier->limits->firstWhere('limit_key', \App\Enums\TierLimit::MaterialStorageGb->value);
+                            @endphp
+                            @if ($storageLimit)
                                 <ul class="mt-space-lg space-y-space-sm border-t border-outline-variant pt-space-lg">
-                                    @foreach ($tier->limits as $limit)
-                                        @php
-                                            $limitText = match ($limit->limit_key) {
-                                                \App\Enums\TierLimit::MaterialStorageGb->value => $limit->limit_value !== null
-                                                    ? number_format($limit->limit_value).' GB material storage'
-                                                    : 'Unlimited material storage',
-                                                default => ($limit->limit_value !== null ? number_format($limit->limit_value).' ' : '').(\App\Enums\TierLimit::tryFrom($limit->limit_key)?->label() ?? $limit->limit_key),
-                                            };
-                                        @endphp
-                                        <li class="flex items-start gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
-                                            <span class="text-success" aria-hidden="true">&#10003;</span>
-                                            <span>{{ $limitText }}</span>
-                                        </li>
-                                    @endforeach
+                                    <li class="flex items-start gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
+                                        <span class="text-success" aria-hidden="true">&#10003;</span>
+                                        <span>{{ $storageLimit->limit_value !== null ? number_format($storageLimit->limit_value).' GB material storage' : 'Unlimited material storage' }}</span>
+                                    </li>
                                 </ul>
                             @endif
                         </div>

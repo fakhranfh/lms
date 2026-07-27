@@ -2,6 +2,7 @@
 
 use App\Enums\RoleName;
 use App\Livewire\SchoolRegister;
+use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\User;
 use Database\Seeders\PricingTierSeeder;
@@ -56,6 +57,58 @@ test('registering a school attaches the current user as school admin', function 
 
     expect($school->admins->contains($user->id))->toBeTrue()
         ->and($user->hasRole(RoleName::SchoolAdmin))->toBeTrue();
+});
+
+test('a school registers with the basic tier by default', function () {
+    $this->seed(PricingTierSeeder::class);
+    $this->actingAs(User::factory()->create(['school_id' => null]));
+
+    $schoolDomain = 'myschool.'.config('app.domain');
+
+    Livewire::test(SchoolRegister::class)
+        ->set('name', 'My School')
+        ->set('domainType', 'subdomain')
+        ->set('subdomain', 'myschool')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $school = School::query()->where('domain', $schoolDomain)->firstOrFail();
+
+    expect($school->tier->slug)->toBe('basic');
+});
+
+test('a school registers with the tier selected from the pricing page', function () {
+    $this->seed(PricingTierSeeder::class);
+    $this->actingAs(User::factory()->create(['school_id' => null]));
+
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $schoolDomain = 'myschool.'.config('app.domain');
+
+    Livewire::withQueryParams(['tier' => $plusTier->id])
+        ->test(SchoolRegister::class)
+        ->assertSet('tierId', (string) $plusTier->id)
+        ->set('name', 'My School')
+        ->set('domainType', 'subdomain')
+        ->set('subdomain', 'myschool')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $school = School::query()->where('domain', $schoolDomain)->firstOrFail();
+
+    expect($school->tier->id)->toBe($plusTier->id);
+});
+
+test('registration is rejected for an unknown tier', function () {
+    $this->seed(PricingTierSeeder::class);
+    $this->actingAs(User::factory()->create(['school_id' => null]));
+
+    Livewire::test(SchoolRegister::class)
+        ->set('name', 'My School')
+        ->set('domainType', 'subdomain')
+        ->set('subdomain', 'myschool')
+        ->set('tierId', 'not-a-real-tier-id')
+        ->call('save')
+        ->assertHasErrors('tierId');
 });
 
 test('guests are redirected to the get-started account step', function () {

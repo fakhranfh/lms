@@ -3,8 +3,10 @@
 namespace App\Livewire;
 
 use App\Models\School;
+use App\Services\PricingTierService;
 use App\Services\SchoolService;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -22,10 +24,19 @@ class SchoolRegister extends Component
 
     public $logo = null;
 
-    public function mount(): void
+    #[Url(as: 'tier')]
+    public string $tierId = '';
+
+    public function mount(PricingTierService $pricingTierService): void
     {
         if (! auth()->check()) {
             $this->redirectRoute('get-started');
+        }
+
+        $validTierIds = $pricingTierService->get(['is_active' => true])->pluck('id');
+
+        if (! $validTierIds->contains($this->tierId)) {
+            $this->tierId = $pricingTierService->get(['slug' => 'basic'])->first()?->id ?? '';
         }
     }
 
@@ -54,6 +65,7 @@ class SchoolRegister extends Component
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'max:5120', 'mimes:jpg,jpeg,png,gif,webp'],
+            'tierId' => ['bail', 'required', 'integer', 'exists:pricing_tiers,id'],
         ];
 
         if ($this->domainType === 'subdomain') {
@@ -96,7 +108,7 @@ class SchoolRegister extends Component
             ? $this->computeSubdomain()
             : $this->customDomain;
 
-        $data = ['name' => $this->name, 'domain' => $domain];
+        $data = ['name' => $this->name, 'domain' => $domain, 'tier_id' => $this->tierId];
 
         if ($this->logo) {
             $data['logo'] = $this->logo;
@@ -108,9 +120,11 @@ class SchoolRegister extends Component
         $this->redirectRoute('manage.schools.index');
     }
 
-    public function render()
+    public function render(PricingTierService $pricingTierService)
     {
-        return view('livewire.school-register')
+        return view('livewire.school-register', [
+            'tiers' => $pricingTierService->get(['is_active' => true]),
+        ])
             ->extends('master', ['body_class' => 'bg-background text-on-background min-h-screen flex flex-col font-body-md'])
             ->section('content');
     }

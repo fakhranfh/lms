@@ -10,6 +10,13 @@
 
     <main class="flex flex-1 items-center justify-center p-gutter">
         <div class="w-full max-w-[480px] bg-surface rounded-xl p-space-xl border border-outline-variant shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <a href="{{ route('get-started.school') }}" class="inline-flex items-center gap-space-xxs font-body-sm text-body-sm text-secondary hover:text-on-surface mb-space-lg">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back
+            </a>
+
             <div class="text-center mb-space-xl">
                 <h2 class="font-headline-md text-headline-md text-on-surface mb-space-xxs">Complete Your Payment</h2>
                 <p class="font-body-md text-body-md text-secondary">Step 3 of 3</p>

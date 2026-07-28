@@ -17,7 +17,7 @@
             </div>
         @endif
 
-        <form action="{{ route('admin.gateways.update', $gateway) }}" method="POST" class="bg-surface border border-outline rounded-lg p-8">
+        <form action="{{ route('admin.gateways.update', $gateway) }}" method="POST" class="bg-surface border border-outline rounded-lg p-8" x-data="{ loading: false }" @submit="loading = true">
             @csrf
             @method('PUT')
 
@@ -112,13 +112,17 @@
                 <label for="webhook_secret" class="block text-body-md font-medium text-on-surface mb-2">
                     Webhook Secret
                 </label>
-                <input type="password" name="webhook_secret" id="webhook_secret" class="w-full px-4 py-2 border border-outline rounded-lg text-on-surface" placeholder="Optional webhook secret for signature verification" value="{{ $gateway->webhook_secret ?? '' }}">
+                <input type="password" name="webhook_secret" id="webhook_secret" class="w-full px-4 py-2 border border-outline rounded-lg text-on-surface" placeholder="Optional webhook secret for signature verification" value="">
                 <p class="text-body-sm text-on-surface-variant mt-2">Leave blank to keep current value</p>
             </div>
 
             <div class="flex gap-4">
-                <button type="submit" class="px-6 py-3 bg-primary text-on-primary rounded-lg font-medium hover:opacity-90 transition">
-                    Update Gateway
+                <button type="submit" :disabled="loading" class="px-6 py-3 bg-primary text-on-primary rounded-lg font-medium hover:opacity-90 transition disabled:opacity-50 flex items-center gap-2">
+                    <svg x-show="loading" x-cloak class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span x-text="loading ? 'Updating...' : 'Update Gateway'"></span>
                 </button>
                 <a href="{{ route('admin.gateways.index') }}" class="px-6 py-3 border border-outline text-on-surface rounded-lg font-medium hover:bg-surface-container transition">
                     Cancel

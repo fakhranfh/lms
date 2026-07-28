@@ -94,7 +94,8 @@ describe('XenditGateway', function () {
         ]);
 
         Http::assertSent(fn ($request) => $request['channel_code'] === 'OVO'
-            && $request['channel_properties']['success_return_url']);
+            && $request['channel_properties']['success_return_url']
+            && $request['channel_properties']['account_mobile_number'] === '+628123456789');
     });
 
     test('checkTransactionStatus returns invoice details', function () {

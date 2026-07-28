@@ -75,6 +75,28 @@ test('test result page shows the ewallet redirect layout for ewallet channels', 
     $result->assertSee('https://ovo.example/pay');
 });
 
+test('ewallet result page shows a push notification message when Xendit returns no action', function () {
+    Http::fake([
+        '*api.xendit.co*' => Http::response([
+            'payment_request_id' => 'pr-ovo-456',
+            'status' => 'REQUIRES_ACTION',
+            'request_amount' => 1000,
+            'currency' => 'IDR',
+            'channel_code' => 'OVO',
+            'actions' => [],
+        ]),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->post('http://admin.lms.local/gateways/'.$this->gateway->id.'/test-connection', ['channel' => 'OVO']);
+
+    $result = $this->actingAs($this->admin)->get('http://admin.lms.local/gateways/'.$this->gateway->id.'/test-result');
+
+    $result->assertOk();
+    $result->assertViewIs('admin.gateways.test-result.ewallet');
+    $result->assertSee('push notification');
+});
+
 test('test result page redirects back when no test transaction exists yet', function () {
     $result = $this->actingAs($this->admin)->get('http://admin.lms.local/gateways/'.$this->gateway->id.'/test-result');
 

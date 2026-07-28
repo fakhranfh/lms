@@ -57,6 +57,19 @@ enum XenditChannel: string
     }
 
     /**
+     * The actual channel_code Xendit expects on the wire — distinct from
+     * ->value (used for storage/labels), since bank codes need a
+     * "_VIRTUAL_ACCOUNT" suffix for the Payment Requests API.
+     */
+    public function xenditChannelCode(): string
+    {
+        return match ($this) {
+            self::Bca, self::Bni, self::Bri, self::Mandiri, self::Permata => $this->value.'_VIRTUAL_ACCOUNT',
+            default => $this->value,
+        };
+    }
+
+    /**
      * Which result page layout this channel's payment details should use.
      */
     public function viewType(): string
@@ -78,16 +91,30 @@ enum XenditChannel: string
     public function buildChannelProperties(array $data): array
     {
         if ($this->isRedirectBased()) {
-            return [
+            $properties = [
                 'success_return_url' => $data['success_return_url'] ?? config('app.url'),
                 'failure_return_url' => $data['failure_return_url'] ?? config('app.url'),
             ];
+
+            // OVO charges are tied to the customer's registered mobile number.
+            if ($this === self::Ovo) {
+                $properties['account_mobile_number'] = $data['mobile_number'] ?? '+628123456789';
+            }
+
+            return $properties;
         }
 
         if ($this->requestType() === 'REUSABLE_PAYMENT_CODE') {
-            return [
+            $properties = [
                 'display_name' => $data['display_name'] ?? config('app.name'),
             ];
+
+            // Retail outlets (Alfamart, Indomaret) also require the payer's name.
+            if ($this === self::Alfamart || $this === self::Indomaret) {
+                $properties['payer_name'] = $data['payer_name'] ?? config('app.name');
+            }
+
+            return $properties;
         }
 
         return [];

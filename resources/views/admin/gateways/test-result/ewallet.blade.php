@@ -15,7 +15,7 @@
                     Open {{ $channel->label() }}
                 </a>
             @else
-                <p class="text-on-surface-variant">No redirect URL was returned for this transaction.</p>
+                <p class="text-on-surface-variant">A push notification was sent to the customer's {{ $channel->label() }} app for approval. No redirect is needed for this channel.</p>
             @endif
         </div>
     </div>

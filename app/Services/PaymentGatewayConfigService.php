@@ -139,9 +139,14 @@ class PaymentGatewayConfigService
     {
         $invoiceData = [
             'order_id' => 'connection-test-'.Str::uuid(),
-            'amount' => 1000,
+            // Above Xendit's minimum for virtual account / retail channels.
+            'amount' => 10000,
             'customer_email' => 'connection-test@example.com',
             'description' => 'Payment gateway connection test',
+            // Send redirect-based test channels (DANA, LinkAja, ...) back to
+            // this same result page instead of the generic app URL default.
+            'success_return_url' => route('admin.gateways.test-result', $gateway),
+            'failure_return_url' => route('admin.gateways.test-result', $gateway),
         ];
 
         if ($channel !== null) {

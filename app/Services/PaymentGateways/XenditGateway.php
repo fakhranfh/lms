@@ -35,7 +35,7 @@ class XenditGateway implements PaymentGateway
                 'country' => 'ID',
                 'currency' => $data['currency'] ?? 'IDR',
                 'request_amount' => (int) $data['amount'],
-                'channel_code' => $channel->value,
+                'channel_code' => $channel->xenditChannelCode(),
                 'channel_properties' => $channel->buildChannelProperties($data),
                 'description' => $data['description'] ?? 'Payment for subscription',
             ];

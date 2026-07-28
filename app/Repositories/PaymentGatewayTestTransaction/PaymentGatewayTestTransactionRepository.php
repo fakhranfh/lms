@@ -23,4 +23,9 @@ class PaymentGatewayTestTransactionRepository implements PaymentGatewayTestTrans
     {
         PaymentGatewayTestTransaction::where('payment_gateway_id', $gatewayId)->update(['status' => $status]);
     }
+
+    public function updateStatusByTransactionId(string $transactionId, string $status): void
+    {
+        PaymentGatewayTestTransaction::where('transaction_id', $transactionId)->update(['status' => $status]);
+    }
 }

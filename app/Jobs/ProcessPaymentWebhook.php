@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Enums\PaymentStatus;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentWebhook;
+use App\Repositories\PaymentGatewayTestTransaction\PaymentGatewayTestTransactionRepositoryInterface;
 use App\Services\PaymentGatewayFactory;
 use App\Services\SubscriptionPaymentService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,8 +19,11 @@ class ProcessPaymentWebhook implements ShouldQueue
         private readonly PaymentWebhook $webhook
     ) {}
 
-    public function handle(SubscriptionPaymentService $paymentService, PaymentGatewayFactory $gatewayFactory): void
-    {
+    public function handle(
+        SubscriptionPaymentService $paymentService,
+        PaymentGatewayFactory $gatewayFactory,
+        PaymentGatewayTestTransactionRepositoryInterface $testTransactionRepository
+    ): void {
         if ($this->webhook->processed) {
             return;
         }
@@ -33,10 +37,12 @@ class ProcessPaymentWebhook implements ShouldQueue
             $transactionId = $gatewayInstance->extractWebhookTransactionId($payload);
 
             if ($transactionId) {
+                $status = $gatewayInstance->extractWebhookStatus($payload);
+
                 $transaction = PaymentTransaction::where('transaction_id', $transactionId)->first();
                 if ($transaction) {
                     $transaction->update([
-                        'status' => $gatewayInstance->extractWebhookStatus($payload),
+                        'status' => $status,
                         'metadata' => $payload,
                     ]);
 
@@ -46,6 +52,11 @@ class ProcessPaymentWebhook implements ShouldQueue
                         $paymentService->handleFailedPayment($transaction);
                     }
                 }
+
+                // Xendit's /simulate endpoint always responds with PENDING —
+                // the real outcome only arrives later via this webhook, so
+                // the admin "test payment" result page needs updating here too.
+                $testTransactionRepository->updateStatusByTransactionId($transactionId, $status->value);
             }
 
             $paymentService->processWebhook($this->webhook);

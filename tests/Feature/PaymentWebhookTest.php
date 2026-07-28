@@ -4,12 +4,14 @@ use App\Contracts\PaymentGateway;
 use App\Enums\PaymentStatus;
 use App\Jobs\ProcessPaymentWebhook;
 use App\Models\PaymentGateway as PaymentGatewayModel;
+use App\Models\PaymentGatewayTestTransaction;
 use App\Models\PaymentGatewayType;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentWebhook;
 use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\SchoolTier;
+use App\Repositories\PaymentGatewayTestTransaction\PaymentGatewayTestTransactionRepositoryInterface;
 use App\Services\PaymentGatewayFactory;
 use App\Services\SubscriptionPaymentService;
 use Illuminate\Support\Facades\Bus;
@@ -205,7 +207,7 @@ test('webhook processing job marks webhook as processed', function () {
     $paymentService = new SubscriptionPaymentService($mockFactory);
 
     $job = new ProcessPaymentWebhook($webhook);
-    $job->handle($paymentService, $mockFactory);
+    $job->handle($paymentService, $mockFactory, app(PaymentGatewayTestTransactionRepositoryInterface::class));
 
     $webhook->refresh();
     expect($webhook->processed)->toBeTrue();
@@ -234,10 +236,37 @@ test('webhook processing job updates transaction status', function () {
         ]);
 
     $job = new ProcessPaymentWebhook($webhook);
-    $job->handle(app(SubscriptionPaymentService::class), app(PaymentGatewayFactory::class));
+    $job->handle(app(SubscriptionPaymentService::class), app(PaymentGatewayFactory::class), app(PaymentGatewayTestTransactionRepositoryInterface::class));
 
     $transaction->refresh();
     expect($transaction->status)->toBe(PaymentStatus::Completed);
+});
+
+test('webhook processing job updates the matching test transaction status', function () {
+    $gatewayType = PaymentGatewayType::factory()->create(['name' => 'midtrans']);
+    $gateway = PaymentGatewayModel::factory()
+        ->create(['gateway_type_id' => $gatewayType->id]);
+
+    $testTransaction = PaymentGatewayTestTransaction::factory()
+        ->for($gateway, 'paymentGateway')
+        ->create(['transaction_id' => 'test-tx-123', 'status' => 'pending']);
+
+    $webhook = PaymentWebhook::factory()
+        ->for($gateway, 'paymentGateway')
+        ->create([
+            'event_type' => 'transaction.capture',
+            'payload' => json_encode([
+                'transaction_id' => 'test-tx-123',
+                'transaction_status' => 'capture',
+            ]),
+            'processed' => false,
+        ]);
+
+    $job = new ProcessPaymentWebhook($webhook);
+    $job->handle(app(SubscriptionPaymentService::class), app(PaymentGatewayFactory::class), app(PaymentGatewayTestTransactionRepositoryInterface::class));
+
+    $testTransaction->refresh();
+    expect($testTransaction->status)->toBe(PaymentStatus::Completed->value);
 });
 
 test('webhook processing job skips if already processed', function () {
@@ -265,7 +294,7 @@ test('webhook processing job skips if already processed', function () {
     $originalStatus = $transaction->status;
 
     $job = new ProcessPaymentWebhook($webhook);
-    $job->handle(app(SubscriptionPaymentService::class), app(PaymentGatewayFactory::class));
+    $job->handle(app(SubscriptionPaymentService::class), app(PaymentGatewayFactory::class), app(PaymentGatewayTestTransactionRepositoryInterface::class));
 
     $transaction->refresh();
     expect($transaction->status)->toBe($originalStatus);

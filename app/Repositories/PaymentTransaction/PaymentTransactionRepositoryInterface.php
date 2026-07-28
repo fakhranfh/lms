@@ -25,4 +25,10 @@ interface PaymentTransactionRepositoryInterface
      * Find the most recently completed transaction for a school, if any.
      */
     public function findLatestCompletedForSchool(string $schoolId): ?PaymentTransaction;
+
+    /**
+     * Find the most recent unpaid school-registration transaction initiated
+     * by the given user, if any.
+     */
+    public function findPendingRegistrationForUser(string $userId): ?PaymentTransaction;
 }

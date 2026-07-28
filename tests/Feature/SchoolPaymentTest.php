@@ -3,12 +3,43 @@
 use App\Enums\AdminFeeType;
 use App\Enums\PaymentStatus;
 use App\Enums\RoleName;
+use App\Jobs\ProcessPaymentWebhook;
+use App\Models\PaymentGateway;
+use App\Models\PaymentGatewayCredential;
+use App\Models\PaymentGatewayType;
 use App\Models\PaymentTransaction;
+use App\Models\PaymentWebhook;
 use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\User;
+use App\Repositories\PaymentGatewayTestTransaction\PaymentGatewayTestTransactionRepositoryInterface;
+use App\Services\PaymentGatewayFactory;
+use App\Services\SchoolService;
+use App\Services\SubscriptionPaymentService;
 use Database\Seeders\PricingTierSeeder;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+
+function enableXenditGateway(): PaymentGateway
+{
+    $gatewayType = PaymentGatewayType::firstOrCreate(
+        ['name' => 'xendit'],
+        ['label' => 'Xendit', 'is_active' => true]
+    );
+
+    $gateway = PaymentGateway::factory()
+        ->for($gatewayType)
+        ->state(['is_enabled' => true, 'is_sandbox_mode' => true, 'enabled_channels' => ['QRIS', 'BCA']])
+        ->create();
+
+    PaymentGatewayCredential::create([
+        'payment_gateway_id' => $gateway->id,
+        'credential_key' => 'api_key',
+        'credential_value' => 'test_api_key',
+    ]);
+
+    return $gateway;
+}
 
 function createPendingRegistrationTransaction(User $user, PricingTier $tier, string $domain = 'myschool.lms.local'): PaymentTransaction
 {
@@ -42,6 +73,7 @@ function createPendingRegistrationTransaction(User $user, PricingTier $tier, str
 
 test('initiator can view their pending payment page', function () {
     $this->seed(PricingTierSeeder::class);
+    enableXenditGateway();
     $user = User::factory()->create(['school_id' => null]);
     $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
     $transaction = createPendingRegistrationTransaction($user, $plusTier);
@@ -53,6 +85,8 @@ test('initiator can view their pending payment page', function () {
     $response->assertSeeText('My School');
     $response->assertSeeText($plusTier->name);
     $response->assertSeeText('Rp');
+    $response->assertSeeText('QRIS');
+    $response->assertSeeText('BCA Virtual Account');
 });
 
 test('another user cannot view someone else\'s pending payment page', function () {
@@ -79,16 +113,111 @@ test('unauthenticated user cannot view payment page', function () {
     $response->assertRedirect(route('login'));
 });
 
-test('confirming payment creates the school and attaches the initiator as admin', function () {
+test('confirming payment initiates a payment request against the chosen channel', function () {
     $this->seed(PricingTierSeeder::class);
+    enableXenditGateway();
+    Http::fake([
+        '*api.xendit.co*' => Http::response([
+            'payment_request_id' => 'pr-registration-123',
+            'reference_id' => 'inv-123',
+            'status' => 'REQUIRES_ACTION',
+            'actions' => [
+                ['type' => 'PRESENT_TO_CUSTOMER', 'descriptor' => 'QR_STRING', 'value' => '00020101...'],
+            ],
+        ]),
+    ]);
+
     $user = User::factory()->create(['school_id' => null]);
     $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
     $transaction = createPendingRegistrationTransaction($user, $plusTier);
 
     $this->actingAs($user);
-    $response = $this->post(route('school.payment.confirm', $transaction));
+    $response = $this->post(route('school.payment.confirm', $transaction), ['channel' => 'QRIS']);
 
-    $response->assertRedirect(route('manage.schools.index'));
+    $response->assertRedirect(route('school.payment.index', $transaction));
+
+    expect(School::query()->where('domain', 'myschool.lms.local')->exists())->toBeFalse();
+
+    $transaction->refresh();
+    expect($transaction->status)->toBe(PaymentStatus::Pending)
+        ->and($transaction->channel)->toBe('QRIS')
+        ->and($transaction->payment_instructions)->toBe('00020101...')
+        ->and($transaction->transaction_id)->toBe('pr-registration-123');
+});
+
+test('confirming payment via ajax returns json payment instructions without redirecting', function () {
+    $this->seed(PricingTierSeeder::class);
+    enableXenditGateway();
+    Http::fake([
+        '*api.xendit.co*' => Http::response([
+            'payment_request_id' => 'pr-registration-456',
+            'status' => 'REQUIRES_ACTION',
+            'actions' => [
+                ['type' => 'PRESENT_TO_CUSTOMER', 'descriptor' => 'QR_STRING', 'value' => '00020102...'],
+            ],
+        ]),
+    ]);
+
+    $user = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($user, $plusTier);
+
+    $this->actingAs($user);
+    $response = $this->postJson(route('school.payment.confirm', $transaction), ['channel' => 'QRIS']);
+
+    $response->assertOk()->assertJson([
+        'channel' => 'QRIS',
+        'channel_label' => 'QRIS',
+        'view_type' => 'qris',
+        'payment_instructions' => '00020102...',
+        'redirect_url' => null,
+    ]);
+    $response->assertJsonStructure(['channel_logo']);
+});
+
+test('another user cannot confirm someone else\'s payment', function () {
+    $this->seed(PricingTierSeeder::class);
+    enableXenditGateway();
+    $owner = User::factory()->create(['school_id' => null]);
+    $intruder = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($owner, $plusTier);
+
+    $this->actingAs($intruder);
+    $response = $this->post(route('school.payment.confirm', $transaction), ['channel' => 'QRIS']);
+
+    $response->assertStatus(403);
+    expect(School::query()->where('domain', 'myschool.lms.local')->exists())->toBeFalse();
+});
+
+test('payment webhook completion creates the school and attaches the initiator as admin', function () {
+    $this->seed(PricingTierSeeder::class);
+    $gateway = enableXenditGateway();
+    $user = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($user, $plusTier);
+    $transaction->update([
+        'payment_gateway_id' => $gateway->id,
+        'channel' => 'QRIS',
+        'transaction_id' => 'pr-registration-123',
+    ]);
+
+    $webhook = PaymentWebhook::create([
+        'payment_gateway_id' => $gateway->id,
+        'event_type' => 'payment.succeeded',
+        'payload' => json_encode([
+            'event' => 'payment.succeeded',
+            'data' => ['payment_request_id' => 'pr-registration-123', 'status' => 'SUCCEEDED'],
+        ]),
+        'processed' => false,
+    ]);
+
+    (new ProcessPaymentWebhook($webhook))->handle(
+        app(SubscriptionPaymentService::class),
+        app(PaymentGatewayFactory::class),
+        app(PaymentGatewayTestTransactionRepositoryInterface::class),
+        app(SchoolService::class),
+    );
 
     $school = School::query()->where('domain', 'myschool.lms.local')->firstOrFail();
 
@@ -101,29 +230,16 @@ test('confirming payment creates the school and attaches the initiator as admin'
         ->and($transaction->school_id)->toBe($school->id);
 });
 
-test('another user cannot confirm someone else\'s payment', function () {
-    $this->seed(PricingTierSeeder::class);
-    $owner = User::factory()->create(['school_id' => null]);
-    $intruder = User::factory()->create(['school_id' => null]);
-    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
-    $transaction = createPendingRegistrationTransaction($owner, $plusTier);
-
-    $this->actingAs($intruder);
-    $response = $this->post(route('school.payment.confirm', $transaction));
-
-    $response->assertStatus(403);
-    expect(School::query()->where('domain', 'myschool.lms.local')->exists())->toBeFalse();
-});
-
 test('viewing an already completed payment page redirects to the dashboard', function () {
     $this->seed(PricingTierSeeder::class);
+    $gateway = enableXenditGateway();
     $user = User::factory()->create(['school_id' => null]);
     $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
     $transaction = createPendingRegistrationTransaction($user, $plusTier);
+    $transaction->update(['payment_gateway_id' => $gateway->id]);
+    app(SchoolService::class)->completeRegistrationTransaction($transaction);
 
     $this->actingAs($user);
-    $this->post(route('school.payment.confirm', $transaction));
-
     $response = $this->get(route('school.payment.index', $transaction));
 
     $response->assertRedirect(route('manage.schools.index'));

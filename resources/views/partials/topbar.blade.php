@@ -26,6 +26,13 @@
                 <a href="{{ url('/dashboard') }}" class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors">
                     Dashboard
                 </a>
+
+                <form method="POST" action="{{ route('logout') }}" class="m-0">
+                    @csrf
+                    <button type="submit" class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors">
+                        Logout
+                    </button>
+                </form>
             @else
                 @if (Route::has('try-demo'.$rootDomainSuffix))
                     <a href="{{ route('try-demo'.$rootDomainSuffix) }}" class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors">

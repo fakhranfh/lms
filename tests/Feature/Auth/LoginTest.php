@@ -1,8 +1,14 @@
 <?php
 
+use App\Enums\AdminFeeType;
+use App\Enums\PaymentStatus;
+use App\Models\PaymentTransaction;
+use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\User;
+use Database\Seeders\PricingTierSeeder;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 test('login page can be rendered on the root domain', function () {
     $this->get('/login')->assertSuccessful();
@@ -95,6 +101,41 @@ test('login keeps existing timezone when ip lookup fails', function () {
         'id' => $user->id,
         'timezone' => 'Asia/Jakarta',
     ]);
+});
+
+test('login redirects to the pending payment page when the user has an unpaid school registration', function () {
+    $this->seed(PricingTierSeeder::class);
+    $tier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $user = User::factory()->create([
+        'email' => 'john@example.com',
+        'password' => 'password',
+        'school_id' => null,
+    ]);
+
+    $subtotal = (float) $tier->price;
+    $transaction = PaymentTransaction::create([
+        'initiated_by' => $user->id,
+        'transaction_id' => (string) Str::uuid(),
+        'amount' => $subtotal,
+        'currency' => 'IDR',
+        'status' => PaymentStatus::Pending,
+        'registration_data' => ['name' => 'My School', 'domain' => 'myschool.lms.local', 'tier_id' => $tier->id],
+        'subtotal' => $subtotal,
+        'vat_rate' => 0,
+        'vat_amount' => 0,
+        'admin_fee_rate' => 0,
+        'admin_fee_type' => AdminFeeType::Percentage,
+        'admin_fee_amount' => 0,
+        'tier_name' => $tier->name,
+        'billing_period' => 'monthly',
+    ]);
+
+    $response = $this->post('/login', [
+        'email' => 'john@example.com',
+        'password' => 'password',
+    ]);
+
+    $response->assertRedirect(route('school.payment.index', $transaction));
 });
 
 test('login is throttled after 5 failed attempts', function () {

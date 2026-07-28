@@ -7,7 +7,6 @@
         <div class="w-full max-w-[480px] bg-surface rounded-xl p-space-xl border border-outline-variant shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             <div class="text-center mb-space-xl">
                 <h2 class="font-headline-md text-headline-md text-on-surface mb-space-xxs">Create your admin account</h2>
-                <p class="font-body-md text-body-md text-secondary">Step 1 of 2 &mdash; you'll set up your school next.</p>
             </div>
 
             <form wire:submit="save" class="space-y-space-md">

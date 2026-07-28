@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Services\R2StorageService;
+
 enum XenditChannel: string
 {
     case Qris = 'QRIS';
@@ -33,6 +35,36 @@ enum XenditChannel: string
             self::Alfamart => 'Alfamart',
             self::Indomaret => 'Indomaret',
         };
+    }
+
+    /**
+     * Brand color used for this channel's generated logo badge.
+     */
+    public function brandColor(): string
+    {
+        return match ($this) {
+            self::Qris => '#DD2624',
+            self::Ovo => '#4C3494',
+            self::Dana => '#118EEA',
+            self::LinkAja => '#E9312A',
+            self::ShopeePay => '#EE4D2D',
+            self::Bca => '#0058A3',
+            self::Bni => '#F37021',
+            self::Bri => '#00529C',
+            self::Mandiri => '#003D79',
+            self::Permata => '#00695C',
+            self::Alfamart => '#E4032E',
+            self::Indomaret => '#123B7D',
+        };
+    }
+
+    /**
+     * Public R2 URL for this channel's logo, uploaded by the
+     * `channels:sync-logos` artisan command.
+     */
+    public function logoUrl(): string
+    {
+        return app(R2StorageService::class)->getPublicUrl("channel-logos/{$this->value}");
     }
 
     /**

@@ -38,4 +38,15 @@ class PaymentTransactionRepository implements PaymentTransactionRepositoryInterf
             ->latest('created_at')
             ->first();
     }
+
+    public function findPendingRegistrationForUser(string $userId): ?PaymentTransaction
+    {
+        return PaymentTransaction::whereHas('detail', function ($query) {
+            $query->whereNotNull('registration_data');
+        })
+            ->where('initiated_by', $userId)
+            ->where('status', PaymentStatus::Pending)
+            ->latest('created_at')
+            ->first();
+    }
 }

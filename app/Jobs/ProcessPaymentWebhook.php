@@ -7,6 +7,7 @@ use App\Models\PaymentTransaction;
 use App\Models\PaymentWebhook;
 use App\Repositories\PaymentGatewayTestTransaction\PaymentGatewayTestTransactionRepositoryInterface;
 use App\Services\PaymentGatewayFactory;
+use App\Services\SchoolService;
 use App\Services\SubscriptionPaymentService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -22,7 +23,8 @@ class ProcessPaymentWebhook implements ShouldQueue
     public function handle(
         SubscriptionPaymentService $paymentService,
         PaymentGatewayFactory $gatewayFactory,
-        PaymentGatewayTestTransactionRepositoryInterface $testTransactionRepository
+        PaymentGatewayTestTransactionRepositoryInterface $testTransactionRepository,
+        SchoolService $schoolService
     ): void {
         if ($this->webhook->processed) {
             return;
@@ -41,13 +43,14 @@ class ProcessPaymentWebhook implements ShouldQueue
 
                 $transaction = PaymentTransaction::where('transaction_id', $transactionId)->first();
                 if ($transaction) {
-                    $transaction->update([
-                        'status' => $status,
-                        'metadata' => $payload,
-                    ]);
+                    $transaction->update(['status' => $status]);
 
                     if ($transaction->status === PaymentStatus::Completed) {
-                        $paymentService->completeSubscription($transaction);
+                        if ($transaction->registration_data) {
+                            $schoolService->completeRegistrationTransaction($transaction);
+                        } else {
+                            $paymentService->completeSubscription($transaction);
+                        }
                     } elseif ($transaction->status === PaymentStatus::Failed) {
                         $paymentService->handleFailedPayment($transaction);
                     }

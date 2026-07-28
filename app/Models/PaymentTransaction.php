@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['initiated_by', 'payment_gateway_id', 'transaction_id', 'amount', 'currency', 'status', 'transaction_type', 'subtotal', 'vat_rate', 'vat_amount', 'admin_fee_rate', 'admin_fee_type', 'admin_fee_amount'])]
+#[Fillable(['initiated_by', 'payment_gateway_id', 'channel', 'payment_instructions', 'transaction_id', 'amount', 'currency', 'status', 'transaction_type', 'subtotal', 'vat_rate', 'vat_amount', 'admin_fee_rate', 'admin_fee_type', 'admin_fee_amount'])]
 class PaymentTransaction extends Model
 {
     /** @use HasFactory<PaymentTransactionFactory> */

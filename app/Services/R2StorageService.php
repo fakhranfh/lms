@@ -130,6 +130,23 @@ class R2StorageService
     }
 
     /**
+     * Upload raw content to a fixed R2 key (no random hash), overwriting
+     * whatever is already there. Used for static assets such as payment
+     * channel logos where the URL needs to stay stable across uploads.
+     */
+    public function uploadRawContent(string $key, string $content, string $contentType): string
+    {
+        $this->s3Client->putObject([
+            'Bucket' => $this->bucket,
+            'Key' => $key,
+            'Body' => $content,
+            'ContentType' => $contentType,
+        ]);
+
+        return $this->getPublicUrl($key);
+    }
+
+    /**
      * Delete file from R2
      */
     public function delete(string $filePath): bool

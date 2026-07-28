@@ -70,6 +70,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Extra Root Domains
+    |--------------------------------------------------------------------------
+    |
+    | Additional root domains that behave identically to "app.domain" above
+    | (same landing page, admin panel, and school subdomains). Configure as
+    | a comma-separated list, e.g. APP_EXTRA_DOMAINS=lms.io,mylms.test.
+    | These can only be changed via .env, not through the admin panel.
+    |
+    */
+
+    'extra_domains' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('APP_EXTRA_DOMAINS', ''))
+    ))),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

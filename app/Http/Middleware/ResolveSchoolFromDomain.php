@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Enums\RoleName;
 use App\Services\SchoolService;
 use App\Support\CurrentSchool;
+use App\Support\RootDomains;
 use App\Support\SchoolDomainResolver;
 use Closure;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class ResolveSchoolFromDomain
     public function handle(Request $request, Closure $next): Response
     {
         $host = $request->getHost();
-        $rootDomain = config('app.domain');
+        $rootDomain = RootDomains::match($host);
         $adminDomain = "admin.{$rootDomain}";
 
         if ($request->user() && $request->user()->hasRole(RoleName::Admin) && $request->user()->school_id !== null) {

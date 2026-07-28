@@ -66,7 +66,7 @@
         <div class="mt-space-xl text-center">
             <p class="font-body-sm text-body-sm text-secondary">
                 Don't have an account?
-                <a class="text-primary font-medium hover:underline transition-colors" href="{{ route('get-started') }}">Register</a>
+                <a class="text-primary font-medium hover:underline transition-colors" href="{{ route('get-started'.\App\Support\RootDomains::currentSuffix()) }}">Register</a>
             </p>
         </div>
     </div>

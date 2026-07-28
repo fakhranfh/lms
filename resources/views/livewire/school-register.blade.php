@@ -53,7 +53,7 @@
             <div
                 class="space-y-space-xs"
                 x-data="tierBreakdown({
-                    breakdownUrlTemplate: @js(route('pricing-tiers.breakdown', ['pricingTier' => '__ID__'])),
+                    breakdownUrlTemplate: @js(route('pricing-tiers.breakdown'.\App\Support\RootDomains::currentSuffix(), ['pricingTier' => '__ID__'])),
                 })"
                 x-init="if (@js($tierId)) load(@js($tierId))"
             >

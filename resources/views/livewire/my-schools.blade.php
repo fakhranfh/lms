@@ -7,7 +7,7 @@
         <div class="w-full max-w-[560px] bg-surface rounded-xl p-space-xl border border-outline-variant shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             <div class="flex items-center justify-between mb-space-lg">
                 <h2 class="font-headline-md text-headline-md text-on-surface">My Schools</h2>
-                <a href="{{ route('get-started.school') }}" class="flex h-9 items-center rounded bg-primary px-space-md font-label-md text-label-md text-on-primary hover:bg-primary-container transition-colors">
+                <a href="{{ route('get-started.school'.\App\Support\RootDomains::currentSuffix()) }}" class="flex h-9 items-center rounded bg-primary px-space-md font-label-md text-label-md text-on-primary hover:bg-primary-container transition-colors">
                     Add School
                 </a>
             </div>

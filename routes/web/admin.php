@@ -17,64 +17,71 @@ use App\Livewire\Schools\SchoolIndex;
 use App\Livewire\Schools\SchoolTierHistory;
 use App\Livewire\Users\UserIndex;
 use App\Services\R2StorageService;
+use App\Support\RootDomains;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-// Admin panel (admin.lms.local): admin-only, school_id must be null.
-Route::domain('admin.'.config('app.domain'))->group(function () {
-    Route::get('/', function () {
-        return redirect()->route(Auth::check() ? 'admin.dashboard' : 'admin.login');
-    })->name('admin.home');
+// Admin panel (admin.lms.local) and any APP_EXTRA_DOMAINS: admin-only, school_id must be null.
+// The primary domain (index 0) keeps the canonical route names; extra domains
+// get suffixed names (see RootDomains) so they can be served directly.
+foreach (RootDomains::all() as $index => $rootDomain) {
+    $suffix = $index === 0 ? '' : ".alt{$index}";
 
-    Route::middleware('guest')->group(function () {
-        Route::get('/login', function () {
-            return view('auth.admin-login');
-        })->name('admin.login');
-        Route::post('/login', [AdminLoginController::class, 'store'])->name('admin.login.store');
+    Route::domain('admin.'.$rootDomain)->group(function () use ($suffix) {
+        Route::get('/', function () use ($suffix) {
+            return redirect()->route(Auth::check() ? "admin.dashboard{$suffix}" : "admin.login{$suffix}");
+        })->name("admin.home{$suffix}");
+
+        Route::middleware('guest')->group(function () use ($suffix) {
+            Route::get('/login', function () {
+                return view('auth.admin-login');
+            })->name("admin.login{$suffix}");
+            Route::post('/login', [AdminLoginController::class, 'store'])->name("admin.login.store{$suffix}");
+        });
+
+        Route::middleware(['auth', 'role:Admin'])->group(function () use ($suffix) {
+            Route::get('/dashboard', function (R2StorageService $r2Service) {
+                return view('admin.dashboard', [
+                    'quota' => $r2Service->checkSchoolQuota(''),
+                ]);
+            })->name("admin.dashboard{$suffix}");
+
+            Route::resource('gateways', GatewayConfigController::class)->names("admin.gateways{$suffix}");
+            Route::post('gateways/{gateway}/test-connection', [GatewayConfigController::class, 'testConnection'])->name("admin.gateways.test-connection{$suffix}");
+            Route::get('gateways/{gateway}/test-result', [GatewayConfigController::class, 'testResult'])->name("admin.gateways.test-result{$suffix}");
+            Route::post('gateways/{gateway}/test-result/simulate', [GatewayConfigController::class, 'simulatePayment'])->name("admin.gateways.test-result.simulate{$suffix}");
+
+            Route::get('/pricing-tiers', PricingTierIndex::class)->name("admin.pricing-tiers.index{$suffix}");
+            Route::get('/pricing-tiers/create', PricingTierCreate::class)->name("admin.pricing-tiers.create{$suffix}");
+            Route::get('/pricing-tiers/{tier}/edit', PricingTierEdit::class)->name("admin.pricing-tiers.edit{$suffix}");
+
+            Route::get('/audit-logs', AuditLogTable::class)->name("admin.audit-logs.index{$suffix}");
+
+            Route::get('/storage', AdminStorageDashboard::class)->name("admin.storage.dashboard{$suffix}");
+            Route::get('/storage/materials', AdminStorageMaterials::class)->name("admin.storage.materials{$suffix}");
+
+            Route::get('/schools', SchoolIndex::class)->name("admin.schools.index{$suffix}");
+            Route::get('/schools/{school}/edit', SchoolEdit::class)->name("admin.schools.edit{$suffix}");
+            Route::get('/schools/{school}/tier-history', SchoolTierHistory::class)->name("admin.schools.tier-history{$suffix}");
+
+            Route::get('/demo-credentials', function () {
+                return view('admin.demo-credentials');
+            })->name("admin.demo-credentials{$suffix}");
+
+            Route::get('/users', UserIndex::class)->name("admin.users.index{$suffix}");
+            Route::get('/roles', RoleIndex::class)->name("admin.roles.index{$suffix}");
+            Route::get('/roles/create', RoleCreate::class)->name("admin.roles.create{$suffix}");
+            Route::get('/roles/{role}/edit', RoleEdit::class)->name("admin.roles.edit{$suffix}");
+            Route::get('/permissions', [PermissionController::class, 'index'])->name("admin.permissions.index{$suffix}");
+
+            Route::post('/logout', function (Request $request) use ($suffix) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()->route("admin.login{$suffix}");
+            })->name("admin.logout{$suffix}");
+        });
     });
-
-    Route::middleware(['auth', 'role:Admin'])->group(function () {
-        Route::get('/dashboard', function (R2StorageService $r2Service) {
-            return view('admin.dashboard', [
-                'quota' => $r2Service->checkSchoolQuota(''),
-            ]);
-        })->name('admin.dashboard');
-
-        Route::resource('gateways', GatewayConfigController::class)->names('admin.gateways');
-        Route::post('gateways/{gateway}/test-connection', [GatewayConfigController::class, 'testConnection'])->name('admin.gateways.test-connection');
-        Route::get('gateways/{gateway}/test-result', [GatewayConfigController::class, 'testResult'])->name('admin.gateways.test-result');
-        Route::post('gateways/{gateway}/test-result/simulate', [GatewayConfigController::class, 'simulatePayment'])->name('admin.gateways.test-result.simulate');
-
-        Route::get('/pricing-tiers', PricingTierIndex::class)->name('admin.pricing-tiers.index');
-        Route::get('/pricing-tiers/create', PricingTierCreate::class)->name('admin.pricing-tiers.create');
-        Route::get('/pricing-tiers/{tier}/edit', PricingTierEdit::class)->name('admin.pricing-tiers.edit');
-
-        Route::get('/audit-logs', AuditLogTable::class)->name('admin.audit-logs.index');
-
-        Route::get('/storage', AdminStorageDashboard::class)->name('admin.storage.dashboard');
-        Route::get('/storage/materials', AdminStorageMaterials::class)->name('admin.storage.materials');
-
-        Route::get('/schools', SchoolIndex::class)->name('admin.schools.index');
-        Route::get('/schools/{school}/edit', SchoolEdit::class)->name('admin.schools.edit');
-        Route::get('/schools/{school}/tier-history', SchoolTierHistory::class)->name('admin.schools.tier-history');
-
-        Route::get('/demo-credentials', function () {
-            return view('admin.demo-credentials');
-        })->name('admin.demo-credentials');
-
-        Route::get('/users', UserIndex::class)->name('admin.users.index');
-        Route::get('/roles', RoleIndex::class)->name('admin.roles.index');
-        Route::get('/roles/create', RoleCreate::class)->name('admin.roles.create');
-        Route::get('/roles/{role}/edit', RoleEdit::class)->name('admin.roles.edit');
-        Route::get('/permissions', [PermissionController::class, 'index'])->name('admin.permissions.index');
-
-        Route::post('/logout', function (Request $request) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return redirect()->route('admin.login');
-        })->name('admin.logout');
-    });
-});
+}

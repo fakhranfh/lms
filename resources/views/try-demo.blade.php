@@ -16,7 +16,7 @@
             </div>
 
             <div class="space-y-space-md" x-data="{ loading: null }">
-                <a href="{{ route('try-demo.login', ['role' => 'school-admin']) }}"
+                <a href="{{ route('try-demo.login'.\App\Support\RootDomains::currentSuffix(), ['role' => 'school-admin']) }}"
                     @click="loading = 'school-admin'"
                     :class="loading ? (loading === 'school-admin' ? 'pointer-events-none opacity-75' : 'pointer-events-none opacity-50') : ''"
                     class="flex items-center justify-between h-[56px] px-space-md rounded-lg border border-outline-variant bg-surface-container-lowest hover:border-primary hover:ring-1 hover:ring-primary transition-colors group">
@@ -35,7 +35,7 @@
                     <span class="material-symbols-outlined text-secondary/60 text-[20px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
                 </a>
 
-                <a href="{{ route('try-demo.login', ['role' => 'instructor']) }}"
+                <a href="{{ route('try-demo.login'.\App\Support\RootDomains::currentSuffix(), ['role' => 'instructor']) }}"
                     @click="loading = 'instructor'"
                     :class="loading ? (loading === 'instructor' ? 'pointer-events-none opacity-75' : 'pointer-events-none opacity-50') : ''"
                     class="flex items-center justify-between h-[56px] px-space-md rounded-lg border border-outline-variant bg-surface-container-lowest hover:border-primary hover:ring-1 hover:ring-primary transition-colors group">
@@ -54,7 +54,7 @@
                     <span class="material-symbols-outlined text-secondary/60 text-[20px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
                 </a>
 
-                <a href="{{ route('try-demo.login', ['role' => 'student']) }}"
+                <a href="{{ route('try-demo.login'.\App\Support\RootDomains::currentSuffix(), ['role' => 'student']) }}"
                     @click="loading = 'student'"
                     :class="loading ? (loading === 'student' ? 'pointer-events-none opacity-75' : 'pointer-events-none opacity-50') : ''"
                     class="flex items-center justify-between h-[56px] px-space-md rounded-lg border border-outline-variant bg-surface-container-lowest hover:border-primary hover:ring-1 hover:ring-primary transition-colors group">

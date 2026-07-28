@@ -104,6 +104,11 @@ class GatewayConfigController extends Controller
         }
 
         $response = $testTransaction->response ?? [];
+
+        if ($testTransaction->status) {
+            $response['status'] = $testTransaction->status;
+        }
+
         $channelValue = $response['channel'] ?? null;
         $channel = $channelValue ? XenditChannel::from($channelValue) : null;
 

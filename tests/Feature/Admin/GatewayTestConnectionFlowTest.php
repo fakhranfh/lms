@@ -198,6 +198,9 @@ test('simulating a payment calls the Xendit simulate endpoint and redirects back
 
     Http::assertSent(fn ($request) => str_contains($request->url(), 'pr-simulate-me/simulate')
         && $request['amount'] === 10000);
+
+    $testTransaction = PaymentGatewayTestTransaction::where('payment_gateway_id', $this->gateway->id)->first();
+    expect($testTransaction->status)->toBe('pending');
 });
 
 test('simulating a payment with no test transaction redirects with an error', function () {

@@ -118,6 +118,8 @@ class PaymentGatewayConfigService
                 $result = $gatewayInstance->checkTransactionStatus($testTransaction->transaction_id);
 
                 if ($result && ($result['success'] ?? false)) {
+                    $this->testTransactionRepository->updateStatus($gateway->id, $result['status'] ?? $testTransaction->status);
+
                     return [
                         'success' => true,
                         'message' => 'Gateway connection successful!',
@@ -164,7 +166,7 @@ class PaymentGatewayConfigService
             ];
         }
 
-        $this->testTransactionRepository->storeForGateway($gateway->id, $invoice['transaction_id'], $invoice);
+        $this->testTransactionRepository->storeForGateway($gateway->id, $invoice['transaction_id'], $invoice['status'] ?? null, $invoice);
 
         return [
             'success' => true,
@@ -220,6 +222,10 @@ class PaymentGatewayConfigService
                     'success' => false,
                     'message' => 'Simulation failed: '.($result['error'] ?? 'Unknown error'),
                 ];
+            }
+
+            if ($result['status'] ?? null) {
+                $this->testTransactionRepository->updateStatus($gateway->id, $result['status']);
             }
 
             return [

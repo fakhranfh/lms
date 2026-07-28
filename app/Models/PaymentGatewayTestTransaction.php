@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['payment_gateway_id', 'transaction_id', 'response'])]
+#[Fillable(['payment_gateway_id', 'transaction_id', 'status', 'response'])]
 class PaymentGatewayTestTransaction extends Model
 {
     /** @use HasFactory<PaymentGatewayTestTransactionFactory> */

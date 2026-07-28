@@ -45,6 +45,7 @@ describe('PaymentGatewayConfigService::testConnection', function () {
             ->first();
 
         expect($testTransaction)->not->toBeNull();
+        expect($testTransaction->status)->toBe('requires_action');
         expect($testTransaction->response)->toMatchArray([
             'success' => true,
             'transaction_id' => 'pr-dummy-12345',
@@ -54,12 +55,12 @@ describe('PaymentGatewayConfigService::testConnection', function () {
     test('reuses the stored dummy transaction instead of creating a new one', function () {
         PaymentGatewayTestTransaction::factory()
             ->for($this->gateway, 'paymentGateway')
-            ->create(['transaction_id' => 'pr-existing-999']);
+            ->create(['transaction_id' => 'pr-existing-999', 'status' => 'requires_action']);
 
         Http::fake([
             '*api.xendit.co*/v3/payment_requests/pr-existing-999' => Http::response([
                 'payment_request_id' => 'pr-existing-999',
-                'status' => 'REQUIRES_ACTION',
+                'status' => 'SUCCEEDED',
             ]),
         ]);
 
@@ -68,6 +69,9 @@ describe('PaymentGatewayConfigService::testConnection', function () {
         expect($result['success'])->toBeTrue();
         Http::assertSent(fn ($request) => str_contains($request->url(), 'pr-existing-999') && $request->method() === 'GET');
         Http::assertNotSent(fn ($request) => $request->method() === 'POST');
+
+        $testTransaction = PaymentGatewayTestTransaction::where('payment_gateway_id', $this->gateway->id)->first();
+        expect($testTransaction->status)->toBe('succeeded');
     });
 
     test('treats a failed invoice creation as invalid credentials', function () {

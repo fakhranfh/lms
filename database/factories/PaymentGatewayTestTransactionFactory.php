@@ -21,6 +21,7 @@ class PaymentGatewayTestTransactionFactory extends Factory
         return [
             'payment_gateway_id' => PaymentGateway::factory(),
             'transaction_id' => 'test-'.$this->faker->uuid(),
+            'status' => 'pending',
         ];
     }
 }

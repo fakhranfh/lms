@@ -11,11 +11,16 @@ class PaymentGatewayTestTransactionRepository implements PaymentGatewayTestTrans
         return PaymentGatewayTestTransaction::where('payment_gateway_id', $gatewayId)->first();
     }
 
-    public function storeForGateway(string $gatewayId, string $transactionId, array $response = []): PaymentGatewayTestTransaction
+    public function storeForGateway(string $gatewayId, string $transactionId, ?string $status = null, array $response = []): PaymentGatewayTestTransaction
     {
         return PaymentGatewayTestTransaction::updateOrCreate(
             ['payment_gateway_id' => $gatewayId],
-            ['transaction_id' => $transactionId, 'response' => $response]
+            ['transaction_id' => $transactionId, 'status' => $status, 'response' => $response]
         );
+    }
+
+    public function updateStatus(string $gatewayId, string $status): void
+    {
+        PaymentGatewayTestTransaction::where('payment_gateway_id', $gatewayId)->update(['status' => $status]);
     }
 }

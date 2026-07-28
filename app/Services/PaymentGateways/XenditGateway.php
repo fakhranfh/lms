@@ -3,6 +3,7 @@
 namespace App\Services\PaymentGateways;
 
 use App\Contracts\PaymentGateway;
+use App\Enums\PaymentStatus;
 use App\Enums\XenditChannel;
 use App\Models\PaymentGateway as PaymentGatewayModel;
 use Illuminate\Http\Client\ConnectionException;
@@ -82,10 +83,9 @@ class XenditGateway implements PaymentGateway
                 return false;
             }
 
-            $paymentRequestId = $payload['id'] ?? $payload['payment_request_id'] ?? null;
-            $status = $payload['status'] ?? null;
+            $data = $this->webhookData($payload);
 
-            if (! $paymentRequestId || ! $status) {
+            if (! ($data['payment_request_id'] ?? $data['id'] ?? null) || ! ($data['status'] ?? null)) {
                 return false;
             }
 
@@ -171,6 +171,38 @@ class XenditGateway implements PaymentGateway
         } catch (RequestException|ConnectionException) {
             return false;
         }
+    }
+
+    public function extractWebhookTransactionId(array $payload): ?string
+    {
+        $data = $this->webhookData($payload);
+
+        return $data['payment_request_id'] ?? $data['id'] ?? null;
+    }
+
+    public function extractWebhookStatus(array $payload): PaymentStatus
+    {
+        $data = $this->webhookData($payload);
+        $status = strtolower($data['status'] ?? '');
+
+        return match ($status) {
+            'succeeded', 'accepting_payments', 'paid' => PaymentStatus::Completed,
+            'pending', 'requires_action', 'authorized' => PaymentStatus::Pending,
+            'failed', 'expired', 'canceled' => PaymentStatus::Failed,
+            default => PaymentStatus::Pending,
+        };
+    }
+
+    /**
+     * v3 webhooks wrap the payment request in a "data" envelope:
+     * {"event": "payment.succeeded", "data": {"payment_request_id": ..., "status": ...}}
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    private function webhookData(array $payload): array
+    {
+        return $payload['data'] ?? $payload;
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Services\PaymentGateways;
 
 use App\Contracts\PaymentGateway;
+use App\Enums\PaymentStatus;
 use App\Models\PaymentGateway as PaymentGatewayModel;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -141,6 +142,23 @@ class MidtransGateway implements PaymentGateway
         } catch (RequestException|ConnectionException) {
             return false;
         }
+    }
+
+    public function extractWebhookTransactionId(array $payload): ?string
+    {
+        return $payload['transaction_id'] ?? null;
+    }
+
+    public function extractWebhookStatus(array $payload): PaymentStatus
+    {
+        $status = strtolower($payload['transaction_status'] ?? '');
+
+        return match ($status) {
+            'capture', 'settlement' => PaymentStatus::Completed,
+            'pending' => PaymentStatus::Pending,
+            'deny', 'cancel', 'expire' => PaymentStatus::Failed,
+            default => PaymentStatus::Pending,
+        };
     }
 
     private function verifyWebhookSignature(array $payload): bool

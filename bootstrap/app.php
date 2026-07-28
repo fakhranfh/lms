@@ -29,6 +29,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SecurityHeaders::class);
         $middleware->web(prepend: [ResolveSchoolFromDomain::class]);
 
+        // Payment gateway webhooks are called by Xendit/Midtrans directly,
+        // without a browser session or CSRF token.
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/*',
+        ]);
+
         $middleware->alias([
             'feature' => CheckFeatureAccess::class,
             'permission' => PermissionMiddleware::class,

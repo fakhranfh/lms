@@ -64,17 +64,21 @@ test('webhook controller stores xendit webhook', function () {
         ->create(['gateway_type_id' => $xenditType->id]);
 
     $payload = [
-        'id' => 'inv-123',
-        'status' => 'paid',
-        'amount' => 100000,
-        'metadata' => ['school_id' => $school->id],
+        'event' => 'payment.succeeded',
+        'api_version' => 'v3',
+        'data' => [
+            'payment_request_id' => 'pr-123',
+            'status' => 'SUCCEEDED',
+            'request_amount' => 100000,
+            'metadata' => ['school_id' => $school->id],
+        ],
     ];
 
     $response = $this->postJson('/webhooks/xendit', $payload);
 
     $response->assertStatus(200);
     expect(PaymentWebhook::count())->toBe(1);
-    expect(PaymentWebhook::first()->event_type)->toBe('invoice.paid');
+    expect(PaymentWebhook::first()->event_type)->toBe('payment.succeeded');
 });
 
 test('webhook controller returns 404 for unknown gateway', function () {
@@ -192,6 +196,8 @@ test('webhook processing job marks webhook as processed', function () {
 
     $mockGateway = Mockery::mock(PaymentGateway::class);
     $mockGateway->shouldReceive('handleWebhook')->andReturn(true);
+    $mockGateway->shouldReceive('extractWebhookTransactionId')->andReturn($transaction->transaction_id);
+    $mockGateway->shouldReceive('extractWebhookStatus')->andReturn(PaymentStatus::Completed);
 
     $mockFactory = Mockery::mock(PaymentGatewayFactory::class);
     $mockFactory->shouldReceive('make')->andReturn($mockGateway);
@@ -199,7 +205,7 @@ test('webhook processing job marks webhook as processed', function () {
     $paymentService = new SubscriptionPaymentService($mockFactory);
 
     $job = new ProcessPaymentWebhook($webhook);
-    $job->handle($paymentService);
+    $job->handle($paymentService, $mockFactory);
 
     $webhook->refresh();
     expect($webhook->processed)->toBeTrue();
@@ -228,7 +234,7 @@ test('webhook processing job updates transaction status', function () {
         ]);
 
     $job = new ProcessPaymentWebhook($webhook);
-    $job->handle(app(SubscriptionPaymentService::class));
+    $job->handle(app(SubscriptionPaymentService::class), app(PaymentGatewayFactory::class));
 
     $transaction->refresh();
     expect($transaction->status)->toBe(PaymentStatus::Completed);
@@ -259,7 +265,7 @@ test('webhook processing job skips if already processed', function () {
     $originalStatus = $transaction->status;
 
     $job = new ProcessPaymentWebhook($webhook);
-    $job->handle(app(SubscriptionPaymentService::class));
+    $job->handle(app(SubscriptionPaymentService::class), app(PaymentGatewayFactory::class));
 
     $transaction->refresh();
     expect($transaction->status)->toBe($originalStatus);

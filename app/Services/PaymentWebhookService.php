@@ -74,8 +74,9 @@ class PaymentWebhookService
                 return 'transaction.'.strtolower($payload['transaction_status']);
             }
         } elseif ($gatewayName === 'xendit') {
-            if (isset($payload['status'])) {
-                return 'invoice.'.strtolower($payload['status']);
+            // v3 webhooks send {"event": "payment.succeeded", "data": {...}}
+            if (isset($payload['event'])) {
+                return $payload['event'];
             }
         }
 

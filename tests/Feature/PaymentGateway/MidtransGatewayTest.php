@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PaymentStatus;
 use App\Models\PaymentGateway;
 use App\Models\PaymentGatewayType;
 use App\Services\PaymentGateways\MidtransGateway;
@@ -169,6 +170,22 @@ describe('MidtransGateway', function () {
         $result = $this->gateway->handleWebhook($payload);
 
         expect($result)->toBeFalse();
+    });
+
+    test('extractWebhookTransactionId reads transaction_id', function () {
+        $payload = ['transaction_id' => 'midtrans_tx_12345'];
+
+        expect($this->gateway->extractWebhookTransactionId($payload))->toBe('midtrans_tx_12345');
+    });
+
+    test('extractWebhookStatus maps transaction_status to PaymentStatus', function () {
+        $completed = ['transaction_status' => 'settlement'];
+        $pending = ['transaction_status' => 'pending'];
+        $failed = ['transaction_status' => 'expire'];
+
+        expect($this->gateway->extractWebhookStatus($completed))->toBe(PaymentStatus::Completed);
+        expect($this->gateway->extractWebhookStatus($pending))->toBe(PaymentStatus::Pending);
+        expect($this->gateway->extractWebhookStatus($failed))->toBe(PaymentStatus::Failed);
     });
 
     test('uses correct base URL for sandbox mode', function () {

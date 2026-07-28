@@ -8,6 +8,6 @@ class PaymentWebhookRepository implements PaymentWebhookRepositoryInterface
 {
     public function create(array $data): PaymentWebhook
     {
-        return PaymentWebhook::create($data);
+        return PaymentWebhook::create([...$data, 'created_at' => now()]);
     }
 }

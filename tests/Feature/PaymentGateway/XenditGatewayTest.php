@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PaymentStatus;
 use App\Models\PaymentGateway;
 use App\Models\PaymentGatewayType;
 use App\Services\PaymentGateways\XenditGateway;
@@ -174,6 +175,25 @@ describe('XenditGateway', function () {
         $payload = null;
 
         expect($this->gateway->handleWebhook((array) $payload))->toBeFalse();
+    });
+
+    test('extractWebhookTransactionId unwraps the v3 data envelope', function () {
+        $payload = [
+            'event' => 'payment.succeeded',
+            'data' => ['payment_request_id' => 'pr-webhook-123'],
+        ];
+
+        expect($this->gateway->extractWebhookTransactionId($payload))->toBe('pr-webhook-123');
+    });
+
+    test('extractWebhookStatus maps v3 statuses to PaymentStatus', function () {
+        $succeeded = ['data' => ['status' => 'SUCCEEDED']];
+        $pending = ['data' => ['status' => 'REQUIRES_ACTION']];
+        $failed = ['data' => ['status' => 'EXPIRED']];
+
+        expect($this->gateway->extractWebhookStatus($succeeded))->toBe(PaymentStatus::Completed);
+        expect($this->gateway->extractWebhookStatus($pending))->toBe(PaymentStatus::Pending);
+        expect($this->gateway->extractWebhookStatus($failed))->toBe(PaymentStatus::Failed);
     });
 
     test('uses the same base URL regardless of sandbox mode', function () {

@@ -2,7 +2,6 @@
 
 use App\Models\PaymentGateway;
 use App\Models\PaymentGatewayType;
-use App\Services\CredentialEncryption;
 use App\Services\PaymentGateways\MidtransGateway;
 use Illuminate\Support\Facades\Http;
 
@@ -22,11 +21,9 @@ describe('MidtransGateway', function () {
             'client_key' => 'test_client_key_456',
         ];
 
-        $this->encryptionService = app(CredentialEncryption::class);
         $this->gateway = new MidtransGateway(
             $this->config,
             $this->credentials,
-            $this->encryptionService
         );
     });
 
@@ -199,7 +196,7 @@ describe('MidtransGateway', function () {
             ->state(['is_sandbox_mode' => false])
             ->create();
 
-        $gateway = new MidtransGateway($config, $this->credentials, $this->encryptionService);
+        $gateway = new MidtransGateway($config, $this->credentials);
 
         Http::fake([
             '*app.midtrans.com*' => Http::response(['status_code' => '201']),

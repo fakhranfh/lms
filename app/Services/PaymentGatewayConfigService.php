@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Contracts\PaymentGateway as PaymentGatewayContract;
 use App\Models\PaymentGateway;
 use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
 use App\Repositories\PaymentGatewayCredential\PaymentGatewayCredentialRepositoryInterface;
+use App\Repositories\PaymentGatewayTestTransaction\PaymentGatewayTestTransactionRepositoryInterface;
 use App\Repositories\PaymentGatewayType\PaymentGatewayTypeRepositoryInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PaymentGatewayConfigService
 {
@@ -15,6 +18,7 @@ class PaymentGatewayConfigService
         private readonly PaymentGatewayFactory $gatewayFactory,
         private readonly PaymentGatewayTypeRepositoryInterface $gatewayTypeRepository,
         private readonly PaymentGatewayCredentialRepositoryInterface $credentialRepository,
+        private readonly PaymentGatewayTestTransactionRepositoryInterface $testTransactionRepository,
     ) {}
 
     public function getAllGateways(array $with = [])
@@ -39,6 +43,7 @@ class PaymentGatewayConfigService
             'is_enabled' => $data['is_enabled'] ?? false,
             'is_sandbox_mode' => $data['is_sandbox_mode'] ?? true,
             'webhook_secret' => $data['webhook_secret'] ?? null,
+            'enabled_channels' => $data['enabled_channels'] ?? [],
         ];
 
         $gateway = DB::transaction(function () use ($gatewayData, $data) {
@@ -58,14 +63,15 @@ class PaymentGatewayConfigService
             'is_enabled' => $data['is_enabled'] ?? false,
             'is_sandbox_mode' => $data['is_sandbox_mode'] ?? true,
             'webhook_secret' => $data['webhook_secret'] ?? null,
+            'enabled_channels' => $data['enabled_channels'] ?? [],
         ];
 
         $gateway = DB::transaction(function () use ($id, $gatewayData, $data) {
             $gateway = $this->repository->update($id, $gatewayData);
 
-            // Delete old credentials and store new ones
-            $this->credentialRepository->deleteForGateway($gateway->id);
-            $this->storeCredentials($gateway->id, $data['credentials'] ?? []);
+            // Credential fields are left blank in the edit form to mean
+            // "keep current value" — only overwrite the ones actually submitted.
+            $this->updateCredentials($gateway->id, $data['credentials'] ?? []);
 
             return $gateway;
         });
@@ -87,7 +93,7 @@ class PaymentGatewayConfigService
         });
     }
 
-    public function testConnection(PaymentGateway $gateway): array
+    public function testConnection(PaymentGateway $gateway, ?string $channel = null): array
     {
         try {
             $gateway->load(['paymentGatewayType', 'credentials']);
@@ -97,25 +103,66 @@ class PaymentGatewayConfigService
                 $gateway
             );
 
-            $result = $gatewayInstance->checkTransactionStatus('test-transaction');
-
-            if ($result && isset($result['success']) && ! $result['success']) {
-                return [
-                    'success' => false,
-                    'message' => 'Gateway responded but with an error. Please check your credentials.',
-                ];
+            // A specific channel was picked (from the "choose payment method"
+            // modal) — always create a fresh dummy transaction for it so the
+            // result page reflects that exact channel.
+            if ($channel !== null) {
+                return $this->createTestTransaction($gateway, $gatewayInstance, $channel);
             }
 
-            return [
-                'success' => true,
-                'message' => 'Gateway connection successful!',
-            ];
+            $testTransaction = $this->testTransactionRepository->findForGateway($gateway->id);
+
+            if ($testTransaction) {
+                $result = $gatewayInstance->checkTransactionStatus($testTransaction->transaction_id);
+
+                if ($result && ($result['success'] ?? false)) {
+                    return [
+                        'success' => true,
+                        'message' => 'Gateway connection successful!',
+                    ];
+                }
+            }
+
+            // No dummy transaction yet, or the stored one is no longer valid
+            // (e.g. sandbox was reset) — create a fresh one to confirm the
+            // gateway actually accepts these credentials.
+            return $this->createTestTransaction($gateway, $gatewayInstance, $channel);
         } catch (\Exception $e) {
             return [
                 'success' => false,
                 'message' => 'Connection failed: '.$e->getMessage(),
             ];
         }
+    }
+
+    private function createTestTransaction(PaymentGateway $gateway, PaymentGatewayContract $gatewayInstance, ?string $channel): array
+    {
+        $invoiceData = [
+            'order_id' => 'connection-test-'.Str::uuid(),
+            'amount' => 1000,
+            'customer_email' => 'connection-test@example.com',
+            'description' => 'Payment gateway connection test',
+        ];
+
+        if ($channel !== null) {
+            $invoiceData['channel'] = $channel;
+        }
+
+        $invoice = $gatewayInstance->createInvoice($invoiceData);
+
+        if (! ($invoice['success'] ?? false) || ! ($invoice['transaction_id'] ?? null)) {
+            return [
+                'success' => false,
+                'message' => 'Gateway responded but with an error. Please check your credentials.',
+            ];
+        }
+
+        $this->testTransactionRepository->storeForGateway($gateway->id, $invoice['transaction_id'], $invoice);
+
+        return [
+            'success' => true,
+            'message' => 'Gateway connection successful!',
+        ];
     }
 
     private function storeCredentials(string $gatewayId, array $credentials): void
@@ -128,6 +175,15 @@ class PaymentGatewayConfigService
                     'credential_value' => $value,
                     'is_sensitive' => true,
                 ]);
+            }
+        }
+    }
+
+    private function updateCredentials(string $gatewayId, array $credentials): void
+    {
+        foreach ($credentials as $key => $value) {
+            if ($value !== null && $value !== '') {
+                $this->credentialRepository->updateOrCreate($gatewayId, $key, $value);
             }
         }
     }

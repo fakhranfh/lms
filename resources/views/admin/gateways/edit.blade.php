@@ -69,6 +69,23 @@
                             <input type="password" name="credentials[callback_token]" id="credentials[callback_token]" class="w-full px-4 py-2 border border-outline rounded-lg text-on-surface" placeholder="Enter Xendit callback token" value="">
                             <p class="text-body-sm text-on-surface-variant mt-1">Leave blank to keep current value</p>
                         </div>
+
+                        <div>
+                            <span class="block text-body-md font-medium text-on-surface mb-2">
+                                Enabled Payment Channels <span class="text-error">*</span>
+                            </span>
+                            <div class="grid grid-cols-2 gap-3">
+                                @foreach (\App\Enums\XenditChannel::cases() as $channel)
+                                    <label class="flex items-center gap-2">
+                                        <input type="checkbox" name="enabled_channels[]" value="{{ $channel->value }}" class="rounded" {{ in_array($channel->value, $gateway->enabled_channels ?? []) ? 'checked' : '' }}>
+                                        <span class="text-body-sm text-on-surface">{{ $channel->label() }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('enabled_channels')
+                                <p class="text-error text-body-sm mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
                 @endif
             </div>

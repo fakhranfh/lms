@@ -15,4 +15,12 @@ class PaymentGatewayCredentialRepository implements PaymentGatewayCredentialRepo
     {
         return PaymentGatewayCredential::where('payment_gateway_id', $gatewayId)->delete();
     }
+
+    public function updateOrCreate(string $gatewayId, string $key, string $value): PaymentGatewayCredential
+    {
+        return PaymentGatewayCredential::updateOrCreate(
+            ['payment_gateway_id' => $gatewayId, 'credential_key' => $key],
+            ['credential_value' => $value, 'is_sensitive' => true]
+        );
+    }
 }

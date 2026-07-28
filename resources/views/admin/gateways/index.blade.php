@@ -82,16 +82,50 @@
                                     </p>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex items-center justify-end gap-2">
+                                    <div class="flex items-center justify-end gap-2" @if (!empty($gateway->enabled_channels)) x-data="{ testModalOpen: false, channel: null }" @endif>
                                         <a href="{{ route('admin.gateways.edit', $gateway) }}" class="px-4 py-2 text-primary text-body-sm font-medium hover:bg-surface-container rounded transition">
                                             Edit
                                         </a>
-                                        <form action="{{ route('admin.gateways.test-connection', $gateway) }}" method="POST" class="inline">
-                                            @csrf
-                                            <button type="submit" class="px-4 py-2 text-info text-body-sm font-medium hover:bg-surface-container rounded transition">
+
+                                        @if (!empty($gateway->enabled_channels))
+                                            <button type="button" @click="testModalOpen = true" class="px-4 py-2 text-info text-body-sm font-medium hover:bg-surface-container rounded transition">
                                                 Test
                                             </button>
-                                        </form>
+
+                                            <div x-show="testModalOpen" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                                <div class="bg-surface rounded-lg shadow-xl max-w-sm w-full mx-4" @click.outside="testModalOpen = false">
+                                                    <form action="{{ route('admin.gateways.test-connection', $gateway) }}" method="POST" class="p-6">
+                                                        @csrf
+                                                        <h3 class="text-body-lg font-medium text-on-surface mb-4">Choose Payment Method</h3>
+                                                        <div class="space-y-2 mb-6">
+                                                            @foreach ($gateway->enabled_channels as $channelValue)
+                                                                @php $channelEnum = \App\Enums\XenditChannel::from($channelValue); @endphp
+                                                                <label class="flex items-center gap-3 px-3 py-2 border border-outline rounded-lg cursor-pointer hover:bg-surface-container">
+                                                                    <input type="radio" name="channel" value="{{ $channelEnum->value }}" x-model="channel" required>
+                                                                    <span class="text-body-sm text-on-surface">{{ $channelEnum->label() }}</span>
+                                                                </label>
+                                                            @endforeach
+                                                        </div>
+                                                        <div class="flex gap-3">
+                                                            <button type="button" @click="testModalOpen = false" class="flex-1 px-4 py-2 border border-outline text-on-surface rounded-lg font-medium hover:bg-surface-container transition">
+                                                                Cancel
+                                                            </button>
+                                                            <button type="submit" class="flex-1 px-4 py-2 bg-primary text-on-primary rounded-lg font-medium hover:opacity-90 transition">
+                                                                Test
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <form action="{{ route('admin.gateways.test-connection', $gateway) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit" class="px-4 py-2 text-info text-body-sm font-medium hover:bg-surface-container rounded transition">
+                                                    Test
+                                                </button>
+                                            </form>
+                                        @endif
+
                                         <form action="{{ route('admin.gateways.destroy', $gateway) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure?')">
                                             @csrf
                                             @method('DELETE')

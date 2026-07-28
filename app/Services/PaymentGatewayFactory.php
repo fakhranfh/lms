@@ -7,19 +7,18 @@ use App\Models\PaymentGateway as PaymentGatewayModel;
 use App\Services\PaymentGateways\MidtransGateway;
 use App\Services\PaymentGateways\XenditGateway;
 
+// CredentialEncryption no longer used here; PaymentGatewayCredential model
+// handles encryption via its 'encrypted' cast.
+
 class PaymentGatewayFactory
 {
-    public function __construct(
-        private readonly CredentialEncryption $credentialEncryption
-    ) {}
-
     public function make(string $gatewayName, PaymentGatewayModel $config): PaymentGateway
     {
         $credentials = $this->loadCredentials($config);
 
         return match ($gatewayName) {
-            'midtrans' => new MidtransGateway($config, $credentials, $this->credentialEncryption),
-            'xendit' => new XenditGateway($config, $credentials, $this->credentialEncryption),
+            'midtrans' => new MidtransGateway($config, $credentials),
+            'xendit' => new XenditGateway($config, $credentials),
             default => throw new \InvalidArgumentException("Unknown payment gateway: {$gatewayName}"),
         };
     }
@@ -29,11 +28,7 @@ class PaymentGatewayFactory
         $credentials = [];
 
         foreach ($config->credentials as $credential) {
-            $value = $credential->credential_value;
-            if ($credential->is_sensitive) {
-                $value = $this->credentialEncryption->decrypt($value);
-            }
-            $credentials[$credential->credential_key] = $value;
+            $credentials[$credential->credential_key] = $credential->credential_value;
         }
 
         return $credentials;

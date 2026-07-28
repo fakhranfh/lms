@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['gateway_type_id', 'is_enabled', 'is_sandbox_mode', 'webhook_secret'])]
+#[Fillable(['gateway_type_id', 'is_enabled', 'is_sandbox_mode', 'webhook_secret', 'enabled_channels'])]
 class PaymentGateway extends Model
 {
     /** @use HasFactory<PaymentGatewayFactory> */
@@ -21,6 +22,7 @@ class PaymentGateway extends Model
     protected $casts = [
         'is_enabled' => 'boolean',
         'is_sandbox_mode' => 'boolean',
+        'enabled_channels' => 'array',
     ];
 
     /**
@@ -41,5 +43,15 @@ class PaymentGateway extends Model
     public function credentials(): HasMany
     {
         return $this->hasMany(PaymentGatewayCredential::class, 'payment_gateway_id');
+    }
+
+    /**
+     * Get the dummy transaction used to test this gateway's connection.
+     *
+     * @return HasOne<PaymentGatewayTestTransaction, $this>
+     */
+    public function testTransaction(): HasOne
+    {
+        return $this->hasOne(PaymentGatewayTestTransaction::class, 'payment_gateway_id');
     }
 }

@@ -2,7 +2,6 @@
 
 use App\Models\PaymentGateway;
 use App\Models\PaymentGatewayType;
-use App\Services\CredentialEncryption;
 use App\Services\PaymentGateways\XenditGateway;
 use Illuminate\Support\Facades\Http;
 
@@ -14,7 +13,7 @@ describe('XenditGateway', function () {
         );
         $this->config = PaymentGateway::factory()
             ->for($gatewayType)
-            ->state(['is_sandbox_mode' => true])
+            ->state(['is_sandbox_mode' => true, 'enabled_channels' => ['QRIS']])
             ->create();
 
         $this->credentials = [
@@ -22,24 +21,23 @@ describe('XenditGateway', function () {
             'callback_token' => 'test_callback_token_abc456',
         ];
 
-        $this->encryptionService = app(CredentialEncryption::class);
         $this->gateway = new XenditGateway(
             $this->config,
             $this->credentials,
-            $this->encryptionService
         );
     });
 
     test('createInvoice returns success response with transaction data', function () {
         Http::fake([
-            '*sandbox.xendit.co*' => Http::response([
-                'id' => 'inv_xendit_12345',
-                'external_id' => 'inv-123',
-                'status' => 'PENDING',
-                'amount' => 199000,
+            '*api.xendit.co*' => Http::response([
+                'payment_request_id' => 'pr-xendit-12345',
+                'reference_id' => 'inv-123',
+                'status' => 'REQUIRES_ACTION',
+                'request_amount' => 199000,
                 'currency' => 'IDR',
-                'invoice_url' => 'https://invoice.xendit.co/invoice/...',
-                'expiry_date' => '2026-07-21T14:23:45.123Z',
+                'actions' => [
+                    ['type' => 'PRESENT_TO_CUSTOMER', 'descriptor' => 'QR_STRING', 'value' => '00020101...'],
+                ],
             ]),
         ]);
 
@@ -53,14 +51,19 @@ describe('XenditGateway', function () {
 
         expect($result)->toHaveKeys(['success', 'transaction_id', 'order_id', 'status', 'payment_url', 'amount', 'currency']);
         expect($result['success'])->toBeTrue();
-        expect($result['transaction_id'])->toBe('inv_xendit_12345');
-        expect($result['status'])->toBe('pending');
+        expect($result['transaction_id'])->toBe('pr-xendit-12345');
+        expect($result['status'])->toBe('requires_action');
+        expect($result['payment_url'])->toBe('00020101...');
         expect($result['currency'])->toBe('IDR');
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/v3/payment_requests')
+            && $request['channel_code'] === 'QRIS'
+            && $request->hasHeader('api-version', '2024-11-11'));
     });
 
     test('createInvoice handles request exception gracefully', function () {
         Http::fake([
-            '*sandbox.xendit.co*' => Http::response([
+            '*api.xendit.co*' => Http::response([
                 'error_code' => 'INVALID_REQUEST',
             ], 400),
         ]);
@@ -76,34 +79,54 @@ describe('XenditGateway', function () {
         expect($result)->toHaveKey('error');
     });
 
-    test('checkTransactionStatus returns invoice details', function () {
+    test('createInvoice uses the requested channel over the gateway default', function () {
         Http::fake([
-            '*sandbox.xendit.co*' => Http::response([
-                'id' => 'inv_xendit_12345',
-                'status' => 'PAID',
-                'amount' => 199000,
-                'currency' => 'IDR',
-                'payment_method' => 'CREDIT_CARD',
+            '*api.xendit.co*' => Http::response([
+                'payment_request_id' => 'pr-xendit-12345',
+                'status' => 'REQUIRES_ACTION',
             ]),
         ]);
 
-        $result = $this->gateway->checkTransactionStatus('inv_xendit_12345');
+        $this->gateway->createInvoice([
+            'order_id' => 'inv-123',
+            'amount' => 199000,
+            'channel' => 'OVO',
+        ]);
+
+        Http::assertSent(fn ($request) => $request['channel_code'] === 'OVO'
+            && $request['channel_properties']['success_return_url']);
+    });
+
+    test('checkTransactionStatus returns invoice details', function () {
+        Http::fake([
+            '*api.xendit.co*' => Http::response([
+                'payment_request_id' => 'pr-xendit-12345',
+                'status' => 'SUCCEEDED',
+                'request_amount' => 199000,
+                'currency' => 'IDR',
+                'channel_code' => 'QRIS',
+            ]),
+        ]);
+
+        $result = $this->gateway->checkTransactionStatus('pr-xendit-12345');
 
         expect($result)->toHaveKeys(['transaction_id', 'status', 'amount', 'currency', 'payment_method']);
         expect($result['success'])->toBeTrue();
-        expect($result['status'])->toBe('paid');
+        expect($result['status'])->toBe('succeeded');
         expect($result['amount'])->toBe(199000);
+
+        Http::assertSent(fn ($request) => $request->hasHeader('api-version', '2024-11-11'));
     });
 
     test('checkTransactionStatus handles request failure', function () {
         Http::fake([
-            '*sandbox.xendit.co*' => Http::response(
-                ['error_code' => 'INVOICE_NOT_FOUND'],
+            '*api.xendit.co*' => Http::response(
+                ['error_code' => 'PAYMENT_REQUEST_NOT_FOUND'],
                 404
             ),
         ]);
 
-        $result = $this->gateway->checkTransactionStatus('invalid_inv_id');
+        $result = $this->gateway->checkTransactionStatus('invalid_pr_id');
 
         expect($result)->toHaveKey('success');
         expect($result['success'])->toBeFalse();
@@ -112,34 +135,34 @@ describe('XenditGateway', function () {
 
     test('refund processes successfully', function () {
         Http::fake([
-            '*sandbox.xendit.co*' => Http::response([
+            '*api.xendit.co*' => Http::response([
                 'id' => 'refund_xendit_12345',
                 'status' => 'COMPLETED',
                 'amount' => 199000,
             ]),
         ]);
 
-        $result = $this->gateway->refund('inv_xendit_12345', 199000);
+        $result = $this->gateway->refund('pr-xendit-12345', 199000);
 
         expect($result)->toBeTrue();
     });
 
     test('refund handles request failure', function () {
         Http::fake([
-            '*sandbox.xendit.co*' => Http::response(
-                ['error_code' => 'INVOICE_NOT_FOUND'],
+            '*api.xendit.co*' => Http::response(
+                ['error_code' => 'PAYMENT_REQUEST_NOT_FOUND'],
                 404
             ),
         ]);
 
-        $result = $this->gateway->refund('invalid_inv_id', 199000);
+        $result = $this->gateway->refund('invalid_pr_id', 199000);
 
         expect($result)->toBeFalse();
     });
 
     test('handleWebhook rejects missing id or status', function () {
         $payload = [
-            'external_id' => 'inv-123',
+            'reference_id' => 'inv-123',
             'amount' => 199000,
         ];
 
@@ -152,35 +175,20 @@ describe('XenditGateway', function () {
         expect($this->gateway->handleWebhook((array) $payload))->toBeFalse();
     });
 
-    test('uses correct base URL for sandbox mode', function () {
-        Http::fake([
-            '*sandbox.xendit.co*' => Http::response(['id' => 'inv_123']),
-        ]);
-
-        $this->gateway->createInvoice([
-            'order_id' => 'inv-123',
-            'amount' => 199000,
-        ]);
-
-        Http::assertSent(function ($request) {
-            return str_contains($request->url(), 'sandbox.xendit.co');
-        });
-    });
-
-    test('uses correct base URL for production mode', function () {
+    test('uses the same base URL regardless of sandbox mode', function () {
         $gatewayType = PaymentGatewayType::firstOrCreate(
             ['name' => 'xendit'],
             ['label' => 'Xendit', 'is_active' => true]
         );
         $config = PaymentGateway::factory()
             ->for($gatewayType)
-            ->state(['is_sandbox_mode' => false])
+            ->state(['is_sandbox_mode' => false, 'enabled_channels' => ['QRIS']])
             ->create();
 
-        $gateway = new XenditGateway($config, $this->credentials, $this->encryptionService);
+        $gateway = new XenditGateway($config, $this->credentials);
 
         Http::fake([
-            '*api.xendit.co*' => Http::response(['id' => 'inv_123']),
+            '*api.xendit.co*' => Http::response(['payment_request_id' => 'pr-123']),
         ]);
 
         $gateway->createInvoice([
@@ -189,8 +197,7 @@ describe('XenditGateway', function () {
         ]);
 
         Http::assertSent(function ($request) {
-            return str_contains($request->url(), 'api.xendit.co') &&
-                ! str_contains($request->url(), 'sandbox');
+            return str_contains($request->url(), 'api.xendit.co');
         });
     });
 

@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Enums\RoleName;
+use App\Enums\XenditChannel;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateGatewayConfigRequest extends FormRequest
 {
@@ -23,6 +25,8 @@ class UpdateGatewayConfigRequest extends FormRequest
             'credentials.client_key' => ['nullable', 'string'],
             'credentials.api_key' => ['nullable', 'string'],
             'credentials.callback_token' => ['nullable', 'string'],
+            'enabled_channels' => ['nullable', 'array'],
+            'enabled_channels.*' => [Rule::enum(XenditChannel::class)],
         ];
     }
 }

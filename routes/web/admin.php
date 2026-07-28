@@ -43,6 +43,7 @@ Route::domain('admin.'.config('app.domain'))->group(function () {
 
         Route::resource('gateways', GatewayConfigController::class)->names('admin.gateways');
         Route::post('gateways/{gateway}/test-connection', [GatewayConfigController::class, 'testConnection'])->name('admin.gateways.test-connection');
+        Route::get('gateways/{gateway}/test-result', [GatewayConfigController::class, 'testResult'])->name('admin.gateways.test-result');
 
         Route::get('/pricing-tiers', PricingTierIndex::class)->name('admin.pricing-tiers.index');
         Route::get('/pricing-tiers/create', PricingTierCreate::class)->name('admin.pricing-tiers.create');

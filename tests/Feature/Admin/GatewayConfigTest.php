@@ -3,6 +3,7 @@
 use App\Models\PaymentGateway;
 use App\Models\PaymentGatewayCredential;
 use App\Models\PaymentGatewayType;
+use App\Services\PaymentGatewayConfigService;
 
 beforeEach(function () {
     PaymentGatewayType::query()->delete();
@@ -52,4 +53,49 @@ test('multiple credentials can be stored for one gateway', function () {
 
     expect(PaymentGatewayCredential::count())->toBe(2);
     expect($gateway->credentials->count())->toBe(2);
+});
+
+test('updating a gateway with blank credential fields keeps the existing credentials', function () {
+    $gateway = PaymentGateway::factory()->create();
+
+    PaymentGatewayCredential::factory()
+        ->for($gateway, 'paymentGateway')
+        ->create(['credential_key' => 'api_key', 'credential_value' => 'super-secret-key']);
+
+    $service = app(PaymentGatewayConfigService::class);
+
+    $service->updateGateway($gateway->id, [
+        'is_enabled' => true,
+        'is_sandbox_mode' => true,
+        'enabled_channels' => ['QRIS'],
+        'credentials' => ['api_key' => ''],
+    ]);
+
+    $credential = PaymentGatewayCredential::where('payment_gateway_id', $gateway->id)
+        ->where('credential_key', 'api_key')
+        ->first();
+
+    expect($credential)->not->toBeNull();
+    expect($credential->credential_value)->toBe('super-secret-key');
+});
+
+test('updating a gateway with a new credential value overwrites the old one', function () {
+    $gateway = PaymentGateway::factory()->create();
+
+    PaymentGatewayCredential::factory()
+        ->for($gateway, 'paymentGateway')
+        ->create(['credential_key' => 'api_key', 'credential_value' => 'old-key']);
+
+    $service = app(PaymentGatewayConfigService::class);
+
+    $service->updateGateway($gateway->id, [
+        'credentials' => ['api_key' => 'new-key'],
+    ]);
+
+    $credential = PaymentGatewayCredential::where('payment_gateway_id', $gateway->id)
+        ->where('credential_key', 'api_key')
+        ->first();
+
+    expect($credential->credential_value)->toBe('new-key');
+    expect(PaymentGatewayCredential::where('payment_gateway_id', $gateway->id)->count())->toBe(1);
 });

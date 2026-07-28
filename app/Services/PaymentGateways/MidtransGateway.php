@@ -4,7 +4,6 @@ namespace App\Services\PaymentGateways;
 
 use App\Contracts\PaymentGateway;
 use App\Models\PaymentGateway as PaymentGatewayModel;
-use App\Services\CredentialEncryption;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
@@ -18,7 +17,6 @@ class MidtransGateway implements PaymentGateway
     public function __construct(
         private readonly PaymentGatewayModel $config,
         private readonly array $credentials,
-        private readonly CredentialEncryption $credentialEncryption,
     ) {
         $this->serverKey = $credentials['server_key'] ?? '';
         $this->baseUrl = $this->config->is_sandbox_mode
@@ -68,7 +66,7 @@ class MidtransGateway implements PaymentGateway
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
-                'status_code' => $e->response?->status(),
+                'status_code' => $e instanceof RequestException ? $e->response->status() : null,
             ];
         }
     }
@@ -116,7 +114,7 @@ class MidtransGateway implements PaymentGateway
                 'success' => false,
                 'transaction_id' => $transactionId,
                 'error' => $e->getMessage(),
-                'status_code' => $e->response?->status(),
+                'status_code' => $e instanceof RequestException ? $e->response->status() : null,
             ];
         }
     }

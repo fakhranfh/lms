@@ -36,6 +36,8 @@ use App\Repositories\PaymentGateway\PaymentGatewayRepository;
 use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
 use App\Repositories\PaymentGatewayCredential\PaymentGatewayCredentialRepository;
 use App\Repositories\PaymentGatewayCredential\PaymentGatewayCredentialRepositoryInterface;
+use App\Repositories\PaymentGatewayTestTransaction\PaymentGatewayTestTransactionRepository;
+use App\Repositories\PaymentGatewayTestTransaction\PaymentGatewayTestTransactionRepositoryInterface;
 use App\Repositories\PaymentGatewayType\PaymentGatewayTypeRepository;
 use App\Repositories\PaymentGatewayType\PaymentGatewayTypeRepositoryInterface;
 use App\Repositories\PaymentTransaction\PaymentTransactionRepository;
@@ -127,6 +129,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PaymentGatewayTypeRepositoryInterface::class, PaymentGatewayTypeRepository::class);
         $this->app->bind(PaymentWebhookRepositoryInterface::class, PaymentWebhookRepository::class);
         $this->app->bind(PaymentGatewayCredentialRepositoryInterface::class, PaymentGatewayCredentialRepository::class);
+        $this->app->bind(PaymentGatewayTestTransactionRepositoryInterface::class, PaymentGatewayTestTransactionRepository::class);
         $this->app->bind(StorageUsageLogRepositoryInterface::class, StorageUsageLogRepository::class);
 
         $this->app->singleton(CurrentSchool::class);

@@ -123,6 +123,36 @@ class XenditGateway implements PaymentGateway
         }
     }
 
+    /**
+     * Simulate completion of a test-mode payment request.
+     * Only works against payment requests created with a test API key.
+     */
+    public function simulatePayment(string $transactionId, float $amount): array
+    {
+        try {
+            $payload = ['amount' => (int) $amount];
+
+            $response = Http::withBasicAuth($this->apiKey, '')
+                ->withHeaders(['api-version' => '2024-11-11'])
+                ->timeout(30)
+                ->post("{$this->baseUrl}/v3/payment_requests/{$transactionId}/simulate", $payload)
+                ->throw()
+                ->json();
+
+            return [
+                'success' => true,
+                'status' => strtolower($response['status'] ?? 'pending'),
+                'message' => $response['message'] ?? 'Payment simulation triggered.',
+            ];
+        } catch (RequestException|ConnectionException $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'status_code' => $e instanceof RequestException ? $e->response->status() : null,
+            ];
+        }
+    }
+
     public function refund(string $transactionId, float $amount): bool
     {
         try {

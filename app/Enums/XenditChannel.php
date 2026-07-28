@@ -83,6 +83,15 @@ enum XenditChannel: string
     }
 
     /**
+     * Xendit's test-mode simulate endpoint only supports VA, retail (OTC),
+     * and QR channels — not e-wallets, which use a push/redirect flow.
+     */
+    public function supportsSimulation(): bool
+    {
+        return $this->viewType() !== 'ewallet';
+    }
+
+    /**
      * Build the channel_properties payload for this channel.
      *
      * @param  array<string, mixed>  $data

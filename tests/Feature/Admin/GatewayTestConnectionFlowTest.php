@@ -116,3 +116,93 @@ test('failed channel test does not redirect to the result page', function () {
     $response->assertSessionHas('error');
     expect(PaymentGatewayTestTransaction::where('payment_gateway_id', $this->gateway->id)->exists())->toBeFalse();
 });
+
+test('simulate payment button appears on channel-specific result pages', function () {
+    Http::fake([
+        '*api.xendit.co*' => Http::response([
+            'payment_request_id' => 'pr-qris-789',
+            'status' => 'REQUIRES_ACTION',
+            'request_amount' => 10000,
+            'currency' => 'IDR',
+            'actions' => [
+                ['type' => 'PRESENT_TO_CUSTOMER', 'descriptor' => 'QR_STRING', 'value' => 'qr-string-data'],
+            ],
+        ]),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->post('http://admin.lms.local/gateways/'.$this->gateway->id.'/test-connection', ['channel' => 'QRIS']);
+
+    $result = $this->actingAs($this->admin)->get('http://admin.lms.local/gateways/'.$this->gateway->id.'/test-result');
+
+    $result->assertOk();
+    $result->assertSee('Simulate Payment');
+});
+
+test('simulate payment button is hidden for ewallet channels since Xendit does not support simulating them', function () {
+    Http::fake([
+        '*api.xendit.co*' => Http::response([
+            'payment_request_id' => 'pr-ovo-789',
+            'status' => 'REQUIRES_ACTION',
+            'request_amount' => 10000,
+            'currency' => 'IDR',
+            'actions' => [],
+        ]),
+    ]);
+
+    $this->actingAs($this->admin)
+        ->post('http://admin.lms.local/gateways/'.$this->gateway->id.'/test-connection', ['channel' => 'OVO']);
+
+    $result = $this->actingAs($this->admin)->get('http://admin.lms.local/gateways/'.$this->gateway->id.'/test-result');
+
+    $result->assertOk();
+    $result->assertDontSee('Simulate Payment');
+});
+
+test('simulating a payment for an ewallet channel is rejected with a clear message', function () {
+    PaymentGatewayTestTransaction::factory()
+        ->for($this->gateway, 'paymentGateway')
+        ->create([
+            'transaction_id' => 'pr-ovo-simulate',
+            'response' => ['amount' => 10000, 'channel' => 'OVO'],
+        ]);
+
+    $response = $this->actingAs($this->admin)
+        ->post('http://admin.lms.local/gateways/'.$this->gateway->id.'/test-result/simulate');
+
+    $response->assertSessionHas('error');
+    expect(session('error'))->toContain("isn't available for OVO");
+    Http::assertNothingSent();
+});
+
+test('simulating a payment calls the Xendit simulate endpoint and redirects back to the result page', function () {
+    PaymentGatewayTestTransaction::factory()
+        ->for($this->gateway, 'paymentGateway')
+        ->create([
+            'transaction_id' => 'pr-simulate-me',
+            'response' => ['amount' => 10000, 'channel' => 'QRIS'],
+        ]);
+
+    Http::fake([
+        '*api.xendit.co*/v3/payment_requests/pr-simulate-me/simulate' => Http::response([
+            'status' => 'PENDING',
+            'message' => 'A simulated payment for the specified payment request id is being processed.',
+        ]),
+    ]);
+
+    $response = $this->actingAs($this->admin)
+        ->post('http://admin.lms.local/gateways/'.$this->gateway->id.'/test-result/simulate');
+
+    $response->assertRedirect('http://admin.lms.local/gateways/'.$this->gateway->id.'/test-result');
+    $response->assertSessionHas('success');
+
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'pr-simulate-me/simulate')
+        && $request['amount'] === 10000);
+});
+
+test('simulating a payment with no test transaction redirects with an error', function () {
+    $response = $this->actingAs($this->admin)
+        ->post('http://admin.lms.local/gateways/'.$this->gateway->id.'/test-result/simulate');
+
+    $response->assertSessionHas('error');
+});

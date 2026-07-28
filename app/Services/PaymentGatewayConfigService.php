@@ -3,11 +3,13 @@
 namespace App\Services;
 
 use App\Contracts\PaymentGateway as PaymentGatewayContract;
+use App\Enums\XenditChannel;
 use App\Models\PaymentGateway;
 use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
 use App\Repositories\PaymentGatewayCredential\PaymentGatewayCredentialRepositoryInterface;
 use App\Repositories\PaymentGatewayTestTransaction\PaymentGatewayTestTransactionRepositoryInterface;
 use App\Repositories\PaymentGatewayType\PaymentGatewayTypeRepositoryInterface;
+use App\Services\PaymentGateways\XenditGateway;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -168,6 +170,68 @@ class PaymentGatewayConfigService
             'success' => true,
             'message' => 'Gateway connection successful!',
         ];
+    }
+
+    /**
+     * Simulate completion of the gateway's stored test-mode payment request.
+     */
+    public function simulateTestPayment(PaymentGateway $gateway): array
+    {
+        try {
+            $gateway->load(['paymentGatewayType', 'credentials']);
+
+            $testTransaction = $this->testTransactionRepository->findForGateway($gateway->id);
+
+            if (! $testTransaction) {
+                return [
+                    'success' => false,
+                    'message' => 'No test transaction found. Please run a connection test first.',
+                ];
+            }
+
+            $gatewayInstance = $this->gatewayFactory->make(
+                $gateway->paymentGatewayType->name,
+                $gateway
+            );
+
+            if (! $gatewayInstance instanceof XenditGateway) {
+                return [
+                    'success' => false,
+                    'message' => 'Payment simulation is only supported for Xendit gateways.',
+                ];
+            }
+
+            $channelValue = $testTransaction->response['channel'] ?? null;
+            $channel = $channelValue ? XenditChannel::from($channelValue) : null;
+
+            if ($channel && ! $channel->supportsSimulation()) {
+                return [
+                    'success' => false,
+                    'message' => "Xendit's payment simulation isn't available for {$channel->label()}. Approve it through the app/redirect instead.",
+                ];
+            }
+
+            $amount = $testTransaction->response['amount'] ?? 10000;
+
+            $result = $gatewayInstance->simulatePayment($testTransaction->transaction_id, $amount);
+
+            if (! ($result['success'] ?? false)) {
+                return [
+                    'success' => false,
+                    'message' => 'Simulation failed: '.($result['error'] ?? 'Unknown error'),
+                ];
+            }
+
+            return [
+                'success' => true,
+                'message' => $result['message'] ?? 'Payment simulation triggered.',
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Simulation failed: '.$e->getMessage(),
+            ];
+        }
     }
 
     private function storeCredentials(string $gatewayId, array $credentials): void

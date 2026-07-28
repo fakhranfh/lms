@@ -118,4 +118,14 @@ class GatewayConfigController extends Controller
             'qrCodeSvg' => $qrCodeSvg,
         ]);
     }
+
+    public function simulatePayment(PaymentGateway $gateway): RedirectResponse
+    {
+        $result = $this->gatewayConfigService->simulateTestPayment($gateway);
+
+        $redirectKey = $result['success'] ? 'success' : 'error';
+
+        return redirect()->route('admin.gateways.test-result', $gateway)
+            ->with($redirectKey, $result['message']);
+    }
 }

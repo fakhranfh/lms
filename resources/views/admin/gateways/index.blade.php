@@ -82,7 +82,7 @@
                                     </p>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex items-center justify-end gap-2" @if (!empty($gateway->enabled_channels)) x-data="{ testModalOpen: false, channel: null }" @endif>
+                                    <div class="flex items-center justify-end gap-2" @if (!empty($gateway->enabled_channels)) x-data="{ testModalOpen: false, channel: null, loading: false }" @endif>
                                         <a href="{{ route('admin.gateways.edit', $gateway) }}" class="px-4 py-2 text-primary text-body-sm font-medium hover:bg-surface-container rounded transition">
                                             Edit
                                         </a>
@@ -94,7 +94,7 @@
 
                                             <div x-show="testModalOpen" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                                                 <div class="bg-surface rounded-lg shadow-xl max-w-sm w-full mx-4" @click.outside="testModalOpen = false">
-                                                    <form action="{{ route('admin.gateways.test-connection', $gateway) }}" method="POST" class="p-6">
+                                                    <form action="{{ route('admin.gateways.test-connection', $gateway) }}" method="POST" class="p-6" @submit="loading = true">
                                                         @csrf
                                                         <h3 class="text-body-lg font-medium text-on-surface mb-4">Choose Payment Method</h3>
                                                         <div class="space-y-2 mb-6">
@@ -107,21 +107,29 @@
                                                             @endforeach
                                                         </div>
                                                         <div class="flex gap-3">
-                                                            <button type="button" @click="testModalOpen = false" class="flex-1 px-4 py-2 border border-outline text-on-surface rounded-lg font-medium hover:bg-surface-container transition">
+                                                            <button type="button" @click="testModalOpen = false" :disabled="loading" class="flex-1 px-4 py-2 border border-outline text-on-surface rounded-lg font-medium hover:bg-surface-container transition disabled:opacity-50">
                                                                 Cancel
                                                             </button>
-                                                            <button type="submit" class="flex-1 px-4 py-2 bg-primary text-on-primary rounded-lg font-medium hover:opacity-90 transition">
-                                                                Test
+                                                            <button type="submit" :disabled="loading" class="flex-1 px-4 py-2 bg-primary text-on-primary rounded-lg font-medium hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                                                                <svg x-show="loading" x-cloak class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                                                </svg>
+                                                                <span x-text="loading ? 'Testing...' : 'Test'"></span>
                                                             </button>
                                                         </div>
                                                     </form>
                                                 </div>
                                             </div>
                                         @else
-                                            <form action="{{ route('admin.gateways.test-connection', $gateway) }}" method="POST" class="inline">
+                                            <form action="{{ route('admin.gateways.test-connection', $gateway) }}" method="POST" class="inline" x-data="{ loading: false }" @submit="loading = true">
                                                 @csrf
-                                                <button type="submit" class="px-4 py-2 text-info text-body-sm font-medium hover:bg-surface-container rounded transition">
-                                                    Test
+                                                <button type="submit" :disabled="loading" class="px-4 py-2 text-info text-body-sm font-medium hover:bg-surface-container rounded transition disabled:opacity-50 inline-flex items-center gap-2">
+                                                    <svg x-show="loading" x-cloak class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                                    </svg>
+                                                    <span x-text="loading ? 'Testing...' : 'Test'"></span>
                                                 </button>
                                             </form>
                                         @endif

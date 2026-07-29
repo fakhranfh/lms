@@ -199,7 +199,8 @@
 
                         <p x-show="errorMessage" x-text="errorMessage" class="font-body-sm text-body-sm text-error"></p>
 
-                        <div class="flex gap-space-sm">
+                        {{-- Sticky so Cancel/Confirm stay reachable while the channel list scrolls --}}
+                        <div class="sticky bottom-0 -mx-space-xl px-space-xl pt-space-sm pb-space-xs bg-surface border-t border-outline-variant flex gap-space-sm">
                             <template x-if="result">
                                 <button type="button" @click="switchingChannel = false; errorMessage = ''" class="flex-1 h-[44px] rounded-lg border border-outline-variant font-label-md text-label-md text-on-surface hover:bg-surface-container-lowest">
                                     Cancel
@@ -278,7 +279,19 @@
                             body: JSON.stringify({ channel }),
                         });
 
-                        const data = await response.json();
+                        // A server error can come back as an HTML error page
+                        // instead of JSON — parse defensively so that case
+                        // still surfaces a useful message instead of a
+                        // generic "something went wrong".
+                        let data;
+                        try {
+                            data = await response.json();
+                        } catch (parseError) {
+                            this.loading = false;
+                            this.errorMessage = `Server error (${response.status}). Please try again or contact support.`;
+
+                            return;
+                        }
 
                         if (!response.ok) {
                             this.loading = false;
@@ -303,7 +316,7 @@
                         }
                     } catch (e) {
                         this.loading = false;
-                        this.errorMessage = 'Something went wrong. Please try again.';
+                        this.errorMessage = 'Something went wrong. Please check your connection and try again.';
                     }
                 },
 

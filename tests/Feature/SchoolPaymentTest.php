@@ -202,6 +202,35 @@ test('confirming payment for an e-wallet channel stays on the payment page inste
         ->and($transaction->payment_instructions)->toBe('https://ovo.example/pay/123');
 });
 
+test('confirming payment persists a checkout url longer than 255 characters', function () {
+    $this->seed(PricingTierSeeder::class);
+    enableXenditGateway();
+    $longUrl = 'https://ewallet-service-dev.xendit.co/ewallets/sandbox/checkout?token='.str_repeat('a1b2c3d4', 40);
+    expect(strlen($longUrl))->toBeGreaterThan(255);
+
+    Http::fake([
+        '*api.xendit.co*' => Http::response([
+            'payment_request_id' => 'pr-registration-dana-long',
+            'status' => 'REQUIRES_ACTION',
+            'actions' => [
+                ['type' => 'PRESENT_TO_CUSTOMER', 'descriptor' => 'WEB_URL', 'value' => $longUrl],
+            ],
+        ]),
+    ]);
+
+    $user = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($user, $plusTier);
+
+    $this->actingAs($user);
+    $response = $this->postJson(route('school.payment.confirm', $transaction), ['channel' => 'DANA']);
+
+    $response->assertOk();
+
+    $transaction->refresh();
+    expect($transaction->payment_instructions)->toBe($longUrl);
+});
+
 test('confirming payment for an e-wallet channel via ajax returns the deeplink without an auto redirect', function () {
     $this->seed(PricingTierSeeder::class);
     enableXenditGateway();

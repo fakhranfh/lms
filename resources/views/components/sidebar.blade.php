@@ -1,6 +1,6 @@
 <!-- Sidebar Navigation -->
 @php
-    $isAdminUser = auth()->user() && app(\App\Support\CurrentSchool::class)->getSchoolId() === null;
+    $isAdminUser = auth()->user() && auth()->user()->hasRole(\App\Enums\RoleName::Admin);
     $sidebarConfig = $isAdminUser ? config('admin-sidebar') : config('sidebar');
 @endphp
 
@@ -11,12 +11,31 @@
             @if($isAdminUser)
                 @forelse ($sidebarConfig as $item)
                     @continue(($item['requires_permission'] ?? null) && ! auth()->user()->can($item['requires_permission']))
+                    @if(isset($item['children']))
+                    <li>
+                        <div class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-black {{ request()->routeIs($item['active_pattern']) ? 'bg-primary/20 text-primary' : '' }}">
+                            <span class="material-symbols-outlined text-[24px]">{{ $item['icon'] }}</span>
+                            <span class="font-body-md text-body-md">{{ $item['label'] }}</span>
+                        </div>
+                        <ul class="ml-space-lg space-y-space-xs">
+                            @foreach ($item['children'] as $child)
+                                @continue(($child['requires_permission'] ?? null) && ! auth()->user()->can($child['requires_permission']))
+                                <li>
+                                    <a href="{{ $child['url'] ?? route($child['route']) }}" class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-black hover:bg-primary/10 transition-colors duration-150 {{ request()->routeIs($child['active_pattern']) ? 'bg-primary/20 text-primary' : 'hover:text-on-surface' }}">
+                                        <span class="font-body-md text-body-md">{{ $child['label'] }}</span>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </li>
+                    @else
                     <li>
                         <a href="{{ $item['url'] ?? route($item['route']) }}" class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-black hover:bg-primary/10 transition-colors duration-150 {{ request()->routeIs($item['active_pattern']) ? 'bg-primary/20 text-primary' : 'hover:text-on-surface' }}">
                             <span class="material-symbols-outlined text-[24px]">{{ $item['icon'] }}</span>
                             <span class="font-body-md text-body-md">{{ $item['label'] }}</span>
                         </a>
                     </li>
+                    @endif
                 @empty
                     <li class="text-body-md text-secondary px-space-md py-space-sm">No menu items</li>
                 @endforelse

@@ -48,6 +48,12 @@ return [
         'active_pattern' => 'admin.schools.*',
     ],
     [
+        'label' => 'Transactions',
+        'route' => 'admin.transactions.index',
+        'icon' => 'receipt_long',
+        'active_pattern' => 'admin.transactions.*',
+    ],
+    [
         'label' => 'Storage',
         'route' => 'admin.storage.dashboard',
         'icon' => 'cloud',

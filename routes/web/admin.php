@@ -6,6 +6,8 @@ use App\Http\Controllers\PermissionController;
 use App\Livewire\Admin\AdminStorageDashboard;
 use App\Livewire\Admin\AdminStorageMaterials;
 use App\Livewire\Admin\AuditLogTable;
+use App\Livewire\Admin\TransactionShow;
+use App\Livewire\Admin\TransactionTable;
 use App\Livewire\PricingTiers\PricingTierCreate;
 use App\Livewire\PricingTiers\PricingTierEdit;
 use App\Livewire\PricingTiers\PricingTierIndex;
@@ -57,6 +59,9 @@ foreach (RootDomains::all() as $index => $rootDomain) {
             Route::get('/pricing-tiers/{tier}/edit', PricingTierEdit::class)->name("admin.pricing-tiers.edit{$suffix}");
 
             Route::get('/audit-logs', AuditLogTable::class)->name("admin.audit-logs.index{$suffix}");
+
+            Route::get('/transactions', TransactionTable::class)->name("admin.transactions.index{$suffix}");
+            Route::get('/transactions/{transaction}', TransactionShow::class)->name("admin.transactions.show{$suffix}");
 
             Route::get('/storage', AdminStorageDashboard::class)->name("admin.storage.dashboard{$suffix}");
             Route::get('/storage/materials', AdminStorageMaterials::class)->name("admin.storage.materials{$suffix}");

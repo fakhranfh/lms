@@ -6,6 +6,7 @@ use App\Enums\AdminFeeType;
 use App\Enums\PaymentStatus;
 use App\Enums\TierChangeType;
 use App\Enums\TransactionType;
+use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\PaymentTransactionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class PaymentTransaction extends Model
 {
     /** @use HasFactory<PaymentTransactionFactory> */
-    use HasFactory, HasUuid;
+    use HasFactory, HasUuid, HasViewerTimezoneDates;
 
     /**
      * Keys that no longer live on this table and are instead stored on the

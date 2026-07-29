@@ -57,14 +57,14 @@ test('webhook controller stores midtrans webhook', function () {
     expect(PaymentWebhook::first()->event_type)->toBe('transaction.capture');
 });
 
-test('webhook controller stores xendit webhook', function () {
+test('webhook controller stores xendit webhook when the callback token is valid', function () {
     Queue::fake();
     Bus::fake();
 
     $school = School::factory()->create();
     $xenditType = PaymentGatewayType::factory()->create(['name' => 'xendit']);
     $xenditGateway = PaymentGatewayModel::factory()
-        ->create(['gateway_type_id' => $xenditType->id]);
+        ->create(['gateway_type_id' => $xenditType->id, 'webhook_secret' => 'correct-callback-token']);
 
     $payload = [
         'event' => 'payment.succeeded',
@@ -77,11 +77,50 @@ test('webhook controller stores xendit webhook', function () {
         ],
     ];
 
-    $response = $this->postJson('/webhooks/xendit', $payload);
+    $response = $this->postJson('/webhooks/xendit', $payload, ['X-Callback-Token' => 'correct-callback-token']);
 
     $response->assertStatus(200);
     expect(PaymentWebhook::count())->toBe(1);
     expect(PaymentWebhook::first()->event_type)->toBe('payment.succeeded');
+});
+
+test('webhook controller rejects xendit webhook with a missing or wrong callback token', function () {
+    Queue::fake();
+    Bus::fake();
+
+    $xenditType = PaymentGatewayType::factory()->create(['name' => 'xendit']);
+    PaymentGatewayModel::factory()->create(['gateway_type_id' => $xenditType->id, 'webhook_secret' => 'correct-callback-token']);
+
+    $payload = [
+        'event' => 'payment.succeeded',
+        'data' => ['payment_request_id' => 'pr-123', 'status' => 'SUCCEEDED'],
+    ];
+
+    $missingToken = $this->postJson('/webhooks/xendit', $payload);
+    $missingToken->assertStatus(401);
+
+    $wrongToken = $this->postJson('/webhooks/xendit', $payload, ['X-Callback-Token' => 'wrong-token']);
+    $wrongToken->assertStatus(401);
+
+    expect(PaymentWebhook::count())->toBe(0);
+});
+
+test('webhook controller accepts xendit webhook without a token when no webhook_secret is configured', function () {
+    Queue::fake();
+    Bus::fake();
+
+    $xenditType = PaymentGatewayType::factory()->create(['name' => 'xendit']);
+    PaymentGatewayModel::factory()->create(['gateway_type_id' => $xenditType->id, 'webhook_secret' => null]);
+
+    $payload = [
+        'event' => 'payment.succeeded',
+        'data' => ['payment_request_id' => 'pr-123', 'status' => 'SUCCEEDED'],
+    ];
+
+    $response = $this->postJson('/webhooks/xendit', $payload);
+
+    $response->assertStatus(200);
+    expect(PaymentWebhook::count())->toBe(1);
 });
 
 test('webhook controller returns 404 for unknown gateway', function () {

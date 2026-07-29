@@ -8,6 +8,7 @@ use App\Models\PaymentTransaction;
 use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
 use App\Services\PaymentGatewayFactory;
 use App\Services\PaymentGateways\XenditGateway;
+use App\Services\PaymentStatusStreamService;
 use App\Services\SchoolService;
 use App\Support\RootDomains;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SchoolPaymentController extends Controller
 {
@@ -131,21 +133,13 @@ class SchoolPaymentController extends Controller
         return response()->json(['message' => $result['message'] ?? 'Payment simulation triggered.']);
     }
 
-    /**
-     * Lightweight polling endpoint the checkout page uses after triggering a
-     * simulation, to detect once the webhook has completed the transaction.
-     */
-    public function status(PaymentTransaction $transaction, Request $request): JsonResponse
+    public function stream(PaymentTransaction $transaction, Request $request, PaymentStatusStreamService $streamService): StreamedResponse
     {
         abort_unless($transaction->initiated_by === auth()->id(), 403);
 
-        $completed = $transaction->status === PaymentStatus::Completed && $transaction->school;
         $suffix = RootDomains::suffixFor(RootDomains::match($request->getHost()));
 
-        return response()->json([
-            'status' => $transaction->status->value,
-            'redirect_url' => $completed ? route("manage.schools.index{$suffix}") : null,
-        ]);
+        return $streamService->stream($transaction, route("manage.schools.index{$suffix}"));
     }
 
     /**
@@ -165,7 +159,7 @@ class SchoolPaymentController extends Controller
             'is_sandbox' => (bool) $transaction->paymentGateway?->is_sandbox_mode,
             'supports_simulation' => (bool) $selectedChannel?->supportsSimulation(),
             'simulate_url' => route('school.payment.simulate', $transaction),
-            'status_url' => route('school.payment.status', $transaction),
+            'stream_url' => route('school.payment.stream', $transaction),
         ];
     }
 }

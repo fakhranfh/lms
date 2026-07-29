@@ -76,13 +76,15 @@ class XenditGateway implements PaymentGateway
         }
     }
 
+    /**
+     * The callback-token signature is verified synchronously in
+     * PaymentWebhookService before the webhook is even queued (a queued job
+     * has no access to the original request's headers), so this only needs
+     * to sanity-check the payload shape.
+     */
     public function handleWebhook(array $payload): bool
     {
         try {
-            if (! $this->verifyWebhookSignature($payload)) {
-                return false;
-            }
-
             $data = $this->webhookData($payload);
 
             if (! ($data['payment_request_id'] ?? $data['id'] ?? null) || ! ($data['status'] ?? null)) {
@@ -240,18 +242,5 @@ class XenditGateway implements PaymentGateway
         }
 
         return null;
-    }
-
-    private function verifyWebhookSignature(array $payload): bool
-    {
-        $xInvoiceToken = request()->header('X-Callback-Token');
-
-        if (! $xInvoiceToken) {
-            return false;
-        }
-
-        $callbackToken = $this->config->webhook_secret ?? '';
-
-        return hash_equals($xInvoiceToken, $callbackToken);
     }
 }

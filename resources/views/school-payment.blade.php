@@ -249,11 +249,11 @@
                 backUrlValue: backUrl,
                 simulating: false,
                 simulateMessage: '',
-                pollTimer: null,
+                eventSource: null,
 
                 init() {
                     if (this.result && this.result.is_sandbox) {
-                        this.startPolling();
+                        this.startWatching();
                     }
                 },
 
@@ -266,7 +266,7 @@
                     this.errorMessage = '';
                     this.loading = true;
                     this.result = null;
-                    this.stopPolling();
+                    this.stopWatching();
 
                     try {
                         const response = await fetch(confirmUrl, {
@@ -312,7 +312,7 @@
                         this.simulateMessage = '';
 
                         if (this.result.is_sandbox) {
-                            this.startPolling();
+                            this.startWatching();
                         }
                     } catch (e) {
                         this.loading = false;
@@ -351,37 +351,44 @@
                         }
 
                         this.simulateMessage = 'Simulation triggered — waiting for confirmation...';
-                        this.startPolling();
+                        this.startWatching();
                     } catch (e) {
                         this.simulating = false;
                         this.simulateMessage = 'Something went wrong. Please try again.';
                     }
                 },
 
-                startPolling() {
-                    if (!this.result || !this.result.status_url || this.pollTimer) return;
+                // Server-Sent Events instead of client-side interval polling:
+                // the server pushes a "completed" event the moment the
+                // webhook lands, instead of the browser asking on a timer.
+                // Each connection self-closes after ~10s (see
+                // SchoolPaymentController::stream) and EventSource
+                // auto-reconnects, so this keeps watching until stopped.
+                startWatching() {
+                    if (!this.result || !this.result.stream_url || this.eventSource) return;
 
-                    this.pollTimer = setInterval(async () => {
-                        try {
-                            const response = await fetch(this.result.status_url, {
-                                headers: { 'Accept': 'application/json' },
-                            });
-                            const data = await response.json();
+                    this.eventSource = new EventSource(this.result.stream_url);
 
-                            if (data.redirect_url) {
-                                this.stopPolling();
-                                window.location.href = data.redirect_url;
-                            }
-                        } catch (e) {
-                            // Ignore transient polling errors; next tick retries.
-                        }
-                    }, 3000);
+                    this.eventSource.addEventListener('completed', (e) => {
+                        const data = JSON.parse(e.data);
+                        this.stopWatching();
+                        window.location.href = data.redirect_url;
+                    });
+
+                    this.eventSource.addEventListener('failed', () => {
+                        this.stopWatching();
+                        this.simulateMessage = 'Payment failed. Please try again.';
+                    });
+
+                    // "timeout" just means this connection's ~10s window
+                    // elapsed with nothing to report — EventSource reconnects
+                    // on its own, nothing to do here.
                 },
 
-                stopPolling() {
-                    if (this.pollTimer) {
-                        clearInterval(this.pollTimer);
-                        this.pollTimer = null;
+                stopWatching() {
+                    if (this.eventSource) {
+                        this.eventSource.close();
+                        this.eventSource = null;
                     }
                     this.simulating = false;
                 },

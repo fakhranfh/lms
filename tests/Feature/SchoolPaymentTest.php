@@ -283,7 +283,7 @@ test('confirming payment via ajax includes the how-to-pay guide and sandbox simu
         'is_sandbox' => true,
         'supports_simulation' => true,
     ]);
-    $response->assertJsonStructure(['guide_steps', 'simulate_url', 'status_url']);
+    $response->assertJsonStructure(['guide_steps', 'simulate_url', 'stream_url']);
     expect($response->json('guide_steps'))->not->toBeEmpty();
 });
 
@@ -345,40 +345,6 @@ test('another user cannot simulate someone else\'s payment', function () {
 
     $this->actingAs($intruder);
     $response = $this->postJson(route('school.payment.simulate', $transaction));
-
-    $response->assertStatus(403);
-});
-
-test('status endpoint reports completion and a redirect url once the school exists', function () {
-    $this->seed(PricingTierSeeder::class);
-    $gateway = enableXenditGateway();
-    $user = User::factory()->create(['school_id' => null]);
-    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
-    $transaction = createPendingRegistrationTransaction($user, $plusTier);
-    $transaction->update(['payment_gateway_id' => $gateway->id]);
-
-    $this->actingAs($user);
-
-    $pendingResponse = $this->getJson(route('school.payment.status', $transaction));
-    $pendingResponse->assertOk()->assertJson(['status' => 'pending', 'redirect_url' => null]);
-
-    app(SchoolService::class)->completeRegistrationTransaction($transaction);
-    $transaction->refresh();
-
-    $completedResponse = $this->getJson(route('school.payment.status', $transaction));
-    $completedResponse->assertOk()->assertJson(['status' => 'completed']);
-    expect($completedResponse->json('redirect_url'))->not->toBeNull();
-});
-
-test('another user cannot poll someone else\'s payment status', function () {
-    $this->seed(PricingTierSeeder::class);
-    $owner = User::factory()->create(['school_id' => null]);
-    $intruder = User::factory()->create(['school_id' => null]);
-    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
-    $transaction = createPendingRegistrationTransaction($owner, $plusTier);
-
-    $this->actingAs($intruder);
-    $response = $this->getJson(route('school.payment.status', $transaction));
 
     $response->assertStatus(403);
 });
@@ -451,4 +417,39 @@ test('viewing an already completed payment page redirects to the dashboard', fun
     $response = $this->get(route('school.payment.index', $transaction));
 
     $response->assertRedirect(route('manage.schools.index'));
+});
+
+test('stream endpoint emits a completed event immediately once the school exists', function () {
+    $this->seed(PricingTierSeeder::class);
+    $gateway = enableXenditGateway();
+    $user = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($user, $plusTier);
+    $transaction->update(['payment_gateway_id' => $gateway->id]);
+    $school = app(SchoolService::class)->completeRegistrationTransaction($transaction);
+
+    $this->actingAs($user);
+    $response = $this->get(route('school.payment.stream', $transaction));
+
+    $response->assertOk();
+    $response->assertHeader('Content-Type', 'text/event-stream; charset=UTF-8');
+
+    $content = $response->streamedContent();
+    expect($content)->toContain('event: completed')
+        ->and($content)->toContain(route('manage.schools.index'));
+
+    expect($school->id)->not->toBeNull();
+});
+
+test('another user cannot open someone else\'s payment stream', function () {
+    $this->seed(PricingTierSeeder::class);
+    $owner = User::factory()->create(['school_id' => null]);
+    $intruder = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($owner, $plusTier);
+
+    $this->actingAs($intruder);
+    $response = $this->get(route('school.payment.stream', $transaction));
+
+    $response->assertStatus(403);
 });

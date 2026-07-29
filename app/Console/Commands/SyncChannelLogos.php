@@ -64,11 +64,13 @@ class SyncChannelLogos extends Command
             // XenditChannel::logoUrl() doesn't need to track per-channel format.
             $key = "channel-logos/{$channel->value}";
 
-            $publicUrl = $r2Storage->uploadRawContent($key, $response->body(), $contentType);
+            $r2Storage->uploadRawContent($key, $response->body(), $contentType);
 
-            PaymentChannel::where('code', $channel->value)->update(['logo_url' => $publicUrl]);
+            // Store the bare key, not the full URL, so the logo stays reachable
+            // if the R2 base/custom domain ever changes.
+            PaymentChannel::where('code', $channel->value)->update(['logo_url' => $key]);
 
-            $this->line("Uploaded {$channel->value} -> {$publicUrl}");
+            $this->line("Uploaded {$channel->value} -> {$key}");
         }
 
         return self::SUCCESS;

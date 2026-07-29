@@ -65,7 +65,7 @@ enum XenditChannel: string
      */
     public function logoUrl(): ?string
     {
-        return PaymentChannel::where('code', $this->value)->value('logo_url');
+        return PaymentChannel::where('code', $this->value)->first()?->logo_url;
     }
 
     /**

@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Enums\MaterialType;
+use App\Services\R2StorageService;
 use App\Traits\HasUuid;
 use Database\Factories\LessonMaterialFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +27,20 @@ class LessonMaterial extends Model
         'type' => MaterialType::class,
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Build the file URL from the stored R2 key rather than the persisted
+     * `file_url` column, so links keep working if the R2 base/custom domain
+     * changes later.
+     */
+    protected function fileUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value, array $attributes) => ($attributes['file_path'] ?? null)
+                ? app(R2StorageService::class)->getPublicUrl($attributes['file_path'])
+                : $value,
+        );
+    }
 
     /**
      * Get the lesson that owns this material.

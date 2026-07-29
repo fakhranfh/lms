@@ -7,6 +7,7 @@ use App\Livewire\Admin\AdminStorageDashboard;
 use App\Livewire\Admin\AdminStorageMaterials;
 use App\Livewire\Admin\AuditLogTable;
 use App\Livewire\Admin\TransactionShow;
+use App\Livewire\Admin\TransactionSummary;
 use App\Livewire\Admin\TransactionTable;
 use App\Livewire\PricingTiers\PricingTierCreate;
 use App\Livewire\PricingTiers\PricingTierEdit;
@@ -61,6 +62,7 @@ foreach (RootDomains::all() as $index => $rootDomain) {
             Route::get('/audit-logs', AuditLogTable::class)->name("admin.audit-logs.index{$suffix}");
 
             Route::get('/transactions', TransactionTable::class)->name("admin.transactions.index{$suffix}");
+            Route::get('/transactions/summary', TransactionSummary::class)->name("admin.transactions.summary{$suffix}");
             Route::get('/transactions/{transaction}', TransactionShow::class)->name("admin.transactions.show{$suffix}");
 
             Route::get('/storage', AdminStorageDashboard::class)->name("admin.storage.dashboard{$suffix}");

@@ -49,9 +49,20 @@ return [
     ],
     [
         'label' => 'Transactions',
-        'route' => 'admin.transactions.index',
         'icon' => 'receipt_long',
         'active_pattern' => 'admin.transactions.*',
+        'children' => [
+            [
+                'label' => 'Summary',
+                'route' => 'admin.transactions.summary',
+                'active_pattern' => 'admin.transactions.summary*',
+            ],
+            [
+                'label' => 'List Transactions',
+                'route' => 'admin.transactions.index',
+                'active_pattern' => ['admin.transactions.index*', 'admin.transactions.show*'],
+            ],
+        ],
     ],
     [
         'label' => 'Storage',

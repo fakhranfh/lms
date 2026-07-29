@@ -4,6 +4,7 @@ namespace App\Repositories\PaymentTransaction;
 
 use App\Enums\PaymentStatus;
 use App\Models\PaymentTransaction;
+use Illuminate\Support\Collection;
 
 class PaymentTransactionRepository implements PaymentTransactionRepositoryInterface
 {
@@ -48,5 +49,32 @@ class PaymentTransactionRepository implements PaymentTransactionRepositoryInterf
             ->where('status', PaymentStatus::Pending)
             ->latest('created_at')
             ->first();
+    }
+
+    public function getStatusTotals(?string $dateFrom, ?string $dateTo): Collection
+    {
+        return PaymentTransaction::query()
+            ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->selectRaw('status, count(*) as total_count, coalesce(sum(amount), 0) as total_amount')
+            ->groupBy('status')
+            ->get()
+            ->keyBy(fn ($row) => $row->status->value);
+    }
+
+    public function getGatewayTotals(?string $dateFrom, ?string $dateTo): Collection
+    {
+        return PaymentTransaction::query()
+            ->when($dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('created_at', '<=', $dateTo))
+            ->where('status', PaymentStatus::Completed)
+            ->with('paymentGateway.paymentGatewayType')
+            ->get()
+            ->groupBy(fn (PaymentTransaction $transaction) => $transaction->paymentGateway?->paymentGatewayType?->label ?? 'Unknown')
+            ->map(fn (Collection $transactions) => [
+                'count' => $transactions->count(),
+                'total_amount' => (float) $transactions->sum('amount'),
+            ])
+            ->sortByDesc('total_amount');
     }
 }

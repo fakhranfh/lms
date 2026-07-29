@@ -2,7 +2,9 @@
 
 namespace App\Repositories\PaymentTransaction;
 
+use App\Enums\PaymentStatus;
 use App\Models\PaymentTransaction;
+use Illuminate\Support\Collection;
 
 interface PaymentTransactionRepositoryInterface
 {
@@ -31,4 +33,20 @@ interface PaymentTransactionRepositoryInterface
      * by the given user, if any.
      */
     public function findPendingRegistrationForUser(string $userId): ?PaymentTransaction;
+
+    /**
+     * Get transaction counts and amount totals grouped by status, optionally
+     * scoped to a date range.
+     *
+     * @return Collection<string, object{status: PaymentStatus, total_count: int, total_amount: float}>
+     */
+    public function getStatusTotals(?string $dateFrom, ?string $dateTo): Collection;
+
+    /**
+     * Get completed transaction counts and amount totals grouped by gateway
+     * type label, optionally scoped to a date range.
+     *
+     * @return Collection<string, array{count: int, total_amount: float}>
+     */
+    public function getGatewayTotals(?string $dateFrom, ?string $dateTo): Collection;
 }

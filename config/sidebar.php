@@ -6,6 +6,7 @@ return [
         'route' => 'dashboard',
         'icon' => 'dashboard',
         'active_pattern' => 'dashboard',
+        'exclude_role' => 'School Admin',
     ],
     [
         'label' => 'Courses',
@@ -47,6 +48,7 @@ return [
         'icon' => 'group',
         'active_pattern' => 'users.*',
         'requires_permission' => 'users.view',
+        'requires_school' => true,
     ],
     [
         'label' => 'Roles',
@@ -54,6 +56,7 @@ return [
         'icon' => 'shield',
         'active_pattern' => 'roles.*',
         'requires_permission' => 'roles.view',
+        'requires_school' => true,
     ],
     [
         'label' => 'Permissions',
@@ -61,13 +64,13 @@ return [
         'icon' => 'key',
         'active_pattern' => 'permissions.*',
         'requires_permission' => 'permissions.view',
+        'requires_school' => true,
     ],
     [
-        'label' => 'Tier Management',
-        'route' => 'tier-management.show',
-        'icon' => 'layers',
-        'active_pattern' => 'tier-management.*',
-        'exclude_role' => ['Student', 'Instructor'],
-        'requires_school' => true,
+        'label' => 'My Schools',
+        'route' => 'manage.schools.index',
+        'icon' => 'apartment',
+        'active_pattern' => 'manage.schools.index',
+        'requires_role' => 'School Admin',
     ],
 ];

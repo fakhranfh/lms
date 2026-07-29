@@ -27,12 +27,12 @@ test('instructor does not see tier management in the sidebar', function () {
         ->assertDontSee('Tier Management');
 });
 
-test('school admin sees tier management in the sidebar', function () {
+test('school admin does not see tier management in the sidebar', function () {
     $school = School::factory()->create();
     $user = actingAsSchoolUser($school, RoleName::SchoolAdmin);
 
     $this->actingAs($user)->get("http://{$school->domain}/dashboard")
-        ->assertSee('Tier Management');
+        ->assertDontSee('Tier Management');
 });
 
 test('instructor cannot access tier management page directly', function () {

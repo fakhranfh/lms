@@ -124,6 +124,42 @@ enum XenditChannel: string
     }
 
     /**
+     * Step-by-step "how to pay" instructions shown once this channel's
+     * payment instructions are ready.
+     *
+     * @return array<int, string>
+     */
+    public function paymentGuideSteps(): array
+    {
+        return match ($this->viewType()) {
+            'qris' => [
+                'Open your mobile banking or e-wallet app that supports QRIS.',
+                'Select the "Scan QR" or "Pay" menu.',
+                'Scan the QR code shown above.',
+                'Check the amount, then confirm and complete the payment.',
+            ],
+            'virtual_account' => [
+                "Open your {$this->label()} app, ATM, or internet banking.",
+                'Select the Transfer menu, then Virtual Account.',
+                'Enter the virtual account number shown above.',
+                'Check the amount, then confirm and complete the payment.',
+            ],
+            'retail' => [
+                "Go to the nearest {$this->label()} outlet.",
+                'Tell the cashier you want to pay with a payment code.',
+                'Give the cashier the payment code shown above.',
+                'Check the amount, then complete the payment at the counter.',
+            ],
+            'ewallet' => [
+                "Tap \"Continue to {$this->label()}\" above.",
+                "You'll be taken to the {$this->label()} app or a redirect page.",
+                'Check the amount, then confirm and complete the payment.',
+            ],
+            default => [],
+        };
+    }
+
+    /**
      * Build the channel_properties payload for this channel.
      *
      * @param  array<string, mixed>  $data

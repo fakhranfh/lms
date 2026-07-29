@@ -175,6 +175,185 @@ test('confirming payment via ajax returns json payment instructions without redi
     $response->assertJsonStructure(['channel_logo']);
 });
 
+test('confirming payment for an e-wallet channel stays on the payment page instead of redirecting off-site', function () {
+    $this->seed(PricingTierSeeder::class);
+    enableXenditGateway();
+    Http::fake([
+        '*api.xendit.co*' => Http::response([
+            'payment_request_id' => 'pr-registration-ovo',
+            'status' => 'REQUIRES_ACTION',
+            'actions' => [
+                ['type' => 'PRESENT_TO_CUSTOMER', 'descriptor' => 'WEB_URL', 'value' => 'https://ovo.example/pay/123'],
+            ],
+        ]),
+    ]);
+
+    $user = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($user, $plusTier);
+
+    $this->actingAs($user);
+    $response = $this->post(route('school.payment.confirm', $transaction), ['channel' => 'OVO']);
+
+    $response->assertRedirect(route('school.payment.index', $transaction));
+
+    $transaction->refresh();
+    expect($transaction->channel)->toBe('OVO')
+        ->and($transaction->payment_instructions)->toBe('https://ovo.example/pay/123');
+});
+
+test('confirming payment for an e-wallet channel via ajax returns the deeplink without an auto redirect', function () {
+    $this->seed(PricingTierSeeder::class);
+    enableXenditGateway();
+    Http::fake([
+        '*api.xendit.co*' => Http::response([
+            'payment_request_id' => 'pr-registration-dana',
+            'status' => 'REQUIRES_ACTION',
+            'actions' => [
+                ['type' => 'PRESENT_TO_CUSTOMER', 'descriptor' => 'WEB_URL', 'value' => 'https://dana.example/pay/456'],
+            ],
+        ]),
+    ]);
+
+    $user = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($user, $plusTier);
+
+    $this->actingAs($user);
+    $response = $this->postJson(route('school.payment.confirm', $transaction), ['channel' => 'DANA']);
+
+    $response->assertOk()->assertJson([
+        'view_type' => 'ewallet',
+        'payment_instructions' => 'https://dana.example/pay/456',
+        'redirect_url' => null,
+    ]);
+});
+
+test('confirming payment via ajax includes the how-to-pay guide and sandbox simulation flags', function () {
+    $this->seed(PricingTierSeeder::class);
+    enableXenditGateway();
+    Http::fake([
+        '*api.xendit.co*' => Http::response([
+            'payment_request_id' => 'pr-registration-789',
+            'status' => 'REQUIRES_ACTION',
+            'actions' => [
+                ['type' => 'PRESENT_TO_CUSTOMER', 'descriptor' => 'VIRTUAL_ACCOUNT_NUMBER', 'value' => '1234567890'],
+            ],
+        ]),
+    ]);
+
+    $user = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($user, $plusTier);
+
+    $this->actingAs($user);
+    $response = $this->postJson(route('school.payment.confirm', $transaction), ['channel' => 'BCA']);
+
+    $response->assertOk()->assertJson([
+        'view_type' => 'virtual_account',
+        'is_sandbox' => true,
+        'supports_simulation' => true,
+    ]);
+    $response->assertJsonStructure(['guide_steps', 'simulate_url', 'status_url']);
+    expect($response->json('guide_steps'))->not->toBeEmpty();
+});
+
+test('simulating payment triggers the gateway simulate endpoint in sandbox mode', function () {
+    $this->seed(PricingTierSeeder::class);
+    $gateway = enableXenditGateway();
+    $user = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($user, $plusTier);
+    $transaction->update([
+        'payment_gateway_id' => $gateway->id,
+        'channel' => 'QRIS',
+        'transaction_id' => 'pr-registration-999',
+    ]);
+
+    Http::fake([
+        '*api.xendit.co*' => Http::response(['status' => 'SUCCEEDED', 'message' => 'ok']),
+    ]);
+
+    $this->actingAs($user);
+    $response = $this->postJson(route('school.payment.simulate', $transaction));
+
+    $response->assertOk();
+    Http::assertSent(fn ($request) => str_contains($request->url(), '/simulate'));
+});
+
+test('simulating payment is rejected outside sandbox mode', function () {
+    $this->seed(PricingTierSeeder::class);
+    $gatewayType = PaymentGatewayType::firstOrCreate(['name' => 'xendit'], ['label' => 'Xendit', 'is_active' => true]);
+    $gateway = PaymentGateway::factory()->for($gatewayType)->state([
+        'is_enabled' => true,
+        'is_sandbox_mode' => false,
+        'enabled_channels' => ['QRIS'],
+    ])->create();
+
+    $user = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($user, $plusTier);
+    $transaction->update([
+        'payment_gateway_id' => $gateway->id,
+        'channel' => 'QRIS',
+        'transaction_id' => 'pr-registration-live',
+    ]);
+
+    $this->actingAs($user);
+    $response = $this->postJson(route('school.payment.simulate', $transaction));
+
+    $response->assertStatus(422);
+});
+
+test('another user cannot simulate someone else\'s payment', function () {
+    $this->seed(PricingTierSeeder::class);
+    $gateway = enableXenditGateway();
+    $owner = User::factory()->create(['school_id' => null]);
+    $intruder = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($owner, $plusTier);
+    $transaction->update(['payment_gateway_id' => $gateway->id, 'channel' => 'QRIS', 'transaction_id' => 'pr-x']);
+
+    $this->actingAs($intruder);
+    $response = $this->postJson(route('school.payment.simulate', $transaction));
+
+    $response->assertStatus(403);
+});
+
+test('status endpoint reports completion and a redirect url once the school exists', function () {
+    $this->seed(PricingTierSeeder::class);
+    $gateway = enableXenditGateway();
+    $user = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($user, $plusTier);
+    $transaction->update(['payment_gateway_id' => $gateway->id]);
+
+    $this->actingAs($user);
+
+    $pendingResponse = $this->getJson(route('school.payment.status', $transaction));
+    $pendingResponse->assertOk()->assertJson(['status' => 'pending', 'redirect_url' => null]);
+
+    app(SchoolService::class)->completeRegistrationTransaction($transaction);
+    $transaction->refresh();
+
+    $completedResponse = $this->getJson(route('school.payment.status', $transaction));
+    $completedResponse->assertOk()->assertJson(['status' => 'completed']);
+    expect($completedResponse->json('redirect_url'))->not->toBeNull();
+});
+
+test('another user cannot poll someone else\'s payment status', function () {
+    $this->seed(PricingTierSeeder::class);
+    $owner = User::factory()->create(['school_id' => null]);
+    $intruder = User::factory()->create(['school_id' => null]);
+    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
+    $transaction = createPendingRegistrationTransaction($owner, $plusTier);
+
+    $this->actingAs($intruder);
+    $response = $this->getJson(route('school.payment.status', $transaction));
+
+    $response->assertStatus(403);
+});
+
 test('another user cannot confirm someone else\'s payment', function () {
     $this->seed(PricingTierSeeder::class);
     enableXenditGateway();

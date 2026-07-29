@@ -13,13 +13,7 @@
             confirmUrl: @js(route('school.payment.confirm', $transaction)),
             csrfToken: @js(csrf_token()),
             backUrl: @js(route('get-started.school'.\App\Support\RootDomains::currentSuffix())),
-            initialResult: @js($selectedChannel ? [
-                'channel' => $selectedChannel->value,
-                'channel_label' => $selectedChannel->label(),
-                'channel_logo' => $selectedChannel->logoUrl(),
-                'view_type' => $selectedChannel->viewType(),
-                'payment_instructions' => $transaction->payment_instructions,
-            ] : null),
+            initialResult: @js($initialResult),
             defaultChannel: @js($channels->first()?->value),
         })"
     >
@@ -107,10 +101,50 @@
                                     <p class="font-mono text-headline-sm text-on-surface tracking-wider" x-text="result.payment_instructions"></p>
                                 </div>
                             </template>
-                            <template x-if="result.view_type !== 'qris' && result.view_type !== 'virtual_account' && result.view_type !== 'retail'">
+                            <template x-if="result.view_type === 'ewallet' && result.payment_instructions">
+                                <p class="text-secondary">Tap "Simulate Payment" below to open <span x-text="result.channel_label"></span> and complete the payment.</p>
+                            </template>
+                            <template x-if="!result.payment_instructions">
                                 <p class="text-secondary">Waiting for payment instructions from the gateway.</p>
                             </template>
                         </div>
+
+                        {{-- How to pay --}}
+                        <template x-if="result.guide_steps && result.guide_steps.length">
+                            <div class="mt-space-md rounded-lg border border-outline-variant px-4 py-3">
+                                <p class="font-label-md text-label-md text-on-surface mb-space-sm">How to pay</p>
+                                <ol class="list-decimal list-inside space-y-space-xxs">
+                                    <template x-for="step in result.guide_steps" :key="step">
+                                        <li class="font-body-sm text-body-sm text-secondary" x-text="step"></li>
+                                    </template>
+                                </ol>
+                            </div>
+                        </template>
+
+                        {{-- Sandbox-only: e-wallet channels have no real Xendit simulate endpoint —
+                             "simulating" here just opens the actual e-wallet deeplink on this same page,
+                             instead of the auto-redirect used before. --}}
+                        <template x-if="result.is_sandbox && result.view_type === 'ewallet' && result.payment_instructions">
+                            <div class="mt-space-md">
+                                <button type="button" @click="openEwalletLink" class="w-full h-[40px] rounded-lg border border-primary text-primary font-label-md text-label-md hover:bg-primary/5 flex items-center justify-center gap-space-xs">
+                                    Simulate Payment (Sandbox)
+                                </button>
+                            </div>
+                        </template>
+
+                        {{-- Sandbox-only: simulate the payment instead of waiting on the real gateway --}}
+                        <template x-if="result.is_sandbox && result.view_type !== 'ewallet' && result.supports_simulation">
+                            <div class="mt-space-md">
+                                <button type="button" @click="simulatePayment" :disabled="simulating" class="w-full h-[40px] rounded-lg border border-primary text-primary font-label-md text-label-md hover:bg-primary/5 disabled:opacity-50 flex items-center justify-center gap-space-xs">
+                                    <svg x-show="simulating" x-cloak class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                    </svg>
+                                    <span x-text="simulating ? 'Simulating payment...' : 'Simulate Payment (Sandbox)'"></span>
+                                </button>
+                                <p x-show="simulateMessage" x-text="simulateMessage" class="text-center font-body-sm text-body-sm text-secondary mt-space-xs"></p>
+                            </div>
+                        </template>
 
                         @if ($channels->count() > 1)
                             <button type="button" @click="switchingChannel = true; channel = result.channel" class="w-full text-center font-label-md text-label-md text-primary hover:underline mt-space-md">
@@ -128,7 +162,7 @@
                             <div>
                                 <p class="font-label-md text-label-md text-on-surface mb-space-sm">Choose a payment method</p>
                                 <div class="space-y-space-xs">
-                                    @foreach ($channels as $channel)
+                                    @foreach ($channels->take(3) as $channel)
                                         <label class="flex items-center gap-space-sm rounded-lg border border-outline-variant px-4 py-3 cursor-pointer hover:bg-surface-container-lowest has-[:checked]:border-primary has-[:checked]:bg-surface-container-lowest">
                                             <input type="radio" name="channel" value="{{ $channel->value }}" x-model="channel" {{ $loop->first ? 'checked' : '' }} class="accent-primary" required>
                                             <img src="{{ $channel->logoUrl() }}" alt="{{ $channel->label() }}" class="w-8 h-8 rounded" loading="lazy">
@@ -136,6 +170,30 @@
                                         </label>
                                     @endforeach
                                 </div>
+
+                                @if ($channels->count() > 3)
+                                    {{-- CSS grid-rows trick animates height without a plugin or JS measuring --}}
+                                    <div class="grid transition-[grid-template-rows] duration-300 ease-in-out" :class="showAllChannels ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'">
+                                        <div class="overflow-hidden">
+                                            <div class="space-y-space-xs pt-space-xs">
+                                                @foreach ($channels->skip(3) as $channel)
+                                                    <label class="flex items-center gap-space-sm rounded-lg border border-outline-variant px-4 py-3 cursor-pointer hover:bg-surface-container-lowest has-[:checked]:border-primary has-[:checked]:bg-surface-container-lowest">
+                                                        <input type="radio" name="channel" value="{{ $channel->value }}" x-model="channel" class="accent-primary" required>
+                                                        <img src="{{ $channel->logoUrl() }}" alt="{{ $channel->label() }}" class="w-8 h-8 rounded" loading="lazy">
+                                                        <span class="font-body-md text-body-md text-on-surface">{{ $channel->label() }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button type="button" @click="showAllChannels = !showAllChannels" class="w-full flex items-center justify-center gap-space-xxs text-center font-label-md text-label-md text-primary hover:underline mt-space-sm">
+                                        <span x-text="showAllChannels ? 'Show fewer options' : 'Show {{ $channels->count() - 3 }} more options'"></span>
+                                        <svg class="w-3 h-3 transition-transform duration-300" :class="showAllChannels ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                @endif
                             </div>
                         @endif
 
@@ -185,8 +243,18 @@
                 errorMessage: '',
                 channel: defaultChannel || null,
                 switchingChannel: false,
+                showAllChannels: false,
                 showBackModal: false,
                 backUrlValue: backUrl,
+                simulating: false,
+                simulateMessage: '',
+                pollTimer: null,
+
+                init() {
+                    if (this.result && this.result.is_sandbox) {
+                        this.startPolling();
+                    }
+                },
 
                 confirmBack() {
                     this.showBackModal = true;
@@ -197,6 +265,7 @@
                     this.errorMessage = '';
                     this.loading = true;
                     this.result = null;
+                    this.stopPolling();
 
                     try {
                         const response = await fetch(confirmUrl, {
@@ -227,10 +296,81 @@
                         this.result = data;
                         this.loading = false;
                         this.switchingChannel = false;
+                        this.simulateMessage = '';
+
+                        if (this.result.is_sandbox) {
+                            this.startPolling();
+                        }
                     } catch (e) {
                         this.loading = false;
                         this.errorMessage = 'Something went wrong. Please try again.';
                     }
+                },
+
+                openEwalletLink() {
+                    if (!this.result || !this.result.payment_instructions) return;
+
+                    window.open(this.result.payment_instructions, '_blank', 'noopener');
+                },
+
+                async simulatePayment() {
+                    if (!this.result || !this.result.simulate_url) return;
+
+                    this.simulating = true;
+                    this.simulateMessage = '';
+
+                    try {
+                        const response = await fetch(this.result.simulate_url, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                            },
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            this.simulating = false;
+                            this.simulateMessage = data.message || 'Unable to simulate payment.';
+
+                            return;
+                        }
+
+                        this.simulateMessage = 'Simulation triggered — waiting for confirmation...';
+                        this.startPolling();
+                    } catch (e) {
+                        this.simulating = false;
+                        this.simulateMessage = 'Something went wrong. Please try again.';
+                    }
+                },
+
+                startPolling() {
+                    if (!this.result || !this.result.status_url || this.pollTimer) return;
+
+                    this.pollTimer = setInterval(async () => {
+                        try {
+                            const response = await fetch(this.result.status_url, {
+                                headers: { 'Accept': 'application/json' },
+                            });
+                            const data = await response.json();
+
+                            if (data.redirect_url) {
+                                this.stopPolling();
+                                window.location.href = data.redirect_url;
+                            }
+                        } catch (e) {
+                            // Ignore transient polling errors; next tick retries.
+                        }
+                    }, 3000);
+                },
+
+                stopPolling() {
+                    if (this.pollTimer) {
+                        clearInterval(this.pollTimer);
+                        this.pollTimer = null;
+                    }
+                    this.simulating = false;
                 },
             };
         }

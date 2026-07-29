@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\RoleName;
 use App\Models\PaymentGateway;
 use App\Models\PaymentGatewayCredential;
 use App\Models\PaymentGatewayType;
+use App\Models\User;
 use App\Services\PaymentGatewayConfigService;
 
 beforeEach(function () {
@@ -98,4 +100,52 @@ test('updating a gateway with a new credential value overwrites the old one', fu
 
     expect($credential->credential_value)->toBe('new-key');
     expect(PaymentGatewayCredential::where('payment_gateway_id', $gateway->id)->count())->toBe(1);
+});
+
+test('edit gateway page renders the channel reorder picker', function () {
+    $admin = User::factory()->create(['school_id' => null]);
+    $admin->assignRole(RoleName::Admin);
+
+    $gatewayType = PaymentGatewayType::factory()->create(['name' => 'xendit', 'label' => 'Xendit']);
+    $gateway = PaymentGateway::factory()
+        ->for($gatewayType)
+        ->state(['enabled_channels' => ['BCA', 'QRIS']])
+        ->create();
+
+    $response = $this->actingAs($admin)->get(route('admin.gateways.edit', $gateway));
+
+    // The channel picker is Alpine-rendered from a JSON x-data payload, not
+    // server-rendered text, so assert against the raw HTML rather than
+    // assertSeeText (which strips tag/attribute content along with tags).
+    $response->assertOk();
+    $response->assertSee('BCA Virtual Account');
+    $response->assertSee('initialEnabled', false);
+});
+
+test('admin can reorder enabled channels and the stored order reflects the submission', function () {
+    $admin = User::factory()->create(['school_id' => null]);
+    $admin->assignRole(RoleName::Admin);
+
+    $gatewayType = PaymentGatewayType::factory()->create(['name' => 'xendit', 'label' => 'Xendit']);
+    $gateway = PaymentGateway::factory()
+        ->for($gatewayType)
+        ->state(['enabled_channels' => ['QRIS', 'BCA']])
+        ->create();
+
+    PaymentGatewayCredential::factory()
+        ->for($gateway, 'paymentGateway')
+        ->create(['credential_key' => 'api_key', 'credential_value' => 'existing-key']);
+
+    // The reorder picker submits hidden inputs in display order, so
+    // "BCA" before "QRIS" here simulates the admin having dragged BCA above QRIS.
+    $response = $this->actingAs($admin)->put(route('admin.gateways.update', $gateway), [
+        'is_enabled' => true,
+        'is_sandbox_mode' => true,
+        'enabled_channels' => ['BCA', 'QRIS'],
+        'credentials' => ['api_key' => ''],
+    ]);
+
+    $response->assertRedirect(route('admin.gateways.index'));
+
+    expect($gateway->fresh()->enabled_channels)->toBe(['BCA', 'QRIS']);
 });

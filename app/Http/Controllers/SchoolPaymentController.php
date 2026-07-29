@@ -6,6 +6,8 @@ use App\Enums\PaymentStatus;
 use App\Enums\XenditChannel;
 use App\Models\PaymentTransaction;
 use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
+use App\Services\PaymentGatewayFactory;
+use App\Services\PaymentGateways\XenditGateway;
 use App\Services\SchoolService;
 use App\Support\RootDomains;
 use Illuminate\Http\JsonResponse;
@@ -48,6 +50,7 @@ class SchoolPaymentController extends Controller
             'transaction' => $transaction,
             'selectedChannel' => $selectedChannel,
             'channels' => $channels,
+            'initialResult' => $selectedChannel ? $this->channelPayload($transaction) : null,
         ]);
     }
 
@@ -73,22 +76,23 @@ class SchoolPaymentController extends Controller
 
         $transaction->refresh();
 
-        // Redirect-based flows (e.g. Midtrans's hosted Snap page, e-wallet
-        // deeplinks) send the customer off-site to finish paying.
-        $offSiteUrl = ($invoice['payment_url'] ?? null) && filter_var($invoice['payment_url'], FILTER_VALIDATE_URL)
+        $selectedChannel = XenditChannel::tryFrom($transaction->channel ?? '');
+
+        // Redirect-based flows (e.g. Midtrans's hosted Snap page) send the
+        // customer off-site immediately. Xendit e-wallet channels (OVO, DANA,
+        // ...) instead stay on this page like every other channel — the
+        // e-wallet deeplink is only opened when the customer clicks
+        // "Simulate Payment", via `payment_instructions` below.
+        $offSiteUrl = $selectedChannel?->viewType() !== 'ewallet'
+            && ($invoice['payment_url'] ?? null)
+            && filter_var($invoice['payment_url'], FILTER_VALIDATE_URL)
             ? $invoice['payment_url']
             : null;
 
         if ($request->wantsJson()) {
-            $selectedChannel = XenditChannel::tryFrom($transaction->channel ?? '');
-
             return response()->json([
                 'redirect_url' => $offSiteUrl,
-                'channel' => $selectedChannel?->value,
-                'channel_label' => $selectedChannel?->label(),
-                'channel_logo' => $selectedChannel?->logoUrl(),
-                'view_type' => $selectedChannel?->viewType(),
-                'payment_instructions' => $transaction->payment_instructions,
+                ...$this->channelPayload($transaction),
             ]);
         }
 
@@ -97,5 +101,71 @@ class SchoolPaymentController extends Controller
         }
 
         return redirect()->route('school.payment.index', $transaction);
+    }
+
+    /**
+     * Trigger Xendit's test-mode "simulate payment" endpoint for a pending,
+     * sandbox-mode transaction. Only moves the transaction to "paid" on
+     * Xendit's side — the actual status flip happens later via webhook.
+     */
+    public function simulate(PaymentTransaction $transaction, PaymentGatewayFactory $gatewayFactory): JsonResponse
+    {
+        abort_unless($transaction->initiated_by === auth()->id(), 403);
+
+        $gateway = $transaction->paymentGateway;
+        $channel = XenditChannel::tryFrom($transaction->channel ?? '');
+
+        abort_unless($transaction->status === PaymentStatus::Pending, 422);
+        abort_unless($gateway?->is_sandbox_mode, 422, 'This gateway is not in sandbox mode.');
+        abort_unless($channel?->supportsSimulation(), 422, 'This payment method cannot be simulated.');
+
+        $gatewayInstance = $gatewayFactory->make($gateway->paymentGatewayType->name, $gateway);
+        abort_unless($gatewayInstance instanceof XenditGateway, 422, 'Payment simulation is only supported for Xendit gateways.');
+
+        $result = $gatewayInstance->simulatePayment($transaction->transaction_id, (float) $transaction->amount);
+
+        if (! ($result['success'] ?? false)) {
+            return response()->json(['message' => $result['error'] ?? 'Unable to simulate payment.'], 422);
+        }
+
+        return response()->json(['message' => $result['message'] ?? 'Payment simulation triggered.']);
+    }
+
+    /**
+     * Lightweight polling endpoint the checkout page uses after triggering a
+     * simulation, to detect once the webhook has completed the transaction.
+     */
+    public function status(PaymentTransaction $transaction, Request $request): JsonResponse
+    {
+        abort_unless($transaction->initiated_by === auth()->id(), 403);
+
+        $completed = $transaction->status === PaymentStatus::Completed && $transaction->school;
+        $suffix = RootDomains::suffixFor(RootDomains::match($request->getHost()));
+
+        return response()->json([
+            'status' => $transaction->status->value,
+            'redirect_url' => $completed ? route("manage.schools.index{$suffix}") : null,
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function channelPayload(PaymentTransaction $transaction): array
+    {
+        $selectedChannel = XenditChannel::tryFrom($transaction->channel ?? '');
+
+        return [
+            'channel' => $selectedChannel?->value,
+            'channel_label' => $selectedChannel?->label(),
+            'channel_logo' => $selectedChannel?->logoUrl(),
+            'view_type' => $selectedChannel?->viewType(),
+            'payment_instructions' => $transaction->payment_instructions,
+            'guide_steps' => $selectedChannel?->paymentGuideSteps() ?? [],
+            'is_sandbox' => (bool) $transaction->paymentGateway?->is_sandbox_mode,
+            'supports_simulation' => (bool) $selectedChannel?->supportsSimulation(),
+            'simulate_url' => route('school.payment.simulate', $transaction),
+            'status_url' => route('school.payment.status', $transaction),
+        ];
     }
 }

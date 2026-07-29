@@ -70,22 +70,7 @@
                             <p class="text-body-sm text-on-surface-variant mt-1">Leave blank to keep current value</p>
                         </div>
 
-                        <div>
-                            <span class="block text-body-md font-medium text-on-surface mb-2">
-                                Enabled Payment Channels <span class="text-error">*</span>
-                            </span>
-                            <div class="grid grid-cols-2 gap-3">
-                                @foreach (\App\Enums\XenditChannel::cases() as $channel)
-                                    <label class="flex items-center gap-2">
-                                        <input type="checkbox" name="enabled_channels[]" value="{{ $channel->value }}" class="rounded" {{ in_array($channel->value, $gateway->enabled_channels ?? []) ? 'checked' : '' }}>
-                                        <span class="text-body-sm text-on-surface">{{ $channel->label() }}</span>
-                                    </label>
-                                @endforeach
-                            </div>
-                            @error('enabled_channels')
-                                <p class="text-error text-body-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
+                        @include('admin.gateways._channel-order-picker', ['initialEnabledChannels' => $gateway->enabled_channels ?? []])
                     </div>
                 @endif
             </div>

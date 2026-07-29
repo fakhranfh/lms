@@ -1,18 +1,14 @@
-@extends('master')
+@extends('layouts.app', ['topbarTitle' => 'Complete Your Payment'])
 
 @section('title', 'Complete Your Payment')
 
-@section('body_class', 'bg-background text-on-background min-h-screen flex flex-col font-body-md')
+@section('app-content')
 
-@section('content')
-
-    @include('partials.topbar')
-
-    <main class="flex flex-1 items-center justify-center p-gutter"
+    <div class="flex items-center justify-center py-space-xl"
         x-data="schoolPayment({
             confirmUrl: @js(route('school.payment.confirm', $transaction)),
             csrfToken: @js(csrf_token()),
-            backUrl: @js(route('get-started.school'.\App\Support\RootDomains::currentSuffix())),
+            backUrl: @js($backUrl),
             initialResult: @js($initialResult),
             defaultChannel: @js($channels->first()?->value),
         })"
@@ -30,39 +26,53 @@
             </div>
 
             <div class="space-y-space-lg">
-                <div class="rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3">
-                    <p class="font-body-sm text-body-sm text-secondary mb-space-xs">School</p>
-                    <div class="flex items-center gap-space-sm">
-                        @if ($transaction->registration_data['logo_path'] ?? null)
-                            <img src="{{ $transaction->registration_data['logo_path'] }}" alt="{{ $transaction->registration_data['name'] }} logo" class="w-10 h-10 rounded-lg object-cover border border-outline-variant">
-                        @endif
-                        <p class="font-headline-sm text-headline-sm text-on-surface">{{ $transaction->registration_data['name'] }}</p>
+                @if ($isTierChange)
+                    <div class="rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3">
+                        <p class="font-body-sm text-body-sm text-secondary mb-space-xs">School</p>
+                        <p class="font-headline-sm text-headline-sm text-on-surface">{{ $transaction->school->name }}</p>
                     </div>
-                </div>
+                @else
+                    <div class="rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3">
+                        <p class="font-body-sm text-body-sm text-secondary mb-space-xs">School</p>
+                        <div class="flex items-center gap-space-sm">
+                            @if ($transaction->registration_data['logo_path'] ?? null)
+                                <img src="{{ $transaction->registration_data['logo_path'] }}" alt="{{ $transaction->registration_data['name'] }} logo" class="w-10 h-10 rounded-lg object-cover border border-outline-variant">
+                            @endif
+                            <p class="font-headline-sm text-headline-sm text-on-surface">{{ $transaction->registration_data['name'] }}</p>
+                        </div>
+                    </div>
+                @endif
 
                 <div class="rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3">
                     <p class="font-body-sm text-body-sm text-secondary mb-space-xs">Plan</p>
                     <p class="font-headline-sm text-headline-sm text-on-surface">{{ $transaction->tier_name }}</p>
                     <p class="font-body-sm text-body-sm text-secondary">Billed {{ $transaction->billing_period }}</p>
 
-                    <dl class="mt-space-md space-y-space-xxs">
-                        <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
-                            <dt>Subtotal</dt>
-                            <dd>Rp {{ number_format($transaction->subtotal, 0, '.', '.') }}</dd>
+                    @if ($isTierChange)
+                        <div class="mt-space-md flex items-center justify-between border-t border-outline-variant pt-space-md">
+                            <p class="font-label-md text-label-md text-on-surface">Total</p>
+                            <p class="font-headline-sm text-headline-sm text-on-surface">Rp {{ number_format($transaction->amount, 0, '.', '.') }}</p>
                         </div>
-                        <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
-                            <dt>VAT ({{ number_format($transaction->vat_rate * 100, 2) }}%)</dt>
-                            <dd>Rp {{ number_format($transaction->vat_amount, 0, '.', '.') }}</dd>
+                    @else
+                        <dl class="mt-space-md space-y-space-xxs">
+                            <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
+                                <dt>Subtotal</dt>
+                                <dd>Rp {{ number_format($transaction->subtotal, 0, '.', '.') }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
+                                <dt>VAT ({{ number_format($transaction->vat_rate * 100, 2) }}%)</dt>
+                                <dd>Rp {{ number_format($transaction->vat_amount, 0, '.', '.') }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
+                                <dt>Admin fee ({{ number_format($transaction->admin_fee_rate * ($transaction->admin_fee_type === \App\Enums\AdminFeeType::Percentage ? 100 : 1), 2) }}{{ $transaction->admin_fee_type === \App\Enums\AdminFeeType::Percentage ? '%' : '' }})</dt>
+                                <dd>Rp {{ number_format($transaction->admin_fee_amount, 0, '.', '.') }}</dd>
+                            </div>
+                        </dl>
+                        <div class="mt-space-md flex items-center justify-between border-t border-outline-variant pt-space-md">
+                            <p class="font-label-md text-label-md text-on-surface">Total</p>
+                            <p class="font-headline-sm text-headline-sm text-on-surface">Rp {{ number_format($transaction->amount, 0, '.', '.') }}</p>
                         </div>
-                        <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
-                            <dt>Admin fee ({{ number_format($transaction->admin_fee_rate * ($transaction->admin_fee_type === \App\Enums\AdminFeeType::Percentage ? 100 : 1), 2) }}{{ $transaction->admin_fee_type === \App\Enums\AdminFeeType::Percentage ? '%' : '' }})</dt>
-                            <dd>Rp {{ number_format($transaction->admin_fee_amount, 0, '.', '.') }}</dd>
-                        </div>
-                    </dl>
-                    <div class="mt-space-md flex items-center justify-between border-t border-outline-variant pt-space-md">
-                        <p class="font-label-md text-label-md text-on-surface">Total</p>
-                        <p class="font-headline-sm text-headline-sm text-on-surface">Rp {{ number_format($transaction->amount, 0, '.', '.') }}</p>
-                    </div>
+                    @endif
                 </div>
 
                 {{-- Skeleton shown while the payment request is being created --}}
@@ -152,7 +162,13 @@
                             </button>
                         @endif
 
-                        <p class="text-center font-body-sm text-body-sm text-secondary mt-space-md">Your school will be created automatically once payment is confirmed.</p>
+                        <p class="text-center font-body-sm text-body-sm text-secondary mt-space-md">
+                            @if ($isTierChange)
+                                Your subscription will be updated automatically once payment is confirmed.
+                            @else
+                                Your school will be created automatically once payment is confirmed.
+                            @endif
+                        </p>
                     </div>
                 </template>
 
@@ -211,7 +227,13 @@
                             </button>
                         </div>
                     </form>
-                    <p class="text-center font-body-sm text-body-sm text-secondary">Your school will be created once payment is confirmed.</p>
+                    <p class="text-center font-body-sm text-body-sm text-secondary">
+                        @if ($isTierChange)
+                            Your subscription will be updated once payment is confirmed.
+                        @else
+                            Your school will be created once payment is confirmed.
+                        @endif
+                    </p>
                 </template>
             </div>
         </div>
@@ -221,7 +243,15 @@
             <div class="absolute inset-0 bg-black/50" @click="showBackModal = false"></div>
             <div class="relative w-full max-w-[400px] bg-surface rounded-xl p-space-lg border border-outline-variant shadow-xl">
                 <h3 class="font-headline-sm text-headline-sm text-on-surface mb-space-xs">Leave this page?</h3>
-                <p class="font-body-sm text-body-sm text-secondary mb-space-lg">Going back will discard this checkout session. You'll need to fill in your school details again.</p>
+                <p class="font-body-sm text-body-sm text-secondary mb-space-lg">
+                    @if ($isTierChange)
+                        Going back will cancel this upgrade. You can try paying again later by picking this transaction from
+                        <a href="{{ route('transactions.index') }}" class="text-primary hover:underline">Transactions</a>.
+                    @else
+                        Going back will discard this checkout session, but your school details are saved. You can try paying again later by picking this transaction from
+                        <a href="{{ route('transactions.index') }}" class="text-primary hover:underline">Transactions</a>.
+                    @endif
+                </p>
                 <div class="flex gap-space-sm">
                     <button type="button" @click="showBackModal = false" class="flex-1 h-[40px] rounded-lg border border-outline-variant font-label-md text-label-md text-on-surface hover:bg-surface-container-lowest">
                         Stay
@@ -232,9 +262,7 @@
                 </div>
             </div>
         </div>
-    </main>
-
-    @include('partials.footer')
+    </div>
 
     <script>
         function schoolPayment({ confirmUrl, csrfToken, backUrl, initialResult, defaultChannel }) {

@@ -16,12 +16,8 @@ class MySchools extends Component
         abort_unless(auth()->check(), 403);
     }
 
-    public function changeTier(
-        string $schoolId,
-        string $tierId,
-        ?string $gatewayName,
-        TierChangeService $tierChangeService
-    ): mixed {
+    public function changeTier(string $schoolId, string $tierId, TierChangeService $tierChangeService): mixed
+    {
         $school = $this->authorizedSchool($schoolId);
 
         abort_if($this->isDemoMode($school), 403, 'Demo accounts cannot change pricing tiers.');
@@ -29,10 +25,10 @@ class MySchools extends Component
         $newTier = PricingTier::findOrFail($tierId);
 
         try {
-            $invoice = $tierChangeService->initiateTierChange($school, $newTier, $gatewayName);
+            $transaction = $tierChangeService->initiateTierChange($school, $newTier);
 
-            if ($invoice && isset($invoice['redirect_url'])) {
-                return $this->redirect($invoice['redirect_url']);
+            if ($transaction) {
+                return $this->redirectRoute('school.payment.index', ['transaction' => $transaction]);
             }
 
             session()->flash('success', "Tier changed to {$newTier->name} successfully.");
@@ -90,8 +86,10 @@ class MySchools extends Component
         );
 
         $prorations = [];
+        $chargeAmounts = [];
         foreach ($availableTiers as $tier) {
             $prorations[$tier->id] = $tierChangeService->calculateProration($school, $tier);
+            $chargeAmounts[$tier->id] = $tierChangeService->calculateChargeAmount($school, $tier);
         }
 
         $pendingTier = $school->schoolTiers()
@@ -104,6 +102,7 @@ class MySchools extends Component
             'upgradeTiers' => $upgradeTiers,
             'downgradeTiers' => $downgradeTiers,
             'prorations' => $prorations,
+            'chargeAmounts' => $chargeAmounts,
             'pendingTier' => $pendingTier,
             'enabledGateways' => $gatewayRegistry->getEnabledGateways(),
             'isDemoMode' => $this->isDemoMode($school),

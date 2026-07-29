@@ -73,4 +73,11 @@ return [
         'active_pattern' => 'manage.schools.index',
         'requires_role' => 'School Admin',
     ],
+    [
+        'label' => 'Transactions',
+        'route' => 'transactions.index',
+        'icon' => 'receipt_long',
+        'active_pattern' => 'transactions.index',
+        'requires_role' => 'School Admin',
+    ],
 ];

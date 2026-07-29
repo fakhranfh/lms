@@ -10,6 +10,7 @@ use App\Services\PaymentGatewayFactory;
 use App\Services\PaymentGateways\XenditGateway;
 use App\Services\PaymentStatusStreamService;
 use App\Services\SchoolService;
+use App\Services\SubscriptionPaymentService;
 use App\Support\RootDomains;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -48,23 +49,36 @@ class SchoolPaymentController extends Controller
             ? collect($gateway->enabled_channels ?? [])->map(fn (string $value) => XenditChannel::tryFrom($value))->filter()
             : collect();
 
+        $suffix = RootDomains::suffixFor(RootDomains::match($request->getHost()));
+        $isTierChange = ! $transaction->registration_data;
+
         return view('school-payment', [
             'transaction' => $transaction,
             'selectedChannel' => $selectedChannel,
             'channels' => $channels,
             'initialResult' => $selectedChannel ? $this->channelPayload($transaction) : null,
+            'isTierChange' => $isTierChange,
+            'backUrl' => $isTierChange
+                ? route("manage.schools.index{$suffix}")
+                : route("get-started.school{$suffix}"),
         ]);
     }
 
-    public function confirm(PaymentTransaction $transaction, SchoolService $schoolService, Request $request): RedirectResponse|JsonResponse
-    {
+    public function confirm(
+        PaymentTransaction $transaction,
+        SchoolService $schoolService,
+        SubscriptionPaymentService $subscriptionPaymentService,
+        Request $request
+    ): RedirectResponse|JsonResponse {
         abort_unless($transaction->initiated_by === auth()->id(), 403);
 
         $validated = $request->validate([
             'channel' => ['nullable', Rule::enum(XenditChannel::class)],
         ]);
 
-        $invoice = $schoolService->initiateRegistrationPayment($transaction, $validated['channel'] ?? null);
+        $invoice = $transaction->registration_data
+            ? $schoolService->initiateRegistrationPayment($transaction, $validated['channel'] ?? null)
+            : $subscriptionPaymentService->initiateSubscriptionPayment($transaction, $validated['channel'] ?? null);
 
         if (! ($invoice['success'] ?? false)) {
             $message = $invoice['error'] ?? 'Unable to initiate payment. Please try again.';

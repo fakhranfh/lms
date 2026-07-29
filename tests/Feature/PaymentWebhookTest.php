@@ -11,7 +11,9 @@ use App\Models\PaymentWebhook;
 use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\SchoolTier;
+use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
 use App\Repositories\PaymentGatewayTestTransaction\PaymentGatewayTestTransactionRepositoryInterface;
+use App\Repositories\PaymentTransaction\PaymentTransactionRepositoryInterface;
 use App\Services\PaymentGatewayFactory;
 use App\Services\SchoolService;
 use App\Services\SubscriptionPaymentService;
@@ -244,7 +246,11 @@ test('webhook processing job marks webhook as processed', function () {
     $mockFactory = Mockery::mock(PaymentGatewayFactory::class);
     $mockFactory->shouldReceive('make')->andReturn($mockGateway);
 
-    $paymentService = new SubscriptionPaymentService($mockFactory);
+    $paymentService = new SubscriptionPaymentService(
+        $mockFactory,
+        app(PaymentGatewayRepositoryInterface::class),
+        app(PaymentTransactionRepositoryInterface::class),
+    );
 
     $job = new ProcessPaymentWebhook($webhook);
     $job->handle($paymentService, $mockFactory, app(PaymentGatewayTestTransactionRepositoryInterface::class), app(SchoolService::class));

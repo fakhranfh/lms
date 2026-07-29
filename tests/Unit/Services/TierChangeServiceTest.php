@@ -95,3 +95,30 @@ it('calculates zero proration when current tier has no expiration', function () 
     $proration = $service->calculateProration($school, $newTier);
     expect($proration)->toBe(0.0);
 });
+
+it('charges the full tier price when upgrading off the free tier with no proration', function () {
+    $school = School::factory()->create();
+    $newTier = PricingTier::where('slug', 'plus')->first();
+
+    $service = app(TierChangeService::class);
+
+    $amount = $service->calculateChargeAmount($school, $newTier);
+    expect($amount)->toEqual((float) $newTier->price);
+});
+
+it('charges the prorated amount when upgrading mid-cycle from an active paid tier', function () {
+    $school = School::factory()->create();
+    $oldTier = $school->tier;
+    $newTier = PricingTier::where('slug', 'plus')->first();
+
+    $schoolTier = $school->schoolTiers()->first();
+    $schoolTier->update(['expires_at' => now()->addDays(15)]);
+
+    $service = app(TierChangeService::class);
+
+    $proration = $service->calculateProration($school, $newTier);
+    $amount = $service->calculateChargeAmount($school, $newTier);
+
+    expect($proration)->toBeGreaterThan(0);
+    expect(abs($amount - $proration))->toBeLessThan(1);
+});

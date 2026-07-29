@@ -66,11 +66,32 @@ class TierChangeService
         return ($newDailyRate - $oldDailyRate) * $remainingDays;
     }
 
+    /**
+     * The actual amount to charge for an upgrade. calculateProration() only
+     * covers switching mid-cycle between two paid tiers — it returns 0 when
+     * the school has no active paid subscription to prorate against (e.g.
+     * upgrading off the free tier), which must still charge the new tier's
+     * full price rather than being treated as "free".
+     */
+    public function calculateChargeAmount(School $school, PricingTier $newTier): float
+    {
+        $proration = $this->calculateProration($school, $newTier);
+
+        return $proration > 0 ? $proration : (float) $newTier->price;
+    }
+
+    /**
+     * Start a tier change. Downgrades and free tiers apply immediately and
+     * return null. Paid upgrades create a pending subscription + payment
+     * transaction (no gateway call yet) and return that transaction, so the
+     * caller can send the user to the payment page to pick a channel and
+     * confirm — mirroring the school-registration checkout flow.
+     */
     public function initiateTierChange(
         School $school,
         PricingTier $newTier,
         ?string $gatewayName = null
-    ): ?array {
+    ): ?PaymentTransaction {
         // Check if a tier change is already in progress
         if ($this->schoolTierRepository->hasPendingForSchool($school->id)) {
             throw new TierChangeInProgressException;
@@ -84,15 +105,17 @@ class TierChangeService
 
         // Immediate application for downgrades or free tiers
         if (! $isUpgrade || ! $isPaid) {
-            return $this->applyImmediateChange($school, $newTier, $oldTierId, $proration);
+            $this->applyImmediateChange($school, $newTier, $oldTierId, $proration);
+
+            return null;
         }
 
         // Payment-gated upgrade
         $gateway = $this->resolveGateway($gatewayName);
 
-        $amount = max(0, $proration);
+        $amount = $this->calculateChargeAmount($school, $newTier);
 
-        $schoolTier = DB::transaction(function () use ($school, $newTier, $gateway, $oldTierId, $proration, $amount) {
+        return DB::transaction(function () use ($school, $newTier, $gateway, $oldTierId, $proration, $amount) {
             $schoolTier = $this->schoolTierRepository->create([
                 'school_id' => $school->id,
                 'tier_id' => $newTier->id,
@@ -104,7 +127,8 @@ class TierChangeService
                 'payment_method' => $gateway->paymentGatewayType->name,
             ]);
 
-            $this->paymentTransactionRepository->create([
+            return $this->paymentTransactionRepository->create([
+                'initiated_by' => auth()->id(),
                 'school_id' => $school->id,
                 'subscription_id' => $schoolTier->id,
                 'payment_gateway_id' => $gateway->id,
@@ -115,18 +139,10 @@ class TierChangeService
                 'from_tier_id' => $oldTierId,
                 'change_type' => TierChangeType::Upgrade,
                 'proration_amount' => $proration,
+                'tier_name' => $newTier->name,
+                'billing_period' => $newTier->billing_period->value,
             ]);
-
-            return $schoolTier;
         });
-
-        $invoice = $this->paymentService->createPaymentInvoice(
-            $schoolTier,
-            $gateway,
-            $amount > 0 ? $amount : null
-        );
-
-        return $invoice;
     }
 
     public function cancelTierChange(School $school): bool

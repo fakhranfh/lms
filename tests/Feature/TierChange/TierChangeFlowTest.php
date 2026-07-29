@@ -21,7 +21,7 @@ beforeEach(function () {
     $this->seed('PricingTierSeeder');
 });
 
-it('initiates an upgrade with pending tier and invoice', function () {
+it('initiates an upgrade with a pending tier and payment transaction', function () {
     Queue::fake();
 
     $school = School::factory()->create();
@@ -32,29 +32,21 @@ it('initiates an upgrade with pending tier and invoice', function () {
         ->for($gatewayType)
         ->create(['is_enabled' => true]);
 
-    $mockGateway = $this->mock(PaymentGateway::class);
-    $mockGateway->shouldReceive('createInvoice')->andReturn([
-        'transaction_id' => 'txn-123',
-        'redirect_url' => 'https://payment.gateway/pay/txn-123',
-    ]);
-
-    $this->mock(PaymentGatewayFactory::class, function (MockInterface $mock) use ($mockGateway) {
-        $mock->shouldReceive('make')->andReturn($mockGateway);
-    });
-
     $service = app(TierChangeService::class);
-    $invoice = $service->initiateTierChange($school, $plusTier, 'midtrans');
+    $transaction = $service->initiateTierChange($school, $plusTier, 'midtrans');
 
-    expect($invoice)->toHaveKey('redirect_url');
+    expect($transaction)->toBeInstanceOf(PaymentTransaction::class);
+    expect($transaction->status)->toBe(PaymentStatus::Pending);
+    expect($transaction->change_type)->toBe(TierChangeType::Upgrade);
+    expect($transaction->tier_name)->toBe($plusTier->name);
+    // Fresh upgrade off the free tier has no proration to prorate against,
+    // so the full tier price must be charged rather than Rp 0.
+    expect((float) $transaction->amount)->toEqual((float) $plusTier->price);
 
     $pendingTier = $school->schoolTiers()->where('status', SubscriptionStatus::Pending)->first();
     expect($pendingTier)->not->toBeNull();
     expect($pendingTier->tier_id)->toBe($plusTier->id);
-
-    $transaction = PaymentTransaction::whereHas('detail', fn ($query) => $query->where('subscription_id', $pendingTier->id))->first();
-    expect($transaction)->not->toBeNull();
-    expect($transaction->status)->toBe(PaymentStatus::Pending);
-    expect($transaction->change_type)->toBe(TierChangeType::Upgrade);
+    expect($transaction->subscription_id)->toBe($pendingTier->id);
 });
 
 it('applies immediate downgrade without payment', function () {
@@ -101,7 +93,7 @@ it('throws exception when tier change is already in progress', function () {
 
     $mockGateway = $this->mock(PaymentGateway::class);
     $mockGateway->shouldReceive('createInvoice')->andReturn([
-        'redirect_url' => 'https://payment.gateway/pay',
+        'payment_url' => 'https://payment.gateway/pay',
     ]);
 
     $this->mock(PaymentGatewayFactory::class, function (MockInterface $mock) use ($mockGateway) {
@@ -128,7 +120,7 @@ it('cancels pending tier change', function () {
 
     $mockGateway = $this->mock(PaymentGateway::class);
     $mockGateway->shouldReceive('createInvoice')->andReturn([
-        'redirect_url' => 'https://payment.gateway/pay',
+        'payment_url' => 'https://payment.gateway/pay',
     ]);
 
     $this->mock(PaymentGatewayFactory::class, function (MockInterface $mock) use ($mockGateway) {

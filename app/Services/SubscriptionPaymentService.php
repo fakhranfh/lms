@@ -9,11 +9,15 @@ use App\Models\PaymentGateway;
 use App\Models\PaymentTransaction;
 use App\Models\PaymentWebhook;
 use App\Models\SchoolTier;
+use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
+use App\Repositories\PaymentTransaction\PaymentTransactionRepositoryInterface;
 
 class SubscriptionPaymentService
 {
     public function __construct(
-        private readonly PaymentGatewayFactory $factory
+        private readonly PaymentGatewayFactory $factory,
+        private readonly PaymentGatewayRepositoryInterface $gatewayRepository,
+        private readonly PaymentTransactionRepositoryInterface $paymentTransactionRepository,
     ) {}
 
     public function createPaymentInvoice(SchoolTier $subscription, PaymentGateway $gateway, ?float $amountOverride = null): array
@@ -32,6 +36,45 @@ class SubscriptionPaymentService
             'currency' => $subscription->tier->currency,
             'description' => "Subscription: {$subscription->tier->name}",
         ]);
+    }
+
+    /**
+     * Create the gateway invoice for a pending tier-change transaction (mirrors
+     * SchoolService::initiateRegistrationPayment for the "existing school" case)
+     * and record the resulting channel/instructions on the transaction.
+     *
+     * @return array<string, mixed>
+     */
+    public function initiateSubscriptionPayment(PaymentTransaction $transaction, ?string $channel = null): array
+    {
+        $gateway = $transaction->paymentGateway ?? $this->gatewayRepository->findFirstEnabled();
+
+        if (! $gateway) {
+            throw new \RuntimeException('No payment gateway configured.');
+        }
+
+        $gatewayInstance = $this->factory->make($gateway->paymentGatewayType->name, $gateway);
+
+        $invoice = $gatewayInstance->createInvoice([
+            'subscription_id' => $transaction->subscription_id,
+            'school_id' => $transaction->school_id,
+            'order_id' => $transaction->transaction_id,
+            'amount' => (float) $transaction->amount,
+            'currency' => $transaction->currency,
+            'channel' => $channel,
+            'description' => "Subscription: {$transaction->tier_name}",
+        ]);
+
+        if ($invoice['success'] ?? false) {
+            $this->paymentTransactionRepository->update($transaction->id, [
+                'payment_gateway_id' => $gateway->id,
+                'channel' => $channel ?? ($invoice['channel'] ?? null),
+                'payment_instructions' => $invoice['payment_url'] ?? null,
+                'transaction_id' => $invoice['transaction_id'] ?? $transaction->transaction_id,
+            ]);
+        }
+
+        return $invoice;
     }
 
     public function processWebhook(PaymentWebhook $webhook): bool

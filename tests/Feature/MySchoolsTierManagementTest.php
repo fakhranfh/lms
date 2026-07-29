@@ -1,18 +1,16 @@
 <?php
 
-use App\Contracts\PaymentGateway;
 use App\Enums\SubscriptionStatus;
 use App\Livewire\MySchools;
 use App\Models\PaymentGateway as PaymentGatewayModel;
 use App\Models\PaymentGatewayType;
+use App\Models\PaymentTransaction;
 use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\User;
-use App\Services\PaymentGatewayFactory;
 use App\Services\TierChangeService;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
-use Mockery\MockInterface;
 
 beforeEach(function () {
     $this->seed('PricingTierSeeder');
@@ -37,11 +35,11 @@ it('refuses to change the tier of a school the user does not administer', functi
 
     Livewire::actingAs($user)
         ->test(MySchools::class)
-        ->call('changeTier', $otherSchool->id, $plusTier->id, null)
+        ->call('changeTier', $otherSchool->id, $plusTier->id)
         ->assertForbidden();
 });
 
-it('lets a school admin upgrade a school tier from the my schools page', function () {
+it('redirects straight to the payment page on upgrade', function () {
     Queue::fake();
 
     $school = School::factory()->create();
@@ -53,24 +51,18 @@ it('lets a school admin upgrade a school tier from the my schools page', functio
     $gatewayType = PaymentGatewayType::where('name', 'midtrans')->first();
     PaymentGatewayModel::factory()->for($gatewayType)->create(['is_enabled' => true]);
 
-    $mockGateway = $this->mock(PaymentGateway::class);
-    $mockGateway->shouldReceive('createInvoice')->andReturn([
-        'transaction_id' => 'txn-my-schools',
-        'redirect_url' => 'https://payment.gateway/pay/txn-my-schools',
-    ]);
-
-    $this->mock(PaymentGatewayFactory::class, function (MockInterface $mock) use ($mockGateway) {
-        $mock->shouldReceive('make')->andReturn($mockGateway);
-    });
-
-    Livewire::actingAs($user)
+    $test = Livewire::actingAs($user)
         ->test(MySchools::class)
-        ->call('changeTier', $school->id, $plusTier->id, 'midtrans')
-        ->assertRedirect('https://payment.gateway/pay/txn-my-schools');
+        ->call('changeTier', $school->id, $plusTier->id);
 
     $pendingTier = $school->schoolTiers()->where('status', SubscriptionStatus::Pending)->first();
     expect($pendingTier)->not->toBeNull();
     expect($pendingTier->tier_id)->toBe($plusTier->id);
+
+    $transaction = PaymentTransaction::whereHas('detail', fn ($query) => $query->where('subscription_id', $pendingTier->id))->first();
+    expect($transaction)->not->toBeNull();
+
+    $test->assertRedirect(route('school.payment.index', $transaction));
 });
 
 it('lets a school admin cancel a pending tier change', function () {
@@ -84,15 +76,6 @@ it('lets a school admin cancel a pending tier change', function () {
 
     $gatewayType = PaymentGatewayType::where('name', 'midtrans')->first();
     PaymentGatewayModel::factory()->for($gatewayType)->create(['is_enabled' => true]);
-
-    $mockGateway = $this->mock(PaymentGateway::class);
-    $mockGateway->shouldReceive('createInvoice')->andReturn([
-        'redirect_url' => 'https://payment.gateway/pay',
-    ]);
-
-    $this->mock(PaymentGatewayFactory::class, function (MockInterface $mock) use ($mockGateway) {
-        $mock->shouldReceive('make')->andReturn($mockGateway);
-    });
 
     app(TierChangeService::class)->initiateTierChange($school, $plusTier, 'midtrans');
 

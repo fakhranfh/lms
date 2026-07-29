@@ -93,14 +93,14 @@ class TierChangeController extends Controller
         $gatewayName = $request->input('gateway_name');
 
         try {
-            $invoice = $this->tierChangeService->initiateTierChange(
+            $transaction = $this->tierChangeService->initiateTierChange(
                 $school,
                 $newTier,
                 $gatewayName
             );
 
-            if ($invoice && isset($invoice['redirect_url'])) {
-                return redirect($invoice['redirect_url']);
+            if ($transaction) {
+                return redirect()->route('school.payment.index', ['transaction' => $transaction]);
             }
 
             return back()->with('success', "Tier changed to {$newTier->name} successfully.");

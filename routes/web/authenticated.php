@@ -17,6 +17,7 @@ use App\Livewire\Courses\LessonViewer;
 use App\Livewire\Courses\ModuleForm;
 use App\Livewire\Dashboard;
 use App\Livewire\EditProfile;
+use App\Livewire\MyTransactions;
 use App\Livewire\Roles\RoleCreate;
 use App\Livewire\Roles\RoleEdit;
 use App\Livewire\Roles\RoleIndex;
@@ -34,6 +35,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/payment/{transaction}/confirm', [SchoolPaymentController::class, 'confirm'])->name('school.payment.confirm');
     Route::post('/payment/{transaction}/simulate', [SchoolPaymentController::class, 'simulate'])->name('school.payment.simulate');
     Route::get('/payment/{transaction}/stream', [SchoolPaymentController::class, 'stream'])->name('school.payment.stream');
+
+    Route::get('/transactions', MyTransactions::class)->name('transactions.index');
 });
 
 Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function () {

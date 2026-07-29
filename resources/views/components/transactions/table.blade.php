@@ -3,6 +3,8 @@
     'perPage' => 15,
     'sort' => 'created_at',
     'direction' => 'desc',
+    'filterTargets' => 'dateFrom,dateTo,status,transactionType,gatewayId,search,perPage',
+    'actionsView' => 'components.transactions.admin-actions',
 ])
 
 @php
@@ -30,7 +32,7 @@
 <!-- Table -->
 <div class="bg-surface rounded-lg border border-outline-variant overflow-hidden">
     <!-- Skeleton (shown while loading) -->
-    <div wire:loading.block wire:target="dateFrom,dateTo,status,transactionType,gatewayId,search,perPage">
+    <div wire:loading.block wire:target="{{ $filterTargets }}">
         <div class="grid border-b border-outline-variant bg-surface-container" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
             @for ($i = 0; $i < 6; $i++)
                 <div class="px-space-lg py-space-md"><div class="h-4 w-24 rounded bg-outline-variant/60 animate-pulse"></div></div>
@@ -46,7 +48,7 @@
     </div>
 
     <!-- Table (hidden while loading) -->
-    <div wire:loading.remove wire:target="dateFrom,dateTo,status,transactionType,gatewayId,search,perPage" class="overflow-x-auto">
+    <div wire:loading.remove wire:target="{{ $filterTargets }}" class="overflow-x-auto">
         <table class="w-full">
             <thead class="bg-surface-container border-b border-outline-variant">
                 <tr>
@@ -88,10 +90,8 @@
                                 {{ $transaction->status->label() }}
                             </span>
                         </td>
-                        <td class="px-space-lg py-space-md">
-                            <a href="{{ route('admin.transactions.show', $transaction) }}" class="inline-block px-space-md py-space-xs rounded-lg bg-outline-variant text-on-surface font-label-sm text-label-sm hover:bg-outline transition-colors">
-                                View
-                            </a>
+                        <td class="px-space-lg py-space-md space-x-space-sm whitespace-nowrap">
+                            @include($actionsView, ['transaction' => $transaction])
                         </td>
                     </tr>
                 @empty

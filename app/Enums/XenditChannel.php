@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-use App\Services\R2StorageService;
+use App\Models\PaymentChannel;
 
 enum XenditChannel: string
 {
@@ -60,11 +60,12 @@ enum XenditChannel: string
 
     /**
      * Public R2 URL for this channel's logo, uploaded by the
-     * `channels:sync-logos` artisan command.
+     * `channels:sync-logos` artisan command and persisted on the
+     * matching payment_channels row.
      */
-    public function logoUrl(): string
+    public function logoUrl(): ?string
     {
-        return app(R2StorageService::class)->getPublicUrl("channel-logos/{$this->value}");
+        return PaymentChannel::where('code', $this->value)->value('logo_url');
     }
 
     /**

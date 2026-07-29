@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\XenditChannel;
+use App\Models\PaymentChannel;
 use App\Services\R2StorageService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -64,6 +65,8 @@ class SyncChannelLogos extends Command
             $key = "channel-logos/{$channel->value}";
 
             $publicUrl = $r2Storage->uploadRawContent($key, $response->body(), $contentType);
+
+            PaymentChannel::where('code', $channel->value)->update(['logo_url' => $publicUrl]);
 
             $this->line("Uploaded {$channel->value} -> {$publicUrl}");
         }

@@ -115,7 +115,7 @@
                                             <dd x-text="formatRp(breakdown.vat_amount)"></dd>
                                         </div>
                                         <div class="flex items-center justify-between font-body-sm text-body-sm text-secondary">
-                                            <dt x-text="'Admin fee (' + formatPercent(breakdown.admin_fee_rate) + '%)'"></dt>
+                                            <dt>Admin fee</dt>
                                             <dd x-text="formatRp(breakdown.admin_fee_amount)"></dd>
                                         </div>
                                     </dl>

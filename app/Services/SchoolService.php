@@ -38,6 +38,7 @@ class SchoolService
         protected PaymentGatewayFactory $paymentGatewayFactory,
         protected R2StorageService $r2Storage,
         protected RoleService $roleService,
+        protected SettingsService $settingsService,
     ) {}
 
     /**
@@ -127,10 +128,11 @@ class SchoolService
         $data['tier_id'] = $tier->id;
 
         $subtotal = (float) $tier->price;
-        $vatRate = (float) config('billing.vat_rate');
-        $adminFeeRate = (float) config('billing.admin_fee_rate');
+        $vatRate = $this->settingsService->getVatRate();
+        $adminFeeType = $this->settingsService->getAdminFeeType();
+        $adminFeeRate = $this->settingsService->getAdminFeeRate();
         $vatAmount = $subtotal * $vatRate;
-        $adminFeeAmount = $subtotal * $adminFeeRate;
+        $adminFeeAmount = $this->settingsService->calculateAdminFee($subtotal);
 
         return $this->paymentTransactionRepository->create([
             'initiated_by' => $user->id,
@@ -142,8 +144,8 @@ class SchoolService
             'subtotal' => $subtotal,
             'vat_rate' => $vatRate,
             'vat_amount' => $vatAmount,
-            'admin_fee_rate' => $adminFeeRate,
-            'admin_fee_type' => AdminFeeType::Percentage,
+            'admin_fee_rate' => $adminFeeType === AdminFeeType::Percentage ? $adminFeeRate : 0,
+            'admin_fee_type' => $adminFeeType,
             'admin_fee_amount' => $adminFeeAmount,
             'tier_name' => $tier->name,
             'billing_period' => strtolower($tier->billing_period->label()),

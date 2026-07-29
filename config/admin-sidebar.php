@@ -78,6 +78,13 @@ return [
         'active_pattern' => 'admin.demo-credentials',
     ],
     [
+        'label' => 'Settings',
+        'route' => 'admin.settings.index',
+        'icon' => 'settings',
+        'active_pattern' => 'admin.settings.*',
+        'requires_permission' => 'settings.view',
+    ],
+    [
         'label' => 'Audit Logs',
         'route' => 'admin.audit-logs.index',
         'icon' => 'history',

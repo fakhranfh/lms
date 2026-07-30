@@ -609,7 +609,7 @@ class R2StorageService
     /**
      * Handle upload exceptions with appropriate messaging
      */
-    protected function handleUploadException(AwsException $e): void
+    protected function handleUploadException(AwsException $e): never
     {
         $statusCode = $e->getStatusCode();
         $errorCode = $e->getAwsErrorCode();

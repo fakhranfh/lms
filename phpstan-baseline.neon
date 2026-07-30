@@ -1,0 +1,901 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Instanceof between App\\Models\\User and Illuminate\\Contracts\\Auth\\MustVerifyEmail will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Actions/Fortify/UpdateUserProfileInformation.php
+
+		-
+			message: '#^Call to static method create\(\) on an unknown class App\\Models\\SchoolAdmin\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Console/Commands/CreateSchoolAdmin.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>domain" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Console/Commands/CreateSchoolAdmin.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\LessonMaterial\:\:\$file_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/DeleteR2Material.php
+
+		-
+			message: '#^Call to preg_quote\(\) is missing delimiter / to be effective\.$#'
+			identifier: argument.invalidPregQuote
+			count: 4
+			path: app/Console/Commands/DeleteRepositoryServiceController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Console/Commands/Generators/MigrationGenerator.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Connection\:\:getDoctrineSchemaManager\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Console/Commands/Helpers/SchemaHelper.php
+
+		-
+			message: '#^Parameter \#2 \$default of method Illuminate\\Console\\Command\:\:ask\(\) expects string\|null, int given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Console/Commands/MakeRepositoryServiceController.php
+
+		-
+			message: '#^Property App\\Console\\Commands\\MakeRepositoryServiceController\:\:\$generatedFiles is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Console/Commands/MakeRepositoryServiceController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between array\|string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Console/Commands/MakeRepositoryServiceController.php
+
+		-
+			message: '#^Variable \$name on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: app/Console/Commands/MakeRepositoryServiceController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Connection\:\:getDoctrineSchemaManager\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Console/Commands/Stubs/BladeCreateEditStubGenerator.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: app/Console/Commands/SyncChannelLogos.php
+
+		-
+			message: '#^Offset ''ALFAMART''\|''BCA''\|''BNI''\|''BRI''\|''DANA''\|''INDOMARET''\|''LINKAJA''\|''MANDIRI''\|''OVO''\|''PERMATA''\|''QRIS''\|''SHOPEEPAY'' on array\{QRIS\: ''https\://www\.google…'', OVO\: ''https\://www\.google…'', DANA\: ''https\://www\.google…'', LINKAJA\: ''https\://linkaja\.id…'', SHOPEEPAY\: ''https\://www\.google…'', BCA\: ''https\://bca\.co\.id…'', BNI\: ''https\://www\.google…'', BRI\: ''https\://www\.google…'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Console/Commands/SyncChannelLogos.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\LessonMaterial\:\:\$file_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/TestPresignedUpload.php
+
+		-
+			message: '#^Parameter \#1 \$lessonId of method App\\Services\\LessonMaterialService\:\:finalizeR2Upload\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Console/Commands/TestPresignedUpload.php
+
+		-
+			message: '#^Parameter \#1 \$lessonId of method App\\Services\\LessonMaterialService\:\:generatePresignedUploadUrl\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Console/Commands/TestPresignedUpload.php
+
+		-
+			message: '#^Parameter \#1 \$schoolId of method App\\Services\\R2StorageService\:\:checkSchoolQuota\(\) expects string\|null, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/TestPresignedUpload.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\LessonMaterial\:\:\$file_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/TestR2Upload.php
+
+		-
+			message: '#^Parameter \#1 \$lessonId of method App\\Services\\LessonMaterialService\:\:create\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/TestR2Upload.php
+
+		-
+			message: '#^Parameter \#1 \$schoolId of method App\\Services\\R2StorageService\:\:checkSchoolQuota\(\) expects string\|null, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/TestR2Upload.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PaymentChannel\:\:\$logo_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Enums/XenditChannel.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Services\\SubmissionService\:\:overrideScore\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/SubmissionController.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Services\\SubmissionService\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/SubmissionController.php
+
+		-
+			message: '#^Parameter \#1 \$submissionId of job class App\\Jobs\\GradeSubmissionJob constructor expects string in App\\Jobs\\GradeSubmissionJob\:\:dispatch\(\), int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/SubmissionController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and int will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/SubmissionController.php
+
+		-
+			message: '#^Parameter \#1 \$schoolId of method App\\Support\\CurrentSchool\:\:setSchoolId\(\) expects string\|null, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Middleware/ResolveSchoolFromDomain.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Requests/PricingTier/UpdatePricingTierRequest.php
+
+		-
+			message: '#^Parameter \#1 \$userId of method App\\Repositories\\PaymentTransaction\\PaymentTransactionRepository\:\:findPendingRegistrationForUser\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Responses/CustomAuthenticatedSessionResponse.php
+
+		-
+			message: '#^Method App\\Http\\Responses\\CustomVerifyEmailViewResponse\:\:toResponse\(\) should return Symfony\\Component\\HttpFoundation\\Response but returns Illuminate\\View\\View\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Responses/CustomVerifyEmailViewResponse.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Repositories\\Submission\\SubmissionRepositoryInterface\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Jobs/GradeSubmissionJob.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Livewire/Admin/AuditLogTable.php
+
+		-
+			message: '#^Property App\\Livewire\\Admin\\DemoCredentials\:\:\$selectedSchoolId \(string\|null\) does not accept int\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Livewire/Admin/DemoCredentials.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>total_amount" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Livewire/Admin/TransactionSummary.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Assignments\\AssignmentForm\:\:\$totalWeight\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Livewire/Assignments/AssignmentForm.php
+
+		-
+			message: '#^Call to function abort_if\(\) with true and 404 will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Livewire/Assignments/AssignmentForm.php
+
+		-
+			message: '#^Offset ''criterion'' on array\{criterion\: string, weight\: float\|int\|string, description\: string, max_points\: float\|int\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Livewire/Assignments/AssignmentForm.php
+
+		-
+			message: '#^Offset ''weight'' on array\{criterion\: string, weight\: float\|int\|string, description\: string, max_points\: float\|int\|string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Livewire/Assignments/AssignmentForm.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Services\\AssignmentService\:\:publish\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Assignments/AssignmentForm.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Services\\AssignmentService\:\:unpublish\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Assignments/AssignmentForm.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Services\\AssignmentService\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Assignments/AssignmentForm.php
+
+		-
+			message: '#^Result of \|\| is always true\.$#'
+			identifier: booleanOr.alwaysTrue
+			count: 1
+			path: app/Livewire/Assignments/AssignmentForm.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int and string will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Livewire/Assignments/AssignmentForm.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Services\\CourseService\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Courses/CourseForm.php
+
+		-
+			message: '#^Parameter \#3 \$excludeId of method App\\Services\\CourseService\:\:slugExists\(\) expects string\|null, int\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Courses/CourseForm.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: app/Livewire/Courses/LessonForm.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\)\: App\\Models\\LessonMaterial, Closure\(App\\Models\\LessonMaterial\)\: App\\Models\\LessonMaterial given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Courses/LessonForm.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:reject\(\) expects bool\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\)\: bool\)\|Illuminate\\Database\\Eloquent\\Model, Closure\(App\\Models\\LessonMaterial\)\: false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Courses/LessonForm.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Services\\LessonService\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Courses/LessonForm.php
+
+		-
+			message: '#^Parameter \#1 \$lessonId of method App\\Services\\LessonMaterialService\:\:finalizeR2Upload\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Courses/LessonForm.php
+
+		-
+			message: '#^Parameter \#1 \$lessonId of method App\\Services\\LessonMaterialService\:\:reorder\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Courses/LessonForm.php
+
+		-
+			message: '#^Parameter \#1 \$lessonId of method App\\Services\\R2StorageService\:\:generatePresignedPutUrl\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Livewire/Courses/LessonForm.php
+
+		-
+			message: '#^Property App\\Livewire\\Courses\\LessonForm\:\:\$durationMinutes \(string\|null\) does not accept int\<0, max\>\|null\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Livewire/Courses/LessonForm.php
+
+		-
+			message: '#^Result of \|\| is always true\.$#'
+			identifier: booleanOr.alwaysTrue
+			count: 1
+			path: app/Livewire/Courses/LessonForm.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and int\|null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Livewire/Courses/LessonForm.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between int and string will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Livewire/Courses/LessonForm.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Livewire/Courses/LessonForm.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:filter\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\)\: bool\)\|null, Closure\(App\\Models\\Lesson\)\: bool given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Courses/LessonViewer.php
+
+		-
+			message: '#^Parameter \#1 \$lessonId of method App\\Services\\LessonMaterialService\:\:getAccessedMaterialCount\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Livewire/Courses/LessonViewer.php
+
+		-
+			message: '#^Parameter \#1 \$lessonId of method App\\Services\\UserLessonService\:\:isCompletedBy\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Livewire/Courses/LessonViewer.php
+
+		-
+			message: '#^Parameter \#1 \$lessonId of method App\\Services\\UserLessonService\:\:markComplete\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Courses/LessonViewer.php
+
+		-
+			message: '#^Parameter \#1 \$materialId of method App\\Services\\LessonMaterialService\:\:isMaterialAccessedBy\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Courses/LessonViewer.php
+
+		-
+			message: '#^Parameter \#1 \$materialId of method App\\Services\\LessonMaterialService\:\:markMaterialAsAccessed\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Courses/LessonViewer.php
+
+		-
+			message: '#^Parameter \#1 \$moduleId of method App\\Services\\LessonService\:\:getByModulePublished\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Livewire/Courses/LessonViewer.php
+
+		-
+			message: '#^Parameter \#1 \$value of method Illuminate\\Support\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:search\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\)\: bool\)\|Illuminate\\Database\\Eloquent\\Model, Closure\(App\\Models\\Lesson\)\: bool given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Livewire/Courses/LessonViewer.php
+
+		-
+			message: '#^Property App\\Livewire\\Courses\\LessonViewer\:\:\$nextLesson \(App\\Models\\Lesson\|null\) does not accept Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Livewire/Courses/LessonViewer.php
+
+		-
+			message: '#^Property App\\Livewire\\Courses\\LessonViewer\:\:\$previousLesson \(App\\Models\\Lesson\|null\) does not accept Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Livewire/Courses/LessonViewer.php
+
+		-
+			message: '#^Property App\\Livewire\\Courses\\LessonViewer\:\:\$selectedMaterial \(App\\Models\\LessonMaterial\|null\) does not accept Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Livewire/Courses/LessonViewer.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Services\\ModuleService\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Courses/ModuleForm.php
+
+		-
+			message: '#^Parameter \#1 \$schoolId of method App\\Services\\R2StorageService\:\:checkSchoolQuota\(\) expects string\|null, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Dashboard.php
+
+		-
+			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\School\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/MySchools.php
+
+		-
+			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\School\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/MyTransactions.php
+
+		-
+			message: '#^Access to an undefined property Spatie\\Permission\\Models\\Role\:\:\$school_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Roles/RoleEdit.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/SchoolRegister.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Livewire/SchoolRegister.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Schools\\SchoolEdit\:\:\$school\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Livewire/Schools/SchoolEdit.php
+
+		-
+			message: '#^Call to an undefined method App\\Livewire\\Schools\\SchoolEdit\:\:resetComputed\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Livewire/Schools/SchoolEdit.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Schools\\SchoolIndex\:\:\$schools\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Schools/SchoolIndex.php
+
+		-
+			message: '#^Call to function abort_unless\(\) with false and 404 will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Livewire/Submissions/EssaySubmissionForm.php
+
+		-
+			message: '#^Parameter \#1 \$submissionId of job class App\\Jobs\\GradeSubmissionJob constructor expects string in App\\Jobs\\GradeSubmissionJob\:\:dispatch\(\), int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Submissions/EssaySubmissionForm.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and int will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Livewire/Submissions/EssaySubmissionForm.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Services\\SubmissionService\:\:overrideScore\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Submissions/OverrideScoreModal.php
+
+		-
+			message: '#^Access to an undefined property App\\Livewire\\Submissions\\SubmissionShow\:\:\$pastAttempts\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Submissions/SubmissionShow.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and int will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Livewire/Submissions/SubmissionShow.php
+
+		-
+			message: '#^Call to an undefined method Monolog\\Handler\\HandlerInterface\:\:setFormatter\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Logging/JsonLineFormatter.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_published\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Course.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$published_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Course.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$school_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Course.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$school_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/DemoLmsAccess.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_published\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Lesson.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$published_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Lesson.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_published\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Module.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$published_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Module.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Role\:\:\$protected\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/Role.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Role\:\:\$school_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Role.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$school_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/SchoolTier.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$school_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Subscription.php
+
+		-
+			message: '#^PHPDoc tag @use has invalid type Database\\Factories\\SubscriptionFactory\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/Subscription.php
+
+		-
+			message: '#^Type Database\\Factories\\SubscriptionFactory in generic type Illuminate\\Database\\Eloquent\\Factories\\HasFactory\<Database\\Factories\\SubscriptionFactory\> in PHPDoc tag @use is not subtype of template type TFactory of Illuminate\\Database\\Eloquent\\Factories\\Factory of trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: app/Models/Subscription.php
+
+		-
+			message: '#^PHPDoc tag @use has invalid type Database\\Factories\\SubscriptionTierFactory\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/SubscriptionTier.php
+
+		-
+			message: '#^Type Database\\Factories\\SubscriptionTierFactory in generic type Illuminate\\Database\\Eloquent\\Factories\\HasFactory\<Database\\Factories\\SubscriptionTierFactory\> in PHPDoc tag @use is not subtype of template type TFactory of Illuminate\\Database\\Eloquent\\Factories\\Factory of trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: app/Models/SubscriptionTier.php
+
+		-
+			message: '#^Anonymous function never returns string so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Observers/AuditableObserver.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Role\:\:\$protected\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Policies/RolePolicy.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Role\:\:\$school_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Policies/RolePolicy.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and int will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Policies/SubmissionPolicy.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\LessonMaterial\:\:\$file_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Repositories/LessonMaterial/LessonMaterialRepository.php
+
+		-
+			message: '#^Method App\\Repositories\\PaymentTransaction\\PaymentTransactionRepository\:\:getGatewayTotals\(\) should return Illuminate\\Support\\Collection\<string, array\{count\: int, total_amount\: float\}\> but returns Illuminate\\Support\\Collection\<\(int\|string\), array\{count\: int\<0, max\>, total_amount\: float\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Repositories/PaymentTransaction/PaymentTransactionRepository.php
+
+		-
+			message: '#^Method App\\Repositories\\PaymentTransaction\\PaymentTransactionRepository\:\:getStatusTotals\(\) should return Illuminate\\Support\\Collection\<string, object\{status\: App\\Enums\\PaymentStatus, total_count\: int, total_amount\: float\}\> but returns Illuminate\\Database\\Eloquent\\Collection\<string, App\\Models\\PaymentTransaction\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Repositories/PaymentTransaction/PaymentTransactionRepository.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>label" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Repositories/PaymentTransaction/PaymentTransactionRepository.php
+
+		-
+			message: '#^Method App\\Repositories\\Role\\RoleRepository\:\:create\(\) should return App\\Models\\Role but returns Spatie\\Permission\\Contracts\\Role\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Repositories/Role/RoleRepository.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between numeric\-string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/AiGrading/AbstractOpenAiCompatibleProvider.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Client\\Response\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/AiGrading/AbstractOpenAiCompatibleProvider.php
+
+		-
+			message: '#^Parameter \#1 \$schoolId of method App\\Repositories\\DemoLmsAccess\\DemoLmsAccessRepositoryInterface\:\:findValidForSchoolAndRole\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/DemoLmsAccessService.php
+
+		-
+			message: '#^Parameter \#1 \$schoolId of method App\\Repositories\\Role\\RoleRepositoryInterface\:\:firstOrCreateForSchool\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/DemoLmsAccessService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Carbon\\Carbon and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/DemoLmsAccessService.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Repositories\\Submission\\SubmissionRepositoryInterface\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/FailedJobHandler.php
+
+		-
+			message: '#^Method App\\Services\\LessonCompletionService\:\:getCourseProgress\(\) should return Illuminate\\Support\\Collection\<int, array\> but returns Illuminate\\Support\\Collection\<int, array\{module_id\: int, module_title\: string, lessons\: Illuminate\\Support\\Collection\<int, array\>, total_lessons\: mixed, completed_lessons\: 0\|1, progress_percentage\: 0\|float\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/LessonCompletionService.php
+
+		-
+			message: '#^Method App\\Services\\LessonCompletionService\:\:getModuleProgress\(\) should return Illuminate\\Support\\Collection\<int, array\> but returns Illuminate\\Support\\Collection\<int, array\{lesson_id\: int, lesson_title\: string, progress\: array\{total\: int, accessed\: int, percentage\: float, is_complete\: bool\}\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/LessonCompletionService.php
+
+		-
+			message: '#^Parameter \#1 \$lessonId of method App\\Services\\LessonMaterialService\:\:getAccessedMaterialCount\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/LessonCompletionService.php
+
+		-
+			message: '#^Parameter \#1 \$moduleId of method App\\Services\\LessonCompletionService\:\:getModuleProgress\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/LessonCompletionService.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Repositories\\LessonMaterial\\LessonMaterialRepository\:\:delete\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/LessonMaterialService.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Repositories\\LessonMaterial\\LessonMaterialRepository\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/LessonMaterialService.php
+
+		-
+			message: '#^Parameter \#1 \$gatewayId of method App\\Repositories\\PaymentGatewayTestTransaction\\PaymentGatewayTestTransactionRepositoryInterface\:\:findForGateway\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/PaymentGatewayConfigService.php
+
+		-
+			message: '#^Parameter \#1 \$gatewayId of method App\\Repositories\\PaymentGatewayTestTransaction\\PaymentGatewayTestTransactionRepositoryInterface\:\:storeForGateway\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/PaymentGatewayConfigService.php
+
+		-
+			message: '#^Parameter \#1 \$gatewayId of method App\\Repositories\\PaymentGatewayTestTransaction\\PaymentGatewayTestTransactionRepositoryInterface\:\:updateStatus\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/PaymentGatewayConfigService.php
+
+		-
+			message: '#^Method App\\Services\\PermissionService\:\:getAllGrouped\(\) should return Illuminate\\Database\\Eloquent\\Collection\<string, Illuminate\\Database\\Eloquent\\Collection\<int, Spatie\\Permission\\Models\\Permission\>\> but returns Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\), Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/PermissionService.php
+
+		-
+			message: '#^Parameter \#1 \$groupBy of method Illuminate\\Support\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:groupBy\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\)\: \(int\|string\|Stringable\|UnitEnum\)\)\|list\<Closure\|string\>\|string, Closure\(Spatie\\Permission\\Models\\Permission\)\: mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/PermissionService.php
+
+		-
+			message: '#^Type Illuminate\\Database\\Eloquent\\Collection\<int, Spatie\\Permission\\Models\\Permission\> in generic type Illuminate\\Database\\Eloquent\\Collection\<string, Illuminate\\Database\\Eloquent\\Collection\<int, Spatie\\Permission\\Models\\Permission\>\> in PHPDoc tag @return is not subtype of template type TModel of Illuminate\\Database\\Eloquent\\Model of class Illuminate\\Database\\Eloquent\\Collection\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: app/Services/PermissionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/SchoolService.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Repositories\\PaymentTransaction\\PaymentTransactionRepositoryInterface\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/SchoolService.php
+
+		-
+			message: '#^Parameter \#1 \$schoolId of method App\\Services\\RoleService\:\:createDefaultRolesForSchool\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/SchoolService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of method App\\Repositories\\School\\SchoolRepositoryInterface\:\:administers\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/SchoolService.php
+
+		-
+			message: '#^Parameter \#2 \$userId of method App\\Repositories\\School\\SchoolRepositoryInterface\:\:attachAdmin\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/SchoolService.php
+
+		-
+			message: '#^Method App\\Services\\StorageMonitoringService\:\:perSchoolBreakdown\(\) should return Illuminate\\Support\\Collection\<int, array\{school\: App\\Models\\School, used_bytes\: int, material_count\: int, largest_material_bytes\: int, last_upload_at\: string\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{school\: App\\Models\\School, used_bytes\: int, material_count\: int\<0, max\>, largest_material_bytes\: int, last_upload_at\: mixed\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/StorageMonitoringService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\|string\)\: array\{school\: App\\Models\\School, used_bytes\: int, material_count\: int\<0, max\>, largest_material_bytes\: int, last_upload_at\: mixed\}, Closure\(App\\Models\\School\)\: array\{school\: App\\Models\\School, used_bytes\: int, material_count\: int\<0, max\>, largest_material_bytes\: int, last_upload_at\: mixed\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/StorageMonitoringService.php
+
+		-
+			message: '#^Parameter \#1 \$schoolId of method App\\Repositories\\LessonMaterial\\LessonMaterialRepositoryInterface\:\:getActiveForSchool\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/StorageMonitoringService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>last_alert_threshold" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/StorageMonitoringService.php
+
+		-
+			message: '#^Parameter \#1 \$assignmentId of method App\\Repositories\\Submission\\SubmissionRepositoryInterface\:\:hasGradedSubmission\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/SubmissionService.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Repositories\\PaymentTransaction\\PaymentTransactionRepositoryInterface\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/SubscriptionPaymentService.php
+
+		-
+			message: '#^Method App\\Services\\TierChangeService\:\:applyImmediateChange\(\) never returns array so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Services/TierChangeService.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Repositories\\PaymentTransaction\\PaymentTransactionRepositoryInterface\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/TierChangeService.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Repositories\\SchoolTier\\SchoolTierRepositoryInterface\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/TierChangeService.php
+
+		-
+			message: '#^Parameter \#1 \$id of method App\\Repositories\\School\\SchoolRepositoryInterface\:\:update\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/TierChangeService.php
+
+		-
+			message: '#^Parameter \#1 \$schoolId of method App\\Repositories\\PaymentTransaction\\PaymentTransactionRepositoryInterface\:\:findLatestCompletedForSchool\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/TierChangeService.php
+
+		-
+			message: '#^Parameter \#1 \$schoolId of method App\\Repositories\\SchoolTier\\SchoolTierRepositoryInterface\:\:findPendingForSchool\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/TierChangeService.php
+
+		-
+			message: '#^Parameter \#1 \$schoolId of method App\\Repositories\\SchoolTier\\SchoolTierRepositoryInterface\:\:hasPendingForSchool\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/TierChangeService.php
+
+		-
+			message: '#^Parameter \#1 \$subscriptionId of method App\\Repositories\\PaymentTransaction\\PaymentTransactionRepositoryInterface\:\:findPendingBySubscriptionId\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/TierChangeService.php
+
+		-
+			message: '#^Parameter \#2 \$excludingUserId of method App\\Repositories\\Role\\RoleRepositoryInterface\:\:otherUsersHaveRole\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/UserService.php

@@ -16,6 +16,7 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - laravel/prompts (PROMPTS) - v0
 - laravel/pulse (PULSE) - v1
 - livewire/livewire (LIVEWIRE) - v4
+- larastan/larastan (LARASTAN) - v3
 - laravel/boost (BOOST) - v2
 - laravel/dusk (DUSK) - v8
 - laravel/mcp (MCP) - v0
@@ -118,7 +119,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
 - Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
-- Do not run the full test suite when the change is Blade-only with no backend interaction (controller, model, Livewire component, etc.).
 
 === laravel/core rules ===
 

@@ -17,11 +17,12 @@ class CreateSchoolAdmin extends Command
     public function handle()
     {
         $name = $this->option('name') ?? 'Admin User';
-        $email = $this->option('email') ?? 'admin@' . (School::first()?->domain ?? 'system.test');
+        $email = $this->option('email') ?? 'admin@'.(School::first()?->domain ?? 'system.test');
         $password = $this->option('password') ?? '123123';
 
         if (User::where('email', $email)->exists()) {
             $this->error("User with email {$email} already exists.");
+
             return 1;
         }
 
@@ -48,11 +49,11 @@ class CreateSchoolAdmin extends Command
                 $user->assignRole($adminRole);
             }
 
-            $this->info("✓ School admin created!");
+            $this->info('✓ School admin created!');
             $this->info("Email: {$user->email}");
             $this->info("School: {$school->name}");
         } else {
-            $this->info("✓ Global admin created!");
+            $this->info('✓ Global admin created!');
             $this->info("Email: {$user->email}");
         }
 

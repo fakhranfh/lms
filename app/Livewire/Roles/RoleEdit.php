@@ -76,10 +76,12 @@ class RoleEdit extends Component
 
     public function render(PermissionService $permissionService)
     {
+        $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
+
         return view('livewire.roles.role-edit', [
             'groupedPermissions' => $permissionService->getAllGrouped(),
         ])
-            ->extends('layouts.admin', ['topbarTitle' => 'Edit Role'])
-            ->section('admin-content');
+            ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => 'Edit Role'])
+            ->section($isAdminUser ? 'admin-content' : 'app-content');
     }
 }

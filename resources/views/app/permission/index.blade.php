@@ -1,12 +1,13 @@
-@extends('layouts.admin')
-
-@section('title', 'Permissions')
-
 @php
+    $isAdminUser = auth()->user()->hasRole(\App\Enums\RoleName::Admin);
     $topbarTitle = 'Permissions';
 @endphp
 
-@section('admin-content')
+@extends($isAdminUser ? 'layouts.admin' : 'layouts.app')
+
+@section('title', 'Permissions')
+
+@section($isAdminUser ? 'admin-content' : 'app-content')
     <div class="space-y-space-lg">
         <h1 class="font-headline-sm text-headline-sm text-on-surface">Permissions</h1>
 

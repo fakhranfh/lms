@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Users;
 
+use App\Enums\RoleName;
 use App\Models\User;
 use App\Services\RoleService;
 use App\Services\UserService;
@@ -50,10 +51,12 @@ class UserRoles extends Component
 
     public function render(RoleService $roleService)
     {
+        $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
+
         return view('livewire.users.user-roles', [
             'allRoles' => $roleService->get(['school_id' => $this->user->school_id]),
         ])
-            ->extends('layouts.admin', ['topbarTitle' => 'Assign Roles'])
-            ->section('admin-content');
+            ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => 'Assign Roles'])
+            ->section($isAdminUser ? 'admin-content' : 'app-content');
     }
 }

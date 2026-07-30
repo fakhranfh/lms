@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Roles;
 
+use App\Enums\RoleName;
 use App\Services\RoleService;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -34,10 +35,12 @@ class RoleIndex extends Component
 
     public function render(RoleService $roleService)
     {
+        $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
+
         return view('livewire.roles.role-index', [
             'roles' => $roleService->get(['school_id' => auth()->user()->school_id], ['permissions']),
         ])
-            ->extends('layouts.admin', ['topbarTitle' => 'Roles'])
-            ->section('admin-content');
+            ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => 'Roles'])
+            ->section($isAdminUser ? 'admin-content' : 'app-content');
     }
 }

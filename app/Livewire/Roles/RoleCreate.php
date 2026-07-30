@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Roles;
 
+use App\Enums\RoleName;
 use App\Http\Requests\Role\StoreRoleRequest;
 use App\Services\PermissionService;
 use App\Services\RoleService;
@@ -50,10 +51,12 @@ class RoleCreate extends Component
 
     public function render(PermissionService $permissionService)
     {
+        $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
+
         return view('livewire.roles.role-create', [
             'groupedPermissions' => $permissionService->getAllGrouped(),
         ])
-            ->extends('layouts.admin', ['topbarTitle' => 'New Role'])
-            ->section('admin-content');
+            ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => 'New Role'])
+            ->section($isAdminUser ? 'admin-content' : 'app-content');
     }
 }

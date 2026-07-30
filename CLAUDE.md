@@ -119,6 +119,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
 - Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
+- After developing a feature, run static analysis with `vendor/bin/phpstan analyse --memory-limit=1G` (Larastan) and fix any reported errors before finalizing changes.
 
 === laravel/core rules ===
 

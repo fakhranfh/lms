@@ -5,6 +5,7 @@ namespace App\Livewire\Users;
 use App\Enums\RoleName;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Services\UserService;
+use App\Support\CurrentSchool;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Computed;
@@ -65,7 +66,9 @@ class UserIndex extends Component
     #[Computed]
     public function availableRoles(): Collection
     {
-        return resolve(RoleRepositoryInterface::class)->getAll();
+        $schoolId = resolve(CurrentSchool::class)->getSchoolId() ?? auth()->user()->school_id;
+
+        return resolve(RoleRepositoryInterface::class)->get(['school_id' => $schoolId]);
     }
 
     public function render()

@@ -3,6 +3,7 @@
 use App\Enums\RoleName;
 use App\Livewire\Users\UserIndex;
 use App\Livewire\Users\UserRoles;
+use App\Models\School;
 use App\Models\User;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
@@ -60,6 +61,20 @@ test('users index filters users by role', function () {
         ->set('filterRole', $editorRole->id)
         ->assertSee('Editor User')
         ->assertDontSee('Viewer User');
+});
+
+test('users index role filter only lists roles scoped to the current school', function () {
+    $actor = actingAsUserManager(['users.view']);
+    App\Models\Role::create(['name' => 'own-school-role', 'guard_name' => 'web', 'school_id' => $actor->school_id]);
+
+    $otherSchool = School::factory()->create();
+    App\Models\Role::create(['name' => 'other-school-role', 'guard_name' => 'web', 'school_id' => $otherSchool->id]);
+
+    $component = Livewire::actingAs($actor)->test(UserIndex::class);
+
+    expect($component->instance()->availableRoles()->pluck('name')->all())
+        ->toContain('own-school-role')
+        ->not->toContain('other-school-role');
 });
 
 test('user with users.assign-roles can update a target user roles', function () {

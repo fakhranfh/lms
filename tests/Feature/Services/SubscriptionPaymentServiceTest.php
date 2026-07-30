@@ -25,7 +25,8 @@ it('creates a payment invoice for subscription', function () {
     $factory = Mockery::mock(PaymentGatewayFactory::class);
     $factory->shouldReceive('make')->andReturn($mockGateway);
 
-    $service = new SubscriptionPaymentService($factory);
+    app()->instance(PaymentGatewayFactory::class, $factory);
+    $service = app(SubscriptionPaymentService::class);
     $result = $service->createPaymentInvoice($subscription, $gateway);
 
     expect($result)->toEqual(['invoice_id' => 'inv_123']);
@@ -47,7 +48,8 @@ it('handles failed payments by expiring subscription', function () {
     ]);
 
     $factory = Mockery::mock(PaymentGatewayFactory::class);
-    $service = new SubscriptionPaymentService($factory);
+    app()->instance(PaymentGatewayFactory::class, $factory);
+    $service = app(SubscriptionPaymentService::class);
 
     $service->handleFailedPayment($transaction);
 

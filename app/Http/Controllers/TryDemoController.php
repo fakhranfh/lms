@@ -28,7 +28,7 @@ class TryDemoController extends Controller
      */
     public function login(Request $request, string $role): RedirectResponse
     {
-        $school = $this->schoolRepository->findByDomain(config('app.domain'));
+        $school = $this->schoolRepository->findByDomain('school.'.config('app.domain'));
 
         abort_if(! $school, 404);
 

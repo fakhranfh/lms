@@ -19,7 +19,8 @@ test('trying the demo as instructor generates access and logs the user in', func
     $this->seed(PricingTierSeeder::class);
 
     $rootDomain = config('app.domain');
-    $school = School::where('domain', $rootDomain)->first() ?? School::factory()->create(['domain' => $rootDomain]);
+    $demoDomain = "school.{$rootDomain}";
+    $school = School::where('domain', $demoDomain)->first() ?? School::factory()->create(['domain' => $demoDomain]);
 
     $response = $this->get("http://{$rootDomain}/try-demo/instructor");
 
@@ -33,7 +34,8 @@ test('trying the demo as school admin generates access and logs the user in', fu
     $this->seed(PricingTierSeeder::class);
 
     $rootDomain = config('app.domain');
-    $school = School::where('domain', $rootDomain)->first() ?? School::factory()->create(['domain' => $rootDomain]);
+    $demoDomain = "school.{$rootDomain}";
+    $school = School::where('domain', $demoDomain)->first() ?? School::factory()->create(['domain' => $demoDomain]);
 
     $response = $this->get("http://{$rootDomain}/try-demo/school-admin");
 
@@ -47,7 +49,8 @@ test('trying the demo as student generates access and logs the user in', functio
     $this->seed(PricingTierSeeder::class);
 
     $rootDomain = config('app.domain');
-    $school = School::where('domain', $rootDomain)->first() ?? School::factory()->create(['domain' => $rootDomain]);
+    $demoDomain = "school.{$rootDomain}";
+    $school = School::where('domain', $demoDomain)->first() ?? School::factory()->create(['domain' => $demoDomain]);
 
     $response = $this->get("http://{$rootDomain}/try-demo/student");
 
@@ -61,7 +64,8 @@ test('trying the demo reuses an existing valid access token instead of generatin
     $this->seed(PricingTierSeeder::class);
 
     $rootDomain = config('app.domain');
-    $school = School::where('domain', $rootDomain)->first() ?? School::factory()->create(['domain' => $rootDomain]);
+    $demoDomain = "school.{$rootDomain}";
+    $school = School::where('domain', $demoDomain)->first() ?? School::factory()->create(['domain' => $demoDomain]);
 
     $this->get("http://{$rootDomain}/try-demo/instructor");
     $firstAccess = DemoLmsAccess::where('school_id', $school->id)->where('role', 'instructor')->first();

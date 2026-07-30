@@ -44,6 +44,10 @@ class R2StorageService
                 'secret' => config('services.r2.secret_access_key'),
             ],
             'use_path_style_endpoint' => true,
+            'http' => [
+                'connect_timeout' => 5,
+                'timeout' => 10,
+            ],
         ]);
     }
 

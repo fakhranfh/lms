@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Services\R2StorageService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 
 class Dashboard extends Component
@@ -16,7 +17,11 @@ class Dashboard extends Component
         $school = $user?->school();
 
         if ($school && $user->hasRole(['Admin', 'School Admin', 'Instructor'])) {
-            $this->storageQuota = app(R2StorageService::class)->checkSchoolQuota($school->id);
+            $this->storageQuota = Cache::remember(
+                "school-storage-quota:{$school->id}",
+                now()->addMinutes(5),
+                fn () => app(R2StorageService::class)->checkSchoolQuota($school->id)
+            );
         }
     }
 

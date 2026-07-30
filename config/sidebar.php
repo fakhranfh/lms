@@ -15,6 +15,7 @@ return [
         'active_pattern' => 'courses.*|lessons.*',
         'requires_permission' => 'courses.view',
         'requires_school' => true,
+        'exclude_role' => 'School Admin',
     ],
     [
         'label' => 'Assignments',
@@ -22,7 +23,7 @@ return [
         'icon' => 'assignment',
         'active_pattern' => 'assignments.*',
         'requires_permission' => 'assignments.view',
-        'exclude_role' => 'Student',
+        'exclude_role' => ['Student', 'School Admin'],
         'requires_school' => true,
     ],
     [
@@ -32,6 +33,7 @@ return [
         'active_pattern' => 'grading-queue.*|submissions.override',
         'requires_permission' => 'submissions.grade',
         'requires_school' => true,
+        'exclude_role' => 'School Admin',
     ],
     [
         'label' => 'My Submissions',
@@ -39,7 +41,7 @@ return [
         'icon' => 'assignment_turned_in',
         'active_pattern' => 'submissions.*',
         'requires_permission' => 'submissions.view',
-        'exclude_role' => 'Instructor',
+        'exclude_role' => ['Instructor', 'School Admin'],
         'requires_school' => true,
     ],
     [
@@ -72,6 +74,7 @@ return [
         'icon' => 'apartment',
         'active_pattern' => 'manage.schools.index',
         'requires_role' => 'School Admin',
+        'requires_no_school' => true,
     ],
     [
         'label' => 'Transactions',
@@ -79,5 +82,6 @@ return [
         'icon' => 'receipt_long',
         'active_pattern' => 'transactions.index',
         'requires_role' => 'School Admin',
+        'requires_no_school' => true,
     ],
 ];

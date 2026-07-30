@@ -23,7 +23,7 @@ test('root domain school cannot be deleted', function () {
     $admin = User::factory()->create(['school_id' => null]);
     $admin->assignRole('Admin');
 
-    $school = School::where('domain', config('app.domain'))->firstOrFail();
+    $school = School::factory()->create(['domain' => config('app.domain')]);
 
     Livewire::actingAs($admin)
         ->test(SchoolIndex::class)

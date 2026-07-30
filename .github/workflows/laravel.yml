@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  lint:
+  pint-larastan:
 
     runs-on: ubuntu-latest
 

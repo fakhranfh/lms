@@ -26,8 +26,8 @@ class UserRepository implements UserRepositoryInterface
 
         if (! empty($filters['search'])) {
             $query->where(function ($query) use ($filters): void {
-                $query->whereRaw('name ILIKE ?', ["%{$filters['search']}%"])
-                    ->orWhereRaw('email ILIKE ?', ["%{$filters['search']}%"]);
+                $query->whereLike('name', "%{$filters['search']}%", caseSensitive: false)
+                    ->orWhereLike('email', "%{$filters['search']}%", caseSensitive: false);
             });
         }
 

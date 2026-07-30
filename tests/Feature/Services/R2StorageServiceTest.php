@@ -77,19 +77,31 @@ describe('R2StorageService', function () {
 
     describe('getPublicUrl', function () {
         test('uses the configured custom domain', function () {
+            $original = config('services.r2.custom_domain');
             config(['services.r2.custom_domain' => 'https://cdn.example.com']);
             $service = app(R2StorageService::class);
 
-            expect($service->getPublicUrl('lessons/abc/materials/file.pdf'))
-                ->toBe('https://cdn.example.com/lessons/abc/materials/file.pdf');
+            try {
+                expect($service->getPublicUrl('lessons/abc/materials/file.pdf'))
+                    ->toBe('https://cdn.example.com/lessons/abc/materials/file.pdf');
+            } finally {
+                config(['services.r2.custom_domain' => $original]);
+                app()->forgetInstance(R2StorageService::class);
+            }
         });
 
         test('falls back to the raw R2 domain when no custom domain is set', function () {
+            $original = config('services.r2.custom_domain');
             config(['services.r2.custom_domain' => '']);
             $service = app(R2StorageService::class);
 
-            expect($service->getPublicUrl('lessons/abc/materials/file.pdf'))
-                ->toContain('r2.cloudflarestorage.com/lessons/abc/materials/file.pdf');
+            try {
+                expect($service->getPublicUrl('lessons/abc/materials/file.pdf'))
+                    ->toContain('r2.cloudflarestorage.com/lessons/abc/materials/file.pdf');
+            } finally {
+                config(['services.r2.custom_domain' => $original]);
+                app()->forgetInstance(R2StorageService::class);
+            }
         });
     });
 });

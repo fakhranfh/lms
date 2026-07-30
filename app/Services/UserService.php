@@ -9,6 +9,7 @@ use App\Repositories\Role\RoleRepositoryInterface;
 use App\Repositories\User\UserRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
@@ -73,6 +74,15 @@ class UserService
     public function getAllWithRoles(): Collection
     {
         return $this->userRepository->getAll(['roles']);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @param  array<string>  $with
+     */
+    public function paginate(array $filters = [], array $with = [], int $perPage = 15): LengthAwarePaginator
+    {
+        return $this->userRepository->paginate($filters, $with, $perPage);
     }
 
     public function find(string $id): ?User

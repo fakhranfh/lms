@@ -4,6 +4,7 @@ namespace App\Repositories\User;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Spatie\Permission\Models\Role;
 
 class UserRepository implements UserRepositoryInterface
@@ -13,6 +14,34 @@ class UserRepository implements UserRepositoryInterface
         $user->update($data);
 
         return $user;
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @param  array<string>  $with
+     */
+    public function paginate(array $filters = [], array $with = [], int $perPage = 15): LengthAwarePaginator
+    {
+        $query = User::with($with);
+
+        if (! empty($filters['search'])) {
+            $query->where(function ($query) use ($filters): void {
+                $query->whereRaw('name ILIKE ?', ["%{$filters['search']}%"])
+                    ->orWhereRaw('email ILIKE ?', ["%{$filters['search']}%"]);
+            });
+        }
+
+        if (! empty($filters['role_id'])) {
+            $query->whereHas('roles', function ($query) use ($filters): void {
+                $query->where('roles.id', $filters['role_id']);
+            });
+        }
+
+        if (! empty($filters['sort']) && ! empty($filters['direction'])) {
+            $query->orderBy($filters['sort'], $filters['direction']);
+        }
+
+        return $query->paginate($perPage);
     }
 
     public function setPendingEmail(User $user, string $pendingEmail): void

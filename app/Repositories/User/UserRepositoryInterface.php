@@ -5,6 +5,7 @@ namespace App\Repositories\User;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 interface UserRepositoryInterface
 {
@@ -15,6 +16,14 @@ interface UserRepositoryInterface
     public function confirmPendingEmail(User $user): void;
 
     public function getAll(array $with = []): Collection;
+
+    /**
+     * Get users with pagination, filters, and eager-loaded relationships.
+     *
+     * @param  array<string, mixed>  $filters
+     * @param  array<string>  $with
+     */
+    public function paginate(array $filters = [], array $with = [], int $perPage = 15): LengthAwarePaginator;
 
     public function find(string $id): ?User;
 

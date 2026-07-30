@@ -34,6 +34,34 @@ test('users index lists users with their roles', function () {
         ->assertSee('editor');
 });
 
+test('users index search filters users by name or email', function () {
+    $actor = actingAsUserManager(['users.view']);
+    User::factory()->create(['name' => 'Jane Target', 'email' => 'jane@example.com']);
+    User::factory()->create(['name' => 'Someone Else', 'email' => 'else@example.com']);
+
+    Livewire::actingAs($actor)->test(UserIndex::class)
+        ->set('search', 'Jane')
+        ->assertSee('Jane Target')
+        ->assertDontSee('Someone Else');
+});
+
+test('users index filters users by role', function () {
+    $actor = actingAsUserManager(['users.view']);
+    $editorRole = Role::create(['name' => 'editor', 'guard_name' => 'web']);
+    $viewerRole = Role::create(['name' => 'viewer', 'guard_name' => 'web']);
+
+    $editor = User::factory()->create(['name' => 'Editor User']);
+    $editor->assignRole($editorRole);
+
+    $viewer = User::factory()->create(['name' => 'Viewer User']);
+    $viewer->assignRole($viewerRole);
+
+    Livewire::actingAs($actor)->test(UserIndex::class)
+        ->set('filterRole', $editorRole->id)
+        ->assertSee('Editor User')
+        ->assertDontSee('Viewer User');
+});
+
 test('user with users.assign-roles can update a target user roles', function () {
     $actor = actingAsUserManager(['users.assign-roles']);
     $target = User::factory()->create();

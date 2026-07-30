@@ -469,6 +469,12 @@ parameters:
 			path: app/Livewire/Schools/SchoolIndex.php
 
 		-
+			message: '#^Access to an undefined property App\\Livewire\\Users\\UserIndex\:\:\$users\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/Users/UserIndex.php
+
+		-
 			message: '#^Call to function abort_unless\(\) with false and 404 will always evaluate to false\.$#'
 			identifier: function.impossibleType
 			count: 1

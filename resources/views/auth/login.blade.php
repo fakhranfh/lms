@@ -6,7 +6,9 @@
 
 @section('content')
 
-    @include('partials.topbar')
+    @unless (\App\Support\RootDomains::isSubdomain())
+        @include('partials.topbar')
+    @endunless
 
     <main class="flex flex-1 items-center justify-center p-gutter">
     <div class="w-full max-w-[400px] bg-surface rounded-xl p-space-xl border border-outline-variant shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
@@ -62,17 +64,21 @@
                 <span id="loginArrow" class="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
             </button>
         </form>
-        <!-- Register Link -->
-        <div class="mt-space-xl text-center">
-            <p class="font-body-sm text-body-sm text-secondary">
-                Don't have an account?
-                <a class="text-primary font-medium hover:underline transition-colors" href="{{ route('get-started'.\App\Support\RootDomains::currentSuffix()) }}">Register</a>
-            </p>
-        </div>
+        @unless (\App\Support\RootDomains::isSubdomain())
+            <!-- Register Link -->
+            <div class="mt-space-xl text-center">
+                <p class="font-body-sm text-body-sm text-secondary">
+                    Don't have an account?
+                    <a class="text-primary font-medium hover:underline transition-colors" href="{{ route('get-started'.\App\Support\RootDomains::currentSuffix()) }}">Register</a>
+                </p>
+            </div>
+        @endunless
     </div>
     </main>
 
-    @include('partials.footer')
+    @unless (\App\Support\RootDomains::isSubdomain())
+        @include('partials.footer')
+    @endunless
 @endsection
 
 @push('scripts')

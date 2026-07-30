@@ -10,6 +10,6 @@ foreach (RootDomains::all() as $index => $rootDomain) {
     $suffix = $index === 0 ? '' : ".alt{$index}";
 
     Route::domain('{school}.'.$rootDomain)->group(function () use ($suffix) {
-        Route::view('/', 'landing-page')->name("school.home{$suffix}");
+        Route::redirect('/', '/login')->name("school.home{$suffix}");
     });
 }

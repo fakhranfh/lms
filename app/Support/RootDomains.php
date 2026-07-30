@@ -57,4 +57,14 @@ class RootDomains
     {
         return self::suffixFor(self::match(Request::getHost()));
     }
+
+    /**
+     * Whether the current request's host is a subdomain of a configured
+     * root domain (e.g. a school's tenant subdomain) rather than the
+     * root domain itself.
+     */
+    public static function isSubdomain(): bool
+    {
+        return Request::getHost() !== self::match(Request::getHost());
+    }
 }

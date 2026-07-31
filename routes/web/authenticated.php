@@ -56,7 +56,7 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
 
     Route::get('/users', UserIndex::class)->middleware('permission:users.view')->name('users.index');
     Route::get('/users/create', UserForm::class)->middleware('permission:users.create')->name('users.create');
-    Route::get('/users/import', UserImport::class)->middleware('permission:users.import')->name('users.import');
+    Route::get('/users/import/{role}', UserImport::class)->whereIn('role', ['teacher', 'student'])->middleware('permission:users.import')->name('users.import');
     Route::get('/users/{id}/edit', UserForm::class)->middleware('permission:users.edit')->name('users.edit');
     Route::get('/users/{id}/roles', UserRoles::class)->middleware('permission:users.assign-roles')->name('users.roles.edit');
 

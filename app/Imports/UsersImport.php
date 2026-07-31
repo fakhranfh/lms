@@ -2,8 +2,6 @@
 
 namespace App\Imports;
 
-use App\Enums\RoleName;
-use App\Models\Role;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\UploadedFile;
@@ -32,6 +30,7 @@ class UsersImport implements OnEachRow, SkipsOnError, SkipsOnFailure, WithHeadin
     public function __construct(
         private readonly UserService $userService,
         private readonly string $schoolId,
+        private readonly ?int $roleId,
         private readonly array $photosByFilename = [],
     ) {}
 
@@ -39,14 +38,6 @@ class UsersImport implements OnEachRow, SkipsOnError, SkipsOnFailure, WithHeadin
     {
         $rowNumber = $row->getIndex() + 1;
         $data = $row->toArray();
-
-        $roleName = ucfirst(strtolower(trim((string) ($data['role'] ?? ''))));
-
-        if (! in_array($roleName, [RoleName::Teacher->value, RoleName::Student->value], true)) {
-            $this->rowErrors[] = "Row {$rowNumber}: role must be Teacher or Student, got \"{$data['role']}\".";
-
-            return;
-        }
 
         $email = trim((string) $data['email']);
 
@@ -56,8 +47,6 @@ class UsersImport implements OnEachRow, SkipsOnError, SkipsOnFailure, WithHeadin
             return;
         }
 
-        $roleId = Role::where('school_id', $this->schoolId)->where('name', $roleName)->value('id');
-
         $photoFilename = trim((string) ($data['photo_filename'] ?? ''));
         $photo = $photoFilename !== '' ? ($this->photosByFilename[$photoFilename] ?? null) : null;
 
@@ -66,7 +55,7 @@ class UsersImport implements OnEachRow, SkipsOnError, SkipsOnFailure, WithHeadin
             'email' => $email,
             'password' => Str::random(24),
             'school_id' => $this->schoolId,
-        ], $photo, $roleId ? [$roleId] : []);
+        ], $photo, $this->roleId ? [$this->roleId] : []);
 
         $this->createdCount++;
     }
@@ -79,7 +68,6 @@ class UsersImport implements OnEachRow, SkipsOnError, SkipsOnFailure, WithHeadin
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
-            'role' => ['required', 'string'],
         ];
     }
 }

@@ -3,26 +3,39 @@
 namespace App\Livewire\Users;
 
 use App\Enums\RoleName;
-use App\Imports\UsersImport;
-use App\Services\UserService;
+use App\Repositories\User\UserImportRepositoryInterface;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use Maatwebsite\Excel\Facades\Excel;
 
 class UserImport extends Component
 {
     use WithFileUploads;
 
-    public $spreadsheet = null;
+    public string $role;
 
-    /** @var array<int, mixed> */
+    public ?UploadedFile $spreadsheet = null;
+
+    /** @var array<int, UploadedFile> */
     public array $photos = [];
 
     public ?int $createdCount = null;
 
     /** @var array<int, string> */
     public array $importErrors = [];
+
+    public function mount(string $role): void
+    {
+        abort_unless(in_array($role, ['teacher', 'student'], true), 404);
+
+        $this->role = $role;
+    }
+
+    public function targetRole(): RoleName
+    {
+        return $this->role === 'teacher' ? RoleName::Teacher : RoleName::Student;
+    }
 
     protected function rules(): array
     {
@@ -33,7 +46,7 @@ class UserImport extends Component
         ];
     }
 
-    public function import(UserService $userService): void
+    public function import(UserImportRepositoryInterface $userImportRepository): void
     {
         abort_unless(auth()->user()->can('users.import'), 403);
 
@@ -45,13 +58,22 @@ class UserImport extends Component
             $this->rules()
         )->validate();
 
+        if ($columnError = $userImportRepository->validateColumns($this->spreadsheet)) {
+            $this->importErrors = [$columnError];
+
+            return;
+        }
+
         $photosByFilename = collect($this->photos)
-            ->mapWithKeys(fn ($photo) => [$photo->getClientOriginalName() => $photo])
+            ->mapWithKeys(fn (UploadedFile $photo) => [$photo->getClientOriginalName() => $photo])
             ->all();
 
-        $import = new UsersImport($userService, auth()->user()->school_id, $photosByFilename);
-
-        Excel::import($import, $this->spreadsheet);
+        $import = $userImportRepository->import(
+            $this->spreadsheet,
+            $this->targetRole(),
+            auth()->user()->school_id,
+            $photosByFilename,
+        );
 
         $this->createdCount = $import->createdCount;
 
@@ -70,9 +92,12 @@ class UserImport extends Component
     public function render()
     {
         $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
+        $title = $this->role === 'teacher' ? 'Import Teachers' : 'Import Students';
 
-        return view('livewire.users.user-import')
-            ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => 'Import Users'])
+        return view('livewire.users.user-import', [
+            'templateUrl' => asset("templates/users-import-template-{$this->role}.xlsx"),
+        ])
+            ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => $title])
             ->section($isAdminUser ? 'admin-content' : 'app-content');
     }
 }

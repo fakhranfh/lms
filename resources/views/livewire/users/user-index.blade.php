@@ -12,7 +12,27 @@
         <h1 class="font-headline-sm text-headline-sm text-on-surface">Users</h1>
         <div class="flex items-center gap-space-md">
             @can('users.import')
-                <a href="{{ route('users.import') }}" class="px-space-lg py-space-sm border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors">Import Users</a>
+                <div x-data="{ open: false }" class="relative">
+                    <button type="button" @click="open = !open" @click.outside="open = false"
+                        class="px-space-lg py-space-sm border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors inline-flex items-center gap-space-2xs">
+                        <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                        Import Users
+                        <span class="material-symbols-outlined text-[18px]">expand_more</span>
+                    </button>
+                    <div x-show="open" x-cloak x-transition
+                        class="absolute right-0 mt-space-xs w-56 bg-surface border border-outline-variant rounded-lg shadow-lg z-10 overflow-hidden">
+                        <a href="{{ route('users.import', ['role' => 'teacher']) }}"
+                            class="flex items-center gap-space-sm px-space-lg py-space-sm font-body-md text-body-md text-on-surface hover:bg-surface-container transition-colors">
+                            <span class="material-symbols-outlined text-[18px] text-primary">school</span>
+                            Import Teachers
+                        </a>
+                        <a href="{{ route('users.import', ['role' => 'student']) }}"
+                            class="flex items-center gap-space-sm px-space-lg py-space-sm font-body-md text-body-md text-on-surface hover:bg-surface-container transition-colors">
+                            <span class="material-symbols-outlined text-[18px] text-primary">groups</span>
+                            Import Students
+                        </a>
+                    </div>
+                </div>
             @endcan
             @can('users.create')
                 <a href="{{ route('users.create') }}" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">Create User</a>

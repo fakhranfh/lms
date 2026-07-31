@@ -227,7 +227,7 @@ test('editing a user requires users.edit permission', function () {
         ->assertForbidden();
 });
 
-test('user with users.import can bulk import teachers and students with photos', function () {
+test('user with users.import can bulk import teachers with photos on the teacher import page', function () {
     if (! extension_loaded('gd')) {
         $this->markTestSkipped('GD extension not installed');
     }
@@ -240,30 +240,47 @@ test('user with users.import can bulk import teachers and students with photos',
 
     $actor = actingAsUserManager(['users.import']);
     App\Models\Role::firstOrCreate(['name' => RoleName::Teacher->value, 'guard_name' => 'web', 'school_id' => $actor->school_id]);
-    App\Models\Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $actor->school_id]);
 
-    $csv = "name,email,role,photo_filename\n"
-        ."Jane Teach,jane.teach@example.com,Teacher,jane.jpg\n"
-        ."John Stud,john.stud@example.com,Student,\n";
+    $csv = "name,email,photo_filename\n"
+        ."Jane Teach,jane.teach@example.com,jane.jpg\n"
+        ."John Teach,john.teach@example.com,\n";
 
     $spreadsheet = UploadedFile::fake()->createWithContent('users.csv', $csv);
     $photo = UploadedFile::fake()->image('jane.jpg', 100, 100);
 
-    Livewire::actingAs($actor)->test(UserImport::class)
+    Livewire::actingAs($actor)->test(UserImport::class, ['role' => 'teacher'])
         ->set('spreadsheet', $spreadsheet)
         ->set('photos', [$photo])
         ->call('import')
         ->assertSet('createdCount', 2);
 
     $teacher = User::where('email', 'jane.teach@example.com')->first();
-    $student = User::where('email', 'john.stud@example.com')->first();
+    $otherTeacher = User::where('email', 'john.teach@example.com')->first();
 
     expect($teacher)->not->toBeNull()
         ->and($teacher->hasRole(RoleName::Teacher))->toBeTrue()
         ->and($teacher->profile_photo_path)->toBe('https://r2.example.com/profile-photos/jane.jpg')
-        ->and($student)->not->toBeNull()
-        ->and($student->hasRole(RoleName::Student))->toBeTrue()
-        ->and($student->profile_photo_path)->toBeNull();
+        ->and($otherTeacher)->not->toBeNull()
+        ->and($otherTeacher->hasRole(RoleName::Teacher))->toBeTrue()
+        ->and($otherTeacher->profile_photo_path)->toBeNull();
+});
+
+test('user with users.import can bulk import students on the student import page', function () {
+    $actor = actingAsUserManager(['users.import']);
+    App\Models\Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $actor->school_id]);
+
+    $csv = "name,email,photo_filename\nAlex Stud,alex.stud@example.com,\n";
+    $spreadsheet = UploadedFile::fake()->createWithContent('users.csv', $csv);
+
+    Livewire::actingAs($actor)->test(UserImport::class, ['role' => 'student'])
+        ->set('spreadsheet', $spreadsheet)
+        ->call('import')
+        ->assertSet('createdCount', 1);
+
+    $student = User::where('email', 'alex.stud@example.com')->first();
+
+    expect($student)->not->toBeNull()
+        ->and($student->hasRole(RoleName::Student))->toBeTrue();
 });
 
 test('importing skips rows with an email that already exists and reports it', function () {
@@ -271,12 +288,11 @@ test('importing skips rows with an email that already exists and reports it', fu
     App\Models\Role::firstOrCreate(['name' => RoleName::Teacher->value, 'guard_name' => 'web', 'school_id' => $actor->school_id]);
     User::factory()->create(['email' => 'existing@example.com']);
 
-    $csv = "name,email,role,photo_filename\n"
-        ."Existing Person,existing@example.com,Teacher,\n";
+    $csv = "name,email,photo_filename\nExisting Person,existing@example.com,\n";
 
     $spreadsheet = UploadedFile::fake()->createWithContent('users.csv', $csv);
 
-    $component = Livewire::actingAs($actor)->test(UserImport::class)
+    $component = Livewire::actingAs($actor)->test(UserImport::class, ['role' => 'teacher'])
         ->set('spreadsheet', $spreadsheet)
         ->call('import')
         ->assertSet('createdCount', 0);
@@ -284,13 +300,35 @@ test('importing skips rows with an email that already exists and reports it', fu
     expect($component->get('importErrors'))->not->toBeEmpty();
 });
 
-test('importing users requires users.import permission', function () {
-    $actor = actingAsUserManager(['users.view']);
+test('importing rejects a spreadsheet with the wrong columns', function () {
+    $actor = actingAsUserManager(['users.import']);
+
     $csv = "name,email,role,photo_filename\nJane Teach,jane.teach@example.com,Teacher,\n";
     $spreadsheet = UploadedFile::fake()->createWithContent('users.csv', $csv);
 
-    Livewire::actingAs($actor)->test(UserImport::class)
+    $component = Livewire::actingAs($actor)->test(UserImport::class, ['role' => 'teacher'])
+        ->set('spreadsheet', $spreadsheet)
+        ->call('import')
+        ->assertSet('createdCount', null);
+
+    expect($component->get('importErrors'))->not->toBeEmpty();
+    expect(User::where('email', 'jane.teach@example.com')->exists())->toBeFalse();
+});
+
+test('importing users requires users.import permission', function () {
+    $actor = actingAsUserManager(['users.view']);
+    $csv = "name,email,photo_filename\nJane Teach,jane.teach@example.com,\n";
+    $spreadsheet = UploadedFile::fake()->createWithContent('users.csv', $csv);
+
+    Livewire::actingAs($actor)->test(UserImport::class, ['role' => 'teacher'])
         ->set('spreadsheet', $spreadsheet)
         ->call('import')
         ->assertForbidden();
+});
+
+test('the import page rejects an unknown role', function () {
+    $actor = actingAsUserManager(['users.import']);
+
+    Livewire::actingAs($actor)->test(UserImport::class, ['role' => 'admin'])
+        ->assertStatus(404);
 });

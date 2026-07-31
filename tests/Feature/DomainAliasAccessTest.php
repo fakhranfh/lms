@@ -10,10 +10,11 @@ test('admin extra domain is served directly, without redirecting', function () {
     $this->get('http://admin.lms.io/login')->assertOk();
 });
 
-test('school subdomain on extra domain is served directly, without redirecting', function () {
+test('school subdomain on extra domain redirects to login, without touching the primary domain', function () {
     School::factory()->create(['domain' => 'school1.lms.local']);
 
-    $this->get('http://school1.lms.io/')->assertOk();
+    $this->get('http://school1.lms.io/')
+        ->assertRedirect('http://school1.lms.io/login');
 });
 
 test('canonical root domain still works', function () {

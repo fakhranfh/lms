@@ -20,7 +20,7 @@ test('a known school subdomain resolves its school', function () {
     $domain = 'school1.'.config('app.domain');
     $school = School::factory()->create(['domain' => $domain]);
 
-    $this->get("http://{$domain}/")->assertOk();
+    $this->get("http://{$domain}/")->assertRedirect("http://{$domain}/login");
 
     expect(app(CurrentSchool::class)->getSchoolId())->toBe($school->id);
 });

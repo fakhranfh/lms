@@ -68,4 +68,12 @@ class PermissionRepository implements PermissionRepositoryInterface
             ->where('name', 'like', '%view')
             ->get();
     }
+
+    /**
+     * @return Collection<int, Permission>
+     */
+    public function getByGroups(array $groups): Collection
+    {
+        return Permission::whereIn('group', $groups)->get();
+    }
 }

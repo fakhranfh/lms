@@ -38,7 +38,7 @@ enum RoleName: string
     {
         return match ($this) {
             self::Admin => [], // resolved by the seeder as "all permissions except settings.billing"
-            self::SchoolAdmin => [], // resolved by the seeder as "all permissions except settings.billing", scoped to the school
+            self::SchoolAdmin => [], // resolved by the seeder via permissionGroups()
             self::Instructor => [
                 'courses.create', 'courses.view', 'courses.edit', 'courses.delete',
                 'modules.create', 'modules.view', 'modules.edit', 'modules.delete',
@@ -50,6 +50,20 @@ enum RoleName: string
             self::Student => [
                 'courses.view', 'modules.view', 'lessons.view', 'assignments.view', 'submissions.view',
             ],
+        };
+    }
+
+    /**
+     * Permission groups granted to this role by DefaultRoleSeeder, for roles
+     * whose access is scoped by permission group rather than by name.
+     *
+     * @return array<int, string>
+     */
+    public function permissionGroups(): array
+    {
+        return match ($this) {
+            self::SchoolAdmin => ['Users', 'Roles', 'Permissions'],
+            default => [],
         };
     }
 }

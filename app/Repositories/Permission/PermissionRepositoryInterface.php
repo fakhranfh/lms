@@ -42,4 +42,12 @@ interface PermissionRepositoryInterface
      * @return Collection<int, Permission>
      */
     public function getViewPermissionsFor(string $namespace): Collection;
+
+    /**
+     * Permissions belonging to the given groups (e.g. "Users", "Roles").
+     *
+     * @param  array<int, string>  $groups
+     * @return Collection<int, Permission>
+     */
+    public function getByGroups(array $groups): Collection;
 }

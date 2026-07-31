@@ -74,7 +74,9 @@ class RoleService
             $schoolAdminRole = $this->roleRepository->firstOrCreateForSchool(
                 $schoolId, RoleName::SchoolAdmin->value, ['slug' => RoleName::SchoolAdmin->slug()]
             );
-            $schoolAdminRole->syncPermissions($this->permissionRepository->getAllExcept('settings.billing'));
+            $schoolAdminRole->syncPermissions(
+                $this->permissionRepository->getByGroups(RoleName::SchoolAdmin->permissionGroups())
+            );
 
             $instructorRole = $this->roleRepository->firstOrCreateForSchool(
                 $schoolId, RoleName::Instructor->value, ['slug' => RoleName::Instructor->slug()]

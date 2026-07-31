@@ -152,8 +152,8 @@ describe('School-Scoped RBAC', function () {
             $user = User::factory()->create(['school_id' => $school->id]);
 
             $role = Role::create([
-                'name' => 'instructor_'.$school->id,
-                'slug' => 'instructor-'.$school->id,
+                'name' => 'teacher_'.$school->id,
+                'slug' => 'teacher-'.$school->id,
                 'guard_name' => 'web',
                 'school_id' => $school->id,
             ]);

@@ -39,7 +39,7 @@ class SubmissionController extends Controller
         );
 
         return response()->json([
-            'data' => $submission->only(['id', 'status', 'ai_score', 'ai_feedback', 'instructor_score', 'instructor_feedback', 'graded_at']),
+            'data' => $submission->only(['id', 'status', 'ai_score', 'ai_feedback', 'teacher_score', 'teacher_feedback', 'graded_at']),
         ]);
     }
 
@@ -47,8 +47,8 @@ class SubmissionController extends Controller
     {
         $updated = $this->submissionService->overrideScore(
             $submission->id,
-            (float) $request->validated('instructor_score'),
-            $request->validated('instructor_feedback'),
+            (float) $request->validated('teacher_score'),
+            $request->validated('teacher_feedback'),
             $request->user()
         );
 

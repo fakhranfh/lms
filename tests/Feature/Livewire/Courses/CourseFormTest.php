@@ -13,23 +13,23 @@ class CourseFormTest extends TestCase
 {
     private School $school;
 
-    private User $instructor;
+    private User $teacher;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->school = School::factory()->create();
-        $this->instructor = User::factory()
+        $this->teacher = User::factory()
             ->forSchool($this->school)
             ->create();
 
-        $this->actingAs($this->instructor);
+        $this->actingAs($this->teacher);
     }
 
     public function test_create_course_component_renders(): void
     {
-        $this->instructor->givePermissionTo('courses.create');
+        $this->teacher->givePermissionTo('courses.create');
 
         Livewire::test(CourseForm::class)
             ->assertStatus(200)
@@ -42,7 +42,7 @@ class CourseFormTest extends TestCase
             ->for($this->school)
             ->create(['title' => 'Test Course Title']);
 
-        $this->instructor->givePermissionTo('courses.edit');
+        $this->teacher->givePermissionTo('courses.edit');
 
         Livewire::test(CourseForm::class, ['course' => $course])
             ->assertStatus(200)
@@ -52,7 +52,7 @@ class CourseFormTest extends TestCase
 
     public function test_can_create_course(): void
     {
-        $this->instructor->givePermissionTo('courses.create');
+        $this->teacher->givePermissionTo('courses.create');
 
         Livewire::test(CourseForm::class)
             ->set('title', 'PHP Fundamentals')
@@ -66,13 +66,13 @@ class CourseFormTest extends TestCase
             'description' => 'Learn PHP basics',
             'slug' => 'php-fundamentals',
             'school_id' => $this->school->id,
-            'created_by' => $this->instructor->id,
+            'created_by' => $this->teacher->id,
         ]);
     }
 
     public function test_auto_generates_slug_from_title(): void
     {
-        $this->instructor->givePermissionTo('courses.create');
+        $this->teacher->givePermissionTo('courses.create');
 
         Livewire::test(CourseForm::class)
             ->set('title', 'Advanced JavaScript')
@@ -81,7 +81,7 @@ class CourseFormTest extends TestCase
 
     public function test_slug_must_be_unique_per_school(): void
     {
-        $this->instructor->givePermissionTo('courses.create');
+        $this->teacher->givePermissionTo('courses.create');
 
         Course::factory()
             ->for($this->school)
@@ -100,7 +100,7 @@ class CourseFormTest extends TestCase
             ->for($this->school)
             ->create(['title' => 'Old Title']);
 
-        $this->instructor->givePermissionTo('courses.edit');
+        $this->teacher->givePermissionTo('courses.edit');
 
         Livewire::test(CourseForm::class, ['course' => $course])
             ->set('title', 'New Title')
@@ -121,7 +121,7 @@ class CourseFormTest extends TestCase
             ->for($this->school)
             ->create(['is_published' => false]);
 
-        $this->instructor->givePermissionTo('courses.edit');
+        $this->teacher->givePermissionTo('courses.edit');
 
         Livewire::test(CourseForm::class, ['course' => $course])
             ->set('isPublished', true)
@@ -132,7 +132,7 @@ class CourseFormTest extends TestCase
 
     public function test_required_fields_validation(): void
     {
-        $this->instructor->givePermissionTo('courses.create');
+        $this->teacher->givePermissionTo('courses.create');
 
         Livewire::test(CourseForm::class)
             ->set('title', '')
@@ -142,7 +142,7 @@ class CourseFormTest extends TestCase
 
     public function test_title_max_length_validation(): void
     {
-        $this->instructor->givePermissionTo('courses.create');
+        $this->teacher->givePermissionTo('courses.create');
 
         Livewire::test(CourseForm::class)
             ->set('title', str_repeat('a', 256))
@@ -163,7 +163,7 @@ class CourseFormTest extends TestCase
             ->for($otherSchool)
             ->create();
 
-        $this->instructor->givePermissionTo('courses.edit');
+        $this->teacher->givePermissionTo('courses.edit');
 
         Livewire::test(CourseForm::class, ['course' => $course])
             ->assertStatus(403);

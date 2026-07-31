@@ -24,15 +24,15 @@
 
         <form wire:submit="save" class="space-y-space-md">
             <div>
-                <label class="block text-label-md font-label-md text-on-surface mb-space-sm">Instructor Score</label>
-                <input type="number" step="0.01" wire:model="instructorScore" class="w-full px-space-md py-space-sm border border-outline rounded-lg" />
-                @error('instructorScore') <p class="text-error text-body-sm mt-1">{{ $message }}</p> @enderror
+                <label class="block text-label-md font-label-md text-on-surface mb-space-sm">Teacher Score</label>
+                <input type="number" step="0.01" wire:model="teacherScore" class="w-full px-space-md py-space-sm border border-outline rounded-lg" />
+                @error('teacherScore') <p class="text-error text-body-sm mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div>
-                <label class="block text-label-md font-label-md text-on-surface mb-space-sm">Instructor Feedback</label>
-                <textarea wire:model="instructorFeedback" rows="5" class="w-full px-space-md py-space-sm border border-outline rounded-lg"></textarea>
-                @error('instructorFeedback') <p class="text-error text-body-sm mt-1">{{ $message }}</p> @enderror
+                <label class="block text-label-md font-label-md text-on-surface mb-space-sm">Teacher Feedback</label>
+                <textarea wire:model="teacherFeedback" rows="5" class="w-full px-space-md py-space-sm border border-outline rounded-lg"></textarea>
+                @error('teacherFeedback') <p class="text-error text-body-sm mt-1">{{ $message }}</p> @enderror
             </div>
 
             <button type="submit" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">

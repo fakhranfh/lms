@@ -51,29 +51,29 @@ test('store creates a pending submission quickly and dispatches grading job', fu
 test('override requires submissions.override-grade permission', function () {
     $school = School::factory()->create();
     $student = User::factory()->forSchool($school)->create();
-    $instructor = User::factory()->forSchool($school)->create();
+    $teacher = User::factory()->forSchool($school)->create();
     $assignment = makeAssignmentForSchool($school);
     $submission = Submission::factory()->for($assignment)->for($student)->create();
 
-    $this->actingAs($instructor);
+    $this->actingAs($teacher);
 
     $response = $this->patchJson("/submissions/{$submission->id}/override", [
-        'instructor_score' => 90,
-        'instructor_feedback' => 'Good work.',
+        'teacher_score' => 90,
+        'teacher_feedback' => 'Good work.',
     ]);
 
     $response->assertStatus(403);
 
-    $instructor->givePermissionTo('submissions.override-grade');
+    $teacher->givePermissionTo('submissions.override-grade');
 
     $response = $this->patchJson("/submissions/{$submission->id}/override", [
-        'instructor_score' => 90,
-        'instructor_feedback' => 'Good work.',
+        'teacher_score' => 90,
+        'teacher_feedback' => 'Good work.',
     ]);
 
     $response->assertStatus(200);
     $submission->refresh();
-    expect((float) $submission->instructor_score)->toBe(90.0);
+    expect((float) $submission->teacher_score)->toBe(90.0);
 });
 
 test('rate limit triggers on the 4th rapid submission request', function () {
@@ -168,14 +168,14 @@ test('retry redispatches the grading job for a failed submission', function () {
 
     $school = School::factory()->create();
     $student = User::factory()->forSchool($school)->create();
-    $instructor = User::factory()->forSchool($school)->create();
-    $instructor->givePermissionTo('submissions.grade');
+    $teacher = User::factory()->forSchool($school)->create();
+    $teacher->givePermissionTo('submissions.grade');
     $assignment = makeAssignmentForSchool($school);
     $submission = Submission::factory()->for($assignment)->for($student)->create([
         'status' => SubmissionStatus::Failed,
     ]);
 
-    $this->actingAs($instructor);
+    $this->actingAs($teacher);
 
     $response = $this->postJson("/submissions/{$submission->id}/retry");
 

@@ -119,10 +119,10 @@ class SubmissionService
     }
 
     /**
-     * Override a submission's score with an instructor's manual grade.
+     * Override a submission's score with an teacher's manual grade.
      */
-    public function overrideScore(string $id, float $score, string $feedback, User $instructor): Submission
+    public function overrideScore(string $id, float $score, string $feedback, User $teacher): Submission
     {
-        return $this->submissionRepository->overrideScore($id, $score, $feedback, $instructor);
+        return $this->submissionRepository->overrideScore($id, $score, $feedback, $teacher);
     }
 }

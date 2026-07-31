@@ -16,7 +16,7 @@ class Dashboard extends Component
         $user = Auth::user();
         $school = $user?->school();
 
-        if ($school && $user->hasRole(['Admin', 'School Admin', 'Instructor'])) {
+        if ($school && $user->hasRole(['Admin', 'School Admin', 'Teacher'])) {
             $this->storageQuota = Cache::remember(
                 "school-storage-quota:{$school->id}",
                 now()->addMinutes(5),

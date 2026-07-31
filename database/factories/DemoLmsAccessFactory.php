@@ -24,15 +24,15 @@ class DemoLmsAccessFactory extends Factory
             'school_id' => School::factory(),
             'user_id' => User::factory(),
             'access_token' => Str::random(32),
-            'role' => 'instructor',
+            'role' => 'teacher',
             'expires_at' => $this->faker->dateTimeBetween('+1 day', '+30 days'),
             'accessed_at' => null,
         ];
     }
 
-    public function instructor(): static
+    public function teacher(): static
     {
-        return $this->state(['role' => 'instructor']);
+        return $this->state(['role' => 'teacher']);
     }
 
     public function student(): static

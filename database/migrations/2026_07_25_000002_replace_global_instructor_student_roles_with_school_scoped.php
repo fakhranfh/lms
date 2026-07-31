@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration
 {
     /**
-     * Every school gets its own Instructor/Student/School Admin roles so
+     * Every school gets its own Teacher/Student/School Admin roles so
      * permission changes for one school never affect another. The old
-     * global (school_id null) Instructor/Student roles are removed and any
+     * global (school_id null) Teacher/Student roles are removed and any
      * users holding them are re-assigned to their school's own role.
      */
     public function up(): void
@@ -19,7 +19,7 @@ return new class extends Migration
             ->where('name', '!=', 'settings.billing')
             ->pluck('id');
 
-        $instructorPermissionIds = DB::table('permissions')
+        $teacherPermissionIds = DB::table('permissions')
             ->whereIn('name', [
                 'courses.create', 'courses.view', 'courses.edit', 'courses.delete',
                 'modules.create', 'modules.view', 'modules.edit', 'modules.delete',
@@ -38,7 +38,7 @@ return new class extends Migration
 
         $roleDefinitions = [
             RoleName::SchoolAdmin->value => ['slug' => RoleName::SchoolAdmin->slug(), 'permissions' => $schoolAdminPermissionIds],
-            RoleName::Instructor->value => ['slug' => RoleName::Instructor->slug(), 'permissions' => $instructorPermissionIds],
+            RoleName::Teacher->value => ['slug' => RoleName::Teacher->slug(), 'permissions' => $teacherPermissionIds],
             RoleName::Student->value => ['slug' => RoleName::Student->slug(), 'permissions' => $studentPermissionIds],
         ];
 
@@ -76,8 +76,8 @@ return new class extends Migration
             }
         }
 
-        // Re-assign users holding the old global Instructor/Student roles to their school's role.
-        foreach ([RoleName::Instructor->value, RoleName::Student->value] as $roleName) {
+        // Re-assign users holding the old global Teacher/Student roles to their school's role.
+        foreach ([RoleName::Teacher->value, RoleName::Student->value] as $roleName) {
             $globalRoleId = DB::table('roles')
                 ->whereNull('school_id')
                 ->where('name', $roleName)
@@ -112,8 +112,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Irreversible: the global Instructor/Student roles are intentionally
-        // not recreated. Re-run `2026_07_17_010105_create_instructor_and_student_roles`
+        // Irreversible: the global Teacher/Student roles are intentionally
+        // not recreated. Re-run `2026_07_17_010105_create_teacher_and_student_roles`
         // manually if the old global roles are needed back.
     }
 };

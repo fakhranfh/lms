@@ -10,21 +10,21 @@ test('the try demo page is reachable on the root domain', function () {
     $response = $this->get("http://{$rootDomain}/try-demo");
 
     $response->assertOk();
-    $response->assertSee('Login as Instructor');
+    $response->assertSee('Login as Teacher');
     $response->assertSee('Login as Student');
     $response->assertSee('Login as School Admin');
 });
 
-test('trying the demo as instructor generates access and logs the user in', function () {
+test('trying the demo as teacher generates access and logs the user in', function () {
     $this->seed(PricingTierSeeder::class);
 
     $rootDomain = config('app.domain');
     $demoDomain = "school.{$rootDomain}";
     $school = School::where('domain', $demoDomain)->first() ?? School::factory()->create(['domain' => $demoDomain]);
 
-    $response = $this->get("http://{$rootDomain}/try-demo/instructor");
+    $response = $this->get("http://{$rootDomain}/try-demo/teacher");
 
-    $access = DemoLmsAccess::where('school_id', $school->id)->where('role', 'instructor')->first();
+    $access = DemoLmsAccess::where('school_id', $school->id)->where('role', 'teacher')->first();
 
     expect($access)->not->toBeNull();
     $response->assertRedirect($access->getLoginUrl());
@@ -67,11 +67,11 @@ test('trying the demo reuses an existing valid access token instead of generatin
     $demoDomain = "school.{$rootDomain}";
     $school = School::where('domain', $demoDomain)->first() ?? School::factory()->create(['domain' => $demoDomain]);
 
-    $this->get("http://{$rootDomain}/try-demo/instructor");
-    $firstAccess = DemoLmsAccess::where('school_id', $school->id)->where('role', 'instructor')->first();
+    $this->get("http://{$rootDomain}/try-demo/teacher");
+    $firstAccess = DemoLmsAccess::where('school_id', $school->id)->where('role', 'teacher')->first();
 
-    $this->get("http://{$rootDomain}/try-demo/instructor");
-    $secondAccess = DemoLmsAccess::where('school_id', $school->id)->where('role', 'instructor')->first();
+    $this->get("http://{$rootDomain}/try-demo/teacher");
+    $secondAccess = DemoLmsAccess::where('school_id', $school->id)->where('role', 'teacher')->first();
 
     expect($secondAccess->id)->toBe($firstAccess->id);
 });

@@ -10,17 +10,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Create Instructor Role
-        $instructorRole = DB::table('roles')->insertGetId([
-            'name' => 'Instructor',
+        // Create Teacher Role
+        $teacherRole = DB::table('roles')->insertGetId([
+            'name' => 'Teacher',
             'guard_name' => 'web',
-            'slug' => 'instructor',
+            'slug' => 'teacher',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // Get Instructor permissions
-        $instructorPermissions = DB::table('permissions')->whereIn('name', [
+        // Get Teacher permissions
+        $teacherPermissions = DB::table('permissions')->whereIn('name', [
             'courses.create',
             'courses.view',
             'courses.edit',
@@ -43,9 +43,9 @@ return new class extends Migration
             'analytics.view',
         ])->pluck('id')->toArray();
 
-        foreach ($instructorPermissions as $permissionId) {
+        foreach ($teacherPermissions as $permissionId) {
             DB::table('role_has_permissions')->insert([
-                'role_id' => $instructorRole,
+                'role_id' => $teacherRole,
                 'permission_id' => $permissionId,
             ]);
         }
@@ -82,9 +82,9 @@ return new class extends Migration
     public function down(): void
     {
         DB::table('role_has_permissions')
-            ->whereIn('role_id', DB::table('roles')->whereIn('name', ['Instructor', 'Student'])->pluck('id'))
+            ->whereIn('role_id', DB::table('roles')->whereIn('name', ['Teacher', 'Student'])->pluck('id'))
             ->delete();
 
-        DB::table('roles')->whereIn('name', ['Instructor', 'Student'])->delete();
+        DB::table('roles')->whereIn('name', ['Teacher', 'Student'])->delete();
     }
 };

@@ -12,18 +12,18 @@ class OverrideScoreModal extends Component
     public Submission $submission;
 
     #[Validate('required|numeric|min:0|max:100')]
-    public ?float $instructorScore = null;
+    public ?float $teacherScore = null;
 
     #[Validate('required|string')]
-    public string $instructorFeedback = '';
+    public string $teacherFeedback = '';
 
     public function mount(Submission $submission): void
     {
         abort_unless(auth()->user()->can('submissions.override-grade'), 403);
 
         $this->submission = $submission->load(['assignment', 'user']);
-        $this->instructorScore = $submission->instructor_score !== null ? (float) $submission->instructor_score : ($submission->ai_score !== null ? (float) $submission->ai_score : null);
-        $this->instructorFeedback = $submission->instructor_feedback ?? '';
+        $this->teacherScore = $submission->teacher_score !== null ? (float) $submission->teacher_score : ($submission->ai_score !== null ? (float) $submission->ai_score : null);
+        $this->teacherFeedback = $submission->teacher_feedback ?? '';
     }
 
     public function save(SubmissionService $submissionService)
@@ -32,8 +32,8 @@ class OverrideScoreModal extends Component
 
         $submissionService->overrideScore(
             $this->submission->id,
-            $this->instructorScore,
-            $this->instructorFeedback,
+            $this->teacherScore,
+            $this->teacherFeedback,
             auth()->user()
         );
 

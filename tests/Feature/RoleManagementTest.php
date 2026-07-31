@@ -111,10 +111,10 @@ test('updating a role can reuse a name already used by another school', function
     $user = actingAsRoleManager(['roles.view', 'roles.update']);
     $role = Role::create(['name' => 'billing', 'guard_name' => 'web', 'school_id' => $user->school_id]);
     $otherSchool = School::factory()->create();
-    Role::create(['name' => 'instructor', 'guard_name' => 'web', 'school_id' => $otherSchool->id]);
+    Role::create(['name' => 'teacher', 'guard_name' => 'web', 'school_id' => $otherSchool->id]);
 
     Livewire::actingAs($user)->test(RoleEdit::class, ['role' => $role])
-        ->set('name', 'instructor')
+        ->set('name', 'teacher')
         ->call('update')
         ->assertHasNoErrors()
         ->assertRedirect(route('roles.index'));

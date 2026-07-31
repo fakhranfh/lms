@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('demo_lms_accesses', function (Blueprint $table) {
-            $table->enum('role', ['instructor', 'student'])->default('instructor')->after('access_token');
+            $table->enum('role', ['teacher', 'student'])->default('teacher')->after('access_token');
         });
     }
 

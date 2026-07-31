@@ -18,7 +18,7 @@ class CourseBuilderTest extends TestCase
 {
     private School $school;
 
-    private User $instructor;
+    private User $teacher;
 
     private Course $course;
 
@@ -27,19 +27,19 @@ class CourseBuilderTest extends TestCase
         parent::setUp();
 
         $this->school = School::factory()->create();
-        $this->instructor = User::factory()
+        $this->teacher = User::factory()
             ->forSchool($this->school)
             ->create();
         $this->course = Course::factory()
             ->for($this->school)
             ->create();
 
-        $this->actingAs($this->instructor);
+        $this->actingAs($this->teacher);
     }
 
     public function test_course_builder_component_renders(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Livewire::test(CourseBuilder::class, ['course' => $this->course])
             ->assertStatus(200)
@@ -48,7 +48,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_displays_modules_for_course(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         $module1 = Module::factory()
             ->for($this->course)
@@ -64,7 +64,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_displays_lessons_when_module_expanded(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         $module = Module::factory()
             ->for($this->course)
@@ -80,7 +80,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_can_toggle_module_expansion(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         $module = Module::factory()
             ->for($this->course)
@@ -95,7 +95,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_can_move_module_up(): void
     {
-        $this->instructor->givePermissionTo(['courses.view', 'modules.edit']);
+        $this->teacher->givePermissionTo(['courses.view', 'modules.edit']);
 
         $module1 = Module::factory()
             ->for($this->course)
@@ -113,7 +113,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_can_move_module_down(): void
     {
-        $this->instructor->givePermissionTo(['courses.view', 'modules.edit']);
+        $this->teacher->givePermissionTo(['courses.view', 'modules.edit']);
 
         $module1 = Module::factory()
             ->for($this->course)
@@ -131,7 +131,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_can_move_lesson_up(): void
     {
-        $this->instructor->givePermissionTo(['courses.view', 'lessons.edit']);
+        $this->teacher->givePermissionTo(['courses.view', 'lessons.edit']);
 
         $module = Module::factory()
             ->for($this->course)
@@ -152,7 +152,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_can_move_lesson_down(): void
     {
-        $this->instructor->givePermissionTo(['courses.view', 'lessons.edit']);
+        $this->teacher->givePermissionTo(['courses.view', 'lessons.edit']);
 
         $module = Module::factory()
             ->for($this->course)
@@ -173,7 +173,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_can_delete_module(): void
     {
-        $this->instructor->givePermissionTo(['courses.view', 'modules.delete']);
+        $this->teacher->givePermissionTo(['courses.view', 'modules.delete']);
 
         $module = Module::factory()
             ->for($this->course)
@@ -187,7 +187,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_can_delete_lesson(): void
     {
-        $this->instructor->givePermissionTo(['courses.view', 'lessons.delete']);
+        $this->teacher->givePermissionTo(['courses.view', 'lessons.delete']);
 
         $module = Module::factory()
             ->for($this->course)
@@ -215,7 +215,7 @@ class CourseBuilderTest extends TestCase
             ->for($otherSchool)
             ->create();
 
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Livewire::test(CourseBuilder::class, ['course' => $otherCourse])
             ->assertStatus(403);
@@ -223,7 +223,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_displays_empty_state_when_no_modules(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Livewire::test(CourseBuilder::class, ['course' => $this->course])
             ->assertSee('No modules yet');
@@ -231,7 +231,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_displays_course_description(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         $this->course->update(['description' => 'This is a course description']);
 
@@ -241,7 +241,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_shows_publish_status(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         $publishedCourse = Course::factory()
             ->for($this->school)
@@ -253,7 +253,7 @@ class CourseBuilderTest extends TestCase
 
     public function test_refresh_on_module_created_event(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         $component = Livewire::test(CourseBuilder::class, ['course' => $this->course]);
 
@@ -287,9 +287,9 @@ class CourseBuilderTest extends TestCase
             ->assertDontSee('Draft Lesson');
     }
 
-    public function test_instructor_still_sees_unpublished_lessons(): void
+    public function test_teacher_still_sees_unpublished_lessons(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         $module = Module::factory()->for($this->course)->published()->create();
         Lesson::factory()->for($module)->create(['title' => 'Draft Lesson', 'is_published' => false, 'order' => 1]);

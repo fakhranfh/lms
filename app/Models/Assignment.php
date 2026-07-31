@@ -49,8 +49,8 @@ class Assignment extends Model
 
     public function getScore(Submission $submission): ?float
     {
-        return $submission->instructor_score !== null
-            ? (float) $submission->instructor_score
+        return $submission->teacher_score !== null
+            ? (float) $submission->teacher_score
             : ($submission->ai_score !== null ? (float) $submission->ai_score : null);
     }
 

@@ -21,7 +21,7 @@ class LessonFormTest extends TestCase
 {
     private School $school;
 
-    private User $instructor;
+    private User $teacher;
 
     private Course $course;
 
@@ -32,7 +32,7 @@ class LessonFormTest extends TestCase
         parent::setUp();
 
         $this->school = School::factory()->create();
-        $this->instructor = User::factory()
+        $this->teacher = User::factory()
             ->forSchool($this->school)
             ->create();
         $this->course = Course::factory()
@@ -42,12 +42,12 @@ class LessonFormTest extends TestCase
             ->for($this->course)
             ->create();
 
-        $this->actingAs($this->instructor);
+        $this->actingAs($this->teacher);
     }
 
     public function test_create_lesson_component_renders(): void
     {
-        $this->instructor->givePermissionTo('lessons.create');
+        $this->teacher->givePermissionTo('lessons.create');
 
         Livewire::test(LessonForm::class, ['module' => $this->module])
             ->assertStatus(200)
@@ -60,7 +60,7 @@ class LessonFormTest extends TestCase
             ->for($this->module)
             ->create(['title' => 'Test Lesson Title']);
 
-        $this->instructor->givePermissionTo('lessons.edit');
+        $this->teacher->givePermissionTo('lessons.edit');
 
         Livewire::test(LessonForm::class, [
             'module' => $this->module,
@@ -73,7 +73,7 @@ class LessonFormTest extends TestCase
 
     public function test_can_create_lesson(): void
     {
-        $this->instructor->givePermissionTo('lessons.create');
+        $this->teacher->givePermissionTo('lessons.create');
 
         Livewire::test(LessonForm::class, ['module' => $this->module])
             ->set('title', 'Introduction to HTML')
@@ -93,7 +93,7 @@ class LessonFormTest extends TestCase
 
     public function test_lesson_order_auto_increments(): void
     {
-        $this->instructor->givePermissionTo('lessons.create');
+        $this->teacher->givePermissionTo('lessons.create');
 
         Lesson::factory()
             ->for($this->module)
@@ -116,7 +116,7 @@ class LessonFormTest extends TestCase
             ->for($this->module)
             ->create(['title' => 'Old Title']);
 
-        $this->instructor->givePermissionTo('lessons.edit');
+        $this->teacher->givePermissionTo('lessons.edit');
 
         Livewire::test(LessonForm::class, [
             'module' => $this->module,
@@ -136,7 +136,7 @@ class LessonFormTest extends TestCase
 
     public function test_duration_must_be_numeric(): void
     {
-        $this->instructor->givePermissionTo('lessons.create');
+        $this->teacher->givePermissionTo('lessons.create');
 
         Livewire::test(LessonForm::class, ['module' => $this->module])
             ->set('title', 'Lesson')
@@ -147,7 +147,7 @@ class LessonFormTest extends TestCase
 
     public function test_duration_max_value_validation(): void
     {
-        $this->instructor->givePermissionTo('lessons.create');
+        $this->teacher->givePermissionTo('lessons.create');
 
         Livewire::test(LessonForm::class, ['module' => $this->module])
             ->set('title', 'Lesson')
@@ -158,7 +158,7 @@ class LessonFormTest extends TestCase
 
     public function test_required_fields_validation(): void
     {
-        $this->instructor->givePermissionTo('lessons.create');
+        $this->teacher->givePermissionTo('lessons.create');
 
         Livewire::test(LessonForm::class, ['module' => $this->module])
             ->set('title', '')
@@ -179,7 +179,7 @@ class LessonFormTest extends TestCase
 
     public function test_uploading_a_material_before_saving_creates_a_draft_lesson(): void
     {
-        $this->instructor->givePermissionTo('lessons.create');
+        $this->teacher->givePermissionTo('lessons.create');
 
         $this->mock(R2StorageService::class, function ($mock) {
             $mock->shouldReceive('generatePresignedPutUrl')
@@ -204,7 +204,7 @@ class LessonFormTest extends TestCase
 
     public function test_uploading_a_material_without_a_title_returns_an_error(): void
     {
-        $this->instructor->givePermissionTo('lessons.create');
+        $this->teacher->givePermissionTo('lessons.create');
 
         $component = Livewire::test(LessonForm::class, ['module' => $this->module]);
 
@@ -220,7 +220,7 @@ class LessonFormTest extends TestCase
     {
         $lesson = Lesson::factory()->for($this->module)->create();
 
-        $this->instructor->givePermissionTo('lessons.edit');
+        $this->teacher->givePermissionTo('lessons.edit');
 
         $this->mock(LessonMaterialService::class, function ($mock) {
             $mock->shouldReceive('finalizeR2Upload')
@@ -252,7 +252,7 @@ class LessonFormTest extends TestCase
         $lesson = Lesson::factory()->for($this->module)->create();
         $material = LessonMaterial::factory()->for($lesson)->create(['title' => 'original-filename']);
 
-        $this->instructor->givePermissionTo('lessons.edit');
+        $this->teacher->givePermissionTo('lessons.edit');
 
         $component = Livewire::test(LessonForm::class, [
             'module' => $this->module,
@@ -279,7 +279,7 @@ class LessonFormTest extends TestCase
             ->for($lesson)
             ->create(['title' => 'Duplicate Guard Test', 'version' => 2, 'is_active' => true]);
 
-        $this->instructor->givePermissionTo('lessons.edit');
+        $this->teacher->givePermissionTo('lessons.edit');
 
         $component = Livewire::test(LessonForm::class, [
             'module' => $this->module,
@@ -307,7 +307,7 @@ class LessonFormTest extends TestCase
             ->for($lesson)
             ->create(['title' => 'Versioned Material', 'version' => 2, 'is_active' => false]);
 
-        $this->instructor->givePermissionTo('lessons.edit');
+        $this->teacher->givePermissionTo('lessons.edit');
 
         $component = Livewire::test(LessonForm::class, [
             'module' => $this->module,
@@ -333,7 +333,7 @@ class LessonFormTest extends TestCase
             ->for($lesson)
             ->create(['title' => 'Switch Test', 'version' => 2, 'is_active' => false]);
 
-        $this->instructor->givePermissionTo('lessons.edit');
+        $this->teacher->givePermissionTo('lessons.edit');
 
         $component = Livewire::test(LessonForm::class, [
             'module' => $this->module,
@@ -363,7 +363,7 @@ class LessonFormTest extends TestCase
             ->for($lesson)
             ->create(['title' => 'Delete Test', 'version' => 2, 'is_active' => true]);
 
-        $this->instructor->givePermissionTo('lessons.edit');
+        $this->teacher->givePermissionTo('lessons.edit');
 
         $component = Livewire::test(LessonForm::class, [
             'module' => $this->module,
@@ -390,7 +390,7 @@ class LessonFormTest extends TestCase
             ->withType(MaterialType::PDF)
             ->create(['title' => 'Replaceable Material']);
 
-        $this->instructor->givePermissionTo('lessons.edit');
+        $this->teacher->givePermissionTo('lessons.edit');
 
         $this->mock(R2StorageService::class, function ($mock) {
             $mock->shouldReceive('enforceQuotaLimit')->once();
@@ -425,7 +425,7 @@ class LessonFormTest extends TestCase
             ->withType(MaterialType::PDF)
             ->create(['title' => 'Version Upload Test', 'version' => 1, 'is_active' => true]);
 
-        $this->instructor->givePermissionTo('lessons.edit');
+        $this->teacher->givePermissionTo('lessons.edit');
 
         $this->mock(LessonMaterialService::class, function ($mock) use ($material) {
             $mock->shouldReceive('finalizeVersionUpload')
@@ -458,7 +458,7 @@ class LessonFormTest extends TestCase
             ->withType(MaterialType::PDF)
             ->create(['title' => 'Version Upload Fail Test']);
 
-        $this->instructor->givePermissionTo('lessons.edit');
+        $this->teacher->givePermissionTo('lessons.edit');
 
         $this->mock(LessonMaterialService::class, function ($mock) {
             $mock->shouldReceive('finalizeVersionUpload')
@@ -482,7 +482,7 @@ class LessonFormTest extends TestCase
 
     public function test_edit_lesson_lists_its_assignments(): void
     {
-        $this->instructor->givePermissionTo('lessons.edit');
+        $this->teacher->givePermissionTo('lessons.edit');
 
         $lesson = Lesson::factory()->for($this->module)->create();
         $assignment = Assignment::factory()->for($lesson)->create(['title' => 'Reflection Essay']);
@@ -497,15 +497,15 @@ class LessonFormTest extends TestCase
 
     public function test_new_lesson_prompts_to_save_before_adding_assignments(): void
     {
-        $this->instructor->givePermissionTo('lessons.create');
+        $this->teacher->givePermissionTo('lessons.create');
 
         Livewire::test(LessonForm::class, ['module' => $this->module])
             ->assertSee('Save this lesson to add assignments.');
     }
 
-    public function test_instructor_can_delete_assignment_from_lesson_form(): void
+    public function test_teacher_can_delete_assignment_from_lesson_form(): void
     {
-        $this->instructor->givePermissionTo(['lessons.edit', 'assignments.delete']);
+        $this->teacher->givePermissionTo(['lessons.edit', 'assignments.delete']);
 
         $lesson = Lesson::factory()->for($this->module)->create();
         $assignment = Assignment::factory()->for($lesson)->create();
@@ -522,7 +522,7 @@ class LessonFormTest extends TestCase
 
     public function test_deleting_assignment_from_another_lesson_is_ignored(): void
     {
-        $this->instructor->givePermissionTo(['lessons.edit', 'assignments.delete']);
+        $this->teacher->givePermissionTo(['lessons.edit', 'assignments.delete']);
 
         $lesson = Lesson::factory()->for($this->module)->create();
         $otherLesson = Lesson::factory()->for($this->module)->create();

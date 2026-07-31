@@ -30,7 +30,7 @@
                         [
                             'icon' => '&#128274;',
                             'title' => 'Roles & Permissions',
-                            'description' => 'School-scoped role-based access control lets you define admins, instructors, and students with fine-grained permissions per school.',
+                            'description' => 'School-scoped role-based access control lets you define admins, teachers, and students with fine-grained permissions per school.',
                         ],
                         [
                             'icon' => '&#129302;',

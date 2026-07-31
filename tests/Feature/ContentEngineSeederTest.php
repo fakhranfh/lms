@@ -49,7 +49,7 @@ test('content engine seeder creates modules with lessons', function () {
 
 test('seeded courses have correct structure', function () {
     $school = School::factory()->create();
-    $instructor = User::factory()->forSchool($school)->create();
+    $teacher = User::factory()->forSchool($school)->create();
 
     $this->seed(ContentEngineSeeder::class);
 
@@ -167,9 +167,9 @@ test('seeded assignments have correct structure and publish state', function () 
     }
 });
 
-test('seeded courses are created by school instructors', function () {
+test('seeded courses are created by school teachers', function () {
     $school = School::factory()->create();
-    $instructor = User::factory()->forSchool($school)->create();
+    $teacher = User::factory()->forSchool($school)->create();
 
     $this->seed(ContentEngineSeeder::class);
 

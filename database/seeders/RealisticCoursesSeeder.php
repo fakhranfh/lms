@@ -26,26 +26,26 @@ class RealisticCoursesSeeder extends Seeder
 
     private function seedSchoolCourses(School $school): void
     {
-        $instructors = User::whereHas('memberSchools', function ($q) use ($school) {
+        $teachers = User::whereHas('memberSchools', function ($q) use ($school) {
             $q->where('schools.id', $school->id);
         })
             ->whereHas('roles', function ($q) {
-                $q->where('name', 'Instructor');
+                $q->where('name', 'Teacher');
             })
             ->get();
 
-        if ($instructors->isEmpty()) {
-            $instructors = User::factory()
+        if ($teachers->isEmpty()) {
+            $teachers = User::factory()
                 ->forSchool($school)
                 ->count(2)
                 ->create();
-            $instructors->each(fn ($user) => $user->assignRole('Instructor'));
+            $teachers->each(fn ($user) => $user->assignRole('Teacher'));
         }
 
-        $this->createRealisticCourses($school, $instructors);
+        $this->createRealisticCourses($school, $teachers);
     }
 
-    private function createRealisticCourses(School $school, $instructors): void
+    private function createRealisticCourses(School $school, $teachers): void
     {
         $courses = [
             $this->phpDevelopmentCourse(),
@@ -56,7 +56,7 @@ class RealisticCoursesSeeder extends Seeder
         ];
 
         foreach ($courses as $courseData) {
-            $instructor = $instructors->random();
+            $teacher = $teachers->random();
             $modules = $courseData['modules'];
             unset($courseData['modules']);
 
@@ -64,7 +64,7 @@ class RealisticCoursesSeeder extends Seeder
                 'id' => Str::uuid(),
                 ...$courseData,
                 'school_id' => $school->id,
-                'created_by' => $instructor->id,
+                'created_by' => $teacher->id,
             ]);
 
             foreach ($modules as $moduleOrder => $moduleData) {

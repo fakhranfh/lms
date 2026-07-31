@@ -35,19 +35,19 @@
                     <span class="material-symbols-outlined text-secondary/60 text-[20px] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
                 </a>
 
-                <a href="{{ route('try-demo.login'.\App\Support\RootDomains::currentSuffix(), ['role' => 'instructor']) }}"
-                    @click="loading = 'instructor'"
-                    :class="loading ? (loading === 'instructor' ? 'pointer-events-none opacity-75' : 'pointer-events-none opacity-50') : ''"
+                <a href="{{ route('try-demo.login'.\App\Support\RootDomains::currentSuffix(), ['role' => 'teacher']) }}"
+                    @click="loading = 'teacher'"
+                    :class="loading ? (loading === 'teacher' ? 'pointer-events-none opacity-75' : 'pointer-events-none opacity-50') : ''"
                     class="flex items-center justify-between h-[56px] px-space-md rounded-lg border border-outline-variant bg-surface-container-lowest hover:border-primary hover:ring-1 hover:ring-primary transition-colors group">
                     <span class="flex items-center gap-space-md">
-                        <template x-if="loading === 'instructor'">
+                        <template x-if="loading === 'teacher'">
                             <span class="material-symbols-outlined text-primary text-[24px] animate-spin">progress_activity</span>
                         </template>
-                        <template x-if="loading !== 'instructor'">
+                        <template x-if="loading !== 'teacher'">
                             <span class="material-symbols-outlined text-primary text-[24px]">school</span>
                         </template>
                         <span class="text-left">
-                            <span class="block font-label-md text-label-md text-on-surface">Login as Instructor</span>
+                            <span class="block font-label-md text-label-md text-on-surface">Login as Teacher</span>
                             <span class="block font-body-sm text-body-sm text-secondary">Build courses, grade assignments</span>
                         </span>
                     </span>

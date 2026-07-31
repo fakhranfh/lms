@@ -24,26 +24,26 @@ class ContentEngineSeeder extends Seeder
 
     private function seedSchoolCourses(School $school): void
     {
-        $instructors = User::whereHas('memberSchools', function ($q) use ($school) {
+        $teachers = User::whereHas('memberSchools', function ($q) use ($school) {
             $q->where('schools.id', $school->id);
         })
             ->whereHas('roles', function ($q) {
-                $q->where('name', 'Instructor');
+                $q->where('name', 'Teacher');
             })
             ->get();
 
-        if ($instructors->isEmpty()) {
-            $instructors = User::factory()
+        if ($teachers->isEmpty()) {
+            $teachers = User::factory()
                 ->forSchool($school)
                 ->count(2)
                 ->create();
-            $instructors->each(fn ($user) => $user->assignRole('Instructor'));
+            $teachers->each(fn ($user) => $user->assignRole('Teacher'));
         }
 
-        $this->createDemoCourses($school, $instructors);
+        $this->createDemoCourses($school, $teachers);
     }
 
-    private function createDemoCourses(School $school, $instructors): void
+    private function createDemoCourses(School $school, $teachers): void
     {
         $courses = [
             [
@@ -64,12 +64,12 @@ class ContentEngineSeeder extends Seeder
         ];
 
         foreach ($courses as $courseData) {
-            $instructor = $instructors->random();
+            $teacher = $teachers->random();
 
             $course = Course::create([
                 'id' => (string) Str::uuid(),
                 'school_id' => $school->id,
-                'created_by' => $instructor->id,
+                'created_by' => $teacher->id,
                 'title' => $courseData['title'],
                 'slug' => Str::slug($courseData['title']).'-'.Str::random(6),
                 'description' => $courseData['description'],

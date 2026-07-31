@@ -19,9 +19,9 @@ function actingAsSchoolUser(School $school, RoleName $roleName): User
     return $user;
 }
 
-test('instructor does not see tier management in the sidebar', function () {
+test('teacher does not see tier management in the sidebar', function () {
     $school = School::factory()->create();
-    $user = actingAsSchoolUser($school, RoleName::Instructor);
+    $user = actingAsSchoolUser($school, RoleName::Teacher);
 
     $this->actingAs($user)->get("http://{$school->domain}/dashboard")
         ->assertDontSee('Tier Management');
@@ -35,9 +35,9 @@ test('school admin does not see tier management in the sidebar', function () {
         ->assertDontSee('Tier Management');
 });
 
-test('instructor cannot access tier management page directly', function () {
+test('teacher cannot access tier management page directly', function () {
     $school = School::factory()->create();
-    $user = actingAsSchoolUser($school, RoleName::Instructor);
+    $user = actingAsSchoolUser($school, RoleName::Teacher);
 
     $this->actingAs($user)->get("http://{$school->domain}/tier-management")
         ->assertForbidden();

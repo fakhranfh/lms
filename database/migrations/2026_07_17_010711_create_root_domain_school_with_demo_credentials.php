@@ -38,7 +38,7 @@ return new class extends Migration
             ['email' => $demoEmail],
             [
                 'id' => Str::uuid(),
-                'name' => 'Demo Instructor',
+                'name' => 'Demo Teacher',
                 'password' => Hash::make('demo-password'),
                 'email_verified_at' => now(),
                 'timezone' => 'UTC',
@@ -50,13 +50,13 @@ return new class extends Migration
         // at this point in migration history.
         DB::table('users')->where('id', $user->id)->update(['school_id' => $school->id]);
 
-        // Create/assign instructor role
-        $instructorRole = Role::firstOrCreate(
-            ['name' => 'Instructor'],
-            ['guard_name' => 'web', 'slug' => 'instructor']
+        // Create/assign teacher role
+        $teacherRole = Role::firstOrCreate(
+            ['name' => 'Teacher'],
+            ['guard_name' => 'web', 'slug' => 'teacher']
         );
 
-        $user->assignRole($instructorRole);
+        $user->assignRole($teacherRole);
 
         // Create demo LMS access token
         DemoLmsAccess::firstOrCreate(

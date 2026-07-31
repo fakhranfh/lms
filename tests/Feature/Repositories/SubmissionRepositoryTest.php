@@ -93,11 +93,11 @@ test('can delete a submission', function () {
 
 test('can override a submission score', function () {
     $submission = Submission::factory()->create(['ai_score' => 55]);
-    $instructor = User::factory()->create();
+    $teacher = User::factory()->create();
 
-    $updated = $this->repository->overrideScore($submission->id, 90, 'Great work', $instructor);
+    $updated = $this->repository->overrideScore($submission->id, 90, 'Great work', $teacher);
 
-    expect((float) $updated->instructor_score)->toBe(90.0);
-    expect($updated->instructor_feedback)->toBe('Great work');
-    expect($updated->reviewed_by)->toBe($instructor->id);
+    expect((float) $updated->teacher_score)->toBe(90.0);
+    expect($updated->teacher_feedback)->toBe('Great work');
+    expect($updated->reviewed_by)->toBe($teacher->id);
 });

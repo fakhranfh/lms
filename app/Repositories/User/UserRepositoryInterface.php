@@ -9,6 +9,11 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 interface UserRepositoryInterface
 {
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function create(array $data): User;
+
     public function update(User $user, array $data): User;
 
     public function setPendingEmail(User $user, string $pendingEmail): void;

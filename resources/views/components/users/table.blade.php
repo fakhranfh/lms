@@ -73,7 +73,10 @@
                         <td class="px-space-lg py-space-md text-body-sm text-on-surface-variant">
                             {{ $user->roles->pluck('name')->join(', ') ?: '—' }}
                         </td>
-                        <td class="px-space-lg py-space-md text-right whitespace-nowrap">
+                        <td class="px-space-lg py-space-md text-right whitespace-nowrap space-x-space-md">
+                            @can('users.edit')
+                                <a href="{{ route('users.edit', $user) }}" class="font-label-md text-label-md text-primary hover:underline">Edit</a>
+                            @endcan
                             <a href="{{ route('users.roles.edit', $user) }}" class="font-label-md text-label-md text-primary hover:underline">Assign Roles</a>
                         </td>
                     </tr>

@@ -15,23 +15,23 @@ class CoursesIndexTest extends TestCase
 {
     private School $school;
 
-    private User $instructor;
+    private User $teacher;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->school = School::factory()->create();
-        $this->instructor = User::factory()
+        $this->teacher = User::factory()
             ->forSchool($this->school)
             ->create();
 
-        $this->actingAs($this->instructor);
+        $this->actingAs($this->teacher);
     }
 
     public function test_courses_index_component_renders(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Livewire::test(CoursesIndex::class)
             ->assertStatus(200)
@@ -40,7 +40,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_displays_courses_for_school(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Course::factory()
             ->for($this->school)
@@ -56,7 +56,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_does_not_display_courses_from_other_schools(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         $otherSchool = School::factory()->create();
         Course::factory()
@@ -73,7 +73,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_can_search_courses_by_title(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Course::factory()
             ->for($this->school)
@@ -90,7 +90,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_search_is_case_insensitive(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Course::factory()
             ->for($this->school)
@@ -107,7 +107,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_can_search_courses_by_description(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Course::factory()
             ->for($this->school)
@@ -124,7 +124,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_displays_empty_state_when_no_courses(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Livewire::test(CoursesIndex::class)
             ->assertSee('No courses yet');
@@ -132,7 +132,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_displays_empty_state_when_search_has_no_results(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Course::factory()
             ->for($this->school)
@@ -145,7 +145,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_displays_course_module_count(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         $course = Course::factory()
             ->for($this->school)
@@ -157,7 +157,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_displays_published_status(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Course::factory()
             ->for($this->school)
@@ -173,11 +173,11 @@ class CoursesIndexTest extends TestCase
 
     public function test_displays_course_creator(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Course::factory()
             ->for($this->school)
-            ->for($this->instructor, 'creator')
+            ->for($this->teacher, 'creator')
             ->create(['title' => 'My Course']);
 
         Livewire::test(CoursesIndex::class)
@@ -186,7 +186,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_pagination_works(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Course::factory()
             ->for($this->school)
@@ -202,7 +202,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_search_resets_pagination(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         Course::factory()
             ->for($this->school)
@@ -218,7 +218,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_can_delete_course(): void
     {
-        $this->instructor->givePermissionTo(['courses.view', 'courses.delete']);
+        $this->teacher->givePermissionTo(['courses.view', 'courses.delete']);
 
         $course = Course::factory()
             ->for($this->school)
@@ -233,7 +233,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_cannot_delete_course_without_permission(): void
     {
-        $this->instructor->givePermissionTo('courses.view');
+        $this->teacher->givePermissionTo('courses.view');
 
         $course = Course::factory()
             ->for($this->school)
@@ -250,7 +250,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_cannot_delete_course_from_different_school(): void
     {
-        $this->instructor->givePermissionTo(['courses.view', 'courses.delete']);
+        $this->teacher->givePermissionTo(['courses.view', 'courses.delete']);
 
         $otherSchool = School::factory()->create();
         $course = Course::factory()
@@ -272,7 +272,7 @@ class CoursesIndexTest extends TestCase
 
     public function test_cannot_delete_course_with_student_progress(): void
     {
-        $this->instructor->givePermissionTo(['courses.view', 'courses.delete']);
+        $this->teacher->givePermissionTo(['courses.view', 'courses.delete']);
 
         $course = Course::factory()
             ->for($this->school)

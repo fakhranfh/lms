@@ -39,12 +39,12 @@ class DemoLmsAccessService
     /**
      * Create a demo user account for the school.
      */
-    public function createDemoUser(School $school, string $roleType = 'instructor'): User
+    public function createDemoUser(School $school, string $roleType = 'teacher'): User
     {
         $roleName = match ($roleType) {
             'student' => RoleName::Student,
             'school-admin' => RoleName::SchoolAdmin,
-            default => RoleName::Instructor,
+            default => RoleName::Teacher,
         };
 
         $suffix = '-'.$roleType;
@@ -86,7 +86,7 @@ class DemoLmsAccessService
     /**
      * Grant demo access to a user for 14 days.
      */
-    public function grantDemoAccess(School $school, User $user, string $roleType = 'instructor'): DemoLmsAccess
+    public function grantDemoAccess(School $school, User $user, string $roleType = 'teacher'): DemoLmsAccess
     {
         $token = $this->generateAccessToken($school);
         $expiresAt = now()->addDays(14);
@@ -111,7 +111,7 @@ class DemoLmsAccessService
     /**
      * Get or create demo access for a school.
      */
-    public function getOrCreateDemoAccess(School $school, string $roleType = 'instructor'): DemoLmsAccess
+    public function getOrCreateDemoAccess(School $school, string $roleType = 'teacher'): DemoLmsAccess
     {
         $validAccess = $this->demoLmsAccessRepository->findValidForSchoolAndRole($school->id, $roleType);
 
@@ -127,7 +127,7 @@ class DemoLmsAccessService
     /**
      * Regenerate demo access for a school, always creating a new token.
      */
-    public function regenerateDemoAccess(School $school, string $roleType = 'instructor'): DemoLmsAccess
+    public function regenerateDemoAccess(School $school, string $roleType = 'teacher'): DemoLmsAccess
     {
         $user = $this->createDemoUser($school, $roleType);
 
@@ -135,12 +135,12 @@ class DemoLmsAccessService
     }
 
     /**
-     * Get both instructor and student demo credentials.
+     * Get both teacher and student demo credentials.
      */
     public function getDemoCredentials(School $school): array
     {
         return [
-            'instructor' => $this->getOrCreateDemoAccess($school, 'instructor'),
+            'teacher' => $this->getOrCreateDemoAccess($school, 'teacher'),
             'student' => $this->getOrCreateDemoAccess($school, 'student'),
         ];
     }

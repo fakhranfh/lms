@@ -41,7 +41,7 @@ return [
         'icon' => 'assignment_turned_in',
         'active_pattern' => 'submissions.*',
         'requires_permission' => 'submissions.view',
-        'exclude_role' => ['Instructor', 'School Admin'],
+        'exclude_role' => ['Teacher', 'School Admin'],
         'requires_school' => true,
     ],
     [

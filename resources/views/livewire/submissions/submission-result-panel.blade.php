@@ -1,12 +1,12 @@
 @php
-    $hasOverride = $submission->instructor_score !== null;
+    $hasOverride = $submission->teacher_score !== null;
 @endphp
 
 <div class="border border-outline rounded-lg p-space-lg space-y-space-md">
     <div class="flex items-center justify-between">
         <h2 class="font-title-md text-title-md text-on-surface">Result</h2>
         @if ($hasOverride)
-            <span class="px-space-sm py-space-xs bg-primary/10 text-primary text-label-sm font-label-md rounded-full">Instructor Override</span>
+            <span class="px-space-sm py-space-xs bg-primary/10 text-primary text-label-sm font-label-md rounded-full">Teacher Override</span>
         @endif
     </div>
 
@@ -18,8 +18,8 @@
                     <p class="text-headline-sm font-headline-sm text-on-surface">{{ $submission->ai_score ?? '—' }}</p>
                 </div>
                 <div>
-                    <p class="text-label-sm text-on-surface-variant">Instructor Score</p>
-                    <p class="text-headline-sm font-headline-sm text-primary">{{ $submission->instructor_score }}</p>
+                    <p class="text-label-sm text-on-surface-variant">Teacher Score</p>
+                    <p class="text-headline-sm font-headline-sm text-primary">{{ $submission->teacher_score }}</p>
                 </div>
             @else
                 <div class="col-span-2">

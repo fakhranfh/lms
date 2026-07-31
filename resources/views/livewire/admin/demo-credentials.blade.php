@@ -96,7 +96,7 @@
 
                 <!-- Content -->
                 <div wire:loading.remove wire:target="generateCredentials,selectedSchoolId">
-                    @if ($instructorAccess && $instructorAccess->expires_at->isFuture())
+                    @if ($teacherAccess && $teacherAccess->expires_at->isFuture())
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <!-- School Admin Demo Access -->
                             <div class="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -198,7 +198,7 @@
                                 </div>
                             </div>
 
-                            <!-- Instructor Demo Access -->
+                            <!-- Teacher Demo Access -->
                             <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                                 <div class="flex items-start gap-3">
                                     <svg class="w-5 h-5 text-green-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -207,17 +207,17 @@
                                             clip-rule="evenodd"></path>
                                     </svg>
                                     <div class="flex-1">
-                                        <h3 class="font-semibold text-green-900 mb-3">Instructor Access</h3>
+                                        <h3 class="font-semibold text-green-900 mb-3">Teacher Access</h3>
                                         <div class="space-y-3">
                                             <div class="bg-white rounded p-3 border border-green-100">
                                                 <label class="text-xs font-medium text-gray-600 block mb-1">Email</label>
                                                 <div class="flex items-center gap-2">
                                                     <code
                                                         class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-gray-800 break-all">
-                                                        {{ $instructorAccess->user->email }}
+                                                        {{ $teacherAccess->user->email }}
                                                     </code>
                                                     <button type="button"
-                                                        onclick="copyToClipboard(this, '{{ $instructorAccess->user->email }}')"
+                                                        onclick="copyToClipboard(this, '{{ $teacherAccess->user->email }}')"
                                                         class="p-2 hover:bg-gray-100 rounded transition flex-shrink-0">
                                                         <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor"
                                                             viewBox="0 0 24 24">
@@ -235,10 +235,10 @@
                                                 <div class="flex items-center gap-2">
                                                     <code
                                                         class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-gray-800 break-all">
-                                                        {{ $instructorAccess->access_token }}
+                                                        {{ $teacherAccess->access_token }}
                                                     </code>
                                                     <button type="button"
-                                                        onclick="copyToClipboard(this, '{{ $instructorAccess->access_token }}')"
+                                                        onclick="copyToClipboard(this, '{{ $teacherAccess->access_token }}')"
                                                         class="p-2 hover:bg-gray-100 rounded transition flex-shrink-0">
                                                         <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor"
                                                             viewBox="0 0 24 24">
@@ -255,7 +255,7 @@
                                                 <label class="text-xs font-medium text-gray-600 block mb-1">Login URL</label>
                                                 <div class="flex items-center gap-2">
                                                     @php
-                                                        $loginUrl = $instructorAccess->getLoginUrl();
+                                                        $loginUrl = $teacherAccess->getLoginUrl();
                                                     @endphp
                                                     <a href="{{ $loginUrl }}" target="_blank" rel="noopener noreferrer"
                                                         class="flex-1 bg-gray-50 px-3 py-2 rounded text-sm font-mono text-blue-700 break-all hover:underline">
@@ -278,7 +278,7 @@
 
                                         <div class="mt-3 pt-3 border-t border-green-100">
                                             <p class="text-xs text-green-700">
-                                                <strong>Expires:</strong> {{ $instructorAccess->expires_at_display->format('M d, Y H:i A') }}
+                                                <strong>Expires:</strong> {{ $teacherAccess->expires_at_display->format('M d, Y H:i A') }}
                                             </p>
                                         </div>
                                     </div>

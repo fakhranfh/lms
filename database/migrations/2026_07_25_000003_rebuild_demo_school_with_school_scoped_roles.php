@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 return new class extends Migration
 {
     /**
-     * Rebuild the demo school so its Admin/Instructor/Student roles are
+     * Rebuild the demo school so its Admin/Teacher/Student roles are
      * scoped to the school itself, not shared globally.
      */
     public function up(): void
@@ -50,21 +50,21 @@ return new class extends Migration
         $schoolAdminRole = $this->createSchoolRole($school->id, RoleName::SchoolAdmin);
         $schoolAdminRole->syncPermissions(Permission::where('name', '!=', 'settings.billing')->get());
 
-        $instructorRole = $this->createSchoolRole($school->id, RoleName::Instructor);
-        $instructorRole->syncPermissions(Permission::whereIn('name', RoleName::Instructor->defaultPermissions())->get());
+        $teacherRole = $this->createSchoolRole($school->id, RoleName::Teacher);
+        $teacherRole->syncPermissions(Permission::whereIn('name', RoleName::Teacher->defaultPermissions())->get());
 
         $studentRole = $this->createSchoolRole($school->id, RoleName::Student);
         $studentRole->syncPermissions(Permission::whereIn('name', RoleName::Student->defaultPermissions())->get());
 
-        $instructorUser = User::create([
+        $teacherUser = User::create([
             'id' => (string) Str::uuid(),
-            'name' => 'Demo Instructor',
-            'email' => 'demo-instructor@demo.'.$rootDomain,
+            'name' => 'Demo Teacher',
+            'email' => 'demo-teacher@demo.'.$rootDomain,
             'password' => Hash::make('demo-password'),
             'email_verified_at' => now(),
             'timezone' => 'UTC',
         ]);
-        $instructorUser->assignRole($instructorRole);
+        $teacherUser->assignRole($teacherRole);
 
         $studentUser = User::create([
             'id' => (string) Str::uuid(),
@@ -79,14 +79,14 @@ return new class extends Migration
         // Set the school_id column directly, bypassing the User model's
         // school_user pivot write-through since that table does not exist yet
         // at this point in migration history.
-        DB::table('users')->whereIn('id', [$instructorUser->id, $studentUser->id])->update(['school_id' => $school->id]);
+        DB::table('users')->whereIn('id', [$teacherUser->id, $studentUser->id])->update(['school_id' => $school->id]);
 
         DemoLmsAccess::create([
             'id' => (string) Str::uuid(),
             'school_id' => $school->id,
-            'user_id' => $instructorUser->id,
+            'user_id' => $teacherUser->id,
             'access_token' => Str::random(32),
-            'role' => 'instructor',
+            'role' => 'teacher',
             'expires_at' => now()->addDays(14),
         ]);
 

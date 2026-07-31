@@ -11,11 +11,11 @@ return new class extends Migration
     public function up(): void
     {
         $testUser = DB::table('users')->where('email', 'test@school.local')->first();
-        $instructorRole = DB::table('roles')->where('name', 'Instructor')->first();
+        $teacherRole = DB::table('roles')->where('name', 'Teacher')->first();
 
-        if ($testUser && $instructorRole) {
+        if ($testUser && $teacherRole) {
             DB::table('model_has_roles')->insert([
-                'role_id' => $instructorRole->id,
+                'role_id' => $teacherRole->id,
                 'model_id' => $testUser->id,
                 'model_type' => 'App\Models\User',
             ]);

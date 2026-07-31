@@ -14,7 +14,7 @@ class ModuleFormTest extends TestCase
 {
     private School $school;
 
-    private User $instructor;
+    private User $teacher;
 
     private Course $course;
 
@@ -23,19 +23,19 @@ class ModuleFormTest extends TestCase
         parent::setUp();
 
         $this->school = School::factory()->create();
-        $this->instructor = User::factory()
+        $this->teacher = User::factory()
             ->forSchool($this->school)
             ->create();
         $this->course = Course::factory()
             ->for($this->school)
             ->create();
 
-        $this->actingAs($this->instructor);
+        $this->actingAs($this->teacher);
     }
 
     public function test_create_module_component_renders(): void
     {
-        $this->instructor->givePermissionTo('modules.create');
+        $this->teacher->givePermissionTo('modules.create');
 
         Livewire::test(ModuleForm::class, ['course' => $this->course])
             ->assertStatus(200)
@@ -48,7 +48,7 @@ class ModuleFormTest extends TestCase
             ->for($this->course)
             ->create(['title' => 'Test Module Title']);
 
-        $this->instructor->givePermissionTo('modules.edit');
+        $this->teacher->givePermissionTo('modules.edit');
 
         Livewire::test(ModuleForm::class, [
             'course' => $this->course,
@@ -61,7 +61,7 @@ class ModuleFormTest extends TestCase
 
     public function test_can_create_module(): void
     {
-        $this->instructor->givePermissionTo('modules.create');
+        $this->teacher->givePermissionTo('modules.create');
 
         Livewire::test(ModuleForm::class, ['course' => $this->course])
             ->set('title', 'HTML Basics')
@@ -79,7 +79,7 @@ class ModuleFormTest extends TestCase
 
     public function test_module_order_auto_increments(): void
     {
-        $this->instructor->givePermissionTo('modules.create');
+        $this->teacher->givePermissionTo('modules.create');
 
         Module::factory()
             ->for($this->course)
@@ -102,7 +102,7 @@ class ModuleFormTest extends TestCase
             ->for($this->course)
             ->create(['title' => 'Old Title']);
 
-        $this->instructor->givePermissionTo('modules.edit');
+        $this->teacher->givePermissionTo('modules.edit');
 
         Livewire::test(ModuleForm::class, [
             'course' => $this->course,
@@ -122,7 +122,7 @@ class ModuleFormTest extends TestCase
 
     public function test_required_fields_validation(): void
     {
-        $this->instructor->givePermissionTo('modules.create');
+        $this->teacher->givePermissionTo('modules.create');
 
         Livewire::test(ModuleForm::class, ['course' => $this->course])
             ->set('title', '')
@@ -132,7 +132,7 @@ class ModuleFormTest extends TestCase
 
     public function test_title_max_length_validation(): void
     {
-        $this->instructor->givePermissionTo('modules.create');
+        $this->teacher->givePermissionTo('modules.create');
 
         Livewire::test(ModuleForm::class, ['course' => $this->course])
             ->set('title', str_repeat('a', 256))
@@ -153,7 +153,7 @@ class ModuleFormTest extends TestCase
             ->for($otherSchool)
             ->create();
 
-        $this->instructor->givePermissionTo('modules.create');
+        $this->teacher->givePermissionTo('modules.create');
 
         Livewire::test(ModuleForm::class, ['course' => $otherCourse])
             ->assertStatus(403);

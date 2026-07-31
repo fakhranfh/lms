@@ -32,7 +32,7 @@ class TierChangeController extends Controller
 
     private function denyUnlessCanManageTier(): void
     {
-        abort_if(auth()->user()->hasRole(['Instructor', 'Student']), 403);
+        abort_if(auth()->user()->hasRole(['Teacher', 'Student']), 403);
     }
 
     public function show(): View

@@ -85,11 +85,11 @@ test('can resubmit when assignment allows multiple submissions', function () {
 
 test('can override a submission score', function () {
     $submission = Submission::factory()->create(['ai_score' => 50]);
-    $instructor = User::factory()->create();
+    $teacher = User::factory()->create();
 
     $service = app(SubmissionService::class);
-    $updated = $service->overrideScore($submission->id, 88, 'Nicely done', $instructor);
+    $updated = $service->overrideScore($submission->id, 88, 'Nicely done', $teacher);
 
-    expect((float) $updated->instructor_score)->toBe(88.0);
-    expect($updated->reviewed_by)->toBe($instructor->id);
+    expect((float) $updated->teacher_score)->toBe(88.0);
+    expect($updated->reviewed_by)->toBe($teacher->id);
 });

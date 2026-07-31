@@ -4,12 +4,12 @@ use App\Models\School;
 use App\Models\User;
 use App\Services\R2StorageService;
 
-test('dashboard displays storage quota card for instructor', function () {
+test('dashboard displays storage quota card for teacher', function () {
     $school = School::factory()->create();
     $user = User::factory()
         ->forSchool($school)
         ->create();
-    $user->assignRole('Instructor');
+    $user->assignRole('Teacher');
 
     $this->actingAs($user)
         ->get('/dashboard')
@@ -23,7 +23,7 @@ test('storage quota displays correct limit and percentage', function () {
     $user = User::factory()
         ->forSchool($school)
         ->create();
-    $user->assignRole('Instructor');
+    $user->assignRole('Teacher');
 
     $service = app(R2StorageService::class);
     $quota = $service->checkSchoolQuota($school->id);

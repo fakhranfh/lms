@@ -102,10 +102,10 @@ class SubmissionRepository implements SubmissionRepositoryInterface
         return Submission::destroy($id);
     }
 
-    public function overrideScore(string $id, float $score, string $feedback, User $instructor): Submission
+    public function overrideScore(string $id, float $score, string $feedback, User $teacher): Submission
     {
         $submission = Submission::findOrFail($id);
-        $submission->overrideScore($score, $feedback, $instructor);
+        $submission->overrideScore($score, $feedback, $teacher);
 
         return $submission;
     }

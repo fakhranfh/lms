@@ -11,20 +11,20 @@ return new class extends Migration
     {
         if (Schema::getConnection()->getDriverName() === 'pgsql') {
             DB::statement('ALTER TABLE demo_lms_accesses DROP CONSTRAINT IF EXISTS demo_lms_accesses_role_check');
-            DB::statement("ALTER TABLE demo_lms_accesses ADD CONSTRAINT demo_lms_accesses_role_check CHECK (role IN ('instructor', 'student', 'school-admin'))");
+            DB::statement("ALTER TABLE demo_lms_accesses ADD CONSTRAINT demo_lms_accesses_role_check CHECK (role IN ('teacher', 'student', 'school-admin'))");
 
             return;
         }
 
         if (Schema::getConnection()->getDriverName() === 'sqlite') {
             Schema::table('demo_lms_accesses', function (Blueprint $table) {
-                $table->enum('role', ['instructor', 'student', 'school-admin'])->default('instructor')->change();
+                $table->enum('role', ['teacher', 'student', 'school-admin'])->default('teacher')->change();
             });
 
             return;
         }
 
-        DB::statement("ALTER TABLE demo_lms_accesses MODIFY role ENUM('instructor', 'student', 'school-admin') NOT NULL DEFAULT 'instructor'");
+        DB::statement("ALTER TABLE demo_lms_accesses MODIFY role ENUM('teacher', 'student', 'school-admin') NOT NULL DEFAULT 'teacher'");
     }
 
     public function down(): void
@@ -33,19 +33,19 @@ return new class extends Migration
 
         if (Schema::getConnection()->getDriverName() === 'pgsql') {
             DB::statement('ALTER TABLE demo_lms_accesses DROP CONSTRAINT IF EXISTS demo_lms_accesses_role_check');
-            DB::statement("ALTER TABLE demo_lms_accesses ADD CONSTRAINT demo_lms_accesses_role_check CHECK (role IN ('instructor', 'student'))");
+            DB::statement("ALTER TABLE demo_lms_accesses ADD CONSTRAINT demo_lms_accesses_role_check CHECK (role IN ('teacher', 'student'))");
 
             return;
         }
 
         if (Schema::getConnection()->getDriverName() === 'sqlite') {
             Schema::table('demo_lms_accesses', function (Blueprint $table) {
-                $table->enum('role', ['instructor', 'student'])->default('instructor')->change();
+                $table->enum('role', ['teacher', 'student'])->default('teacher')->change();
             });
 
             return;
         }
 
-        DB::statement("ALTER TABLE demo_lms_accesses MODIFY role ENUM('instructor', 'student') NOT NULL DEFAULT 'instructor'");
+        DB::statement("ALTER TABLE demo_lms_accesses MODIFY role ENUM('teacher', 'student') NOT NULL DEFAULT 'teacher'");
     }
 };

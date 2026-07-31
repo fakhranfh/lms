@@ -9,6 +9,11 @@ use Spatie\Permission\Models\Role;
 
 class UserRepository implements UserRepositoryInterface
 {
+    public function create(array $data): User
+    {
+        return User::create($data);
+    }
+
     public function update(User $user, array $data): User
     {
         $user->update($data);

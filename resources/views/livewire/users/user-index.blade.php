@@ -8,7 +8,17 @@
         </div>
     @endif
 
-    <h1 class="font-headline-sm text-headline-sm text-on-surface">Users</h1>
+    <div class="flex items-center justify-between">
+        <h1 class="font-headline-sm text-headline-sm text-on-surface">Users</h1>
+        <div class="flex items-center gap-space-md">
+            @can('users.import')
+                <a href="{{ route('users.import') }}" class="px-space-lg py-space-sm border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors">Import Users</a>
+            @endcan
+            @can('users.create')
+                <a href="{{ route('users.create') }}" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">Create User</a>
+            @endcan
+        </div>
+    </div>
 
     <!-- Search and Filter -->
     <div class="bg-surface rounded-lg p-space-lg border border-outline-variant">

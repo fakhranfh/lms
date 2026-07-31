@@ -62,7 +62,7 @@ interface SubmissionRepositoryInterface
     public function delete(string $id): int;
 
     /**
-     * Record an instructor's grade override on a submission.
+     * Record an teacher's grade override on a submission.
      */
-    public function overrideScore(string $id, float $score, string $feedback, User $instructor): Submission;
+    public function overrideScore(string $id, float $score, string $feedback, User $teacher): Submission;
 }

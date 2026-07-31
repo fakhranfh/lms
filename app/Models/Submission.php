@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['assignment_id', 'user_id', 'student_answer', 'status', 'ai_score', 'ai_feedback', 'instructor_score', 'instructor_feedback', 'reviewed_by', 'instructor_reviewed_at', 'submitted_at', 'graded_at', 'retry_count', 'error_message'])]
+#[Fillable(['assignment_id', 'user_id', 'student_answer', 'status', 'ai_score', 'ai_feedback', 'teacher_score', 'teacher_feedback', 'reviewed_by', 'teacher_reviewed_at', 'submitted_at', 'graded_at', 'retry_count', 'error_message'])]
 class Submission extends Model
 {
     /** @use HasFactory<SubmissionFactory> */
@@ -23,10 +23,10 @@ class Submission extends Model
         'ai_feedback' => 'array',
         'status' => SubmissionStatus::class,
         'ai_score' => 'decimal:2',
-        'instructor_score' => 'decimal:2',
+        'teacher_score' => 'decimal:2',
         'submitted_at' => 'datetime',
         'graded_at' => 'datetime',
-        'instructor_reviewed_at' => 'datetime',
+        'teacher_reviewed_at' => 'datetime',
     ];
 
     /**
@@ -50,7 +50,7 @@ class Submission extends Model
     }
 
     /**
-     * Get the instructor who reviewed this submission.
+     * Get the teacher who reviewed this submission.
      *
      * @return BelongsTo<User, $this>
      */
@@ -79,27 +79,27 @@ class Submission extends Model
         return $this->status === SubmissionStatus::Failed;
     }
 
-    public function overrideScore(float $score, string $feedback, User $instructor): void
+    public function overrideScore(float $score, string $feedback, User $teacher): void
     {
         $this->update([
-            'instructor_score' => $score,
-            'instructor_feedback' => $feedback,
-            'reviewed_by' => $instructor->id,
-            'instructor_reviewed_at' => now(),
+            'teacher_score' => $score,
+            'teacher_feedback' => $feedback,
+            'reviewed_by' => $teacher->id,
+            'teacher_reviewed_at' => now(),
         ]);
     }
 
     public function getDisplayScore(): ?float
     {
-        return $this->instructor_score !== null
-            ? (float) $this->instructor_score
+        return $this->teacher_score !== null
+            ? (float) $this->teacher_score
             : ($this->ai_score !== null ? (float) $this->ai_score : null);
     }
 
     public function getDisplayFeedback(): ?string
     {
-        if ($this->instructor_feedback !== null) {
-            return $this->instructor_feedback;
+        if ($this->teacher_feedback !== null) {
+            return $this->teacher_feedback;
         }
 
         if ($this->ai_feedback !== null) {

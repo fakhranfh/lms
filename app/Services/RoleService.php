@@ -64,7 +64,7 @@ class RoleService
     }
 
     /**
-     * Create the default School Admin / Instructor / Student roles for a
+     * Create the default School Admin / Teacher / Student roles for a
      * school, if they don't already exist. Used both by DefaultRoleSeeder
      * and automatically when a school is self-registered.
      */
@@ -78,11 +78,11 @@ class RoleService
                 $this->permissionRepository->getByGroups(RoleName::SchoolAdmin->permissionGroups())
             );
 
-            $instructorRole = $this->roleRepository->firstOrCreateForSchool(
-                $schoolId, RoleName::Instructor->value, ['slug' => RoleName::Instructor->slug()]
+            $teacherRole = $this->roleRepository->firstOrCreateForSchool(
+                $schoolId, RoleName::Teacher->value, ['slug' => RoleName::Teacher->slug()]
             );
-            $instructorRole->syncPermissions(
-                $this->permissionRepository->getByNames(RoleName::Instructor->defaultPermissions())
+            $teacherRole->syncPermissions(
+                $this->permissionRepository->getByNames(RoleName::Teacher->defaultPermissions())
             );
 
             $studentRole = $this->roleRepository->firstOrCreateForSchool(

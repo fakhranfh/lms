@@ -35,7 +35,7 @@ foreach (RootDomains::all() as $index => $rootDomain) {
 
         Route::get('/try-demo', [TryDemoController::class, 'index'])->name("try-demo{$suffix}");
         Route::get('/try-demo/{role}', [TryDemoController::class, 'login'])
-            ->whereIn('role', ['instructor', 'student', 'school-admin'])
+            ->whereIn('role', ['teacher', 'student', 'school-admin'])
             ->name("try-demo.login{$suffix}");
     });
 }

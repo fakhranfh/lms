@@ -1,10 +1,14 @@
 <?php
 
 use App\Enums\RoleName;
+use App\Livewire\Users\UserForm;
+use App\Livewire\Users\UserImport;
 use App\Livewire\Users\UserIndex;
 use App\Livewire\Users\UserRoles;
 use App\Models\School;
 use App\Models\User;
+use App\Services\R2StorageService;
+use Illuminate\Http\UploadedFile;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -119,4 +123,174 @@ test('removing the last admin role from the only admin user is blocked', functio
         ->assertHasErrors('roles');
 
     expect($target->fresh()->hasRole(RoleName::Admin))->toBeTrue();
+});
+
+test('user with users.create can create a new user', function () {
+    $actor = actingAsUserManager(['users.create']);
+    $teacherRole = App\Models\Role::firstOrCreate(['name' => RoleName::Teacher->value, 'guard_name' => 'web', 'school_id' => $actor->school_id]);
+
+    Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
+        ->set('name', 'New Teacher')
+        ->set('email', 'new.teacher@example.com')
+        ->set('password', 'password123')
+        ->set('roles', [$teacherRole->id])
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('users.index'));
+
+    $created = User::where('email', 'new.teacher@example.com')->first();
+    expect($created)->not->toBeNull();
+    expect($created->hasRole(RoleName::Teacher))->toBeTrue();
+    expect($created->email_verified_at)->not->toBeNull();
+});
+
+test('creating a user with a photo uploads it via R2StorageService', function () {
+    if (! extension_loaded('gd')) {
+        $this->markTestSkipped('GD extension not installed');
+    }
+
+    $this->mock(R2StorageService::class, function ($mock) {
+        $mock->shouldReceive('uploadPublicFile')
+            ->once()
+            ->andReturn('https://r2.example.com/profile-photos/new-teacher.jpg');
+    });
+
+    $actor = actingAsUserManager(['users.create']);
+    $file = UploadedFile::fake()->image('teacher.jpg', 100, 100);
+
+    Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
+        ->set('name', 'Photo Teacher')
+        ->set('email', 'photo.teacher@example.com')
+        ->set('password', 'password123')
+        ->set('photo', $file)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $this->assertDatabaseHas('users', [
+        'email' => 'photo.teacher@example.com',
+        'profile_photo_path' => 'https://r2.example.com/profile-photos/new-teacher.jpg',
+    ]);
+});
+
+test('creating a user requires users.create permission', function () {
+    $actor = actingAsUserManager(['users.view']);
+
+    Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
+        ->set('name', 'New Teacher')
+        ->set('email', 'blocked@example.com')
+        ->set('password', 'password123')
+        ->call('save')
+        ->assertForbidden();
+});
+
+test('user with users.edit can update an existing user', function () {
+    $actor = actingAsUserManager(['users.edit']);
+    $target = User::factory()->create(['name' => 'Old Name', 'email' => 'old@example.com']);
+
+    Livewire::actingAs($actor)->test(UserForm::class, ['id' => $target->id])
+        ->set('name', 'Updated Name')
+        ->set('email', 'updated@example.com')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('users.index'));
+
+    $this->assertDatabaseHas('users', [
+        'id' => $target->id,
+        'name' => 'Updated Name',
+        'email' => 'updated@example.com',
+    ]);
+});
+
+test('editing a user without a new password keeps the current password', function () {
+    $actor = actingAsUserManager(['users.edit']);
+    $target = User::factory()->create(['password' => 'original-password']);
+    $originalHash = $target->password;
+
+    Livewire::actingAs($actor)->test(UserForm::class, ['id' => $target->id])
+        ->set('name', $target->name)
+        ->set('email', $target->email)
+        ->set('password', '')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($target->fresh()->password)->toBe($originalHash);
+});
+
+test('editing a user requires users.edit permission', function () {
+    $actor = actingAsUserManager(['users.view']);
+    $target = User::factory()->create();
+
+    Livewire::actingAs($actor)->test(UserForm::class, ['id' => $target->id])
+        ->set('name', 'Blocked Update')
+        ->set('email', $target->email)
+        ->call('save')
+        ->assertForbidden();
+});
+
+test('user with users.import can bulk import teachers and students with photos', function () {
+    if (! extension_loaded('gd')) {
+        $this->markTestSkipped('GD extension not installed');
+    }
+
+    $this->mock(R2StorageService::class, function ($mock) {
+        $mock->shouldReceive('uploadPublicFile')
+            ->once()
+            ->andReturn('https://r2.example.com/profile-photos/jane.jpg');
+    });
+
+    $actor = actingAsUserManager(['users.import']);
+    App\Models\Role::firstOrCreate(['name' => RoleName::Teacher->value, 'guard_name' => 'web', 'school_id' => $actor->school_id]);
+    App\Models\Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $actor->school_id]);
+
+    $csv = "name,email,role,photo_filename\n"
+        ."Jane Teach,jane.teach@example.com,Teacher,jane.jpg\n"
+        ."John Stud,john.stud@example.com,Student,\n";
+
+    $spreadsheet = UploadedFile::fake()->createWithContent('users.csv', $csv);
+    $photo = UploadedFile::fake()->image('jane.jpg', 100, 100);
+
+    Livewire::actingAs($actor)->test(UserImport::class)
+        ->set('spreadsheet', $spreadsheet)
+        ->set('photos', [$photo])
+        ->call('import')
+        ->assertSet('createdCount', 2);
+
+    $teacher = User::where('email', 'jane.teach@example.com')->first();
+    $student = User::where('email', 'john.stud@example.com')->first();
+
+    expect($teacher)->not->toBeNull()
+        ->and($teacher->hasRole(RoleName::Teacher))->toBeTrue()
+        ->and($teacher->profile_photo_path)->toBe('https://r2.example.com/profile-photos/jane.jpg')
+        ->and($student)->not->toBeNull()
+        ->and($student->hasRole(RoleName::Student))->toBeTrue()
+        ->and($student->profile_photo_path)->toBeNull();
+});
+
+test('importing skips rows with an email that already exists and reports it', function () {
+    $actor = actingAsUserManager(['users.import']);
+    App\Models\Role::firstOrCreate(['name' => RoleName::Teacher->value, 'guard_name' => 'web', 'school_id' => $actor->school_id]);
+    User::factory()->create(['email' => 'existing@example.com']);
+
+    $csv = "name,email,role,photo_filename\n"
+        ."Existing Person,existing@example.com,Teacher,\n";
+
+    $spreadsheet = UploadedFile::fake()->createWithContent('users.csv', $csv);
+
+    $component = Livewire::actingAs($actor)->test(UserImport::class)
+        ->set('spreadsheet', $spreadsheet)
+        ->call('import')
+        ->assertSet('createdCount', 0);
+
+    expect($component->get('importErrors'))->not->toBeEmpty();
+});
+
+test('importing users requires users.import permission', function () {
+    $actor = actingAsUserManager(['users.view']);
+    $csv = "name,email,role,photo_filename\nJane Teach,jane.teach@example.com,Teacher,\n";
+    $spreadsheet = UploadedFile::fake()->createWithContent('users.csv', $csv);
+
+    Livewire::actingAs($actor)->test(UserImport::class)
+        ->set('spreadsheet', $spreadsheet)
+        ->call('import')
+        ->assertForbidden();
 });

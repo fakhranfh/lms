@@ -23,8 +23,8 @@ class OverrideScoreFormRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'instructor_score' => ['required', 'numeric', 'min:0', 'max:100'],
-            'instructor_feedback' => ['required', 'string'],
+            'teacher_score' => ['required', 'numeric', 'min:0', 'max:100'],
+            'teacher_feedback' => ['required', 'string'],
         ];
     }
 }

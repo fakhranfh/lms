@@ -34,9 +34,9 @@ return new class extends Migration
             $table->string('status', 20)->default('pending');
             $table->decimal('ai_score', 5, 2)->nullable();
             $table->json('ai_feedback')->nullable();
-            $table->decimal('instructor_score', 5, 2)->nullable();
-            $table->longText('instructor_feedback')->nullable();
-            $table->timestamp('instructor_reviewed_at')->nullable();
+            $table->decimal('teacher_score', 5, 2)->nullable();
+            $table->longText('teacher_feedback')->nullable();
+            $table->timestamp('teacher_reviewed_at')->nullable();
             $table->uuid('reviewed_by')->nullable();
             $table->timestamp('submitted_at')->useCurrent();
             $table->timestamp('graded_at')->nullable();

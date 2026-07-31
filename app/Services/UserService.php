@@ -21,6 +21,31 @@ class UserService
         private R2StorageService $r2Storage,
     ) {}
 
+    /**
+     * Create a user (e.g. Teacher/Student) from the School Admin panel, optionally
+     * with a profile photo and role assignment. The user is created already
+     * email-verified since they were provisioned directly by an admin, not
+     * through self-registration.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<int, int>  $roleIds
+     */
+    public function createUser(array $data, ?UploadedFile $photo, array $roleIds = []): User
+    {
+        $user = $this->userRepository->create($data);
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        if ($photo) {
+            $this->updateProfilePhoto($user, $photo);
+        }
+
+        if ($roleIds !== []) {
+            $this->userRepository->syncRoles($user, $roleIds);
+        }
+
+        return $user;
+    }
+
     public function updateProfile(User $user, array $data): User
     {
         return $this->userRepository->update($user, $data);

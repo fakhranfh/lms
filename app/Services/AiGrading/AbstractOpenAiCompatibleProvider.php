@@ -60,7 +60,7 @@ abstract class AbstractOpenAiCompatibleProvider implements AiGradingProvider
             ];
         } catch (RequestException $e) {
             Log::error("{$this->providerName} API request failed", [
-                'status' => $e->response?->status(),
+                'status' => $e->response->status(),
                 'message' => $e->getMessage(),
             ]);
 
@@ -91,7 +91,7 @@ abstract class AbstractOpenAiCompatibleProvider implements AiGradingProvider
             $essay,
             $assignment->rubricItems(),
             $assignment->prompt_question ?? '',
-            $assignment->max_score !== null ? (float) $assignment->max_score : 100.0,
+            (float) $assignment->max_score,
         );
     }
 

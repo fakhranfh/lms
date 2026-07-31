@@ -10,6 +10,9 @@ use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
+/**
+ * @property-read float $totalWeight
+ */
 class AssignmentForm extends Component
 {
     public Lesson $lesson;
@@ -88,7 +91,7 @@ class AssignmentForm extends Component
 
     public function getTotalWeightProperty(): float
     {
-        return collect($this->rubricItems)->sum(fn (array $item) => (float) ($item['weight'] ?? 0));
+        return collect($this->rubricItems)->sum(fn (array $item) => (float) $item['weight']);
     }
 
     public function save(AssignmentService $assignmentService)
@@ -108,7 +111,7 @@ class AssignmentForm extends Component
             return;
         }
 
-        $hasRubricContent = collect($this->rubricItems)->contains(fn (array $item) => trim((string) ($item['criterion'] ?? '')) !== '');
+        $hasRubricContent = collect($this->rubricItems)->contains(fn (array $item) => trim((string) $item['criterion']) !== '');
 
         if ($hasRubricContent && round($this->totalWeight, 2) !== 100.0) {
             $this->errorMessage = 'Rubric item weights must total 100 (currently '.$this->totalWeight.').';

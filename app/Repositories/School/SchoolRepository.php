@@ -99,6 +99,9 @@ class SchoolRepository implements SchoolRepositoryInterface
         return $school->admins()->whereKey($userId)->exists();
     }
 
+    /**
+     * @return Collection<int, School>
+     */
     public function getAllWithUserCounts(): Collection
     {
         return School::withCount('users')->get();

@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+/**
+ * @property-read string|null $file_url
+ */
 #[Fillable(['lesson_id', 'type', 'title', 'description', 'file_url', 'file_path', 'file_size', 'mime_type', 'order', 'version', 'is_active'])]
 class LessonMaterial extends Model
 {

@@ -15,7 +15,7 @@ trait HasViewerTimezoneDates
 {
     public function getAttribute($key)
     {
-        if (is_string($key) && Str::endsWith($key, '_display')) {
+        if (Str::endsWith($key, '_display')) {
             $column = Str::beforeLast($key, '_display');
             $value = parent::getAttribute($column);
 

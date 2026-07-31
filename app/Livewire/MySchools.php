@@ -113,7 +113,7 @@ class MySchools extends Component
     {
         $school = auth()->user()->schools->firstWhere('id', $schoolId);
 
-        abort_unless($school, 403);
+        abort_unless($school !== null, 403);
 
         return $school;
     }

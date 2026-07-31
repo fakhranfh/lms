@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Schools;
 
+use App\Models\School;
 use App\Models\SchoolTier;
 use App\Services\PricingTierService;
 use App\Services\SchoolService;
@@ -10,6 +11,12 @@ use Illuminate\Support\Collection as BaseCollection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
+/**
+ * @property-read School $school
+ * @property-read BaseCollection $availableTiers
+ * @property-read ?SchoolTier $currentSchoolTier
+ * @property-read BaseCollection $tierLimits
+ */
 class SchoolEdit extends Component
 {
     public string $schoolId;
@@ -80,7 +87,7 @@ class SchoolEdit extends Component
             $this->successMessage = "School tier changed to {$newTier->name} successfully.";
 
             // Reset computed properties
-            $this->resetComputed();
+            unset($this->school, $this->currentSchoolTier, $this->tierLimits);
         } catch (\Exception $e) {
             $this->errorMessage = 'Failed to change tier: '.$e->getMessage();
         }

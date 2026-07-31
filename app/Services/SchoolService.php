@@ -81,7 +81,7 @@ class SchoolService
      *
      * @param  array<string>  $with
      */
-    public function findWith(string $id, array $with = [])
+    public function findWith(string $id, array $with = []): ?School
     {
         return $this->schoolRepository->findWith($id, $with);
     }

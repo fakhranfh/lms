@@ -55,24 +55,27 @@ class StorageMonitoringService
     /**
      * Per-school storage breakdown, aggregated from active lesson materials.
      *
-     * @return Collection<int, array{school: School, used_bytes: int, material_count: int, largest_material_bytes: int, last_upload_at: ?string}>
+     * Each item is shaped: array{school: School, used_bytes: int, material_count: int, largest_material_bytes: int, last_upload_at: string|null}
      */
     public function perSchoolBreakdown(string $sortBy = 'used_bytes', string $direction = 'desc'): Collection
     {
         $rows = $this->schoolRepository->getAllWithUserCounts()
-            ->map(function (School $school) {
+            ->map(function (School $school): array {
                 $materials = $this->materialRepository->getActiveForSchool($school->id);
+                $lastUploadAt = $materials->max('created_at');
 
                 return [
                     'school' => $school,
                     'used_bytes' => (int) $materials->sum('file_size'),
-                    'material_count' => $materials->count(),
+                    'material_count' => count($materials),
                     'largest_material_bytes' => (int) $materials->max('file_size'),
-                    'last_upload_at' => $materials->max('created_at'),
+                    'last_upload_at' => $lastUploadAt !== null ? (string) $lastUploadAt : null,
                 ];
             });
 
-        return $rows->sortBy($sortBy, SORT_REGULAR, $direction === 'desc')->values();
+        return $rows->sortBy($sortBy, SORT_REGULAR, $direction === 'desc')
+            ->values()
+            ->map(fn (array $row): array => $row);
     }
 
     /**
@@ -93,7 +96,7 @@ class StorageMonitoringService
         $summary = $this->globalSummary();
 
         $lastLog = $this->usageLogRepository->findLatestGlobal();
-        $lastThreshold = $lastLog?->last_alert_threshold ?? 0;
+        $lastThreshold = $lastLog->last_alert_threshold ?? 0;
 
         $crossedThreshold = null;
         foreach (self::ALERT_THRESHOLDS as $threshold) {

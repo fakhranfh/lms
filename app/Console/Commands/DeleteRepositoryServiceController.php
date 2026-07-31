@@ -150,8 +150,8 @@ class DeleteRepositoryServiceController extends Command
         $updated = preg_replace($pattern, '', $content);
 
         // Also remove the import statement for the repository interface and class
-        $updated = preg_replace('/use App\\\\Repositories\\\\'.preg_quote($name).'\\\\'.preg_quote($name)."RepositoryInterface;?\s*\n?/", '', $updated);
-        $updated = preg_replace('/use App\\\\Repositories\\\\'.preg_quote($name).'\\\\'.preg_quote($name)."Repository;?\s*\n?/", '', $updated);
+        $updated = preg_replace('/use App\\\\Repositories\\\\'.preg_quote($name, '/').'\\\\'.preg_quote($name, '/')."RepositoryInterface;?\s*\n?/", '', $updated);
+        $updated = preg_replace('/use App\\\\Repositories\\\\'.preg_quote($name, '/').'\\\\'.preg_quote($name, '/')."Repository;?\s*\n?/", '', $updated);
 
         if ($updated !== $content) {
             File::put($providerPath, $updated);

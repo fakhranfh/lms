@@ -110,6 +110,7 @@ class LessonRepository implements LessonRepositoryInterface
      * Get all published lessons for a module, ordered by position.
      *
      * @param  array<string>  $with
+     * @return EloquentCollection<int, Lesson>
      */
     public function getByModulePublished(string $moduleId, array $with = []): EloquentCollection
     {

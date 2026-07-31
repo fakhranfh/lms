@@ -3,12 +3,12 @@
 namespace App\Livewire\Roles;
 
 use App\Enums\RoleName;
+use App\Models\Role;
 use App\Services\PermissionService;
 use App\Services\RoleService;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
-use Spatie\Permission\Models\Role;
 
 class RoleEdit extends Component
 {

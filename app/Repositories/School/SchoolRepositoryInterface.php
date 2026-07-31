@@ -69,6 +69,8 @@ interface SchoolRepositoryInterface
 
     /**
      * All schools with their users_count eager-loaded, for storage reporting.
+     *
+     * @return Collection<int, School>
      */
     public function getAllWithUserCounts(): Collection;
 }

@@ -25,8 +25,6 @@ class MakeRepositoryServiceController extends Command
 
     private array $columnInputTypes = [];
 
-    private array $generatedFiles = [];
-
     private array $columns = [];
 
     private array $filterDefinitions = [];
@@ -84,7 +82,7 @@ class MakeRepositoryServiceController extends Command
             $this->error("Error occurred: {$e->getMessage()}");
             $this->error('Stack trace: '.$e->getTraceAsString());
             $this->warn('Cleaning up generated files...');
-            $this->cleanupGeneratedFiles($name ?? null);
+            $this->cleanupGeneratedFiles($name);
             $this->error('Generation failed and files have been cleaned up.');
 
             return 1;
@@ -340,19 +338,15 @@ class MakeRepositoryServiceController extends Command
             $typeOptions
         );
 
-        if ($columnType === null) {
-            return null;
-        }
-
         $column['type'] = $columnType;
 
         // Type-specific options
         if ($columnType === 'string') {
-            $length = $this->ask('String length (press Enter for default 255)', 255);
+            $length = $this->ask('String length (press Enter for default 255)', '255');
             $column['length'] = (int) $length;
         } elseif ($columnType === 'decimal') {
-            $precision = $this->ask('Precision (total digits)', 8);
-            $scale = $this->ask('Scale (decimal places)', 2);
+            $precision = $this->ask('Precision (total digits)', '8');
+            $scale = $this->ask('Scale (decimal places)', '2');
             $column['precision'] = (int) $precision;
             $column['scale'] = (int) $scale;
         } elseif ($columnType === 'enum') {

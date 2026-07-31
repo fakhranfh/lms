@@ -4,6 +4,9 @@ namespace App\Traits;
 
 use Illuminate\Support\Str;
 
+/**
+ * @property string $id
+ */
 trait HasUuid
 {
     /**

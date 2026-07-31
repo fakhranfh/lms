@@ -10,7 +10,7 @@ trait TracksPublishedAt
     {
         static::saving(function (Model $model) {
             if ($model->isDirty('is_published')) {
-                $model->published_at = $model->is_published ? now() : null;
+                $model->setAttribute('published_at', $model->getAttribute('is_published') ? now() : null);
             }
         });
     }

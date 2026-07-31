@@ -6,6 +6,9 @@ use App\Models\Submission;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
 
+/**
+ * @property-read Collection $pastAttempts
+ */
 class SubmissionShow extends Component
 {
     public Submission $submission;

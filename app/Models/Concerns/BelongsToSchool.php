@@ -11,8 +11,8 @@ trait BelongsToSchool
     protected static function bootBelongsToSchool(): void
     {
         static::creating(function (Model $model) {
-            if (empty($model->school_id)) {
-                $model->school_id = app(CurrentSchool::class)->getSchoolId();
+            if (empty($model->getAttribute('school_id'))) {
+                $model->setAttribute('school_id', app(CurrentSchool::class)->getSchoolId());
             }
         });
     }

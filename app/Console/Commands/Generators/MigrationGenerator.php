@@ -94,7 +94,7 @@ PHP;
             $definition .= '->nullable()';
         }
 
-        if (isset($column['default']) && $column['default'] !== null && $column['default'] !== '') {
+        if (isset($column['default']) && $column['default'] !== '') {
             if (is_bool($column['default'])) {
                 $default = $column['default'] ? 'true' : 'false';
             } elseif (is_numeric($column['default'])) {

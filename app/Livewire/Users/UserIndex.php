@@ -11,6 +11,10 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
+/**
+ * @property-read LengthAwarePaginator $users
+ * @property-read Collection $availableRoles
+ */
 class UserIndex extends Component
 {
     public ?string $search = null;

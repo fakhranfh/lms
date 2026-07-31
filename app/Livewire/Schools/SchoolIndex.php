@@ -11,6 +11,10 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
+/**
+ * @property-read LengthAwarePaginator $schools
+ * @property-read Collection $availableTiers
+ */
 class SchoolIndex extends Component
 {
     public ?string $search = null;

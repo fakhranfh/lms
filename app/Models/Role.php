@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Permission\Exceptions\RoleAlreadyExists;
 use Spatie\Permission\Models\Role as SpatieRole;
 
+/**
+ * @property string|null $school_id
+ * @property string|null $slug
+ * @property bool $protected
+ */
 class Role extends SpatieRole
 {
     protected $fillable = ['name', 'guard_name', 'school_id', 'slug', 'protected'];
@@ -82,6 +87,9 @@ class Role extends SpatieRole
      * Override Spatie's create to scope the duplicate-name check by school_id,
      * since teams are not enabled and Spatie's own check would otherwise treat
      * roles with the same name in different schools as duplicates.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @return static
      */
     public static function create(array $attributes = [])
     {

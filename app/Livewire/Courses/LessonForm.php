@@ -35,10 +35,13 @@ class LessonForm extends Component
 
     public bool $isPublished = false;
 
+    /** @var Collection<int, LessonMaterial> */
     public Collection $materials;
 
+    /** @var Collection<int, LessonMaterial> */
     public Collection $materialVersions;
 
+    /** @var Collection<int, Assignment> */
     public Collection $assignments;
 
     public ?string $errorMessage = null;
@@ -69,7 +72,7 @@ class LessonForm extends Component
             $this->lesson = $lesson;
             $this->title = $lesson->title;
             $this->content = $lesson->content ?? '';
-            $this->durationMinutes = $lesson->duration_minutes;
+            $this->durationMinutes = $lesson->duration_minutes !== null ? (string) $lesson->duration_minutes : null;
             $this->isPublished = $lesson->is_published;
             $this->loadMaterials();
             $this->loadAssignments();
@@ -363,7 +366,7 @@ class LessonForm extends Component
     {
         try {
             // Handle case where module is not initialized (e.g., in tests)
-            if (! isset($this->module) || ! $this->module) {
+            if (! isset($this->module)) {
                 return null;
             }
 

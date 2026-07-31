@@ -14,12 +14,16 @@ class PricingTierService
     /**
      * @param  array<string, mixed>  $filters
      * @param  array<string>  $with
+     * @return Collection<int, PricingTier>
      */
     public function get(array $filters = [], array $with = []): Collection
     {
         return $this->pricingTierRepository->get($filters, $with);
     }
 
+    /**
+     * @return Collection<int, PricingTier>
+     */
     public function getAll(): Collection
     {
         return $this->pricingTierRepository->getAll();

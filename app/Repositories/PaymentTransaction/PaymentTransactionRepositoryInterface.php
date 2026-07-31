@@ -38,7 +38,7 @@ interface PaymentTransactionRepositoryInterface
      * Get transaction counts and amount totals grouped by status, optionally
      * scoped to a date range.
      *
-     * @return Collection<string, object{status: PaymentStatus, total_count: int, total_amount: float}>
+     * @return Collection<string, \stdClass&object{status: PaymentStatus, total_count: int, total_amount: float}>
      */
     public function getStatusTotals(?string $dateFrom, ?string $dateTo): Collection;
 
@@ -46,7 +46,7 @@ interface PaymentTransactionRepositoryInterface
      * Get completed transaction counts and amount totals grouped by gateway
      * type label, optionally scoped to a date range.
      *
-     * @return Collection<string, array{count: int, total_amount: float}>
+     * @return Collection<int|string, array{count: int<0, max>, total_amount: float}>
      */
     public function getGatewayTotals(?string $dateFrom, ?string $dateTo): Collection;
 }

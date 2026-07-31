@@ -22,11 +22,17 @@ class PermissionRepository implements PermissionRepositoryInterface
         return $query;
     }
 
+    /**
+     * @return Collection<int, Permission>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         return $this->query($filters)->with($with)->get();
     }
 
+    /**
+     * @return Collection<int, Permission>
+     */
     public function getAll(): Collection
     {
         return Permission::all();
@@ -37,16 +43,25 @@ class PermissionRepository implements PermissionRepositoryInterface
         return Permission::find($id);
     }
 
+    /**
+     * @return Collection<int, Permission>
+     */
     public function getAllExcept(string $name): Collection
     {
         return Permission::where('name', '!=', $name)->get();
     }
 
+    /**
+     * @return Collection<int, Permission>
+     */
     public function getByNames(array $names): Collection
     {
         return Permission::whereIn('name', $names)->get();
     }
 
+    /**
+     * @return Collection<int, Permission>
+     */
     public function getViewPermissionsFor(string $namespace): Collection
     {
         return Permission::where('name', 'like', "{$namespace}.%")

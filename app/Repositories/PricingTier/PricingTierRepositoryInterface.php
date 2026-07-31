@@ -13,11 +13,14 @@ interface PricingTierRepositoryInterface
      *
      * @param  array<string, mixed>  $filters
      * @param  array<string>  $with
+     * @return Collection<int, PricingTier>
      */
     public function get(array $filters = [], array $with = []): Collection;
 
     /**
      * Get all pricing tiers.
+     *
+     * @return Collection<int, PricingTier>
      */
     public function getAll(): Collection;
 

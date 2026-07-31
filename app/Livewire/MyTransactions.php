@@ -55,7 +55,7 @@ class MyTransactions extends Component
 
         $school = $transaction->school;
 
-        abort_unless($school, 404);
+        abort_unless($school !== null, 404);
 
         if ($tierChangeService->cancelTierChange($school)) {
             session()->flash('success', 'Tier change cancelled.');

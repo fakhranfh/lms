@@ -204,7 +204,7 @@ class TierChangeService
         PricingTier $newTier,
         int $oldTierId,
         float $proration
-    ): ?array {
+    ): void {
         $oldTier = $this->pricingTierRepository->find($oldTierId);
 
         $newPrice = (float) $newTier->price;
@@ -245,8 +245,6 @@ class TierChangeService
         if ($changeType === TierChangeType::Downgrade && $proration < 0) {
             $this->attemptRefund($school, abs($proration));
         }
-
-        return null;
     }
 
     private function resolveGateway(?string $gatewayName): PaymentGateway

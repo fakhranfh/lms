@@ -105,10 +105,6 @@ class DemoLmsAccessService
      */
     public function isDemoAccessValid(DemoLmsAccess $access): bool
     {
-        if ($access->expires_at === null) {
-            return false;
-        }
-
         return $access->expires_at->isFuture();
     }
 

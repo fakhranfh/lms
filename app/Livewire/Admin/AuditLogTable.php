@@ -79,7 +79,7 @@ class AuditLogTable extends Component
             foreach ($logs as $log) {
                 fputcsv($handle, [
                     $log->created_at_display?->toDateTimeString(),
-                    $log->user?->email ?? 'system',
+                    $log->user->email ?? 'system',
                     $log->event,
                     class_basename($log->auditable_type),
                     $log->auditable_id,

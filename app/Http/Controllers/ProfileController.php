@@ -20,7 +20,7 @@ class ProfileController extends Controller
         /** @var User $user */
         $user = auth()->user();
 
-        if ((int) $request->query('user') !== $user->id) {
+        if ((string) $request->query('user') !== $user->id) {
             abort(403, 'This verification link does not belong to your account.');
         }
 

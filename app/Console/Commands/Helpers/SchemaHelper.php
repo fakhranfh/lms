@@ -41,20 +41,16 @@ class SchemaHelper
         try {
             $model = new $modelClass;
             $table = $model->getTable();
-            $connection = Schema::getConnection();
 
-            if (! method_exists($connection, 'getDoctrineConnection') || ! Schema::hasTable($table)) {
+            if (! Schema::hasTable($table)) {
                 return $foreignKeys;
             }
 
-            $sm = $connection->getDoctrineSchemaManager();
-            $doctrineTable = $sm->introspectTable($table);
-
-            foreach ($doctrineTable->getForeignKeys() as $fk) {
-                foreach ($fk->getLocalColumns() as $localCol) {
+            foreach (Schema::getForeignKeys($table) as $fk) {
+                foreach ($fk['columns'] as $index => $localCol) {
                     $foreignKeys[$localCol] = [
-                        'table' => $fk->getForeignTableName(),
-                        'column' => $fk->getForeignColumns()[0],
+                        'table' => $fk['foreign_table'],
+                        'column' => $fk['foreign_columns'][$index],
                     ];
                 }
             }

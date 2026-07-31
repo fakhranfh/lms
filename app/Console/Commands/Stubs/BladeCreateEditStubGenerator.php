@@ -15,22 +15,7 @@ class BladeCreateEditStubGenerator
         $exclude = ['id', 'created_at', 'updated_at', 'deleted_at', 'remember_token', 'password'];
         $inputs = '';
 
-        $modelClass = "App\\Models\\$name";
-        $foreignKeys = [];
-        if (class_exists($modelClass)) {
-            $model = new $modelClass;
-            $table = $model->getTable();
-            $sm = Schema::getConnection()->getDoctrineSchemaManager();
-            $doctrineTable = $sm->introspectTable($table);
-            foreach ($doctrineTable->getForeignKeys() as $fk) {
-                foreach ($fk->getLocalColumns() as $localCol) {
-                    $foreignKeys[$localCol] = [
-                        'table' => $fk->getForeignTableName(),
-                        'column' => $fk->getForeignColumns()[0],
-                    ];
-                }
-            }
-        }
+        $foreignKeys = SchemaHelper::getForeignKeys($name);
 
         $firstCol = null;
         foreach (array_keys(array_diff_key($columns, $foreignKeys)) as $colName) {

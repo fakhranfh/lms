@@ -23,7 +23,7 @@ class TransactionSummary extends Component
         $byStatus = $transactionSummaryService->getStatusTotals($this->dateFrom, $this->dateTo);
         $byGateway = $transactionSummaryService->getGatewayTotals($this->dateFrom, $this->dateTo);
 
-        $totalRevenue = $byStatus->get(PaymentStatus::Completed->value)?->total_amount ?? 0;
+        $totalRevenue = $byStatus->get(PaymentStatus::Completed->value)->total_amount ?? 0;
         $totalTransactions = $byStatus->sum('total_count');
 
         return view('livewire.admin.transaction-summary', [

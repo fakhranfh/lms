@@ -39,13 +39,7 @@ class SyncChannelLogos extends Command
     public function handle(R2StorageService $r2Storage): int
     {
         foreach (XenditChannel::cases() as $channel) {
-            $url = self::LOGO_URLS[$channel->value] ?? null;
-
-            if (! $url) {
-                $this->error("No logo source configured for {$channel->value}, skipping.");
-
-                continue;
-            }
+            $url = self::LOGO_URLS[$channel->value];
 
             $response = Http::withHeaders(['User-Agent' => 'Mozilla/5.0 ('.config('app.name').')'])
                 ->timeout(15)

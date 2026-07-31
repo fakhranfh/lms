@@ -84,7 +84,7 @@ class LessonCompletionService
     /**
      * Get progress for all lessons in a module
      *
-     * @return Collection<int, array>
+     * @return Collection<int, array{lesson_id: string, lesson_title: string, progress: array{total: int, accessed: int, percentage: float, is_complete: bool}}>
      */
     public function getModuleProgress(string $moduleId, User $user): Collection
     {
@@ -103,17 +103,17 @@ class LessonCompletionService
     /**
      * Get progress for all lessons in a course
      *
-     * @return Collection<int, array>
+     * @return Collection<int, array{module_id: string, module_title: string, lessons: Collection<int, array{lesson_id: string, lesson_title: string, progress: array{total: int, accessed: int, percentage: float, is_complete: bool}}>, total_lessons: int, completed_lessons: int<0, max>, progress_percentage: float}>
      */
     public function getCourseProgress(string $courseId, User $user): Collection
     {
         $course = Course::findOrFail($courseId);
         $modules = $course->modules;
 
-        return $modules->map(function (Module $module) use ($user) {
+        return $modules->map(function (Module $module) use ($user): array {
             $lessonProgress = $this->getModuleProgress($module->id, $user);
-            $totalLessons = $lessonProgress->sum(fn ($p) => $p['progress']['total']);
-            $completedLessons = $lessonProgress->sum(fn ($p) => $p['progress']['is_complete'] ? 1 : 0);
+            $totalLessons = (int) $lessonProgress->sum(fn (array $p): int => $p['progress']['total']);
+            $completedLessons = count($lessonProgress->filter(fn (array $p): bool => $p['progress']['is_complete']));
 
             return [
                 'module_id' => $module->id,
@@ -121,7 +121,7 @@ class LessonCompletionService
                 'lessons' => $lessonProgress,
                 'total_lessons' => $totalLessons,
                 'completed_lessons' => $completedLessons,
-                'progress_percentage' => $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100, 2) : 0,
+                'progress_percentage' => $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100, 2) : 0.0,
             ];
         });
     }

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToSchool;
 use App\Traits\HasUuid;
-use Database\Factories\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +13,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['school_id', 'tier_id', 'status', 'started_at', 'expires_at', 'renewal_date', 'auto_renew', 'payment_method'])]
 class Subscription extends Model
 {
-    /** @use HasFactory<SubscriptionFactory> */
     use BelongsToSchool, HasFactory, HasUuid;
 
     /**

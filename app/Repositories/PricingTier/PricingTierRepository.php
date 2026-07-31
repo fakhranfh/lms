@@ -29,12 +29,16 @@ class PricingTierRepository implements PricingTierRepositoryInterface
     /**
      * @param  array<string, mixed>  $filters
      * @param  array<string>  $with
+     * @return Collection<int, PricingTier>
      */
     public function get(array $filters = [], array $with = []): Collection
     {
         return $this->query($filters)->with($with)->orderBy('id')->get();
     }
 
+    /**
+     * @return Collection<int, PricingTier>
+     */
     public function getAll(): Collection
     {
         return PricingTier::orderBy('id')->get();

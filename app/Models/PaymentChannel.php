@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property-read string|null $logo_url
+ */
 #[Fillable(['code', 'label', 'brand_color', 'logo_url'])]
 class PaymentChannel extends Model
 {

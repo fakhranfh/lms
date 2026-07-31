@@ -65,8 +65,8 @@ class AuditableObserver
             'auditable_id' => $model->getKey(),
             'old_values' => $old,
             'new_values' => $new,
-            'ip_address' => request()?->ip(),
-            'user_agent' => request()?->userAgent(),
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
             'description' => sprintf('%s %s', class_basename($model), $event),
         ]);
 

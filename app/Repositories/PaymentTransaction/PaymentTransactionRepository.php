@@ -51,6 +51,9 @@ class PaymentTransactionRepository implements PaymentTransactionRepositoryInterf
             ->first();
     }
 
+    /**
+     * @return Collection<string, \stdClass&object{status: PaymentStatus, total_count: int, total_amount: float}>
+     */
     public function getStatusTotals(?string $dateFrom, ?string $dateTo): Collection
     {
         return PaymentTransaction::query()
@@ -59,9 +62,17 @@ class PaymentTransactionRepository implements PaymentTransactionRepositoryInterf
             ->selectRaw('status, count(*) as total_count, coalesce(sum(amount), 0) as total_amount')
             ->groupBy('status')
             ->get()
-            ->keyBy(fn ($row) => $row->status->value);
+            ->map(fn (PaymentTransaction $row): \stdClass => (object) [
+                'status' => $row->status,
+                'total_count' => (int) $row->getAttribute('total_count'),
+                'total_amount' => (float) $row->getAttribute('total_amount'),
+            ])
+            ->keyBy(fn (\stdClass $row): string => $row->status->value);
     }
 
+    /**
+     * @return Collection<int|string, array{count: int<0, max>, total_amount: float}>
+     */
     public function getGatewayTotals(?string $dateFrom, ?string $dateTo): Collection
     {
         return PaymentTransaction::query()
@@ -70,9 +81,9 @@ class PaymentTransactionRepository implements PaymentTransactionRepositoryInterf
             ->where('status', PaymentStatus::Completed)
             ->with('paymentGateway.paymentGatewayType')
             ->get()
-            ->groupBy(fn (PaymentTransaction $transaction) => $transaction->paymentGateway?->paymentGatewayType?->label ?? 'Unknown')
-            ->map(fn (Collection $transactions) => [
-                'count' => $transactions->count(),
+            ->groupBy(fn (PaymentTransaction $transaction): string => $transaction->paymentGateway?->paymentGatewayType->label ?? 'Unknown')
+            ->map(fn (Collection $transactions): array => [
+                'count' => count($transactions),
                 'total_amount' => (float) $transactions->sum('amount'),
             ])
             ->sortByDesc('total_amount');

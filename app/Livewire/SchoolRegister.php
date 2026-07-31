@@ -37,7 +37,7 @@ class SchoolRegister extends Component
         $validTierIds = $pricingTierService->get(['is_active' => true])->pluck('id');
 
         if (! $validTierIds->contains($this->tierId)) {
-            $this->tierId = $pricingTierService->get(['slug' => 'basic'])->first()?->id ?? '';
+            $this->tierId = (string) ($pricingTierService->get(['slug' => 'basic'])->first()->id ?? '');
         }
     }
 

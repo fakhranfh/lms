@@ -3,6 +3,7 @@
 namespace App\Livewire\Courses;
 
 use App\Enums\MaterialType;
+use App\Models\Assignment;
 use App\Models\Lesson;
 use App\Models\LessonMaterial;
 use App\Models\Module;
@@ -33,6 +34,7 @@ class LessonViewer extends Component
 
     public ?Lesson $nextLesson = null;
 
+    /** @var Collection<int, LessonMaterial> */
     public Collection $materials;
 
     public ?LessonMaterial $selectedMaterial = null;
@@ -41,6 +43,7 @@ class LessonViewer extends Component
 
     public int $totalMaterialCount = 0;
 
+    /** @var Collection<int, Assignment> */
     public Collection $assignments;
 
     public function mount(

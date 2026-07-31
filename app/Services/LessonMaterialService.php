@@ -118,7 +118,7 @@ class LessonMaterialService
             }
 
             // All validations passed - promote file from temp to final location
-            $finalKey = "lessons/{$lessonId}/materials/".substr(hash('sha256', uniqid()), 0, 8).'-'.basename($tempKey);
+            $finalKey = $this->r2Service->schoolPrefix()."lessons/{$lessonId}/materials/".substr(hash('sha256', uniqid()), 0, 8).'-'.basename($tempKey);
             $this->r2Service->promoteFromTemp($tempKey, $finalKey);
             $validationPassed = true;
 
@@ -188,7 +188,7 @@ class LessonMaterialService
                 );
             }
 
-            $finalKey = "lessons/{$material->lesson_id}/materials/".substr(hash('sha256', uniqid()), 0, 8).'-'.basename($tempKey);
+            $finalKey = $this->r2Service->schoolPrefix()."lessons/{$material->lesson_id}/materials/".substr(hash('sha256', uniqid()), 0, 8).'-'.basename($tempKey);
             $this->r2Service->promoteFromTemp($tempKey, $finalKey);
             $validationPassed = true;
 
@@ -297,7 +297,7 @@ class LessonMaterialService
             $fileUrl = $this->r2Service->upload($data['file'], $path, $type);
             $fileSize = $data['file']->getSize();
             $mimeType = $data['file']->getMimeType();
-            $filePath = $path.'/'.basename($fileUrl);
+            $filePath = $this->r2Service->extractKeyFromPath($fileUrl);
         } else {
             $fileUrl = $data['file_url'] ?? '';
             $fileSize = $data['file_size'] ?? 0;
@@ -348,7 +348,7 @@ class LessonMaterialService
                 'file_url' => $fileUrl,
                 'file_size' => $data['file']->getSize(),
                 'mime_type' => $data['file']->getMimeType(),
-                'file_path' => $path.'/'.basename($fileUrl),
+                'file_path' => $this->r2Service->extractKeyFromPath($fileUrl),
                 'order' => $material->order,
                 'version' => $material->version + 1,
                 'is_active' => true,

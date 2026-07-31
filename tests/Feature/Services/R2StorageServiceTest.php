@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\School;
 use App\Services\R2StorageService;
+use App\Support\CurrentSchool;
 
 describe('R2StorageService', function () {
     test('configuration is properly set from env', function () {
@@ -72,6 +74,23 @@ describe('R2StorageService', function () {
             } finally {
                 unlink($path);
             }
+        });
+    });
+
+    describe('schoolPrefix', function () {
+        test('is empty when no school is in context', function () {
+            $service = app(R2StorageService::class);
+
+            expect($service->schoolPrefix())->toBe('');
+        });
+
+        test('scopes to schools/{domain}/ when a school is in context', function () {
+            $school = School::factory()->create(['domain' => 'demo.lms.local']);
+            app(CurrentSchool::class)->setSchoolId($school->id);
+
+            $service = app(R2StorageService::class);
+
+            expect($service->schoolPrefix())->toBe('schools/demo.lms.local/');
         });
     });
 

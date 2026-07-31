@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\MaterialType;
 use App\Repositories\PricingTier\PricingTierRepositoryInterface;
 use App\Repositories\School\SchoolRepositoryInterface;
+use App\Support\CurrentSchool;
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use Illuminate\Http\UploadedFile;
@@ -30,6 +31,7 @@ class R2StorageService
     public function __construct(
         protected SchoolRepositoryInterface $schoolRepository,
         protected PricingTierRepositoryInterface $pricingTierRepository,
+        protected CurrentSchool $currentSchool,
     ) {
         $this->accountId = config('services.r2.account_id');
         $this->bucket = config('services.r2.bucket');
@@ -210,7 +212,7 @@ class R2StorageService
             $this->enforceQuotaLimit();
 
             // Upload to temp folder first (content validation happens in finalizeR2Upload)
-            $key = "temp/{$lessonId}/".substr(hash('sha256', uniqid()), 0, 8).'-'.$filename;
+            $key = $this->schoolPrefix()."temp/{$lessonId}/".substr(hash('sha256', uniqid()), 0, 8).'-'.$filename;
 
             $cmd = $this->s3Client->getCommand('PutObject', [
                 'Bucket' => $this->bucket,
@@ -678,14 +680,34 @@ class R2StorageService
     }
 
     /**
-     * Build S3 key with path and filename
+     * Build S3 key with path and filename, scoped under the current school's folder
      */
     protected function buildS3Key(string $path, string $filename): string
     {
         $timestamp = now()->format('YmdHis');
         $hash = substr(hash('sha256', $filename.$timestamp), 0, 8);
 
-        return "{$path}/{$hash}-{$filename}";
+        return $this->schoolPrefix()."{$path}/{$hash}-{$filename}";
+    }
+
+    /**
+     * Prefix an S3 key with the current school's folder (schools/{domain}/), if any
+     */
+    public function schoolPrefix(): string
+    {
+        $schoolId = $this->currentSchool->getSchoolId();
+
+        if (! $schoolId) {
+            return '';
+        }
+
+        $school = $this->schoolRepository->find($schoolId);
+
+        if (! $school || ! $school->domain) {
+            return '';
+        }
+
+        return "schools/{$school->domain}/";
     }
 
     /**

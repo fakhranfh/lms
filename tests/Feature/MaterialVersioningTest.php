@@ -33,6 +33,9 @@ test('updating material with file creates new version', function () {
     $mockR2Service->shouldReceive('upload')
         ->once()
         ->andReturn('https://r2.example.com/lessons/'.$this->lesson->id.'/materials/test.pdf');
+    $mockR2Service->shouldReceive('extractKeyFromPath')
+        ->once()
+        ->andReturn('lessons/'.$this->lesson->id.'/materials/test.pdf');
 
     $service = new LessonMaterialService(
         app(LessonRepository::class),
@@ -324,6 +327,7 @@ test('finalizeVersionUpload creates new version from presigned upload flow', fun
         ->andReturn(sys_get_temp_dir().'/fake-download.pdf');
     $mockR2Service->shouldReceive('validateFileContent')->once();
     $mockR2Service->shouldReceive('validateMimeType')->once();
+    $mockR2Service->shouldReceive('schoolPrefix')->once()->andReturn('');
     $mockR2Service->shouldReceive('promoteFromTemp')->once();
     $mockR2Service->shouldReceive('getPublicUrl')
         ->once()

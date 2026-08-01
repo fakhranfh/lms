@@ -37,6 +37,7 @@ test('users index lists users with their roles', function () {
     $target->assignRole($role);
 
     Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('loadUsers')
         ->assertSee('Jane Target')
         ->assertSee('editor');
 });
@@ -47,6 +48,7 @@ test('users index search filters users by name or email', function () {
     User::factory()->create(['name' => 'Someone Else', 'email' => 'else@example.com']);
 
     Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('loadUsers')
         ->set('search', 'Jane')
         ->assertSee('Jane Target')
         ->assertDontSee('Someone Else');
@@ -64,6 +66,7 @@ test('users index filters users by role', function () {
     $viewer->assignRole($viewerRole);
 
     Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('loadUsers')
         ->set('filterRole', $editorRole->id)
         ->assertSee('Editor User')
         ->assertDontSee('Viewer User');
@@ -529,6 +532,7 @@ test('user with users.delete can soft delete a user', function () {
     $target = User::factory()->create();
 
     Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('loadUsers')
         ->call('destroy', $target->id)
         ->assertSet('successMessage', 'User deleted successfully.');
 
@@ -542,6 +546,7 @@ test('deleting a user requires users.delete permission', function () {
     $target = User::factory()->create();
 
     Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('loadUsers')
         ->call('destroy', $target->id)
         ->assertForbidden();
 
@@ -560,6 +565,7 @@ test('deleting the last admin user is blocked', function () {
     $target->assignRole($admin);
 
     Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('loadUsers')
         ->call('destroy', $target->id)
         ->assertSet('errorMessage', 'At least one user must keep the admin role.');
 
@@ -571,6 +577,7 @@ test('deleted users no longer appear in the users index', function () {
     $target = User::factory()->create(['name' => 'Soon Deleted']);
 
     Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('loadUsers')
         ->call('destroy', $target->id)
         ->assertDontSee('Soon Deleted');
 });
@@ -581,6 +588,7 @@ test('user with users.delete can bulk delete multiple selected users', function 
     $second = User::factory()->create();
 
     Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('loadUsers')
         ->call('destroySelected', [$first->id, $second->id])
         ->assertSet('successMessage', '2 users deleted successfully.');
 
@@ -595,6 +603,7 @@ test('bulk deleting requires users.delete permission', function () {
     $target = User::factory()->create();
 
     Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('loadUsers')
         ->call('destroySelected', [$target->id])
         ->assertForbidden();
 
@@ -614,6 +623,7 @@ test('bulk deleting all admins is blocked but non-admins in the same batch are s
     $regularTarget = User::factory()->create();
 
     Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('loadUsers')
         ->call('destroySelected', [$adminTarget->id, $regularTarget->id])
         ->assertSet('errorMessage', 'At least one user must keep the admin role.');
 
@@ -626,6 +636,7 @@ test('the users index page renders checkboxes for bulk selection', function () {
     $target = User::factory()->create();
 
     Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('loadUsers')
         ->assertSeeHtml('data-user-checkbox')
         ->assertSeeHtml('value="'.$target->id.'"');
 });

@@ -1,6 +1,6 @@
 @section('title', 'Users')
 
-<div class="space-y-space-lg" x-data="{
+<div class="space-y-space-lg" wire:init="loadUsers" x-data="{
         deleteId: null, showDeleteModal: false,
         selected: [],
         get allOnPageSelected() {
@@ -98,7 +98,7 @@
         </div>
     @endcan
 
-    <x-users.table :users="$users" :sort="$sort" :direction="$direction" :perPage="$perPage" />
+    <x-users.table :users="$users" :usersLoaded="$usersLoaded" :sort="$sort" :direction="$direction" :perPage="$perPage" />
 
     <!-- Delete Modal -->
     <div x-show="showDeleteModal" x-cloak class="fixed inset-0 z-50">

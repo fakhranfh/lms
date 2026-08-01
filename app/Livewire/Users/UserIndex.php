@@ -32,9 +32,21 @@ class UserIndex extends Component
 
     public ?string $errorMessage = null;
 
+    /**
+     * Whether the users table has been loaded yet. Kept false through the
+     * initial render (triggered via wire:init) so the page paints instantly
+     * with a skeleton in place of the table, instead of blocking on the query.
+     */
+    public bool $usersLoaded = false;
+
     public function mount(): void
     {
         $this->successMessage = session('success');
+    }
+
+    public function loadUsers(): void
+    {
+        $this->usersLoaded = true;
     }
 
     public function destroy(string $id, UserService $userService): void
@@ -146,7 +158,7 @@ class UserIndex extends Component
         $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
 
         return view('livewire.users.user-index', [
-            'users' => $this->users,
+            'users' => $this->usersLoaded ? $this->users : null,
         ])
             ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => 'Users'])
             ->section($isAdminUser ? 'admin-content' : 'app-content');

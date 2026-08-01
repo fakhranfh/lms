@@ -9,6 +9,9 @@ interface RoleRepositoryInterface
 {
     public function query(array $filters = []);
 
+    /**
+     * @return Collection<int, Role>
+     */
     public function get(array $filters = [], array $with = []): Collection;
 
     public function getAll(): Collection;

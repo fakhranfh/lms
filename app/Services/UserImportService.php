@@ -1,23 +1,23 @@
 <?php
 
-namespace App\Repositories\User;
+namespace App\Services;
 
 use App\Enums\RoleName;
-use App\Models\Role;
-use App\Services\UserService;
+use App\Repositories\Role\RoleRepositoryInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Facades\Excel;
 
-class UserImportRepository implements UserImportRepositoryInterface
+class UserImportService
 {
     /** @var array<int, string> */
     private const EXPECTED_COLUMNS = ['name', 'email'];
 
     public function __construct(
         private readonly UserService $userService,
+        private readonly RoleRepositoryInterface $roleRepository,
     ) {}
 
     public function validateColumns(UploadedFile $file): ?string
@@ -38,6 +38,9 @@ class UserImportRepository implements UserImportRepositoryInterface
         return "Spreadsheet columns must match the template exactly: {$expectedLabels}. Found: {$foundLabels}.";
     }
 
+    /**
+     * @return array{rows: array<int, array{row:int,name:string,email:string}>, errors: array<int,string>}
+     */
     public function parseRows(UploadedFile $file): array
     {
         $sheets = Excel::toArray(new class implements WithHeadingRow {}, $file);
@@ -67,9 +70,13 @@ class UserImportRepository implements UserImportRepositoryInterface
         return ['rows' => $rows, 'errors' => $errors];
     }
 
+    /**
+     * @param  array<int, array{row:int,name:string,email:string,photoUrl?:string|null}>  $rows
+     * @return array{created:int, errors: array<int,string>}
+     */
     public function createUsers(array $rows, RoleName $role, string $schoolId): array
     {
-        $roleId = Role::where('school_id', $schoolId)->where('name', $role->value)->value('id');
+        $roleId = $this->roleRepository->get(['school_id' => $schoolId, 'name' => $role->value])->first()?->id;
 
         $created = 0;
         $errors = [];

@@ -3,7 +3,7 @@
 namespace App\Livewire\Users;
 
 use App\Enums\RoleName;
-use App\Repositories\User\UserImportRepositoryInterface;
+use App\Services\UserImportService;
 use App\Support\CurrentSchool;
 use Illuminate\Http\UploadedFile;
 use Livewire\Component;
@@ -47,7 +47,7 @@ class UserImport extends Component
      * Validate the structure and create users in one step, only when the
      * admin clicks Import — the spreadsheet isn't parsed just for selecting it.
      */
-    public function import(UserImportRepositoryInterface $userImportRepository): void
+    public function import(UserImportService $userImportService): void
     {
         abort_unless(auth()->user()->can('users.import'), 403);
 
@@ -57,16 +57,16 @@ class UserImport extends Component
 
         $this->validate();
 
-        if ($columnError = $userImportRepository->validateColumns($this->spreadsheet)) {
+        if ($columnError = $userImportService->validateColumns($this->spreadsheet)) {
             $this->columnError = $columnError;
 
             return;
         }
 
-        $parsed = $userImportRepository->parseRows($this->spreadsheet);
+        $parsed = $userImportService->parseRows($this->spreadsheet);
 
         $schoolId = app(CurrentSchool::class)->getSchoolId() ?? auth()->user()->school_id;
-        $result = $userImportRepository->createUsers($parsed['rows'], $this->targetRole(), $schoolId);
+        $result = $userImportService->createUsers($parsed['rows'], $this->targetRole(), $schoolId);
 
         $this->createdCount = $result['created'];
         $this->importErrors = [...$parsed['errors'], ...$result['errors']];

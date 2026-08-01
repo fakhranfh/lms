@@ -60,8 +60,6 @@ use App\Repositories\Submission\SubmissionRepository;
 use App\Repositories\Submission\SubmissionRepositoryInterface;
 use App\Repositories\TierChange\TierChangeRepository;
 use App\Repositories\TierChange\TierChangeRepositoryInterface;
-use App\Repositories\User\UserImportRepository;
-use App\Repositories\User\UserImportRepositoryInterface;
 use App\Repositories\User\UserRepository;
 use App\Repositories\User\UserRepositoryInterface;
 use App\Repositories\UserLesson\UserLessonRepository;
@@ -111,7 +109,6 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(AuthRepositoryInterface::class, AuthRepository::class);
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
-        $this->app->bind(UserImportRepositoryInterface::class, UserImportRepository::class);
         $this->app->bind(RoleRepositoryInterface::class, RoleRepository::class);
         $this->app->bind(PermissionRepositoryInterface::class, PermissionRepository::class);
         $this->app->bind(PricingTierRepositoryInterface::class, PricingTierRepository::class);

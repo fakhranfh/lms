@@ -30,7 +30,7 @@ class UserForm extends Component
     /** @var array<int, int> */
     public array $roles = [];
 
-    public function mount(?string $id, UserService $userService): void
+    public function mount(UserService $userService, ?string $id = null): void
     {
         if ($id) {
             $this->user = $userService->find($id);

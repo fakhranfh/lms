@@ -125,6 +125,13 @@ test('removing the last admin role from the only admin user is blocked', functio
     expect($target->fresh()->hasRole(RoleName::Admin))->toBeTrue();
 });
 
+test('the create user page loads via its real route without an id parameter', function () {
+    $actor = actingAsUserManager(['users.create']);
+
+    $this->actingAs($actor)->get(route('users.create'))
+        ->assertOk();
+});
+
 test('user with users.create can create a new user', function () {
     $actor = actingAsUserManager(['users.create']);
     $teacherRole = App\Models\Role::firstOrCreate(['name' => RoleName::Teacher->value, 'guard_name' => 'web', 'school_id' => $actor->school_id]);

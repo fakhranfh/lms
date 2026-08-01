@@ -17,11 +17,11 @@
                     <h2 class="font-label-md text-label-md text-secondary uppercase">{{ $group }}</h2>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full">
+                    <table class="w-full table-fixed">
                         <thead>
                             <tr class="border-b border-outline-variant">
-                                <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Label</th>
-                                <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Name</th>
+                                <th scope="col" class="w-1/2 px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Label</th>
+                                <th scope="col" class="w-1/2 px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Name</th>
                             </tr>
                         </thead>
                         <tbody>

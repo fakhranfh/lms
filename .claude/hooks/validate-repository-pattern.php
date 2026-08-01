@@ -28,6 +28,8 @@ $violations = [];
 
 if (str_contains($normalized, '/app/Http/Controllers/')) {
     $violations = validateController($code);
+} elseif (str_contains($normalized, '/app/Livewire/')) {
+    $violations = validateLivewire($code);
 } elseif (str_contains($normalized, '/app/Repositories/')) {
     $violations = validateRepository($code, $normalized);
 } elseif (str_contains($normalized, '/app/Services/')) {
@@ -68,6 +70,32 @@ function validateController(string $code): array
 
     foreach (directModelCalls($code) as [$class, $method]) {
         $violations[] = "Controller calls `{$class}::{$method}(...)` directly; data access must go through a Service.";
+    }
+
+    return array_unique($violations);
+}
+
+/**
+ * @return array<int, string>
+ */
+function validateLivewire(string $code): array
+{
+    $violations = [];
+
+    foreach (constructorParamTypes($code) as $type) {
+        if (preg_match('/(Repository|RepositoryInterface)$/', $type)) {
+            $violations[] = "Livewire component injects `{$type}` directly; per rule 9, Livewire components are treated like Controllers and must depend on a Service, not a Repository.";
+        }
+    }
+
+    foreach (methodParamTypes($code) as $type) {
+        if (preg_match('/(Repository|RepositoryInterface)$/', $type)) {
+            $violations[] = "Livewire method injects `{$type}` directly; per rule 9, Livewire components are treated like Controllers and must depend on a Service, not a Repository.";
+        }
+    }
+
+    foreach (directModelCalls($code) as [$class, $method]) {
+        $violations[] = "Livewire component calls `{$class}::{$method}(...)` directly; per rule 9, data access must go through a Service, just like a Controller.";
     }
 
     return array_unique($violations);
@@ -144,6 +172,27 @@ function constructorParamTypes(string $code): array
     preg_match_all('/(?:public|protected|private)?\s*(?:readonly\s+)?(?:\?)?([A-Z][A-Za-z0-9_\\\\]*)\s+\$\w+/', $m[1], $matches);
 
     return array_map(fn ($t) => basename(str_replace('\\', '/', $t)), $matches[1]);
+}
+
+/**
+ * Collects param types from every method (not just __construct), e.g. Livewire
+ * action methods and render() that type-hint a Repository via method injection.
+ *
+ * @return array<int, string>
+ */
+function methodParamTypes(string $code): array
+{
+    preg_match_all('/function\s+\w+\s*\(([^)]*)\)/s', $code, $methods);
+
+    $types = [];
+    foreach ($methods[1] as $params) {
+        preg_match_all('/(?:public|protected|private)?\s*(?:readonly\s+)?(?:\?)?([A-Z][A-Za-z0-9_\\\\]*)\s+\$\w+/', $params, $matches);
+        foreach ($matches[1] as $type) {
+            $types[] = basename(str_replace('\\', '/', $type));
+        }
+    }
+
+    return $types;
 }
 
 /**

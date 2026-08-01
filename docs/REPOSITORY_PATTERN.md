@@ -1163,7 +1163,67 @@ class ProductService
 }
 ```
 
-### 9. Queries Only Happen in the Repository
+### 9. Livewire Components Are Treated Like Controllers
+
+A Livewire component (`app/Livewire/**`) is an HTTP entry point, exactly like a Controller. All rules that apply to Controllers apply to Livewire components:
+
+- The component must depend on a **Service**, never on a Repository or `RepositoryInterface`, in its constructor/properties or via `app()`/`resolve()`.
+- The component must never call a Model directly (`Product::create(...)`, `Product::where(...)`, etc.) — that belongs in the Repository, reached through a Service.
+- Business logic and query building do not belong in the component; the component only wires user actions (`wire:click`, form submission, `mount()`, `render()`) to Service calls and passes the result to the view.
+
+```php
+// ❌ AVOID - Livewire component injecting a Repository / touching a Model
+class ProductIndex extends Component
+{
+    public function __construct(protected ProductRepositoryInterface $products) {}
+
+    public function delete(int $id)
+    {
+        Product::destroy($id);
+    }
+}
+
+// ✅ GOOD - Livewire component depends on the Service, like a Controller would
+class ProductIndex extends Component
+{
+    public function delete(int $id, ProductService $products)
+    {
+        $products->delete($id);
+    }
+
+    public function render(ProductService $products)
+    {
+        return view('livewire.products.product-index', [
+            'products' => $products->get(),
+        ]);
+    }
+}
+```
+
+**Why:** Livewire components render views and handle user input exactly like Controllers do; letting them reach into Repositories or Models directly reintroduces the same coupling the pattern exists to prevent.
+
+### 10. Blade Templates Only Bind Variables — No PHP Logic
+
+A Blade view (`resources/views/**/*.blade.php`, including Livewire views) may only reference variables that were already prepared by the Controller/Livewire component/Service and echo or bind them (`{{ $x }}`, `wire:model="x"`, `@if($x)` for simple truthy checks, `@foreach($items as $item)`). It must not contain PHP computation, data transformation, formatting, or queries.
+
+```blade
+{{-- ❌ AVOID - Blade doing computation/formatting/queries --}}
+@php
+    $total = $items->sum('price') * 1.11;
+    $label = $product->stock > 0 ? 'In Stock' : 'Out of Stock';
+@endphp
+<p>{{ number_format($total, 2) }}</p>
+<p>{{ App\Models\Product::find($id)->name }}</p>
+
+{{-- ✅ GOOD - Blade only binds pre-computed variables --}}
+<p>{{ $formattedTotal }}</p>
+<p>{{ $stockLabel }}</p>
+<p>{{ $product->name }}</p>
+```
+
+**Why:** keeps all business logic and formatting in the Service/Livewire layer where it can be tested and reused, and keeps Blade a pure presentation layer. Compute `$formattedTotal`, `$stockLabel`, etc. in the Livewire component or Service before passing them to the view.
+
+### 11. Queries Only Happen in the Repository
 
 All Eloquent query building — `where`, `whereHas`, `groupBy`, `orderBy`, aggregates (`sum`, `count`), joins, etc. — must live in a Repository method. Services must call a repository method to get data; they must never build or execute a query against a Model directly.
 

@@ -30,6 +30,20 @@
             "command": "php \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-repository-pattern.php\"",
             "timeout": 30,
             "statusMessage": "Checking Repository Pattern conventions..."
+          },
+          {
+            "type": "command",
+            "if": "Edit(app/Livewire/**)",
+            "command": "php \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-repository-pattern.php\"",
+            "timeout": 30,
+            "statusMessage": "Checking Repository Pattern conventions..."
+          },
+          {
+            "type": "command",
+            "if": "Edit(**/*.blade.php)",
+            "command": "php \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-blade-pattern.php\"",
+            "timeout": 30,
+            "statusMessage": "Checking Blade view conventions..."
           }
         ]
       }

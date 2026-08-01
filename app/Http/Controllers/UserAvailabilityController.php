@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Scopes\SchoolScope;
-use App\Models\User;
+use App\Services\UserService;
+use App\Support\CurrentSchool;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -26,7 +26,7 @@ class UserAvailabilityController extends Controller implements HasMiddleware
      * Check whether a name or email is already taken, for client-side (JS)
      * live validation on the user create/edit form.
      */
-    public function check(Request $request): JsonResponse
+    public function check(Request $request, UserService $userService, CurrentSchool $currentSchool): JsonResponse
     {
         $validated = $request->validate([
             'field' => ['required', Rule::in(['name', 'email'])],
@@ -34,14 +34,17 @@ class UserAvailabilityController extends Controller implements HasMiddleware
             'ignore_id' => ['nullable', 'string'],
         ]);
 
-        // Matches the scope of the server-side Rule::unique check on save
-        // (global uniqueness, excluding soft-deleted users), not just the
-        // current school, so the live JS check never disagrees with submit.
-        $exists = User::withoutGlobalScope(SchoolScope::class)
-            ->where($validated['field'], $validated['value'])
-            ->when($validated['ignore_id'] ?? null, fn ($query, $id) => $query->where('id', '!=', $id))
-            ->exists();
+        $ignoreId = $validated['ignore_id'] ?? null;
 
-        return response()->json(['available' => ! $exists]);
+        // auth()->user()->school_id only reflects school_user membership;
+        // School Admins are attached via a separate school_admins pivot and
+        // would otherwise resolve to null, hiding the "another school" message.
+        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+
+        $message = $validated['field'] === 'email'
+            ? $userService->emailConflictMessage($validated['value'], $schoolId, $ignoreId)
+            : $userService->nameConflictMessage($validated['value'], $ignoreId);
+
+        return response()->json(['available' => $message === null, 'message' => $message]);
     }
 }

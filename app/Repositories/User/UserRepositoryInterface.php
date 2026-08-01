@@ -51,4 +51,23 @@ interface UserRepositoryInterface
      * Soft delete the user.
      */
     public function delete(User $user): void;
+
+    /**
+     * Find a user by email across all schools and including soft-deleted
+     * users — email has a hard unique constraint at the database level
+     * that isn't school-scoped or soft-delete-aware.
+     */
+    public function findByEmailAnySchool(string $email, ?string $ignoreUserId = null): ?User;
+
+    /**
+     * Determine whether a name is already taken by another user, across
+     * all schools.
+     */
+    public function existsByName(string $name, ?string $ignoreUserId = null): bool;
+
+    /**
+     * Whether the given email belongs to a user who is a member of the
+     * given school (checked against the school_user pivot directly).
+     */
+    public function emailBelongsToSchool(string $email, string $schoolId, ?string $ignoreUserId = null): bool;
 }

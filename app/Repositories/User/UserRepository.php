@@ -2,6 +2,7 @@
 
 namespace App\Repositories\User;
 
+use App\Models\Scopes\SchoolScope;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -97,5 +98,38 @@ class UserRepository implements UserRepositoryInterface
     public function delete(User $user): void
     {
         $user->delete();
+    }
+
+    public function findByEmailAnySchool(string $email, ?string $ignoreUserId = null): ?User
+    {
+        return User::withoutGlobalScope(SchoolScope::class)
+            ->withTrashed()
+            ->where('email', $email)
+            ->when($ignoreUserId, fn ($query, $id) => $query->where('id', '!=', $id))
+            ->first();
+    }
+
+    /**
+     * Whether the given email belongs to a user who is a member of the given
+     * school, checked directly against the school_user pivot rather than
+     * User::school_id (a virtual accessor derived from the first pivot row,
+     * unreliable for this comparison).
+     */
+    public function emailBelongsToSchool(string $email, string $schoolId, ?string $ignoreUserId = null): bool
+    {
+        return User::withoutGlobalScope(SchoolScope::class)
+            ->withTrashed()
+            ->where('email', $email)
+            ->when($ignoreUserId, fn ($query, $id) => $query->where('id', '!=', $id))
+            ->whereHas('memberSchools', fn ($query) => $query->where('schools.id', $schoolId))
+            ->exists();
+    }
+
+    public function existsByName(string $name, ?string $ignoreUserId = null): bool
+    {
+        return User::withoutGlobalScope(SchoolScope::class)
+            ->where('name', $name)
+            ->when($ignoreUserId, fn ($query, $id) => $query->where('id', '!=', $id))
+            ->exists();
     }
 }

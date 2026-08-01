@@ -396,6 +396,21 @@ class R2StorageService
     }
 
     /**
+     * Promote a temp-uploaded file (by its temp key or public URL) to a final
+     * folder, keeping the same unique hashed filename. Used by bulk imports
+     * that stage photos in a temp folder before the row is confirmed saved.
+     */
+    public function promoteTempPhoto(string $tempKeyOrUrl, string $finalPath = 'profile-photos'): string
+    {
+        $tempKey = $this->extractKeyFromPath($tempKeyOrUrl);
+        $finalKey = $this->schoolPrefix()."{$finalPath}/".basename($tempKey);
+
+        $this->promoteFromTemp($tempKey, $finalKey);
+
+        return $this->getPublicUrl($finalKey);
+    }
+
+    /**
      * Delete temporary R2 object (cleanup on validation failure)
      */
     public function deleteTempObject(string $tempKey): bool

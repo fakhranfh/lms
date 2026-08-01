@@ -14,8 +14,8 @@
         isEditing: @js($this->isEditing()),
         userId: @js($user?->id),
         checkUrl: @js(route('users.check-availability')),
-        nameChecking: false, nameTaken: false, nameCheckedValue: null,
-        emailChecking: false, emailTaken: false, emailCheckedValue: null,
+        nameChecking: false, nameTaken: false, nameCheckedValue: null, nameMessage: '',
+        emailChecking: false, emailTaken: false, emailCheckedValue: null, emailMessage: '',
         get passwordTooShort() { return this.password.length > 0 && this.password.length < 8 },
         get passwordMismatch() { return this.passwordConfirmation.length > 0 && this.password !== this.passwordConfirmation },
         get passwordInvalid() {
@@ -44,9 +44,11 @@
                 if (field === 'name') {
                     this.nameTaken = ! data.available;
                     this.nameCheckedValue = value;
+                    this.nameMessage = data.message || '';
                 } else {
                     this.emailTaken = ! data.available;
                     this.emailCheckedValue = value;
+                    this.emailMessage = data.message || '';
                 }
             } finally {
                 if (field === 'name') { this.nameChecking = false } else { this.emailChecking = false }
@@ -99,7 +101,7 @@
                 class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md"
                 :class="nameTaken ? 'border-error' : 'border-outline-variant'">
             <p x-show="nameChecking" x-cloak class="mt-space-xs font-body-sm text-body-sm text-secondary">Checking availability...</p>
-            <p x-show="!nameChecking && nameTaken" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error">This name is already taken.</p>
+            <p x-show="!nameChecking && nameTaken" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error" x-text="nameMessage"></p>
             @error('name')
                 <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
             @enderror
@@ -112,7 +114,7 @@
                 class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md"
                 :class="emailTaken ? 'border-error' : 'border-outline-variant'">
             <p x-show="emailChecking" x-cloak class="mt-space-xs font-body-sm text-body-sm text-secondary">Checking availability...</p>
-            <p x-show="!emailChecking && emailTaken" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error">This email is already in use.</p>
+            <p x-show="!emailChecking && emailTaken" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error" x-text="emailMessage"></p>
             @error('email')
                 <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
             @enderror

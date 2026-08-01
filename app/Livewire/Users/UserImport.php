@@ -4,8 +4,8 @@ namespace App\Livewire\Users;
 
 use App\Enums\RoleName;
 use App\Repositories\User\UserImportRepositoryInterface;
+use App\Support\CurrentSchool;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -17,8 +17,7 @@ class UserImport extends Component
 
     public ?UploadedFile $spreadsheet = null;
 
-    /** @var array<int, UploadedFile> */
-    public array $photos = [];
+    public ?string $columnError = null;
 
     public ?int $createdCount = null;
 
@@ -41,52 +40,38 @@ class UserImport extends Component
     {
         return [
             'spreadsheet' => ['required', 'file', 'mimes:xlsx,csv,txt'],
-            'photos' => ['array'],
-            'photos.*' => ['image', 'max:5120'],
         ];
     }
 
+    /**
+     * Validate the structure and create users in one step, only when the
+     * admin clicks Import — the spreadsheet isn't parsed just for selecting it.
+     */
     public function import(UserImportRepositoryInterface $userImportRepository): void
     {
         abort_unless(auth()->user()->can('users.import'), 403);
 
+        $this->columnError = null;
         $this->createdCount = null;
         $this->importErrors = [];
 
-        Validator::make(
-            ['spreadsheet' => $this->spreadsheet, 'photos' => $this->photos],
-            $this->rules()
-        )->validate();
+        $this->validate();
 
         if ($columnError = $userImportRepository->validateColumns($this->spreadsheet)) {
-            $this->importErrors = [$columnError];
+            $this->columnError = $columnError;
 
             return;
         }
 
-        $photosByFilename = collect($this->photos)
-            ->mapWithKeys(fn (UploadedFile $photo) => [$photo->getClientOriginalName() => $photo])
-            ->all();
+        $parsed = $userImportRepository->parseRows($this->spreadsheet);
 
-        $import = $userImportRepository->import(
-            $this->spreadsheet,
-            $this->targetRole(),
-            auth()->user()->school_id,
-            $photosByFilename,
-        );
+        $schoolId = app(CurrentSchool::class)->getSchoolId() ?? auth()->user()->school_id;
+        $result = $userImportRepository->createUsers($parsed['rows'], $this->targetRole(), $schoolId);
 
-        $this->createdCount = $import->createdCount;
+        $this->createdCount = $result['created'];
+        $this->importErrors = [...$parsed['errors'], ...$result['errors']];
 
-        $this->importErrors = [
-            ...$import->rowErrors,
-            ...collect($import->failures())->map(
-                fn ($failure) => "Row {$failure->row()}: ".implode(' ', $failure->errors())
-            )->all(),
-            ...collect($import->errors())->map(fn ($error) => $error->getMessage())->all(),
-        ];
-
-        $this->spreadsheet = null;
-        $this->photos = [];
+        $this->reset(['spreadsheet']);
     }
 
     public function render()

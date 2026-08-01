@@ -54,6 +54,13 @@
                     </div>
                 </div>
             @endcan
+            @can('users.edit')
+                <a href="{{ route('users.photos') }}"
+                    class="px-space-lg py-space-sm border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors inline-flex items-center gap-space-2xs">
+                    <span class="material-symbols-outlined text-[18px]">add_a_photo</span>
+                    Bulk Upload Photos
+                </a>
+            @endcan
             @can('users.create')
                 <a href="{{ route('users.create') }}" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">Create User</a>
             @endcan

@@ -3,22 +3,32 @@
 namespace App\Repositories\User;
 
 use App\Enums\RoleName;
-use App\Imports\UsersImport;
 use Illuminate\Http\UploadedFile;
 
 interface UserImportRepositoryInterface
 {
     /**
-     * Validate that the uploaded spreadsheet has exactly the expected columns.
-     * Returns an error message describing the mismatch, or null if valid.
+     * Validate that the uploaded spreadsheet has exactly the expected columns
+     * (matching the downloadable template). Returns an error message
+     * describing the mismatch, or null if valid.
      */
     public function validateColumns(UploadedFile $file): ?string;
 
     /**
-     * Run the import for a fixed target role, returning the completed import
-     * with its created count and row-level errors.
+     * Parse the spreadsheet into name/email rows, skipping blank rows and
+     * collecting an error for any row missing a name or valid email.
      *
-     * @param  array<string, UploadedFile>  $photosByFilename  filename => uploaded photo
+     * @return array{rows: array<int, array{row:int,name:string,email:string}>, errors: array<int,string>}
      */
-    public function import(UploadedFile $file, RoleName $role, string $schoolId, array $photosByFilename): UsersImport;
+    public function parseRows(UploadedFile $file): array;
+
+    /**
+     * Create a user for each row, skipping (and reporting) any row whose
+     * email is already in use. Rows may include a 'photoUrl' pointing at an
+     * already-uploaded (permanent) photo.
+     *
+     * @param  array<int, array{row:int,name:string,email:string,photoUrl?:string|null}>  $rows
+     * @return array{created:int, errors: array<int,string>}
+     */
+    public function createUsers(array $rows, RoleName $role, string $schoolId): array;
 }

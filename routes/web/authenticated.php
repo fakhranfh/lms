@@ -30,6 +30,7 @@ use App\Livewire\Submissions\SubmissionShow;
 use App\Livewire\Users\UserForm;
 use App\Livewire\Users\UserImport;
 use App\Livewire\Users\UserIndex;
+use App\Livewire\Users\UserPhotoUpload;
 use App\Livewire\Users\UserRoles;
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +60,7 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
     Route::get('/users/check-availability', [UserAvailabilityController::class, 'check'])->name('users.check-availability');
     Route::get('/users/create', UserForm::class)->middleware('permission:users.create')->name('users.create');
     Route::get('/users/import/{role}', UserImport::class)->whereIn('role', ['teacher', 'student'])->middleware('permission:users.import')->name('users.import');
+    Route::get('/users/photos', UserPhotoUpload::class)->middleware('permission:users.edit')->name('users.photos');
     Route::get('/users/{id}/edit', UserForm::class)->middleware('permission:users.edit')->name('users.edit');
     Route::get('/users/{id}/roles', UserRoles::class)->middleware('permission:users.assign-roles')->name('users.roles.edit');
 

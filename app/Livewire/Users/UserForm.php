@@ -6,6 +6,8 @@ use App\Enums\RoleName;
 use App\Models\User;
 use App\Services\RoleService;
 use App\Services\UserService;
+use App\Support\CurrentSchool;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -50,6 +52,18 @@ class UserForm extends Component
         return $this->user !== null;
     }
 
+    /**
+     * The school this admin is currently operating in. Prefers the
+     * request-resolved CurrentSchool over auth()->user()->school_id, since
+     * that accessor only reflects school_user membership — School Admins
+     * are attached via a separate school_admins pivot and would otherwise
+     * resolve to null.
+     */
+    private function currentSchoolId(): ?string
+    {
+        return app(CurrentSchool::class)->getSchoolId() ?? auth()->user()->school_id;
+    }
+
     public function cancelPhoto(): void
     {
         $this->photo = null;
@@ -65,7 +79,13 @@ class UserForm extends Component
             ],
             'email' => [
                 'required', 'email', 'max:255',
-                Rule::unique('users', 'email')->ignore($this->user?->id)->whereNull('deleted_at'),
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $message = app(UserService::class)->emailConflictMessage($value, $this->currentSchoolId(), $this->user?->id);
+
+                    if ($message !== null) {
+                        $fail($message);
+                    }
+                },
             ],
             'password' => array_filter([
                 $this->isEditing() ? 'nullable' : 'required', 'string', 'min:8',
@@ -105,12 +125,21 @@ class UserForm extends Component
 
             session()->flash('success', __('User updated successfully.'));
         } else {
-            $userService->createUser([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => $validated['password'],
-                'school_id' => auth()->user()->school_id,
-            ], $this->photo, $validated['roles'] ?? []);
+            try {
+                $userService->createUser([
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                    'password' => $validated['password'],
+                    'school_id' => $this->currentSchoolId(),
+                ], $this->photo, $validated['roles'] ?? []);
+            } catch (UniqueConstraintViolationException) {
+                // The availability check raced with another request creating
+                // the same email/name between validation and this insert.
+                $this->addError('email', __('This email is already in use.'));
+                $this->dispatch('show-error-modal', message: __('This email is already in use.'));
+
+                return null;
+            }
 
             session()->flash('success', __('User created successfully.'));
         }
@@ -123,7 +152,7 @@ class UserForm extends Component
         $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
 
         return view('livewire.users.user-form', [
-            'allRoles' => $roleService->get(['school_id' => auth()->user()->school_id]),
+            'allRoles' => $roleService->get(['school_id' => $this->currentSchoolId()]),
         ])
             ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => $this->isEditing() ? 'Edit User' : 'New User'])
             ->section($isAdminUser ? 'admin-content' : 'app-content');

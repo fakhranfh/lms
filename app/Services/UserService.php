@@ -170,6 +170,10 @@ class UserService
     /**
      * Describe why an email is unavailable, distinguishing "already in use
      * in another school" from a same-school conflict, or null if it's free.
+     *
+     * A soft-deleted user re-registering under the same school is not a
+     * conflict — findTrashedInSchool() picks them up so they get restored
+     * instead of blocked.
      */
     public function emailConflictMessage(string $email, ?string $currentSchoolId, ?string $ignoreUserId = null): ?string
     {
@@ -179,11 +183,52 @@ class UserService
             return null;
         }
 
-        if ($currentSchoolId !== null && ! $this->userRepository->emailBelongsToSchool($email, $currentSchoolId, $ignoreUserId)) {
+        $belongsToCurrentSchool = $currentSchoolId !== null
+            && $this->userRepository->emailBelongsToSchool($email, $currentSchoolId, $ignoreUserId);
+
+        if ($existing->trashed() && $belongsToCurrentSchool) {
+            return null;
+        }
+
+        if ($currentSchoolId !== null && ! $belongsToCurrentSchool) {
             return 'This email is already in use in another school.';
         }
 
         return 'This email is already in use.';
+    }
+
+    /**
+     * Find a soft-deleted user with the given email who belonged to the
+     * given school, so they can be restored instead of re-created.
+     */
+    public function findTrashedInSchool(string $email, string $schoolId): ?User
+    {
+        return $this->userRepository->findTrashedInSchool($email, $schoolId);
+    }
+
+    /**
+     * Restore a soft-deleted user rather than creating a duplicate, applying
+     * the freshly submitted name/password/roles/photo as if provisioned anew.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<int, int>  $roleIds
+     */
+    public function restoreUser(User $user, array $data, ?UploadedFile $photo, array $roleIds = []): User
+    {
+        $this->userRepository->restore($user, [
+            'name' => $data['name'],
+            'password' => $data['password'],
+        ]);
+
+        if ($roleIds !== []) {
+            $this->userRepository->syncRoles($user, $roleIds);
+        }
+
+        if ($photo) {
+            $this->updateProfilePhoto($user, $photo);
+        }
+
+        return $user;
     }
 
     /**

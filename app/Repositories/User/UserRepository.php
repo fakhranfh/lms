@@ -132,4 +132,22 @@ class UserRepository implements UserRepositoryInterface
             ->when($ignoreUserId, fn ($query, $id) => $query->where('id', '!=', $id))
             ->exists();
     }
+
+    public function findTrashedInSchool(string $email, string $schoolId): ?User
+    {
+        return User::withoutGlobalScope(SchoolScope::class)
+            ->onlyTrashed()
+            ->where('email', $email)
+            ->whereHas('memberSchools', fn ($query) => $query->where('schools.id', $schoolId))
+            ->first();
+    }
+
+    public function restore(User $user, array $data): User
+    {
+        $user->fill($data);
+        $user->email_verified_at = now();
+        $user->restore();
+
+        return $user;
+    }
 }

@@ -82,12 +82,25 @@ class UserImportRepository implements UserImportRepositoryInterface
             }
 
             try {
-                $this->userService->createUserWithPhotoUrl([
-                    'name' => $row['name'],
-                    'email' => $row['email'],
-                    'password' => Str::random(24),
-                    'school_id' => $schoolId,
-                ], $row['photoUrl'] ?? null, $roleId ? [$roleId] : []);
+                $trashedUser = $this->userService->findTrashedInSchool($row['email'], $schoolId);
+
+                if ($trashedUser) {
+                    $this->userService->restoreUser($trashedUser, [
+                        'name' => $row['name'],
+                        'password' => Str::random(24),
+                    ], null, $roleId ? [$roleId] : []);
+
+                    if ($row['photoUrl'] ?? null) {
+                        $this->userService->updateProfilePhotoFromUrl($trashedUser, $row['photoUrl']);
+                    }
+                } else {
+                    $this->userService->createUserWithPhotoUrl([
+                        'name' => $row['name'],
+                        'email' => $row['email'],
+                        'password' => Str::random(24),
+                        'school_id' => $schoolId,
+                    ], $row['photoUrl'] ?? null, $roleId ? [$roleId] : []);
+                }
 
                 $created++;
             } catch (UniqueConstraintViolationException) {

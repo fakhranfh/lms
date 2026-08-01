@@ -237,6 +237,38 @@ test('a soft-deleted user email is still reported as taken, not silently availab
     expect(User::withTrashed()->where('email', 'gone@example.com')->count())->toBe(1);
 });
 
+test('creating a user with a soft-deleted same-school email restores the old user instead of failing', function () {
+    $school = School::factory()->create();
+    $actor = User::factory()->forSchool($school)->create();
+    $role = App\Models\Role::create(['name' => 'user-manager-'.uniqid(), 'guard_name' => 'web']);
+    $role->givePermissionTo(Permission::firstOrCreate(['name' => 'users.create', 'guard_name' => 'web']));
+    $actor->assignRole($role);
+
+    $teacherRole = App\Models\Role::firstOrCreate(['name' => RoleName::Teacher->value, 'guard_name' => 'web', 'school_id' => $school->id]);
+    $trashed = User::factory()->forSchool($school)->create(['email' => 'gone@example.com', 'name' => 'Old Name']);
+    $trashed->delete();
+
+    app(CurrentSchool::class)->setSchoolId($school->id);
+
+    Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
+        ->set('name', 'Restored Name')
+        ->set('email', 'gone@example.com')
+        ->set('password', 'password123')
+        ->set('password_confirmation', 'password123')
+        ->set('roles', [$teacherRole->id])
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('users.index'));
+
+    expect(User::withTrashed()->where('email', 'gone@example.com')->count())->toBe(1);
+
+    $restored = User::where('email', 'gone@example.com')->first();
+    expect($restored->id)->toBe($trashed->id);
+    expect($restored->name)->toBe('Restored Name');
+    expect($restored->deleted_at)->toBeNull();
+    expect($restored->hasRole(RoleName::Teacher))->toBeTrue();
+});
+
 test('the email conflict message specifies another school when the email belongs elsewhere', function () {
     $actor = actingAsUserManager(['users.create']);
     User::factory()->create(['email' => 'taken@example.com']); // gets its own auto-created school, different from $actor's

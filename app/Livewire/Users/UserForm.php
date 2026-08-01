@@ -125,13 +125,20 @@ class UserForm extends Component
 
             session()->flash('success', __('User updated successfully.'));
         } else {
+            $schoolId = $this->currentSchoolId();
+            $trashedUser = $schoolId ? $userService->findTrashedInSchool($validated['email'], $schoolId) : null;
+
             try {
-                $userService->createUser([
-                    'name' => $validated['name'],
-                    'email' => $validated['email'],
-                    'password' => $validated['password'],
-                    'school_id' => $this->currentSchoolId(),
-                ], $this->photo, $validated['roles'] ?? []);
+                if ($trashedUser) {
+                    $userService->restoreUser($trashedUser, $validated, $this->photo, $validated['roles'] ?? []);
+                } else {
+                    $userService->createUser([
+                        'name' => $validated['name'],
+                        'email' => $validated['email'],
+                        'password' => $validated['password'],
+                        'school_id' => $schoolId,
+                    ], $this->photo, $validated['roles'] ?? []);
+                }
             } catch (UniqueConstraintViolationException) {
                 // The availability check raced with another request creating
                 // the same email/name between validation and this insert.

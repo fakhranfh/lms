@@ -70,4 +70,18 @@ interface UserRepositoryInterface
      * given school (checked against the school_user pivot directly).
      */
     public function emailBelongsToSchool(string $email, string $schoolId, ?string $ignoreUserId = null): bool;
+
+    /**
+     * Find a soft-deleted user with the given email who is a member of the
+     * given school, so they can be restored instead of blocked as a duplicate.
+     */
+    public function findTrashedInSchool(string $email, string $schoolId): ?User;
+
+    /**
+     * Restore a soft-deleted user, applying fresh attributes and re-verifying
+     * their email since they're being provisioned again by an admin.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function restore(User $user, array $data): User;
 }

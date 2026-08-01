@@ -3,7 +3,6 @@
 use App\Models\School;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -31,7 +30,9 @@ return new class extends Migration
             $school->forceFill(['slug' => $slug])->saveQuietly();
         });
 
-        DB::statement('ALTER TABLE schools ALTER COLUMN slug SET NOT NULL');
+        Schema::table('schools', function (Blueprint $table) {
+            $table->string('slug')->nullable(false)->change();
+        });
 
         Schema::table('schools', function (Blueprint $table) {
             $table->unique('slug');

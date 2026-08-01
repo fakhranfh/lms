@@ -691,7 +691,7 @@ class R2StorageService
     }
 
     /**
-     * Prefix an S3 key with the current school's folder (schools/{domain}/), if any
+     * Prefix an S3 key with the current school's folder (schools/{slug}/), if any
      */
     public function schoolPrefix(): string
     {
@@ -703,11 +703,11 @@ class R2StorageService
 
         $school = $this->schoolRepository->find($schoolId);
 
-        if (! $school || ! $school->domain) {
+        if (! $school || ! $school->slug) {
             return '';
         }
 
-        return "schools/{$school->domain}/";
+        return "schools/{$school->slug}/";
     }
 
     /**

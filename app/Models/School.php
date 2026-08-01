@@ -11,9 +11,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 /**
  * @property string $id
+ * @property string $slug
  */
 #[Fillable(['name', 'domain', 'tier_id', 'logo_path'])]
 class School extends Model
@@ -22,6 +25,36 @@ class School extends Model
     use HasFactory, HasUuid, HasViewerTimezoneDates;
 
     protected $table = 'schools';
+
+    /**
+     * Boot the model: generate a permanent slug from the school's name on
+     * creation, and prevent it from ever being changed afterwards.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (School $school): void {
+            if ($school->slug || ! Schema::hasColumn($school->getTable(), 'slug')) {
+                return;
+            }
+
+            $base = Str::slug($school->name);
+            $slug = $base;
+            $suffix = 2;
+
+            while (static::where('slug', $slug)->exists()) {
+                $slug = "{$base}-{$suffix}";
+                $suffix++;
+            }
+
+            $school->slug = $slug;
+        });
+
+        static::updating(function (School $school): void {
+            if ($school->isDirty('slug')) {
+                $school->slug = $school->getOriginal('slug');
+            }
+        });
+    }
 
     /**
      * Get the users belonging to the school.

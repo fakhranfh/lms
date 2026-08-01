@@ -84,13 +84,13 @@ describe('R2StorageService', function () {
             expect($service->schoolPrefix())->toBe('');
         });
 
-        test('scopes to schools/{domain}/ when a school is in context', function () {
-            $school = School::factory()->create(['domain' => 'demo.lms.local']);
+        test('scopes to schools/{slug}/ when a school is in context', function () {
+            $school = School::factory()->create(['name' => 'Demo LMS Local']);
             app(CurrentSchool::class)->setSchoolId($school->id);
 
             $service = app(R2StorageService::class);
 
-            expect($service->schoolPrefix())->toBe('schools/demo.lms.local/');
+            expect($service->schoolPrefix())->toBe('schools/demo-lms-local/');
         });
     });
 

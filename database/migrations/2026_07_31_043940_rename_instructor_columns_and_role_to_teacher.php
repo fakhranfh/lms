@@ -27,9 +27,8 @@ return new class extends Migration
         DB::table('roles')->where('name', 'Instructor')->update(['name' => 'Teacher', 'slug' => 'teacher']);
 
         if (Schema::hasTable('demo_lms_accesses')) {
-            DB::statement('ALTER TABLE demo_lms_accesses DROP CONSTRAINT IF EXISTS demo_lms_accesses_role_check');
             DB::table('demo_lms_accesses')->where('role', 'instructor')->update(['role' => 'teacher']);
-            DB::statement("ALTER TABLE demo_lms_accesses ADD CONSTRAINT demo_lms_accesses_role_check CHECK (role IN ('teacher', 'student', 'school-admin'))");
+            $this->rewriteDemoLmsAccessesRoleConstraint(['teacher', 'student', 'school-admin']);
         }
     }
 
@@ -49,9 +48,34 @@ return new class extends Migration
         DB::table('roles')->where('name', 'Teacher')->update(['name' => 'Instructor', 'slug' => 'instructor']);
 
         if (Schema::hasTable('demo_lms_accesses')) {
-            DB::statement('ALTER TABLE demo_lms_accesses DROP CONSTRAINT IF EXISTS demo_lms_accesses_role_check');
             DB::table('demo_lms_accesses')->where('role', 'teacher')->update(['role' => 'instructor']);
-            DB::statement("ALTER TABLE demo_lms_accesses ADD CONSTRAINT demo_lms_accesses_role_check CHECK (role IN ('instructor', 'student', 'school-admin'))");
+            $this->rewriteDemoLmsAccessesRoleConstraint(['instructor', 'student', 'school-admin']);
         }
+    }
+
+    /**
+     * @param  array<int, string>  $roles
+     */
+    private function rewriteDemoLmsAccessesRoleConstraint(array $roles): void
+    {
+        $driver = Schema::getConnection()->getDriverName();
+        $list = implode(', ', array_map(fn (string $role): string => "'{$role}'", $roles));
+
+        if ($driver === 'pgsql') {
+            DB::statement('ALTER TABLE demo_lms_accesses DROP CONSTRAINT IF EXISTS demo_lms_accesses_role_check');
+            DB::statement("ALTER TABLE demo_lms_accesses ADD CONSTRAINT demo_lms_accesses_role_check CHECK (role IN ({$list}))");
+
+            return;
+        }
+
+        if ($driver === 'sqlite') {
+            Schema::table('demo_lms_accesses', function (Blueprint $table) use ($roles): void {
+                $table->enum('role', $roles)->default($roles[0])->change();
+            });
+
+            return;
+        }
+
+        DB::statement("ALTER TABLE demo_lms_accesses MODIFY role ENUM({$list}) NOT NULL DEFAULT '{$roles[0]}'");
     }
 };

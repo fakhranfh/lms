@@ -1,8 +1,53 @@
 @section('title', $this->isEditing() ? 'Edit User' : 'New User')
 
-<div class="max-w-2xl" x-data="{ showErrorModal: false, errorMessage: '' }"
+<div class="max-w-2xl" x-data="{
+        showErrorModal: false, errorMessage: '',
+        password: @js($password),
+        passwordConfirmation: @js($password_confirmation),
+        isEditing: @js($this->isEditing()),
+        userId: @js($user?->id),
+        checkUrl: @js(route('users.check-availability')),
+        nameChecking: false, nameTaken: false, nameCheckedValue: null,
+        emailChecking: false, emailTaken: false, emailCheckedValue: null,
+        get passwordTooShort() { return this.password.length > 0 && this.password.length < 8 },
+        get passwordMismatch() { return this.passwordConfirmation.length > 0 && this.password !== this.passwordConfirmation },
+        get passwordInvalid() {
+            if (this.password === '' && this.passwordConfirmation === '' && this.isEditing) { return false }
+            return this.passwordTooShort || this.passwordMismatch || this.password === '' || this.passwordConfirmation === ''
+        },
+        get formInvalid() { return this.passwordInvalid || this.nameTaken || this.emailTaken },
+        async checkAvailability(field, value) {
+            value = value.trim();
+            if (value === '') {
+                if (field === 'name') { this.nameTaken = false } else { this.emailTaken = false }
+                return;
+            }
+
+            if (field === 'name') { this.nameChecking = true } else { this.emailChecking = true }
+
+            const params = new URLSearchParams({ field, value });
+            if (this.userId) { params.set('ignore_id', this.userId) }
+
+            try {
+                const response = await fetch(`${this.checkUrl}?${params.toString()}`, {
+                    headers: { 'Accept': 'application/json' },
+                });
+                const data = await response.json();
+
+                if (field === 'name') {
+                    this.nameTaken = ! data.available;
+                    this.nameCheckedValue = value;
+                } else {
+                    this.emailTaken = ! data.available;
+                    this.emailCheckedValue = value;
+                }
+            } finally {
+                if (field === 'name') { this.nameChecking = false } else { this.emailChecking = false }
+            }
+        },
+    }"
     x-init="$wire.$on('show-error-modal', ({ message }) => { errorMessage = message; showErrorModal = true })">
-    <form wire:submit="save" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
+    <form @submit.prevent="if (!formInvalid) { $wire.save() }" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
         <!-- Profile Photo -->
         <div class="flex flex-col md:flex-row items-center md:items-start gap-space-lg pb-space-lg border-b border-outline-variant">
             <label for="photo" class="relative group/avatar cursor-pointer flex-shrink-0">
@@ -32,7 +77,11 @@
         <div>
             <label for="name" class="block font-label-md text-label-md text-on-surface mb-space-xs">Name</label>
             <input type="text" wire:model="name" id="name"
-                class="w-full px-space-md py-space-sm border border-outline-variant rounded-lg font-body-md text-body-md">
+                x-on:input.debounce.400ms="checkAvailability('name', $event.target.value)"
+                class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md"
+                :class="nameTaken ? 'border-error' : 'border-outline-variant'">
+            <p x-show="nameChecking" x-cloak class="mt-space-xs font-body-sm text-body-sm text-secondary">Checking availability...</p>
+            <p x-show="!nameChecking && nameTaken" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error">This name is already taken.</p>
             @error('name')
                 <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
             @enderror
@@ -41,7 +90,11 @@
         <div>
             <label for="email" class="block font-label-md text-label-md text-on-surface mb-space-xs">Email</label>
             <input type="email" wire:model="email" id="email"
-                class="w-full px-space-md py-space-sm border border-outline-variant rounded-lg font-body-md text-body-md">
+                x-on:input.debounce.400ms="checkAvailability('email', $event.target.value)"
+                class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md"
+                :class="emailTaken ? 'border-error' : 'border-outline-variant'">
+            <p x-show="emailChecking" x-cloak class="mt-space-xs font-body-sm text-body-sm text-secondary">Checking availability...</p>
+            <p x-show="!emailChecking && emailTaken" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error">This email is already in use.</p>
             @error('email')
                 <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
             @enderror
@@ -52,8 +105,29 @@
                 Password {{ $this->isEditing() ? '(leave blank to keep current)' : '' }}
             </label>
             <input type="password" wire:model="password" id="password" autocomplete="new-password"
-                class="w-full px-space-md py-space-sm border border-outline-variant rounded-lg font-body-md text-body-md">
+                x-on:input="password = $event.target.value"
+                class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md"
+                :class="passwordTooShort ? 'border-error' : 'border-outline-variant'">
+            <p x-show="passwordTooShort" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error">
+                Password must be at least 8 characters.
+            </p>
             @error('password')
+                <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
+            @enderror
+        </div>
+
+        <div>
+            <label for="password_confirmation" class="block font-label-md text-label-md text-on-surface mb-space-xs">
+                Confirm Password
+            </label>
+            <input type="password" wire:model="password_confirmation" id="password_confirmation" autocomplete="new-password"
+                x-on:input="passwordConfirmation = $event.target.value"
+                class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md"
+                :class="passwordMismatch ? 'border-error' : 'border-outline-variant'">
+            <p x-show="passwordMismatch" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error">
+                Passwords do not match.
+            </p>
+            @error('password_confirmation')
                 <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
             @enderror
         </div>
@@ -74,7 +148,7 @@
         </div>
 
         <div class="flex items-center gap-space-md">
-            <button type="submit" wire:loading.attr="disabled" wire:target="save,photo" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-space-sm">
+            <button type="submit" :disabled="formInvalid" wire:loading.attr="disabled" wire:target="save,photo" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-space-sm">
                 <svg wire:loading wire:target="save" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>

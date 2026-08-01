@@ -140,6 +140,7 @@ test('user with users.create can create a new user', function () {
         ->set('name', 'New Teacher')
         ->set('email', 'new.teacher@example.com')
         ->set('password', 'password123')
+        ->set('password_confirmation', 'password123')
         ->set('roles', [$teacherRole->id])
         ->call('save')
         ->assertHasNoErrors()
@@ -169,6 +170,7 @@ test('creating a user with a photo uploads it via R2StorageService', function ()
         ->set('name', 'Photo Teacher')
         ->set('email', 'photo.teacher@example.com')
         ->set('password', 'password123')
+        ->set('password_confirmation', 'password123')
         ->set('photo', $file)
         ->call('save')
         ->assertHasNoErrors();
@@ -186,8 +188,47 @@ test('creating a user requires users.create permission', function () {
         ->set('name', 'New Teacher')
         ->set('email', 'blocked@example.com')
         ->set('password', 'password123')
+        ->set('password_confirmation', 'password123')
         ->call('save')
         ->assertForbidden();
+});
+
+test('creating a user fails validation when name is already used', function () {
+    $actor = actingAsUserManager(['users.create']);
+    User::factory()->create(['name' => 'Taken Name']);
+
+    Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
+        ->set('name', 'Taken Name')
+        ->set('email', 'unique.email@example.com')
+        ->set('password', 'password123')
+        ->set('password_confirmation', 'password123')
+        ->call('save')
+        ->assertHasErrors('name');
+});
+
+test('creating a user fails validation when email is already used', function () {
+    $actor = actingAsUserManager(['users.create']);
+    User::factory()->create(['email' => 'taken@example.com']);
+
+    Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
+        ->set('name', 'Unique Name')
+        ->set('email', 'taken@example.com')
+        ->set('password', 'password123')
+        ->set('password_confirmation', 'password123')
+        ->call('save')
+        ->assertHasErrors('email');
+});
+
+test('creating a user fails validation when password confirmation does not match', function () {
+    $actor = actingAsUserManager(['users.create']);
+
+    Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
+        ->set('name', 'Mismatch User')
+        ->set('email', 'mismatch@example.com')
+        ->set('password', 'password123')
+        ->set('password_confirmation', 'different123')
+        ->call('save')
+        ->assertHasErrors('password');
 });
 
 test('user with users.edit can update an existing user', function () {
@@ -338,4 +379,157 @@ test('the import page rejects an unknown role', function () {
 
     Livewire::actingAs($actor)->test(UserImport::class, ['role' => 'admin'])
         ->assertStatus(404);
+});
+
+test('user with users.delete can soft delete a user', function () {
+    $actor = actingAsUserManager(['users.delete']);
+    $target = User::factory()->create();
+
+    Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('destroy', $target->id)
+        ->assertSet('successMessage', 'User deleted successfully.');
+
+    expect(User::find($target->id))->toBeNull();
+    expect(User::withTrashed()->find($target->id))->not->toBeNull();
+    expect(User::withTrashed()->find($target->id)->trashed())->toBeTrue();
+});
+
+test('deleting a user requires users.delete permission', function () {
+    $actor = actingAsUserManager(['users.view']);
+    $target = User::factory()->create();
+
+    Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('destroy', $target->id)
+        ->assertForbidden();
+
+    expect(User::find($target->id))->not->toBeNull();
+});
+
+test('deleting the last admin user is blocked', function () {
+    $actor = actingAsUserManager(['users.delete']);
+    $admin = Role::firstOrCreate(['name' => RoleName::Admin->value, 'guard_name' => 'web']);
+
+    // The create_admin_role_and_assign_admin_user migration seeds its own
+    // admin user; remove it so the target below is genuinely the only admin.
+    User::role(RoleName::Admin)->get()->each->delete();
+
+    $target = User::factory()->create();
+    $target->assignRole($admin);
+
+    Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('destroy', $target->id)
+        ->assertSet('errorMessage', 'At least one user must keep the admin role.');
+
+    expect(User::find($target->id))->not->toBeNull();
+});
+
+test('deleted users no longer appear in the users index', function () {
+    $actor = actingAsUserManager(['users.view', 'users.delete']);
+    $target = User::factory()->create(['name' => 'Soon Deleted']);
+
+    Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('destroy', $target->id)
+        ->assertDontSee('Soon Deleted');
+});
+
+test('user with users.delete can bulk delete multiple selected users', function () {
+    $actor = actingAsUserManager(['users.delete']);
+    $first = User::factory()->create();
+    $second = User::factory()->create();
+
+    Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('destroySelected', [$first->id, $second->id])
+        ->assertSet('successMessage', '2 users deleted successfully.');
+
+    expect(User::find($first->id))->toBeNull();
+    expect(User::find($second->id))->toBeNull();
+    expect(User::withTrashed()->find($first->id)->trashed())->toBeTrue();
+    expect(User::withTrashed()->find($second->id)->trashed())->toBeTrue();
+});
+
+test('bulk deleting requires users.delete permission', function () {
+    $actor = actingAsUserManager(['users.view']);
+    $target = User::factory()->create();
+
+    Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('destroySelected', [$target->id])
+        ->assertForbidden();
+
+    expect(User::find($target->id))->not->toBeNull();
+});
+
+test('bulk deleting all admins is blocked but non-admins in the same batch are still deleted', function () {
+    $actor = actingAsUserManager(['users.delete']);
+    $admin = Role::firstOrCreate(['name' => RoleName::Admin->value, 'guard_name' => 'web']);
+
+    // The create_admin_role_and_assign_admin_user migration seeds its own
+    // admin user; remove it so the target below is genuinely the only admin.
+    User::role(RoleName::Admin)->get()->each->delete();
+
+    $adminTarget = User::factory()->create();
+    $adminTarget->assignRole($admin);
+    $regularTarget = User::factory()->create();
+
+    Livewire::actingAs($actor)->test(UserIndex::class)
+        ->call('destroySelected', [$adminTarget->id, $regularTarget->id])
+        ->assertSet('errorMessage', 'At least one user must keep the admin role.');
+
+    expect(User::find($adminTarget->id))->not->toBeNull();
+    expect(User::find($regularTarget->id))->toBeNull();
+});
+
+test('the users index page renders checkboxes for bulk selection', function () {
+    $actor = actingAsUserManager(['users.view', 'users.delete']);
+    $target = User::factory()->create();
+
+    Livewire::actingAs($actor)->test(UserIndex::class)
+        ->assertSeeHtml('data-user-checkbox')
+        ->assertSeeHtml('value="'.$target->id.'"');
+});
+
+test('the availability check reports a taken name as unavailable', function () {
+    $actor = actingAsUserManager(['users.create']);
+    User::factory()->create(['name' => 'Taken Name']);
+
+    $this->actingAs($actor)
+        ->getJson(route('users.check-availability', ['field' => 'name', 'value' => 'Taken Name']))
+        ->assertOk()
+        ->assertJson(['available' => false]);
+});
+
+test('the availability check reports a free name as available', function () {
+    $actor = actingAsUserManager(['users.create']);
+
+    $this->actingAs($actor)
+        ->getJson(route('users.check-availability', ['field' => 'name', 'value' => 'Nobody Yet']))
+        ->assertOk()
+        ->assertJson(['available' => true]);
+});
+
+test('the availability check reports a taken email as unavailable', function () {
+    $actor = actingAsUserManager(['users.create']);
+    User::factory()->create(['email' => 'taken@example.com']);
+
+    $this->actingAs($actor)
+        ->getJson(route('users.check-availability', ['field' => 'email', 'value' => 'taken@example.com']))
+        ->assertOk()
+        ->assertJson(['available' => false]);
+});
+
+test('the availability check ignores the current user when editing', function () {
+    $actor = actingAsUserManager(['users.edit']);
+    $target = User::factory()->create(['name' => 'Existing Name']);
+
+    $this->actingAs($actor)
+        ->getJson(route('users.check-availability', ['field' => 'name', 'value' => 'Existing Name', 'ignore_id' => $target->id]))
+        ->assertOk()
+        ->assertJson(['available' => true]);
+});
+
+test('the availability check requires users.create or users.edit permission', function () {
+    $actor = actingAsUserManager(['users.view']);
+
+    $this->actingAs($actor)
+        ->getJson(route('users.check-availability', ['field' => 'name', 'value' => 'Anything']))
+        ->assertForbidden();
 });

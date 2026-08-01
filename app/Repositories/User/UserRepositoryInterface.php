@@ -46,4 +46,9 @@ interface UserRepositoryInterface
     public function hasAnyRole(User $user): bool;
 
     public function assignRole(User $user, Role $role): void;
+
+    /**
+     * Soft delete the user.
+     */
+    public function delete(User $user): void;
 }

@@ -118,19 +118,31 @@ class UserService
     public function syncRoles(User $user, array $roleIds): void
     {
         if ($user->hasRole(RoleName::Admin) && ! in_array($this->adminRoleId(), $roleIds)) {
-            $this->guardLastAdmin($user);
+            $this->guardLastAdmin($user, 'roles');
         }
 
         $this->userRepository->syncRoles($user, $roleIds);
     }
 
-    private function guardLastAdmin(User $user): void
+    /**
+     * Soft delete a user, refusing to remove the last remaining Admin.
+     */
+    public function deleteUser(User $user): void
+    {
+        if ($user->hasRole(RoleName::Admin)) {
+            $this->guardLastAdmin($user, 'user');
+        }
+
+        $this->userRepository->delete($user);
+    }
+
+    private function guardLastAdmin(User $user, string $errorKey): void
     {
         $otherAdmins = $this->roleRepository->otherUsersHaveRole(RoleName::Admin->value, $user->id);
 
         if (! $otherAdmins) {
             throw ValidationException::withMessages([
-                'roles' => __('At least one user must keep the admin role.'),
+                $errorKey => __('At least one user must keep the admin role.'),
             ]);
         }
     }

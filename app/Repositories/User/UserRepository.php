@@ -93,4 +93,9 @@ class UserRepository implements UserRepositoryInterface
     {
         $user->assignRole($role);
     }
+
+    public function delete(User $user): void
+    {
+        $user->delete();
+    }
 }

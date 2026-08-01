@@ -6,6 +6,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SchoolPaymentController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\TierChangeController;
+use App\Http\Controllers\UserAvailabilityController;
 use App\Livewire\Assignments\AssignmentForm;
 use App\Livewire\Assignments\AssignmentsIndex;
 use App\Livewire\ChangePassword;
@@ -55,6 +56,7 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
 
     Route::get('/users', UserIndex::class)->middleware('permission:users.view')->name('users.index');
+    Route::get('/users/check-availability', [UserAvailabilityController::class, 'check'])->name('users.check-availability');
     Route::get('/users/create', UserForm::class)->middleware('permission:users.create')->name('users.create');
     Route::get('/users/import/{role}', UserImport::class)->whereIn('role', ['teacher', 'student'])->middleware('permission:users.import')->name('users.import');
     Route::get('/users/{id}/edit', UserForm::class)->middleware('permission:users.edit')->name('users.edit');

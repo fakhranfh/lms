@@ -8,6 +8,7 @@ use App\Services\UserService;
 use App\Support\CurrentSchool;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -29,9 +30,74 @@ class UserIndex extends Component
 
     public ?string $successMessage = null;
 
+    public ?string $errorMessage = null;
+
     public function mount(): void
     {
         $this->successMessage = session('success');
+    }
+
+    public function destroy(string $id, UserService $userService): void
+    {
+        abort_unless(auth()->user()->can('users.delete'), 403);
+
+        $this->successMessage = null;
+        $this->errorMessage = null;
+
+        $user = $userService->find($id);
+        abort_if($user === null, 404);
+
+        try {
+            $userService->deleteUser($user);
+            $this->successMessage = __('User deleted successfully.');
+        } catch (ValidationException $exception) {
+            $this->errorMessage = collect($exception->errors())->flatten()->first();
+        }
+
+        unset($this->users);
+    }
+
+    /**
+     * Bulk-delete users selected client-side (checkboxes tracked in Alpine,
+     * not synced to the server on every click); the selected ids are only
+     * sent over the wire when the admin confirms the delete.
+     *
+     * @param  array<int, string>  $ids
+     */
+    public function destroySelected(array $ids, UserService $userService): void
+    {
+        abort_unless(auth()->user()->can('users.delete'), 403);
+
+        $this->successMessage = null;
+        $this->errorMessage = null;
+
+        $deletedCount = 0;
+        $errors = [];
+
+        foreach ($ids as $id) {
+            $user = $userService->find($id);
+
+            if ($user === null) {
+                continue;
+            }
+
+            try {
+                $userService->deleteUser($user);
+                $deletedCount++;
+            } catch (ValidationException $exception) {
+                $errors[] = collect($exception->errors())->flatten()->first();
+            }
+        }
+
+        if ($deletedCount > 0) {
+            $this->successMessage = trans_choice('1 user deleted successfully.|:count users deleted successfully.', $deletedCount, ['count' => $deletedCount]);
+        }
+
+        if ($errors !== []) {
+            $this->errorMessage = collect($errors)->unique()->join(' ');
+        }
+
+        unset($this->users);
     }
 
     public function updating(string $property): void

@@ -41,6 +41,11 @@
         <table class="w-full">
             <thead class="bg-surface-container border-b border-outline-variant">
                 <tr>
+                    @can('users.delete')
+                        <th class="px-space-lg py-space-md w-[1%]">
+                            <input type="checkbox" :checked="allOnPageSelected" @change="toggleSelectAll($event.target.checked)" aria-label="Select all users on this page">
+                        </th>
+                    @endcan
                     <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface cursor-pointer select-none hover:bg-surface-container-lowest transition-colors" wire:click="sortBy('name')">
                         <span class="inline-flex items-center gap-space-2xs">
                             Name
@@ -68,6 +73,13 @@
             <tbody class="divide-y divide-outline-variant">
                 @forelse ($users as $user)
                     <tr wire:key="user-{{ $user->id }}" class="hover:bg-surface-container-lowest transition-colors">
+                        @can('users.delete')
+                            <td class="px-space-lg py-space-md">
+                                @unless ($user->id === auth()->id())
+                                    <input type="checkbox" x-model="selected" value="{{ $user->id }}" data-user-checkbox aria-label="Select {{ $user->name }}">
+                                @endunless
+                            </td>
+                        @endcan
                         <td class="px-space-lg py-space-md text-body-md text-on-surface">{{ $user->name }}</td>
                         <td class="px-space-lg py-space-md text-body-md text-on-surface-variant">{{ $user->email }}</td>
                         <td class="px-space-lg py-space-md text-body-sm text-on-surface-variant">
@@ -78,11 +90,16 @@
                                 <a href="{{ route('users.edit', $user) }}" class="font-label-md text-label-md text-primary hover:underline">Edit</a>
                             @endcan
                             <a href="{{ route('users.roles.edit', $user) }}" class="font-label-md text-label-md text-primary hover:underline">Assign Roles</a>
+                            @can('users.delete')
+                                @unless ($user->id === auth()->id())
+                                    <button type="button" @click="deleteId = '{{ $user->id }}'; showDeleteModal = true" class="font-label-md text-label-md text-error hover:underline">Delete</button>
+                                @endunless
+                            @endcan
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="px-space-lg py-space-lg text-center text-on-surface-variant">
+                        <td colspan="{{ auth()->user()->can('users.delete') ? 5 : 4 }}" class="px-space-lg py-space-lg text-center text-on-surface-variant">
                             No users found.
                         </td>
                     </tr>

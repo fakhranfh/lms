@@ -23,6 +23,8 @@ class UserForm extends Component
 
     public string $password = '';
 
+    public string $password_confirmation = '';
+
     public $photo = null;
 
     public ?string $photoPath = null;
@@ -51,12 +53,18 @@ class UserForm extends Component
     protected function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => [
+                'required', 'string', 'max:255',
+                Rule::unique('users', 'name')->ignore($this->user?->id)->whereNull('deleted_at'),
+            ],
             'email' => [
                 'required', 'email', 'max:255',
-                Rule::unique('users', 'email')->ignore($this->user?->id),
+                Rule::unique('users', 'email')->ignore($this->user?->id)->whereNull('deleted_at'),
             ],
-            'password' => [$this->isEditing() ? 'nullable' : 'required', 'string', 'min:8'],
+            'password' => array_filter([
+                $this->isEditing() ? 'nullable' : 'required', 'string', 'min:8',
+                ($this->password !== '' || ! $this->isEditing()) ? 'confirmed' : null,
+            ]),
             'photo' => ['nullable', 'image', 'max:5120', 'mimes:jpg,jpeg,png,gif'],
             'roles' => ['array'],
             'roles.*' => ['integer', 'exists:roles,id'],

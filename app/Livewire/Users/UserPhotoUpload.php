@@ -32,6 +32,13 @@ class UserPhotoUpload extends Component
     public ?string $successMessage = null;
 
     /**
+     * Whether the photo grid has been loaded yet. Kept false through the
+     * initial render (triggered via wire:init) so the page paints instantly
+     * with a skeleton in place of the grid, instead of blocking on the query.
+     */
+    public bool $usersLoaded = false;
+
+    /**
      * Newly selected files, keyed by user id. Cleared as each one is staged
      * to R2 (uploadPhotos.{id}), so this never holds more than the files
      * currently mid-upload.
@@ -50,6 +57,11 @@ class UserPhotoUpload extends Component
     public function mount(): void
     {
         $this->successMessage = session('success');
+    }
+
+    public function loadUsers(): void
+    {
+        $this->usersLoaded = true;
     }
 
     public function updatedUploads(): void
@@ -114,7 +126,7 @@ class UserPhotoUpload extends Component
     {
         return resolve(UserService::class)->paginate(
             filters: [
-                'search' => $this->search,
+                'name' => $this->search,
                 'role_id' => $this->filterRole,
                 'sort' => 'name',
                 'direction' => 'asc',
@@ -137,7 +149,7 @@ class UserPhotoUpload extends Component
         $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
 
         return view('livewire.users.user-photo-upload', [
-            'users' => $this->users,
+            'users' => $this->usersLoaded ? $this->users : null,
         ])
             ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => 'Bulk Upload Photos'])
             ->section($isAdminUser ? 'admin-content' : 'app-content');

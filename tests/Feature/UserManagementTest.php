@@ -677,6 +677,18 @@ test('the availability check requires users.create or users.edit permission', fu
         ->assertForbidden();
 });
 
+test('bulk photo upload search only matches by name, not email', function () {
+    $actor = actingAsUserManager(['users.edit']);
+    User::factory()->create(['name' => 'Findable Jane', 'email' => 'unrelated@example.com']);
+    User::factory()->create(['name' => 'Someone Else', 'email' => 'jane@example.com']);
+
+    Livewire::actingAs($actor)->test(UserPhotoUpload::class)
+        ->call('loadUsers')
+        ->set('search', 'Jane')
+        ->assertSee('Findable Jane')
+        ->assertDontSee('Someone Else');
+});
+
 test('user with users.edit can stage and save a bulk photo upload', function () {
     if (! extension_loaded('gd')) {
         $this->markTestSkipped('GD extension not installed');

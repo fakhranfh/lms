@@ -37,6 +37,10 @@ class UserRepository implements UserRepositoryInterface
             });
         }
 
+        if (! empty($filters['name'])) {
+            $query->whereLike('name', "%{$filters['name']}%", caseSensitive: false);
+        }
+
         if (! empty($filters['role_id'])) {
             $query->whereHas('roles', function ($query) use ($filters): void {
                 $query->where('roles.id', $filters['role_id']);

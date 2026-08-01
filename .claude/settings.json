@@ -4,5 +4,35 @@
       "Bash(Start-Sleep -Seconds 3)",
       "mcp__laravel-boost__browser-logs"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(app/Http/Controllers/**)",
+            "command": "php \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-repository-pattern.php\"",
+            "timeout": 30,
+            "statusMessage": "Checking Repository Pattern conventions..."
+          },
+          {
+            "type": "command",
+            "if": "Edit(app/Repositories/**)",
+            "command": "php \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-repository-pattern.php\"",
+            "timeout": 30,
+            "statusMessage": "Checking Repository Pattern conventions..."
+          },
+          {
+            "type": "command",
+            "if": "Edit(app/Services/**)",
+            "command": "php \"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-repository-pattern.php\"",
+            "timeout": 30,
+            "statusMessage": "Checking Repository Pattern conventions..."
+          }
+        ]
+      }
+    ]
   }
 }

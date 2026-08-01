@@ -50,6 +50,12 @@ class UserForm extends Component
         return $this->user !== null;
     }
 
+    public function cancelPhoto(): void
+    {
+        $this->photo = null;
+        $this->resetErrorBag('photo');
+    }
+
     protected function rules(): array
     {
         return [

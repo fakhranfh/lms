@@ -1,7 +1,14 @@
 @section('title', $this->isEditing() ? 'Edit User' : 'New User')
 
+@php
+    $userInitial = strtoupper(substr($name ?: 'U', 0, 1));
+    $defaultAvatar = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%231E3A8A%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22 font-size=%2250%22 font-weight=%22bold%22%3E' . $userInitial . '%3C/text%3E%3C/svg%3E';
+    $savedPhotoSrc = $photoPath ?: $defaultAvatar;
+@endphp
+
 <div class="max-w-2xl" x-data="{
         showErrorModal: false, errorMessage: '',
+        savedPhotoSrc: @js($savedPhotoSrc),
         password: @js($password),
         passwordConfirmation: @js($password_confirmation),
         isEditing: @js($this->isEditing()),
@@ -45,6 +52,17 @@
                 if (field === 'name') { this.nameChecking = false } else { this.emailChecking = false }
             }
         },
+        previewPhoto(event) {
+            const file = event.target.files[0];
+            if (! file) { return }
+
+            const reader = new FileReader();
+            reader.onload = (e) => { this.$refs.photoPreview.src = e.target.result };
+            reader.readAsDataURL(file);
+        },
+        cancelPhotoPreview() {
+            this.$refs.photoPreview.src = this.savedPhotoSrc;
+        },
     }"
     x-init="$wire.$on('show-error-modal', ({ message }) => { errorMessage = message; showErrorModal = true })">
     <form @submit.prevent="if (!formInvalid) { $wire.save() }" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
@@ -52,22 +70,22 @@
         <div class="flex flex-col md:flex-row items-center md:items-start gap-space-lg pb-space-lg border-b border-outline-variant">
             <label for="photo" class="relative group/avatar cursor-pointer flex-shrink-0">
                 <div class="w-24 h-24 rounded-full overflow-hidden border-4 border-surface-container-low shadow-sm relative hover:shadow-lg transition-shadow">
-                    @php
-                        $userInitial = strtoupper(substr($name ?: 'U', 0, 1));
-                        $defaultAvatar = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%231E3A8A%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22 font-size=%2250%22 font-weight=%22bold%22%3E' . $userInitial . '%3C/text%3E%3C/svg%3E';
-                        $previewSrc = ($photo && $photo->isPreviewable()) ? $photo->temporaryUrl() : ($photoPath ?: $defaultAvatar);
-                    @endphp
-                    <img src="{{ $previewSrc }}" alt="Photo" class="w-full h-full object-cover">
+                    <img x-ref="photoPreview" src="{{ $savedPhotoSrc }}" alt="Photo" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-on-surface/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-200">
                         <span class="material-symbols-outlined text-surface text-[28px]">photo_camera</span>
                     </div>
                 </div>
             </label>
-            <input type="file" id="photo" wire:model="photo" accept="image/jpeg,image/png,image/gif" class="hidden" />
+            <input type="file" id="photo" wire:model="photo" x-on:change="previewPhoto($event)" accept="image/jpeg,image/png,image/gif" class="hidden" />
             <div class="text-center md:text-left">
                 <h3 class="font-label-md text-label-md text-on-surface">Photo</h3>
                 <p class="font-body-sm text-body-sm text-secondary mt-space-xs">JPG, GIF or PNG. Max size of 5MB.</p>
-                <label for="photo" class="mt-space-sm inline-block font-label-md text-label-md text-primary hover:underline cursor-pointer">Change Photo</label>
+                <div class="mt-space-sm flex items-center gap-space-md">
+                    <label for="photo" class="font-label-md text-label-md text-primary hover:underline cursor-pointer">Change Photo</label>
+                    @if ($photo)
+                        <button type="button" x-on:click="cancelPhotoPreview()" wire:click="cancelPhoto" class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors">Cancel</button>
+                    @endif
+                </div>
                 @error('photo')
                     <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
                 @enderror

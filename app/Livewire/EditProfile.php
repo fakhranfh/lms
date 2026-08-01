@@ -75,6 +75,12 @@ class EditProfile extends Component
         $this->photoPath = null;
     }
 
+    public function cancelPhoto(): void
+    {
+        $this->photo = null;
+        $this->resetErrorBag('photo');
+    }
+
     public function save(UserService $userService): void
     {
         $this->successMessage = null;

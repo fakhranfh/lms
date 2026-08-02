@@ -204,6 +204,20 @@ class R2StorageService
      */
     public function generatePresignedPutUrl(string $lessonId, string $filename, string $materialType, int $expiresIn = 3600): array
     {
+        $result = $this->generatePresignedPutUrlForPath("lessons/{$lessonId}", $filename, $materialType, $expiresIn);
+
+        return [...$result, 'lesson_id' => $lessonId];
+    }
+
+    /**
+     * Generate presigned PUT URL for direct client upload to R2 (temp staging)
+     * Validates file extension BEFORE generating URL (Layer 1)
+     * File will be uploaded to temp/{$tempSubpath}/ first for content validation
+     *
+     * @return array{url: string, key: string}
+     */
+    public function generatePresignedPutUrlForPath(string $tempSubpath, string $filename, string $materialType, int $expiresIn = 3600): array
+    {
         try {
             // Layer 1: Validate extension BEFORE generating URL (server-side validation)
             $this->validateFileExtension($filename, $materialType);
@@ -212,7 +226,7 @@ class R2StorageService
             $this->enforceQuotaLimit();
 
             // Upload to temp folder first (content validation happens in finalizeR2Upload)
-            $key = $this->schoolPrefix()."temp/{$lessonId}/".substr(hash('sha256', uniqid()), 0, 8).'-'.$filename;
+            $key = $this->schoolPrefix()."temp/{$tempSubpath}/".substr(hash('sha256', uniqid()), 0, 8).'-'.$filename;
 
             $cmd = $this->s3Client->getCommand('PutObject', [
                 'Bucket' => $this->bucket,
@@ -225,7 +239,6 @@ class R2StorageService
             return [
                 'url' => $presignedUrl,
                 'key' => $key,
-                'lesson_id' => $lessonId,
             ];
         } catch (AwsException $e) {
             throw new \Exception("Failed to generate presigned PUT URL: {$e->getMessage()}");
@@ -577,17 +590,22 @@ class R2StorageService
         }
 
         try {
+            try {
+                $school = $this->schoolRepository->find($schoolId);
+            } catch (\Exception $e) {
+                $school = null;
+            }
+            $prefix = ($school && $school->slug) ? "schools/{$school->slug}/" : 'lessons/';
+
             $total = 0;
             $paginator = $this->s3Client->getPaginator('ListObjectsV2', [
                 'Bucket' => $this->bucket,
-                'Prefix' => 'lessons/', // All materials are under lessons/
+                'Prefix' => $prefix,
             ]);
 
             foreach ($paginator as $result) {
                 if (isset($result['Contents'])) {
                     foreach ($result['Contents'] as $object) {
-                        // Filter by school path pattern if available
-                        // For now, count all materials (could be enhanced with lesson->module->course->school check)
                         $total += $object['Size'] ?? 0;
                     }
                 }

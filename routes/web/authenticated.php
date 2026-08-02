@@ -18,6 +18,7 @@ use App\Livewire\Courses\LessonViewer;
 use App\Livewire\Courses\ModuleForm;
 use App\Livewire\Dashboard;
 use App\Livewire\EditProfile;
+use App\Livewire\MediaLibrary\MediaLibraryIndex;
 use App\Livewire\MyTransactions;
 use App\Livewire\Roles\RoleCreate;
 use App\Livewire\Roles\RoleEdit;
@@ -82,6 +83,8 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
 
         // Student-facing lesson viewing
         Route::get('/lessons/{lesson}', LessonViewer::class)->name('lessons.show');
+
+        Route::get('/media-library', MediaLibraryIndex::class)->middleware('permission:media.view')->name('media-library.index');
 
         Route::get('/assignments', AssignmentsIndex::class)->middleware('permission:assignments.view')->name('assignments.index');
         Route::get('/lessons/{lesson}/assignments/create', AssignmentForm::class)->middleware('permission:assignments.create')->name('assignments.create');

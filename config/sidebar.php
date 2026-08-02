@@ -18,6 +18,14 @@ return [
         'exclude_role' => 'School Admin',
     ],
     [
+        'label' => 'Media Library',
+        'route' => 'media-library.index',
+        'icon' => 'perm_media',
+        'active_pattern' => 'media-library.*',
+        'requires_permission' => 'media.view',
+        'requires_school' => true,
+    ],
+    [
         'label' => 'Assignments',
         'route' => 'assignments.index',
         'icon' => 'assignment',

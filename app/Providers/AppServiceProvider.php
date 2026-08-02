@@ -30,6 +30,8 @@ use App\Repositories\LessonMaterial\LessonMaterialRepository;
 use App\Repositories\LessonMaterial\LessonMaterialRepositoryInterface;
 use App\Repositories\LessonMaterialUser\LessonMaterialUserRepository;
 use App\Repositories\LessonMaterialUser\LessonMaterialUserRepositoryInterface;
+use App\Repositories\MediaLibrary\MediaLibraryRepository;
+use App\Repositories\MediaLibrary\MediaLibraryRepositoryInterface;
 use App\Repositories\Module\ModuleRepository;
 use App\Repositories\Module\ModuleRepositoryInterface;
 use App\Repositories\PaymentGateway\PaymentGatewayRepository;
@@ -118,6 +120,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ModuleRepositoryInterface::class, ModuleRepository::class);
         $this->app->bind(LessonRepositoryInterface::class, LessonRepository::class);
         $this->app->bind(LessonMaterialRepositoryInterface::class, LessonMaterialRepository::class);
+        $this->app->bind(MediaLibraryRepositoryInterface::class, MediaLibraryRepository::class);
         $this->app->bind(LessonMaterialUserRepositoryInterface::class, LessonMaterialUserRepository::class);
         $this->app->bind(UserLessonRepositoryInterface::class, UserLessonRepository::class);
         $this->app->bind(AssignmentRepositoryInterface::class, AssignmentRepository::class);

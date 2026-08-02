@@ -46,6 +46,7 @@ enum RoleName: string
                 'assignments.create', 'assignments.view', 'assignments.edit', 'assignments.delete',
                 'submissions.view', 'submissions.grade', 'submissions.override-grade',
                 'analytics.view',
+                'media.view', 'media.create', 'media.delete',
             ],
             self::Student => [
                 'courses.view', 'modules.view', 'lessons.view', 'assignments.view', 'submissions.view',
@@ -62,7 +63,7 @@ enum RoleName: string
     public function permissionGroups(): array
     {
         return match ($this) {
-            self::SchoolAdmin => ['Users', 'Roles', 'Permissions'],
+            self::SchoolAdmin => ['Users', 'Roles', 'Permissions', 'Media'],
             default => [],
         };
     }

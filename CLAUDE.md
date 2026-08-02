@@ -38,6 +38,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Check for existing components to reuse before writing a new one.
 - Every submit button must show a loading state while its action is in flight.
 - Every table or data list must show a skeleton loading state while its data is loading.
+- If a Claude Code hook check reports a warning, it must be fixed before proceeding with any further changes.
 
 ## Verification Scripts
 

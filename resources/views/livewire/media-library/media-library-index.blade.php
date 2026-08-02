@@ -274,7 +274,7 @@
                         @can('media.delete')
                             <button
                                 type="button"
-                                @click="$dispatch('open-delete-confirm', { id: selectedMedia.id, name: selectedMedia.title, type: 'media' }); selectedMedia = null"
+                                @click="$dispatch('open-delete-confirm', { id: selectedMedia.id, type: 'media' }); selectedMedia = null"
                                 class="px-space-lg py-space-sm border border-error text-error rounded-lg font-label-md text-label-md hover:bg-error/10 transition"
                             >
                                 Delete

@@ -27,7 +27,7 @@ class DummyMaterialsUploadSeeder extends Seeder
         $this->accountId = config('services.r2.account_id');
         $this->bucket = config('services.r2.bucket');
         $this->customDomain = config('services.r2.custom_domain', '');
-        $this->r2Service = new R2StorageService;
+        $this->r2Service = app(R2StorageService::class);
 
         $this->s3Client = new S3Client([
             'version' => 'latest',

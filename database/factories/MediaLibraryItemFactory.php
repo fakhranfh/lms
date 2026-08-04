@@ -7,6 +7,7 @@ use App\Models\MediaLibraryItem;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<MediaLibraryItem>
@@ -23,6 +24,7 @@ class MediaLibraryItemFactory extends Factory
         $type = $this->faker->randomElement(MaterialType::cases());
 
         return [
+            'id' => (string) Str::uuid(),
             'school_id' => School::factory(),
             'uploaded_by' => User::factory(),
             'type' => $type,

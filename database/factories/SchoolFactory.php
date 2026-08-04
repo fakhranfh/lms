@@ -9,6 +9,7 @@ use App\Models\School;
 use App\Models\SchoolTier;
 use App\Models\TierChange;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends Factory<School>
@@ -36,8 +37,12 @@ class SchoolFactory extends Factory
             ]);
         }
 
+        $name = fake()->company();
+
         return [
-            'name' => fake()->company(),
+            'id' => (string) Str::uuid(),
+            'name' => $name,
+            'slug' => Str::slug($name).'-'.Str::random(6),
             'domain' => 'school-'.str()->uuid().'.test',
             'tier_id' => $basicTier->id,
         ];
@@ -51,6 +56,7 @@ class SchoolFactory extends Factory
         return $this->afterCreating(function (School $school) {
             // Create SchoolTier record
             $schoolTier = SchoolTier::create([
+                'id' => (string) Str::uuid(),
                 'school_id' => $school->id,
                 'tier_id' => $school->tier_id,
                 'status' => SubscriptionStatus::Active,
@@ -63,6 +69,7 @@ class SchoolFactory extends Factory
 
             // Create initial tier change record
             TierChange::create([
+                'id' => (string) Str::uuid(),
                 'school_tier_id' => $schoolTier->id,
                 'from_tier_id' => null,
                 'to_tier_id' => $school->tier_id,

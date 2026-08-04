@@ -28,6 +28,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'id' => (string) Str::uuid(),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
@@ -43,9 +44,12 @@ class UserFactory extends Factory
     {
         return $this->afterCreating(function (User $user) {
             if (! $user->schoolIdWasExplicitlySet() && ! $user->memberSchools()->exists()) {
+                $name = fake()->company();
+
                 $school = School::create([
                     'id' => (string) Str::uuid(),
-                    'name' => fake()->company(),
+                    'name' => $name,
+                    'slug' => Str::slug($name).'-'.Str::random(6),
                     'domain' => fake()->unique()->domainName(),
                     'tier_id' => PricingTier::where('slug', 'basic')->first()?->id
                         ?? PricingTier::create([

@@ -42,7 +42,6 @@ class SchoolFactory extends Factory
         return [
             'id' => (string) Str::uuid(),
             'name' => $name,
-            'slug' => Str::slug($name).'-'.Str::random(6),
             'domain' => 'school-'.str()->uuid().'.test',
             'tier_id' => $basicTier->id,
         ];

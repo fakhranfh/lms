@@ -5,7 +5,7 @@ use App\Models\Role;
 use App\Models\School;
 use App\Services\RoleService;
 
-test('default school admin role only receives users, roles, and permissions permissions', function () {
+test('default school admin role only receives users, roles, permissions, and media permissions', function () {
     $school = School::factory()->create();
 
     app(RoleService::class)->createDefaultRolesForSchool($school->id);
@@ -16,5 +16,5 @@ test('default school admin role only receives users, roles, and permissions perm
 
     $groups = $schoolAdminRole->permissions->pluck('group')->unique()->sort()->values()->all();
 
-    expect($groups)->toEqual(['Permissions', 'Roles', 'Users']);
+    expect($groups)->toEqual(['Media', 'Permissions', 'Roles', 'Users']);
 });

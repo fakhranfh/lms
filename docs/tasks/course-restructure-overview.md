@@ -8,13 +8,20 @@ Restructure the Course entity into a container for several learning components, 
 
 Every Course has:
 
-1. **Session** — a learning meeting/week unit (see [course-restructure-session.md](course-restructure-session.md) for details).
-2. **Syllabus**
-3. **Forum**
-4. **Assessment**
-5. **Gradebook**
-6. **People**
-7. **Attendance**
+1. **Session** — a learning meeting unit; sessions can be grouped into Periods (see [course-restructure-session.md](course-restructure-session.md)).
+2. **Syllabus** — the course plan document, organized into 11 sections (see [course-restructure-syllabus.md](course-restructure-syllabus.md)).
+3. **Forum** — discussion threads and comments (see [course-restructure-forum.md](course-restructure-forum.md)).
+4. **Assessment** — 6 predefined grading types (see [course-restructure-assessment.md](course-restructure-assessment.md)).
+5. **Gradebook** — derived score recap (see [course-restructure-gradebook.md](course-restructure-gradebook.md)).
+6. **People** — course membership: teachers, students, groups (see [course-restructure-people.md](course-restructure-people.md)).
+7. **Attendance** — per-session presence, auto-derived from requirements (see [course-restructure-attendance.md](course-restructure-attendance.md)).
+
+Supporting components used across the above:
+
+- **Group** — student groupings for team-based assessments (see [course-restructure-group.md](course-restructure-group.md)).
+- **Proctor** — cheating-detection for Open/Closed Book Final Exams (see [course-restructure-proctor.md](course-restructure-proctor.md)).
+
+A combined schema across all of the above is available at [course-restructure-schema.md](course-restructure-schema.md).
 
 ---
 
@@ -28,74 +35,87 @@ Course uses soft delete (`deleted_at`), so a deleted course is not immediately r
 
 ---
 
+## 1. Session
+
+A learning meeting unit (title, learning outcome + subtopics, start/end date, delivery mode, learning material, video conference(s)). See [course-restructure-session.md](course-restructure-session.md) for full detail.
+
+Sessions can be grouped into **Periods** (e.g. "Midterm Period"), used to scope which sessions a Final Exam covers (see [course-restructure-assessment-final-exam.md](course-restructure-assessment-final-exam.md)).
+
 ## 2. Syllabus
 
-The overall course plan document, shown to participants as a general overview of the course.
+The overall course plan document, organized into 11 sections, each supporting rich text plus multiple file attachments from the media library. See [course-restructure-syllabus.md](course-restructure-syllabus.md) for full detail.
 
-**Main fields:**
-- `course_id`
-- `content` (rich text — general description, course objectives, grading policy, etc.)
-- `attachments` (optional, supporting files from the media library)
-- `updated_at`
+- Course Description
+- Class Policies (scoped per delivery mode: F2F/Video Conference, Online, General)
+- Submission and Collection of Assignment
+- Tutorial Activity Plan
+- Learning Outcomes (structured LO1, LO2, ... items)
+- Evaluation (structured table: activity × weight × Learning Outcome mapping, grouped by class type)
+- Assessment Rubric (structured table: Learning Outcome × Key Indicator × Proficiency Level)
+- Teaching & Learning Strategies
+- Textbooks
+- Competency Map
+- Video Overview
 
 ## 3. Forum
 
-Discussion space between participants and instructors within a course. Can be a general course forum or a per-session forum.
+Discussion space made up of threads created by users. Each thread has a title, description, and comment count; each comment can be liked. See [course-restructure-forum.md](course-restructure-forum.md) for full detail.
 
 **Main fields:**
 - `course_id`
 - `session_id` (nullable — null means a general course forum, filled means a session-specific forum)
 - `title`
 - `created_by` (user_id)
-- **Thread/Post** (child relation): `forum_id`, `user_id`, `body`, `parent_post_id` (nullable, for replies)
+- **Thread**: `forum_id`, `user_id`, `title`, `description`, `comments_count`
+- **Comment**: `thread_id`, `user_id`, `body`, `likes_count`
+- **Comment Like**: `comment_id`, `user_id`
 
 ## 4. Assessment
 
-A grading unit that can be a quiz, assignment, or exam, optionally tied to a specific session.
+A grading unit belonging to one of 6 predefined types, each with its own weight and detail doc:
 
-**Main fields:**
-- `course_id`
-- `session_id` (nullable — assessment can stand alone or be tied to a session)
-- `title`
-- `type` (quiz / assignment / exam)
-- `description`
-- `due_date`
-- `max_score`
-- `submission_type` (file upload / text / link, depending on type)
+| Type | Weight | Detail |
+|---|---|---|
+| Forum Discussion | 10% | [course-restructure-assessment-forum-discussion.md](course-restructure-assessment-forum-discussion.md) |
+| Attendance | 10% | [course-restructure-attendance.md](course-restructure-attendance.md) |
+| THEORY: Team Assignment | 15% | [course-restructure-assessment-team-assignment.md](course-restructure-assessment-team-assignment.md) |
+| THEORY: Quiz | 15% | [course-restructure-assessment-quiz.md](course-restructure-assessment-quiz.md) |
+| THEORY: Personal Assignment | 20% | [course-restructure-assessment-personal-assignment.md](course-restructure-assessment-personal-assignment.md) |
+| THEORY: FINAL EXAM | 30% | [course-restructure-assessment-final-exam.md](course-restructure-assessment-final-exam.md) |
+
+**Common fields:** `title`, `assigned_to` (individual/group), `start_date`, `end_date`, `status`, `attempt`, `score`. See [course-restructure-assessment.md](course-restructure-assessment.md) for the generic schema (`assessments`, `assessment_attempts`, `assessment_scores`) shared by all types.
 
 ## 5. Gradebook
 
-A recap of scores for all participants across all assessments in a course. Derived from Assessment data + participant submissions/scores, not an independent entity filled in manually.
+A recap of scores for all students across all assessment types in a course. Fully derived from Assessment data — not manually entered. Displayed as a **Final Score** summary (weight/score/grade) plus a breakdown per assessment type, expandable to a per-session breakdown where applicable. See [course-restructure-gradebook.md](course-restructure-gradebook.md) for full detail.
 
 **Main fields:**
 - `course_id`
 - `user_id` (must have `role_in_course = student` in People)
-- `assessment_id`
-- `score`
-- `graded_by` (user_id of the instructor)
-- `graded_at`
-- `feedback` (optional)
+- `assessment_type`
+- `weight`, `score`
+- `last_updated_at`
 
 ## 6. People
 
-A list of all course participants and their roles (instructor, assistant, student), distinct from the school's global RBAC roles — this is course-level membership.
+A list of all course participants and their roles (teacher, assistant, student), distinct from the school's global RBAC roles — this is course-level membership. Also lists Groups students are organized into. See [course-restructure-people.md](course-restructure-people.md) and [course-restructure-group.md](course-restructure-group.md) for full detail.
 
 **Main fields:**
 - `course_id`
 - `user_id`
-- `role_in_course` (instructor / assistant / student)
+- `role_in_course` (teacher / assistant / student)
 - `enrolled_at`
 - `status` (active / dropped / completed)
 
 ## 7. Attendance
 
-Attendance records for participants per session (most relevant for offline delivery mode, but also applicable to online).
+Attendance records for participants per session, auto-derived from configurable requirements (manual check-in, forum participation, video conference duration) rather than only manual marking. See [course-restructure-attendance.md](course-restructure-attendance.md) for full detail.
 
 **Main fields:**
 - `session_id`
 - `user_id` (must have `role_in_course = student` in People)
 - `status` (present / absent / late / excused)
-- `recorded_by` (user_id of the instructor)
+- `recorded_by` (user_id of the instructor, nullable when auto-derived)
 - `recorded_at`
 - `notes` (optional)
 

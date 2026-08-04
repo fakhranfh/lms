@@ -39,16 +39,6 @@ class Course extends Model
     }
 
     /**
-     * Get the modules for this course.
-     *
-     * @return HasMany<Module, $this>
-     */
-    public function modules(): HasMany
-    {
-        return $this->hasMany(Module::class)->orderBy('order');
-    }
-
-    /**
      * Get the user who created this course.
      *
      * @return BelongsTo<User, $this>
@@ -66,11 +56,6 @@ class Course extends Model
     public function isPublished(): bool
     {
         return $this->is_published;
-    }
-
-    public function modulesCount(): int
-    {
-        return $this->modules()->count();
     }
 
     /**

@@ -4,7 +4,6 @@ use App\Http\Controllers\Admin\GatewayConfigController;
 use App\Http\Controllers\AdminLoginController;
 use App\Http\Controllers\PermissionController;
 use App\Livewire\Admin\AdminStorageDashboard;
-use App\Livewire\Admin\AdminStorageMaterials;
 use App\Livewire\Admin\AuditLogTable;
 use App\Livewire\Admin\BillingSettings;
 use App\Livewire\Admin\TransactionShow;
@@ -69,7 +68,6 @@ foreach (RootDomains::all() as $index => $rootDomain) {
             Route::get('/transactions/{transaction}', TransactionShow::class)->name("admin.transactions.show{$suffix}");
 
             Route::get('/storage', AdminStorageDashboard::class)->name("admin.storage.dashboard{$suffix}");
-            Route::get('/storage/materials', AdminStorageMaterials::class)->name("admin.storage.materials{$suffix}");
 
             Route::get('/schools', SchoolIndex::class)->name("admin.schools.index{$suffix}");
             Route::get('/schools/{school}/edit', SchoolEdit::class)->name("admin.schools.edit{$suffix}");

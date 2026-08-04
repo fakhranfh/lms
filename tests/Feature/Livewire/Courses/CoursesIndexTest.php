@@ -4,8 +4,6 @@ namespace Tests\Feature\Livewire\Courses;
 
 use App\Livewire\Courses\CoursesIndex;
 use App\Models\Course;
-use App\Models\Lesson;
-use App\Models\Module;
 use App\Models\School;
 use App\Models\User;
 use Livewire\Livewire;
@@ -143,7 +141,7 @@ class CoursesIndexTest extends TestCase
             ->assertSee('No courses found');
     }
 
-    public function test_displays_course_module_count(): void
+    public function test_displays_course_session_count(): void
     {
         $this->teacher->givePermissionTo('courses.view');
 
@@ -152,7 +150,7 @@ class CoursesIndexTest extends TestCase
             ->create(['title' => 'Complete Course']);
 
         Livewire::test(CoursesIndex::class)
-            ->assertSee('0 modules');
+            ->assertSee('0 sessions');
     }
 
     public function test_displays_published_status(): void
@@ -268,27 +266,5 @@ class CoursesIndexTest extends TestCase
     {
         Livewire::test(CoursesIndex::class)
             ->assertStatus(403);
-    }
-
-    public function test_cannot_delete_course_with_student_progress(): void
-    {
-        $this->teacher->givePermissionTo(['courses.view', 'courses.delete']);
-
-        $course = Course::factory()
-            ->for($this->school)
-            ->create(['title' => 'Course with Students']);
-        $module = Module::factory()->for($course)->create();
-        $lesson = Lesson::factory()->for($module)->create();
-
-        $student = User::factory()
-            ->forSchool($this->school)
-            ->create();
-        $lesson->markCompleteFor($student);
-
-        Livewire::test(CoursesIndex::class)
-            ->call('destroy', $course->id)
-            ->assertSet('errorMessage', 'Cannot delete course with active student progress. Please ensure all students have completed their work before deleting.');
-
-        $this->assertDatabaseHas('courses', ['id' => $course->id]);
     }
 }

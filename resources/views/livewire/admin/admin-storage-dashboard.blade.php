@@ -22,9 +22,6 @@
             <h1 class="font-headline-sm text-headline-sm text-on-surface">Storage Monitoring</h1>
             <p class="text-body-sm text-on-surface-variant mt-1">Global material storage usage and per-school breakdown</p>
         </div>
-        <a href="{{ route('admin.storage.materials') }}" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
-            Browse Materials
-        </a>
     </div>
 
     @if ($bannerColor)
@@ -127,11 +124,6 @@
                             <td class="px-space-lg py-space-md font-body-md text-body-md text-on-surface">{{ $formatBytes($row['largest_material_bytes']) }}</td>
                             <td class="px-space-lg py-space-md font-body-md text-body-md text-on-surface">
                                 {{ $row['last_upload_at'] ? \Illuminate\Support\Carbon::parse($row['last_upload_at'])->diffForHumans() : '—' }}
-                            </td>
-                            <td class="px-space-lg py-space-md text-right">
-                                <a href="{{ route('admin.storage.materials', ['school' => $row['school']->id]) }}" class="font-label-md text-label-md text-primary hover:underline">
-                                    View Materials
-                                </a>
                             </td>
                         </tr>
                     @empty

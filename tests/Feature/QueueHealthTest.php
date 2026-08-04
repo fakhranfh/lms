@@ -1,10 +1,8 @@
 <?php
 
-use App\Jobs\GradeSubmissionJob;
 use App\Services\GradingQueueHealthService;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Str;
 
 test('healthcheck reports redis connectivity', function () {
     $result = app(GradingQueueHealthService::class)->check();
@@ -21,17 +19,6 @@ test('healthcheck reports redis as disconnected when the connection fails', func
     expect($result['redis_connected'])->toBeFalse();
     expect($result['queue_size'])->toBe(0);
     expect($result['threshold_exceeded'])->toBeFalse();
-});
-
-test('a job can be pushed onto and popped from the grading queue', function () {
-    Queue::fake();
-
-    $submissionId = (string) Str::uuid();
-    GradeSubmissionJob::dispatch($submissionId);
-
-    Queue::assertPushed(GradeSubmissionJob::class, function ($job) use ($submissionId) {
-        return $job->submissionId === $submissionId;
-    });
 });
 
 test('threshold_exceeded flips true once queue depth passes the alert threshold', function () {

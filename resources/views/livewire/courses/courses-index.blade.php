@@ -139,23 +139,23 @@
                         @endif
                     </div>
 
-                    <!-- Modules List -->
+                    <!-- Sessions List -->
                     <div class="flex-1 overflow-hidden flex flex-col">
-                        @if ($course->modules->isEmpty())
+                        @if ($course->sessions->isEmpty())
                             <div class="px-space-lg py-space-lg text-center flex-1 flex items-center justify-center">
                                 <div>
-                                    <span class="material-symbols-outlined text-on-surface-variant text-[32px] block mx-auto mb-2">folder_open</span>
-                                    <p class="text-body-sm text-on-surface-variant">No modules yet</p>
+                                    <span class="material-symbols-outlined text-on-surface-variant text-[32px] block mx-auto mb-2">calendar_month</span>
+                                    <p class="text-body-sm text-on-surface-variant">No sessions yet</p>
                                 </div>
                             </div>
                         @else
                             <div class="px-space-lg py-space-md space-y-space-xs max-h-[240px] overflow-y-auto">
-                                @foreach ($course->modules as $module)
-                                    <div wire:key="module-{{ $module->id }}" class="flex items-start gap-space-md p-space-sm rounded hover:bg-surface-container/50 transition-colors group/item">
-                                        <span class="material-symbols-outlined text-on-surface-variant text-[18px] flex-shrink-0 mt-0.5">layers</span>
+                                @foreach ($course->sessions as $session)
+                                    <div wire:key="session-{{ $session->id }}" class="flex items-start gap-space-md p-space-sm rounded hover:bg-surface-container/50 transition-colors group/item">
+                                        <span class="material-symbols-outlined text-on-surface-variant text-[18px] flex-shrink-0 mt-0.5">calendar_month</span>
                                         <div class="min-w-0 flex-1">
                                             <p class="text-body-sm text-on-surface font-medium line-clamp-1 group-hover/item:text-primary transition-colors">
-                                                {{ $module->title }}
+                                                {{ $session->title }}
                                             </p>
                                         </div>
                                     </div>
@@ -167,8 +167,8 @@
                     <!-- Card Footer -->
                     <div class="px-space-lg py-space-md bg-surface-container/50 border-t border-outline-variant flex items-center justify-between">
                         <div class="flex items-center gap-space-md text-body-sm text-on-surface-variant">
-                            <span class="material-symbols-outlined text-[18px]">folder</span>
-                            {{ $course->modules->count() }} module{{ $course->modules->count() !== 1 ? 's' : '' }}
+                            <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                            {{ $course->sessions->count() }} session{{ $course->sessions->count() !== 1 ? 's' : '' }}
                         </div>
 
                         <div class="flex gap-space-xs">

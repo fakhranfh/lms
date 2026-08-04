@@ -2,10 +2,7 @@
 
 use App\Jobs\CalculateStorageUsageJob;
 use App\Mail\StorageQuotaAlertMail;
-use App\Models\Course;
-use App\Models\Lesson;
-use App\Models\LessonMaterial;
-use App\Models\Module;
+use App\Models\MediaLibraryItem;
 use App\Models\School;
 use App\Models\User;
 use App\Services\StorageMonitoringService;
@@ -18,13 +15,10 @@ function fillGlobalStorageTo(float $fraction): void
     $chunk = 300 * 1024 * 1024;
 
     $school = School::factory()->create();
-    $course = Course::factory()->for($school)->create();
-    $module = Module::factory()->for($course)->create();
-    $lesson = Lesson::factory()->for($module)->create();
 
     while ($totalBytes > 0) {
         $size = min($chunk, $totalBytes);
-        LessonMaterial::factory()->withLesson($lesson)->create(['file_size' => $size]);
+        MediaLibraryItem::factory()->for($school)->create(['file_size' => $size]);
         $totalBytes -= $size;
     }
 }

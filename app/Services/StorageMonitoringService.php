@@ -4,10 +4,9 @@ namespace App\Services;
 
 use App\Models\School;
 use App\Models\StorageUsageLog;
-use App\Repositories\LessonMaterial\LessonMaterialRepositoryInterface;
+use App\Repositories\MediaLibrary\MediaLibraryRepositoryInterface;
 use App\Repositories\School\SchoolRepositoryInterface;
 use App\Repositories\StorageUsageLog\StorageUsageLogRepositoryInterface;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class StorageMonitoringService
@@ -17,19 +16,19 @@ class StorageMonitoringService
 
     public function __construct(
         protected R2StorageService $r2Service,
-        protected LessonMaterialRepositoryInterface $materialRepository,
+        protected MediaLibraryRepositoryInterface $mediaLibraryRepository,
         protected StorageUsageLogRepositoryInterface $usageLogRepository,
         protected SchoolRepositoryInterface $schoolRepository,
     ) {}
 
     /**
-     * Global storage summary across all schools, based on active materials in the database.
+     * Global storage summary across all schools, based on media library items in the database.
      *
      * @return array{used_bytes: int, quota_bytes: int, percentage: float, used_formatted: string, quota_formatted: string}
      */
     public function globalSummary(): array
     {
-        $usedBytes = $this->materialRepository->sumActiveFileSize();
+        $usedBytes = $this->mediaLibraryRepository->sumFileSize();
         $quotaBytes = $this->r2Service->getGlobalQuotaBytes();
         $percentage = $quotaBytes > 0 ? round(($usedBytes / $quotaBytes) * 100, 2) : 0.0;
 
@@ -53,7 +52,7 @@ class StorageMonitoringService
     }
 
     /**
-     * Per-school storage breakdown, aggregated from active lesson materials.
+     * Per-school storage breakdown, aggregated from media library items.
      *
      * Each item is shaped: array{school: School, used_bytes: int, material_count: int, largest_material_bytes: int, last_upload_at: string|null}
      */
@@ -61,14 +60,14 @@ class StorageMonitoringService
     {
         $rows = $this->schoolRepository->getAllWithUserCounts()
             ->map(function (School $school): array {
-                $materials = $this->materialRepository->getActiveForSchool($school->id);
-                $lastUploadAt = $materials->max('created_at');
+                $items = $this->mediaLibraryRepository->getForSchool($school->id);
+                $lastUploadAt = $items->max('created_at');
 
                 return [
                     'school' => $school,
-                    'used_bytes' => (int) $materials->sum('file_size'),
-                    'material_count' => count($materials),
-                    'largest_material_bytes' => (int) $materials->max('file_size'),
+                    'used_bytes' => (int) $items->sum('file_size'),
+                    'material_count' => count($items),
+                    'largest_material_bytes' => (int) $items->max('file_size'),
                     'last_upload_at' => $lastUploadAt !== null ? (string) $lastUploadAt : null,
                 ];
             });
@@ -76,16 +75,6 @@ class StorageMonitoringService
         return $rows->sortBy($sortBy, SORT_REGULAR, $direction === 'desc')
             ->values()
             ->map(fn (array $row): array => $row);
-    }
-
-    /**
-     * Active materials matching the given filters, for the school materials browser page.
-     *
-     * @param  array{school_id?: ?string, course_id?: ?string, module_id?: ?string, lesson_id?: ?string, title?: ?string}  $filters
-     */
-    public function filteredMaterialsQuery(array $filters, string $sortBy = 'created_at', string $sortDirection = 'desc'): Builder
-    {
-        return $this->materialRepository->filteredQuery($filters, $sortBy, $sortDirection);
     }
 
     /**

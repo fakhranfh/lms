@@ -24,10 +24,10 @@ class AssessmentAnswer extends Model
     }
 
     /**
-     * @return BelongsTo<LessonMaterial, $this>
+     * @return BelongsTo<MediaLibraryItem, $this>
      */
     public function answerFile(): BelongsTo
     {
-        return $this->belongsTo(LessonMaterial::class, 'answer_file_id');
+        return $this->belongsTo(MediaLibraryItem::class, 'answer_file_id');
     }
 }

@@ -4,19 +4,12 @@ use App\Http\Controllers\DemoLmsController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SchoolPaymentController;
-use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\TierChangeController;
 use App\Http\Controllers\UserAvailabilityController;
-use App\Livewire\Assignments\AssignmentForm;
-use App\Livewire\Assignments\AssignmentsIndex;
 use App\Livewire\ChangePassword;
-use App\Livewire\Courses\CourseBuilder;
 use App\Livewire\Courses\CourseComingSoon;
 use App\Livewire\Courses\CourseForm;
 use App\Livewire\Courses\CoursesIndex;
-use App\Livewire\Courses\LessonForm;
-use App\Livewire\Courses\LessonViewer;
-use App\Livewire\Courses\ModuleForm;
 use App\Livewire\Courses\SessionForm;
 use App\Livewire\Courses\SessionsIndex;
 use App\Livewire\Dashboard;
@@ -26,11 +19,6 @@ use App\Livewire\MyTransactions;
 use App\Livewire\Roles\RoleCreate;
 use App\Livewire\Roles\RoleEdit;
 use App\Livewire\Roles\RoleIndex;
-use App\Livewire\Submissions\EssaySubmissionForm;
-use App\Livewire\Submissions\GradingQueueTable;
-use App\Livewire\Submissions\MySubmissions;
-use App\Livewire\Submissions\OverrideScoreModal;
-use App\Livewire\Submissions\SubmissionShow;
 use App\Livewire\Users\UserForm;
 use App\Livewire\Users\UserImport;
 use App\Livewire\Users\UserIndex;
@@ -80,16 +68,6 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/courses/{course}', fn (Course $course) => redirect()->route('sessions.index', $course))
             ->middleware('permission:courses.view')
             ->name('courses.show');
-        Route::get('/courses/{course}/modules', CourseBuilder::class)->middleware('permission:courses.view')->name('courses.modules');
-
-        Route::get('/courses/{course}/modules/create', ModuleForm::class)->middleware('permission:modules.create')->name('modules.create');
-        Route::get('/modules/{module}/edit', ModuleForm::class)->middleware('permission:modules.edit')->name('modules.edit');
-
-        Route::get('/modules/{module}/lessons/create', LessonForm::class)->middleware('permission:lessons.create')->name('lessons.create');
-        Route::get('/lessons/{lesson}/edit', LessonForm::class)->middleware('permission:lessons.edit')->name('lessons.edit');
-
-        // Student-facing lesson viewing
-        Route::get('/lessons/{lesson}', LessonViewer::class)->name('lessons.show');
 
         Route::get('/courses/{course}/sessions', SessionsIndex::class)->middleware('permission:sessions.view')->name('sessions.index');
         Route::get('/courses/{course}/sessions/create', SessionForm::class)->middleware('permission:sessions.create')->name('sessions.create');
@@ -98,25 +76,6 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/courses/{course}/tabs/{tab}', CourseComingSoon::class)->middleware('permission:courses.view')->name('course-tabs.coming-soon');
 
         Route::get('/media-library', MediaLibraryIndex::class)->middleware('permission:media.view')->name('media-library.index');
-
-        Route::get('/assignments', AssignmentsIndex::class)->middleware('permission:assignments.view')->name('assignments.index');
-        Route::get('/lessons/{lesson}/assignments/create', AssignmentForm::class)->middleware('permission:assignments.create')->name('assignments.create');
-        Route::get('/assignments/{assignment}/edit', AssignmentForm::class)->middleware('permission:assignments.edit')->name('assignments.edit');
-
-        // Student-facing submission — students only have submissions.view, not a dedicated
-        // create permission, so this mirrors the lesson-viewing route: auth + require-school
-        // only, with ownership/publish checks enforced inside EssaySubmissionForm::mount().
-        Route::get('/lessons/{lesson}/assignments/{assignment}/submit', EssaySubmissionForm::class)->name('submissions.create');
-
-        Route::get('/submissions/{submission}', SubmissionShow::class)->name('submissions.show');
-        Route::get('/my-submissions', MySubmissions::class)->middleware('permission:submissions.view')->name('submissions.index');
-        Route::get('/grading-queue', GradingQueueTable::class)->middleware('permission:submissions.grade')->name('grading-queue.index');
-        Route::get('/submissions/{submission}/override', OverrideScoreModal::class)->middleware('permission:submissions.override-grade')->name('submissions.override');
-
-        Route::post('/submissions', [SubmissionController::class, 'store'])->middleware('throttle:3,1')->name('submissions.store');
-        Route::get('/submissions/{submission}/status', [SubmissionController::class, 'show'])->name('submissions.status');
-        Route::patch('/submissions/{submission}/override', [SubmissionController::class, 'override'])->middleware('permission:submissions.override-grade')->name('submissions.override.update');
-        Route::post('/submissions/{submission}/retry', [SubmissionController::class, 'retry'])->middleware('permission:submissions.grade')->name('submissions.retry');
     });
 });
 

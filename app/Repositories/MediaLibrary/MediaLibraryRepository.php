@@ -4,6 +4,7 @@ namespace App\Repositories\MediaLibrary;
 
 use App\Models\MediaLibraryItem;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 class MediaLibraryRepository implements MediaLibraryRepositoryInterface
 {
@@ -56,5 +57,16 @@ class MediaLibraryRepository implements MediaLibraryRepositoryInterface
             ->when($search, fn (Builder $q, string $v) => $q->whereLike('title', "%{$v}%", caseSensitive: false))
             ->with('uploader')
             ->orderBy('created_at', 'desc');
+    }
+
+    public function sumFileSize(?string $schoolId = null): int
+    {
+        return (int) MediaLibraryItem::when($schoolId, fn (Builder $q, string $id) => $q->where('school_id', $id))
+            ->sum('file_size');
+    }
+
+    public function getForSchool(string $schoolId): Collection
+    {
+        return MediaLibraryItem::where('school_id', $schoolId)->get();
     }
 }

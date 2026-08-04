@@ -39,7 +39,7 @@
                 This action cannot be undone.
             </p>
             <p x-show="itemType === 'courses'" class="font-body-sm text-body-sm text-error">
-                This will also delete all of its modules and lessons.
+                This will also delete all of its sessions.
             </p>
             <div x-show="itemName">
                 <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">

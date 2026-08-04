@@ -2,15 +2,11 @@
 
 namespace App\Providers;
 
-use App\Models\Assignment;
 use App\Models\Course;
-use App\Models\Lesson;
-use App\Models\Module;
 use App\Models\PaymentTransaction;
 use App\Models\PricingTier;
 use App\Models\Role;
 use App\Models\SchoolTier;
-use App\Models\Submission;
 use App\Models\TierChange;
 use App\Models\User;
 use App\Observers\AuditableObserver;
@@ -25,10 +21,6 @@ class AuditLogServiceProvider extends ServiceProvider
      */
     private const AUDITED_MODELS = [
         Course::class,
-        Module::class,
-        Lesson::class,
-        Assignment::class,
-        Submission::class,
         Role::class,
         User::class,
         PricingTier::class,

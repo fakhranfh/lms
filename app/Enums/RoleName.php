@@ -41,16 +41,12 @@ enum RoleName: string
             self::SchoolAdmin => [], // resolved by the seeder via permissionGroups()
             self::Teacher => [
                 'courses.create', 'courses.view', 'courses.edit', 'courses.delete',
-                'modules.create', 'modules.view', 'modules.edit', 'modules.delete',
-                'lessons.create', 'lessons.view', 'lessons.edit', 'lessons.delete',
-                'assignments.create', 'assignments.view', 'assignments.edit', 'assignments.delete',
-                'submissions.view', 'submissions.grade', 'submissions.override-grade',
                 'analytics.view',
                 'media.view', 'media.create', 'media.delete',
                 'sessions.view', 'sessions.create', 'sessions.edit', 'sessions.delete',
             ],
             self::Student => [
-                'courses.view', 'modules.view', 'lessons.view', 'assignments.view', 'submissions.view',
+                'courses.view',
                 'sessions.view',
             ],
         };

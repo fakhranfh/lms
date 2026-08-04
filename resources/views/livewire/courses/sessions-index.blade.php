@@ -25,22 +25,13 @@
         </div>
 
         @unless ($isStudent)
-            <div class="flex items-center gap-space-sm">
-                <a
-                    href="{{ route('courses.modules', $course) }}"
-                    class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition-colors inline-flex items-center gap-space-sm"
-                >
-                    <span class="material-symbols-outlined">layers</span>
-                    Manage Modules & Lessons
-                </a>
-                <a
-                    href="{{ route('sessions.create', $course) }}"
-                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm"
-                >
-                    <span class="material-symbols-outlined">add</span>
-                    Add Session
-                </a>
-            </div>
+            <a
+                href="{{ route('sessions.create', $course) }}"
+                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm"
+            >
+                <span class="material-symbols-outlined">add</span>
+                Add Session
+            </a>
         @endunless
     </div>
 

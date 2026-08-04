@@ -1,10 +1,8 @@
 <?php
 
 use App\Enums\RoleName;
-use App\Models\Assignment;
 use App\Models\Role;
 use App\Models\School;
-use App\Models\Submission;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Spatie\Permission\Models\Permission;
@@ -36,28 +34,6 @@ test('role policy denies non-admin from creating roles', function () {
     $user = actingAsPolicyUser(['roles.view', 'roles.create'], isAdmin: false);
 
     expect($user->can('create', Role::class))->toBeFalse();
-});
-
-test('assignment policy checks assignments permission slugs', function () {
-    $user = actingAsPolicyUser(['assignments.create']);
-    $assignment = Assignment::factory()->create();
-
-    expect($user->can('create', Assignment::class))->toBeTrue()
-        ->and($user->can('update', $assignment))->toBeFalse();
-});
-
-test('submission policy allows owner to view own submission with submissions.view permission', function () {
-    $user = actingAsPolicyUser(['submissions.view']);
-    $submission = Submission::factory()->create(['user_id' => $user->id]);
-
-    expect($user->can('view', $submission))->toBeTrue();
-});
-
-test('submission policy requires submissions.grade to view another student submission', function () {
-    $user = actingAsPolicyUser(['submissions.view']);
-    $submission = Submission::factory()->create();
-
-    expect($user->can('view', $submission))->toBeFalse();
 });
 
 test('gate permission and role helpers work as expected', function () {

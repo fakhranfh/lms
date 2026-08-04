@@ -28,6 +28,9 @@ class DatabaseSeeder extends Seeder
         // Seed lesson materials with file uploads to R2 (requires lessons to exist)
         $this->call(DummyMaterialsUploadSeeder::class);
 
+        // Seed course restructure sessions (requires courses to exist)
+        $this->call(SessionSeeder::class);
+
         // $this->call(ProductSeeder::class);
     }
 }

@@ -37,8 +37,8 @@ class SessionService
         return $this->sessionRepository->delete($id);
     }
 
-    public function forCourse(string $courseId): Collection
+    public function forCourse(string $courseId, array $with = []): Collection
     {
-        return $this->sessionRepository->forCourse($courseId);
+        return $this->sessionRepository->forCourse($courseId, $with);
     }
 }

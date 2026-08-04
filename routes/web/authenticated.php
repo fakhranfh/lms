@@ -11,11 +11,14 @@ use App\Livewire\Assignments\AssignmentForm;
 use App\Livewire\Assignments\AssignmentsIndex;
 use App\Livewire\ChangePassword;
 use App\Livewire\Courses\CourseBuilder;
+use App\Livewire\Courses\CourseComingSoon;
 use App\Livewire\Courses\CourseForm;
 use App\Livewire\Courses\CoursesIndex;
 use App\Livewire\Courses\LessonForm;
 use App\Livewire\Courses\LessonViewer;
 use App\Livewire\Courses\ModuleForm;
+use App\Livewire\Courses\SessionForm;
+use App\Livewire\Courses\SessionsIndex;
 use App\Livewire\Dashboard;
 use App\Livewire\EditProfile;
 use App\Livewire\MediaLibrary\MediaLibraryIndex;
@@ -83,6 +86,12 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
 
         // Student-facing lesson viewing
         Route::get('/lessons/{lesson}', LessonViewer::class)->name('lessons.show');
+
+        Route::get('/courses/{course}/sessions', SessionsIndex::class)->middleware('permission:sessions.view')->name('sessions.index');
+        Route::get('/courses/{course}/sessions/create', SessionForm::class)->middleware('permission:sessions.create')->name('sessions.create');
+        Route::get('/sessions/{session}/edit', SessionForm::class)->middleware('permission:sessions.edit')->name('sessions.edit');
+
+        Route::get('/courses/{course}/tabs/{tab}', CourseComingSoon::class)->middleware('permission:courses.view')->name('course-tabs.coming-soon');
 
         Route::get('/media-library', MediaLibraryIndex::class)->middleware('permission:media.view')->name('media-library.index');
 

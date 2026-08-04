@@ -46,11 +46,11 @@ class Session extends Model
     }
 
     /**
-     * @return BelongsToMany<LessonMaterial, $this>
+     * @return BelongsToMany<MediaLibraryItem, $this>
      */
     public function materials(): BelongsToMany
     {
-        return $this->belongsToMany(LessonMaterial::class, 'session_materials')
+        return $this->belongsToMany(MediaLibraryItem::class, 'session_materials', 'session_id', 'media_library_item_id')
             ->withPivot('order')
             ->withTimestamps();
     }

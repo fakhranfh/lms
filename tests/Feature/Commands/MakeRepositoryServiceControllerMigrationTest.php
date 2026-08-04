@@ -35,7 +35,10 @@ test('migration generator creates migration file with correct structure', functi
     $newFiles = File::files($migrationPath);
     expect(count($newFiles))->toBeGreaterThan($initialCount);
 
-    $latestFile = collect($newFiles)->sortBy('getModifiedTime')->last();
+    $latestFile = collect($newFiles)
+        ->filter(fn ($file) => str_contains($file->getPathname(), 'test_migration'))
+        ->sortBy('getModifiedTime')
+        ->last();
     $content = File::get($latestFile->getPathname());
 
     expect($content)
@@ -74,7 +77,10 @@ test('migration generator handles decimal columns', function () {
     $newFiles = File::files($migrationPath);
     expect(count($newFiles))->toBeGreaterThan($initialCount);
 
-    $latestFile = collect($newFiles)->sortBy('getModifiedTime')->last();
+    $latestFile = collect($newFiles)
+        ->filter(fn ($file) => str_contains($file->getPathname(), 'price_migration'))
+        ->sortBy('getModifiedTime')
+        ->last();
     $content = File::get($latestFile->getPathname());
 
     expect($content)->toContain("->decimal('price', 10, 2)");
@@ -104,7 +110,10 @@ test('migration generator handles nullable columns', function () {
     $newFiles = File::files($migrationPath);
     expect(count($newFiles))->toBeGreaterThan($initialCount);
 
-    $latestFile = collect($newFiles)->sortBy('getModifiedTime')->last();
+    $latestFile = collect($newFiles)
+        ->filter(fn ($file) => str_contains($file->getPathname(), 'description_migration'))
+        ->sortBy('getModifiedTime')
+        ->last();
     $content = File::get($latestFile->getPathname());
 
     expect($content)->toContain("->text('description')->nullable()");
@@ -129,7 +138,10 @@ test('migration file is valid PHP syntax', function () {
     });
 
     $migrationPath = database_path('migrations');
-    $latestFile = collect(File::files($migrationPath))->sortBy('getModifiedTime')->last();
+    $latestFile = collect(File::files($migrationPath))
+        ->filter(fn ($file) => str_contains($file->getPathname(), 'validate_migration'))
+        ->sortBy('getModifiedTime')
+        ->last();
     $content = File::get($latestFile->getPathname());
 
     // Verify basic structure

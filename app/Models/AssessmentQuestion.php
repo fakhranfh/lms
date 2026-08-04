@@ -25,11 +25,11 @@ class AssessmentQuestion extends Model
     }
 
     /**
-     * @return BelongsToMany<LessonMaterial, $this>
+     * @return BelongsToMany<MediaLibraryItem, $this>
      */
     public function files(): BelongsToMany
     {
-        return $this->belongsToMany(LessonMaterial::class, 'assessment_question_files')
+        return $this->belongsToMany(MediaLibraryItem::class, 'assessment_question_files', 'assessment_question_id', 'media_library_item_id')
             ->withPivot('order')
             ->withTimestamps();
     }

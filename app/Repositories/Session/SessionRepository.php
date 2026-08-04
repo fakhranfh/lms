@@ -45,8 +45,8 @@ class SessionRepository implements SessionRepositoryInterface
         return Session::destroy($id);
     }
 
-    public function forCourse(string $courseId): Collection
+    public function forCourse(string $courseId, array $with = []): Collection
     {
-        return Session::where('course_id', $courseId)->orderBy('date_start')->get();
+        return Session::where('course_id', $courseId)->with($with)->orderBy('date_start')->get();
     }
 }

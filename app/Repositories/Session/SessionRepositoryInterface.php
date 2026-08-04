@@ -31,7 +31,8 @@ interface SessionRepositoryInterface
     public function delete(string $id): int;
 
     /**
+     * @param  array<string>  $with
      * @return Collection<int, Session>
      */
-    public function forCourse(string $courseId): Collection;
+    public function forCourse(string $courseId, array $with = []): Collection;
 }

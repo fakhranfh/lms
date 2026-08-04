@@ -69,11 +69,11 @@ class Syllabus extends Model
     }
 
     /**
-     * @return BelongsToMany<LessonMaterial, $this>
+     * @return BelongsToMany<MediaLibraryItem, $this>
      */
     public function materials(): BelongsToMany
     {
-        return $this->belongsToMany(LessonMaterial::class, 'syllabus_materials')
+        return $this->belongsToMany(MediaLibraryItem::class, 'syllabus_materials', 'syllabus_id', 'media_library_item_id')
             ->withPivot(['section', 'order'])
             ->withTimestamps();
     }

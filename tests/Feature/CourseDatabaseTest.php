@@ -84,7 +84,7 @@ test('cascade delete removes related records', function () {
     $lesson = Lesson::factory()->for($module)->create();
 
     $courseId = $course->id;
-    $course->delete();
+    $course->forceDelete();
 
     expect(Course::find($courseId))->toBeNull();
     expect(Module::find($module->id))->toBeNull();

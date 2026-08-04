@@ -11,12 +11,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable(['school_id', 'created_by', 'title', 'description', 'slug', 'is_published'])]
 class Course extends Model
 {
     /** @use HasFactory<CourseFactory> */
-    use BelongsToSchool, HasFactory, HasUuid, TracksPublishedAt;
+    use BelongsToSchool, HasFactory, HasUuid, SoftDeletes, TracksPublishedAt;
 
     /**
      * @var array<string, string>
@@ -69,5 +71,61 @@ class Course extends Model
     public function modulesCount(): int
     {
         return $this->modules()->count();
+    }
+
+    /**
+     * @return HasMany<Session, $this>
+     */
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(Session::class);
+    }
+
+    /**
+     * @return HasMany<Period, $this>
+     */
+    public function periods(): HasMany
+    {
+        return $this->hasMany(Period::class)->orderBy('order');
+    }
+
+    /**
+     * @return HasOne<Syllabus, $this>
+     */
+    public function syllabus(): HasOne
+    {
+        return $this->hasOne(Syllabus::class);
+    }
+
+    /**
+     * @return HasMany<CoursePerson, $this>
+     */
+    public function people(): HasMany
+    {
+        return $this->hasMany(CoursePerson::class);
+    }
+
+    /**
+     * @return HasMany<Group, $this>
+     */
+    public function groups(): HasMany
+    {
+        return $this->hasMany(Group::class);
+    }
+
+    /**
+     * @return HasMany<Forum, $this>
+     */
+    public function forums(): HasMany
+    {
+        return $this->hasMany(Forum::class);
+    }
+
+    /**
+     * @return HasMany<Assessment, $this>
+     */
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(Assessment::class);
     }
 }

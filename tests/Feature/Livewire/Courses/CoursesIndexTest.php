@@ -228,7 +228,7 @@ class CoursesIndexTest extends TestCase
             ->call('destroy', $course->id)
             ->assertSet('successMessage', 'Course deleted successfully.');
 
-        $this->assertDatabaseMissing('courses', ['id' => $course->id]);
+        $this->assertSoftDeleted('courses', ['id' => $course->id]);
     }
 
     public function test_cannot_delete_course_without_permission(): void

@@ -6,9 +6,9 @@
         <nav class="flex items-center gap-space-sm text-body-sm text-on-surface-variant">
             <a href="{{ route('courses.index') }}" class="hover:text-on-surface transition">Courses</a>
             <span>/</span>
-            <a href="{{ route('courses.show', $lesson->module->course) }}" class="hover:text-on-surface transition">{{ $lesson->module->course->title }}</a>
+            <a href="{{ route('courses.modules', $lesson->module->course) }}" class="hover:text-on-surface transition">{{ $lesson->module->course->title }}</a>
             <span>/</span>
-            <a href="{{ route('courses.show', $lesson->module->course) }}" class="hover:text-on-surface transition">{{ $lesson->module->title }}</a>
+            <a href="{{ route('courses.modules', $lesson->module->course) }}" class="hover:text-on-surface transition">{{ $lesson->module->title }}</a>
             <span>/</span>
             <a href="{{ route('lessons.edit', $lesson) }}" class="hover:text-on-surface transition">{{ $lesson->title }}</a>
             <span>/</span>

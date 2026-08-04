@@ -67,7 +67,7 @@ class ModuleFormTest extends TestCase
             ->set('title', 'HTML Basics')
             ->set('description', 'Learn HTML')
             ->call('save')
-            ->assertRedirect(route('courses.show', $this->course));
+            ->assertRedirect(route('courses.modules', $this->course));
 
         $this->assertDatabaseHas('modules', [
             'title' => 'HTML Basics',
@@ -111,7 +111,7 @@ class ModuleFormTest extends TestCase
             ->set('title', 'New Title')
             ->set('description', 'Updated description')
             ->call('save')
-            ->assertRedirect(route('courses.show', $this->course));
+            ->assertRedirect(route('courses.modules', $this->course));
 
         $this->assertDatabaseHas('modules', [
             'id' => $module->id,

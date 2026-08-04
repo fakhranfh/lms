@@ -36,6 +36,7 @@ use App\Livewire\Users\UserImport;
 use App\Livewire\Users\UserIndex;
 use App\Livewire\Users\UserPhotoUpload;
 use App\Livewire\Users\UserRoles;
+use App\Models\Course;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -76,7 +77,10 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/courses', CoursesIndex::class)->middleware('permission:courses.view')->name('courses.index');
         Route::get('/courses/create', CourseForm::class)->middleware('permission:courses.create')->name('courses.create');
         Route::get('/courses/{course}/edit', CourseForm::class)->middleware('permission:courses.edit')->name('courses.edit');
-        Route::get('/courses/{course}', CourseBuilder::class)->middleware('permission:courses.view')->name('courses.show');
+        Route::get('/courses/{course}', fn (Course $course) => redirect()->route('sessions.index', $course))
+            ->middleware('permission:courses.view')
+            ->name('courses.show');
+        Route::get('/courses/{course}/modules', CourseBuilder::class)->middleware('permission:courses.view')->name('courses.modules');
 
         Route::get('/courses/{course}/modules/create', ModuleForm::class)->middleware('permission:modules.create')->name('modules.create');
         Route::get('/modules/{module}/edit', ModuleForm::class)->middleware('permission:modules.edit')->name('modules.edit');

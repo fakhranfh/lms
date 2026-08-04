@@ -7,7 +7,7 @@
             <nav class="flex items-center gap-space-sm text-body-sm text-on-surface-variant">
                 <a href="{{ route('courses.index') }}" class="hover:text-on-surface transition">Courses</a>
                 <span>/</span>
-                <a href="{{ route('courses.show', $course) }}" class="hover:text-on-surface transition">{{ $course->title }}</a>
+                <a href="{{ route('courses.modules', $course) }}" class="hover:text-on-surface transition">{{ $course->title }}</a>
                 <span>/</span>
                 <span class="text-on-surface font-medium">{{ $pageTitle }}</span>
             </nav>
@@ -24,7 +24,7 @@
                 </p>
             </div>
             <a
-                href="{{ route('courses.show', $course) }}"
+                href="{{ route('courses.modules', $course) }}"
                 class="px-space-md py-space-xs rounded-lg bg-outline-variant text-on-surface font-label-sm text-label-sm hover:bg-outline transition-colors flex-shrink-0"
             >
                 Back to Course
@@ -90,7 +90,7 @@
             <!-- Actions -->
             <div class="flex gap-space-md pt-space-lg">
                 <a
-                    href="{{ route('courses.show', $course) }}"
+                    href="{{ route('courses.modules', $course) }}"
                     class="flex-1 px-space-lg py-space-md border border-outline rounded-lg font-label-md text-label-md text-on-surface text-center hover:bg-surface-container transition"
                 >
                     Cancel

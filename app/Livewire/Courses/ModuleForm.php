@@ -67,7 +67,7 @@ class ModuleForm extends Component
             $this->dispatch('module-created');
         }
 
-        return redirect()->route('courses.show', $this->course);
+        return redirect()->route('courses.modules', $this->course);
     }
 
     public function render()

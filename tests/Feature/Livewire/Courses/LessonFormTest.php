@@ -80,7 +80,7 @@ class LessonFormTest extends TestCase
             ->set('content', '<h1>HTML Basics</h1>')
             ->set('durationMinutes', 15)
             ->call('save')
-            ->assertRedirect(route('courses.show', $this->course));
+            ->assertRedirect(route('courses.modules', $this->course));
 
         $this->assertDatabaseHas('lessons', [
             'title' => 'Introduction to HTML',
@@ -125,7 +125,7 @@ class LessonFormTest extends TestCase
             ->set('title', 'New Title')
             ->set('content', '<p>New content</p>')
             ->call('save')
-            ->assertRedirect(route('courses.show', $this->course));
+            ->assertRedirect(route('courses.modules', $this->course));
 
         $this->assertDatabaseHas('lessons', [
             'id' => $lesson->id,

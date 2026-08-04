@@ -136,7 +136,7 @@ class LessonForm extends Component
             $this->dispatch('lesson-created');
         }
 
-        return redirect()->route('courses.show', $this->module->course);
+        return redirect()->route('courses.modules', $this->module->course);
     }
 
     /**

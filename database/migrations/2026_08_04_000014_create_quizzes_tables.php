@@ -66,7 +66,7 @@ return new class extends Migration
             $table->foreign('assessment_attempt_id')->references('id')->on('assessment_attempts')->cascadeOnDelete();
             $table->foreign('quiz_question_id')->references('id')->on('quiz_questions')->cascadeOnDelete();
             $table->foreign('selected_option_id')->references('id')->on('quiz_question_options')->nullOnDelete();
-            $table->unique(['assessment_attempt_id', 'quiz_question_id']);
+            $table->unique(['assessment_attempt_id', 'quiz_question_id'], 'aqa_attempt_question_unique');
         });
     }
 

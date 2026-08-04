@@ -31,8 +31,8 @@ return new class extends Migration
 
         Schema::create('syllabus_evaluation_activity_learning_outcome', function (Blueprint $table) {
             $table->id();
-            $table->uuid('syllabus_evaluation_activity_id')->index();
-            $table->uuid('learning_outcome_id')->index();
+            $table->uuid('syllabus_evaluation_activity_id')->index('seaLo_activity_id_index');
+            $table->uuid('learning_outcome_id')->index('seaLo_outcome_id_index');
             $table->timestamps();
 
             $table->foreign('syllabus_evaluation_activity_id', 'seaLo_activity_fk')

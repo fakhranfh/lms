@@ -3,8 +3,6 @@
 <div class="space-y-space-lg">
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => $teacher])
 
-    <h2 class="font-label-lg text-label-lg text-on-surface">Syllabus</h2>
-
     @if (! $syllabus)
         <div class="bg-surface border border-outline-variant rounded-lg p-8 text-center space-y-space-md">
             <span class="material-symbols-outlined text-on-surface-variant text-[48px] block mx-auto">menu_book</span>

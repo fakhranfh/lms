@@ -51,7 +51,7 @@ class SessionSeeder extends Seeder
                 ]);
             }
 
-            if ($blueprint['delivery_mode'] === DeliveryMode::Online) {
+            if ($blueprint['delivery_mode'] === DeliveryMode::VirtualClass) {
                 $session->videoConferences()->create([
                     'title' => 'Main Meeting',
                     'scheduled_start_at' => $dateStart->copy()->setTime(9, 0),
@@ -103,7 +103,7 @@ class SessionSeeder extends Seeder
             [
                 'title' => 'Introduction & Course Overview',
                 'learning_outcome' => 'Understand the course structure, expectations, and grading policy.',
-                'delivery_mode' => DeliveryMode::Online,
+                'delivery_mode' => DeliveryMode::VirtualClass,
                 'subtopics' => ['Course syllabus walkthrough', 'Learning outcomes overview', 'Grading and evaluation policy'],
             ],
             [
@@ -121,7 +121,7 @@ class SessionSeeder extends Seeder
             [
                 'title' => 'Case Study Discussion',
                 'learning_outcome' => 'Analyze a real-world case study using concepts learned so far.',
-                'delivery_mode' => DeliveryMode::Online,
+                'delivery_mode' => DeliveryMode::VirtualClass,
                 'subtopics' => ['Case study background', 'Group discussion', 'Key takeaways'],
             ],
             [

@@ -21,8 +21,9 @@ test('session seeder creates sessions with subtopics, video conferences, and mat
     expect($firstSession->subtopics()->count())->toBeGreaterThan(0);
     expect($firstSession->materials()->count())->toBeGreaterThan(0);
 
-    $onlineSessions = $sessions->filter(fn ($session) => $session->delivery_mode->value === 'online');
-    expect($onlineSessions->every(fn ($session) => $session->videoConferences()->count() > 0))->toBeTrue();
+    $virtualClassSessions = $sessions->filter(fn ($session) => $session->delivery_mode->value === 'virtual_class');
+    expect($virtualClassSessions)->not->toBeEmpty();
+    expect($virtualClassSessions->every(fn ($session) => $session->videoConferences()->count() > 0))->toBeTrue();
 });
 
 test('session seeder skips courses that already have sessions', function () {

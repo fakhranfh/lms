@@ -223,7 +223,7 @@ class SessionsIndex extends Component
         $chips[] = ['key' => 'assessment', 'label' => 'Assessment', 'completed' => false, 'type' => 'assessment', 'id' => null];
         $chips[] = ['key' => 'forum', 'label' => 'Forum', 'completed' => false, 'type' => 'forum', 'id' => null];
 
-        $showVideoConferences = $activeSession->delivery_mode === DeliveryMode::Online
+        $showVideoConferences = $activeSession->delivery_mode === DeliveryMode::VirtualClass
             && $activeSession->videoConferences->isNotEmpty();
 
         $openedVideoConferenceIds = $showVideoConferences

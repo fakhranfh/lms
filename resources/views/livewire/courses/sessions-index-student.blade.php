@@ -204,7 +204,7 @@
                     </div>
                     <div>
                         <p class="text-body-xs text-on-surface-variant uppercase mb-1">Delivery Mode</p>
-                        <p class="text-body-sm text-on-surface capitalize">{{ $activeSession->delivery_mode->value }}</p>
+                        <p class="text-body-sm text-on-surface">{{ str($activeSession->delivery_mode->value)->replace('_', ' ')->title() }}</p>
                     </div>
                 </div>
             </div>

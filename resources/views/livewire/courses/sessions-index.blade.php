@@ -68,8 +68,8 @@
                                     <div class="flex-1">
                                         <div class="flex items-center gap-space-md">
                                             <h3 class="font-label-lg text-label-lg text-on-surface">{{ $session->title }}</h3>
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant capitalize">
-                                                {{ $session->delivery_mode->value }}
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant">
+                                                {{ str($session->delivery_mode->value)->replace('_', ' ')->title() }}
                                             </span>
                                         </div>
                                         <p class="text-body-sm text-on-surface-variant mt-1">

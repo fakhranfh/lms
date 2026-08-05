@@ -33,7 +33,7 @@ class SessionForm extends Component
     #[Validate('required|date|after_or_equal:dateStart')]
     public string $dateEnd = '';
 
-    #[Validate('required|in:online,offline')]
+    #[Validate('required|in:online,offline,virtual_class')]
     public string $deliveryMode = 'online';
 
     /** @var array<int, string> */

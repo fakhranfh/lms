@@ -101,11 +101,11 @@
                 </label>
                 <select
                     id="deliveryMode"
-                    wire:model="deliveryMode"
-                    class="w-full px-space-lg py-space-md border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 capitalize"
+                    wire:model.live="deliveryMode"
+                    class="w-full px-space-lg py-space-md border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
                     @foreach ($deliveryModes as $mode)
-                        <option value="{{ $mode->value }}" class="capitalize">{{ ucfirst($mode->value) }}</option>
+                        <option value="{{ $mode->value }}">{{ str($mode->value)->replace('_', ' ')->title() }}</option>
                     @endforeach
                 </select>
             </div>
@@ -268,6 +268,7 @@
             </div>
 
             <!-- Video Conferences -->
+            @if ($deliveryMode === \App\Enums\DeliveryMode::VirtualClass->value)
             <div>
                 <label class="block text-label-md text-on-surface mb-space-sm font-label-md">Video Conferences</label>
                 <div class="space-y-space-md">
@@ -322,6 +323,7 @@
                     Add Video Conference
                 </button>
             </div>
+            @endif
 
             <!-- Actions -->
             <div class="flex gap-space-md pt-space-lg">

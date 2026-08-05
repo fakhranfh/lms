@@ -85,9 +85,9 @@ class SessionsIndexStudentTest extends TestCase
         ]);
     }
 
-    public function test_video_conference_shows_only_for_online_sessions_and_tracks_opened_state(): void
+    public function test_video_conference_shows_only_for_virtual_class_sessions_and_tracks_opened_state(): void
     {
-        $onlineSession = Session::factory()->for($this->course)->create(['delivery_mode' => DeliveryMode::Online]);
+        $onlineSession = Session::factory()->for($this->course)->create(['delivery_mode' => DeliveryMode::VirtualClass]);
         $videoConference = VideoConference::factory()->for($onlineSession)->create(['title' => 'Main Meeting']);
 
         $offlineSession = Session::factory()->for($this->course)->create(['delivery_mode' => DeliveryMode::Offline]);

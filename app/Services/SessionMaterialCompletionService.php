@@ -8,7 +8,8 @@ use Illuminate\Support\Collection;
 class SessionMaterialCompletionService
 {
     public function __construct(
-        private SessionMaterialCompletionRepositoryInterface $repository
+        private SessionMaterialCompletionRepositoryInterface $repository,
+        private SessionService $sessionService,
     ) {}
 
     /**
@@ -28,5 +29,24 @@ class SessionMaterialCompletionService
         }
 
         $this->repository->markIncomplete($sessionId, $mediaLibraryItemId, $userId);
+    }
+
+    /**
+     * Percentage of a course's session materials the user has completed,
+     * across all of the course's sessions.
+     */
+    public function courseProgressPercent(string $courseId, string $userId): int
+    {
+        $sessions = $this->sessionService->forCourse($courseId, ['materials']);
+
+        $totalMaterials = $sessions->sum(fn ($session) => $session->materials->count());
+
+        if ($totalMaterials === 0) {
+            return 0;
+        }
+
+        $completedMaterials = $this->repository->completedCountForSessions($sessions->pluck('id'), $userId);
+
+        return (int) round(min($completedMaterials, $totalMaterials) / $totalMaterials * 100);
     }
 }

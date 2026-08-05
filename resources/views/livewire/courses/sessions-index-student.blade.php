@@ -16,6 +16,33 @@
         },
     }"
 >
+    <div class="flex items-center justify-between gap-space-md">
+        <h1 class="font-headline-sm text-headline-sm text-on-surface">{{ $course->title }}</h1>
+        <a
+            href="{{ route('courses.index') }}"
+            class="flex-shrink-0 px-space-md py-space-xs rounded-lg bg-outline-variant text-on-surface font-label-sm text-label-sm hover:bg-outline transition-colors inline-flex items-center gap-space-xs"
+        >
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+            Back
+        </a>
+    </div>
+
+    @if ($teacher)
+        <div class="flex items-center gap-space-md">
+            @if ($teacher->profile_photo_path)
+                <img src="{{ $teacher->profile_photo_path }}" alt="{{ $teacher->name }}" class="w-10 h-10 rounded-full object-cover border border-outline-variant">
+            @else
+                <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-headline-sm text-headline-sm">
+                    {{ strtoupper(substr($teacher->name, 0, 1)) }}
+                </div>
+            @endif
+            <div>
+                <p class="font-label-md text-label-md text-on-surface">{{ $teacher->name }}</p>
+                <p class="text-body-xs text-on-surface-variant">Teacher</p>
+            </div>
+        </div>
+    @endif
+
     @include('livewire.courses.partials.course-tabs', ['course' => $course, 'activeTab' => 'session'])
 
     @if ($successMessage)
@@ -117,7 +144,6 @@
                         <div class="h-7 bg-surface-container rounded-full w-28"></div>
                         <div class="h-7 bg-surface-container rounded-full w-24"></div>
                         <div class="h-7 bg-surface-container rounded-full w-20"></div>
-                        <div class="h-7 bg-surface-container rounded-full w-32"></div>
                     </div>
                 </div>
 
@@ -255,7 +281,7 @@
                     </div>
                 </div>
 
-                @if ($activeSession->materials->isEmpty() && $activeSession->assessments->isEmpty() && $activeSession->forums->isEmpty() && ! $showVideoConferences)
+                @if ($activeSession->materials->isEmpty() && $activeSession->assessments->isEmpty() && $activeSession->forums->isEmpty())
                     <p class="pt-space-md border-t border-outline-variant text-body-sm text-on-surface-variant text-center">
                         Nothing here yet.
                     </p>
@@ -307,34 +333,6 @@
                             </div>
                         </div>
 
-                        @if ($showVideoConferences)
-                            <div x-show="activeChipKey === 'video-conference'" x-cloak class="space-y-space-xs">
-                                @foreach ($activeSession->videoConferences as $videoConference)
-                                    <div wire:key="video-conference-chip-{{ $videoConference->id }}" class="flex items-center gap-space-md">
-                                        <div class="min-w-0 flex-1">
-                                            <p class="text-body-xs text-on-surface-variant flex items-center gap-space-xs">
-                                                <span class="material-symbols-outlined text-[14px]">videocam</span>
-                                                {{ $videoConference->title ?: 'Video Conference' }}
-                                            </p>
-                                        </div>
-                                        @if ($openedVideoConferenceIds->contains($videoConference->id))
-                                            <span class="material-symbols-outlined text-success text-[18px]" data-weight="fill">check_circle</span>
-                                        @else
-                                            <a
-                                                wire:click="markVideoConferenceOpened('{{ $videoConference->id }}')"
-                                                href="{{ $videoConference->meeting_url }}"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                class="w-9 h-9 flex items-center justify-center rounded-full border border-outline-variant hover:bg-surface-container transition-colors text-on-surface-variant flex-shrink-0"
-                                                title="Join video conference"
-                                            >
-                                                <span class="material-symbols-outlined text-[18px]">videocam</span>
-                                            </a>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
                     </div>
                 @endif
 

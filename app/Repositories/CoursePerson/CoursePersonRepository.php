@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 class CoursePersonRepository implements CoursePersonRepositoryInterface
 {
+    /**
+     * @return Collection<int, CoursePerson>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         $query = CoursePerson::query();
@@ -46,6 +49,9 @@ class CoursePersonRepository implements CoursePersonRepositoryInterface
         return CoursePerson::destroy($id);
     }
 
+    /**
+     * @return Collection<int, CoursePerson>
+     */
     public function studentsForCourse(string $courseId): Collection
     {
         return CoursePerson::where('course_id', $courseId)
@@ -54,6 +60,9 @@ class CoursePersonRepository implements CoursePersonRepositoryInterface
             ->get();
     }
 
+    /**
+     * @return Collection<int, CoursePerson>
+     */
     public function teachersForCourse(string $courseId): Collection
     {
         return CoursePerson::where('course_id', $courseId)

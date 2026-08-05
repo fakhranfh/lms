@@ -37,4 +37,16 @@ class SessionMaterialCompletionRepository implements SessionMaterialCompletionRe
             ->where('user_id', $userId)
             ->delete();
     }
+
+    public function completedCountForSessions(Collection $sessionIds, string $userId): int
+    {
+        if ($sessionIds->isEmpty()) {
+            return 0;
+        }
+
+        return SessionMaterialCompletion::query()
+            ->whereIn('session_id', $sessionIds)
+            ->where('user_id', $userId)
+            ->count();
+    }
 }

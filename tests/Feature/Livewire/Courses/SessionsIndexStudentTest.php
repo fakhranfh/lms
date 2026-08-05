@@ -7,6 +7,7 @@ use App\Enums\MaterialType;
 use App\Enums\RoleName;
 use App\Livewire\Courses\SessionsIndex;
 use App\Models\Course;
+use App\Models\CoursePerson;
 use App\Models\MediaLibraryItem;
 use App\Models\Role;
 use App\Models\School;
@@ -52,6 +53,18 @@ class SessionsIndexStudentTest extends TestCase
             ->assertSee('Session 1')
             ->assertSee('Understand the basics')
             ->assertSee('Learning Outcome');
+    }
+
+    public function test_student_sees_teacher_name_above_session_tabs(): void
+    {
+        $teacher = User::factory()->forSchool($this->school)->create(['name' => 'Jane Teacher']);
+        CoursePerson::factory()->teacher()->for($this->course)->for($teacher)->create();
+
+        Session::factory()->for($this->course)->create();
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->assertSee('Jane Teacher');
     }
 
     public function test_student_marking_material_completed_updates_progress_and_cannot_be_undone(): void

@@ -3,6 +3,8 @@
 namespace App\Repositories\Course;
 
 use App\Models\Course;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class CourseRepository implements CourseRepositoryInterface
@@ -13,22 +15,41 @@ class CourseRepository implements CourseRepositoryInterface
      */
     public function get(array $filters = [], array $with = []): Collection
     {
-        $query = Course::query();
+        return $this->applyFilters(Course::query(), $filters)->with($with)->get();
+    }
 
+    /**
+     * @param  array<string, mixed>  $filters
+     * @param  array<string>  $with
+     */
+    public function paginate(array $filters = [], array $with = [], int $perPage = 10): LengthAwarePaginator
+    {
+        return $this->applyFilters(Course::query(), $filters)->with($with)->latest()->paginate($perPage);
+    }
+
+    /**
+     * @param  Builder<Course>  $query
+     * @param  array<string, mixed>  $filters
+     * @return Builder<Course>
+     */
+    private function applyFilters($query, array $filters)
+    {
         foreach ($filters as $key => $value) {
             if (is_null($value) || $value === '') {
                 continue;
             }
 
             if ($key === 'search') {
-                $query->where('title', 'like', "%{$value}%")
-                    ->orWhere('description', 'like', "%{$value}%");
+                $query->where(function ($subQuery) use ($value) {
+                    $subQuery->whereLike('title', "%{$value}%", caseSensitive: false)
+                        ->orWhereLike('description', "%{$value}%", caseSensitive: false);
+                });
             } else {
                 $query->where($key, $value);
             }
         }
 
-        return $query->with($with)->get();
+        return $query;
     }
 
     /**

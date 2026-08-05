@@ -37,11 +37,17 @@ class CoursePersonService
         return $this->coursePersonRepository->delete($id);
     }
 
+    /**
+     * @return Collection<int, CoursePerson>
+     */
     public function studentsForCourse(string $courseId): Collection
     {
         return $this->coursePersonRepository->studentsForCourse($courseId);
     }
 
+    /**
+     * @return Collection<int, CoursePerson>
+     */
     public function teachersForCourse(string $courseId): Collection
     {
         return $this->coursePersonRepository->teachersForCourse($courseId);

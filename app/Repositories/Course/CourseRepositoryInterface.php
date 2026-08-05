@@ -3,6 +3,7 @@
 namespace App\Repositories\Course;
 
 use App\Models\Course;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 interface CourseRepositoryInterface
@@ -14,6 +15,14 @@ interface CourseRepositoryInterface
      * @param  array<string>  $with
      */
     public function get(array $filters = [], array $with = []): Collection;
+
+    /**
+     * Get a paginated list of courses with optional filters and eager-loaded relationships.
+     *
+     * @param  array<string, mixed>  $filters
+     * @param  array<string>  $with
+     */
+    public function paginate(array $filters = [], array $with = [], int $perPage = 10): LengthAwarePaginator;
 
     /**
      * Find a course by ID with optional relations.

@@ -2,9 +2,14 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\RoleName;
 use App\Livewire\Courses\CoursesIndex;
 use App\Models\Course;
+use App\Models\MediaLibraryItem;
+use App\Models\Role;
 use App\Models\School;
+use App\Models\Session;
+use App\Models\SessionMaterialCompletion;
 use App\Models\User;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -33,6 +38,7 @@ class CoursesIndexTest extends TestCase
 
         Livewire::test(CoursesIndex::class)
             ->assertStatus(200)
+            ->call('loadCourses')
             ->assertSee('Courses');
     }
 
@@ -48,6 +54,7 @@ class CoursesIndexTest extends TestCase
             ->create(['title' => 'JavaScript Advanced']);
 
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->assertSee('Python Basics')
             ->assertSee('JavaScript Advanced');
     }
@@ -65,6 +72,7 @@ class CoursesIndexTest extends TestCase
             ->create(['title' => 'My Course']);
 
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->assertSee('My Course')
             ->assertDontSee('Hidden Course');
     }
@@ -81,6 +89,7 @@ class CoursesIndexTest extends TestCase
             ->create(['title' => 'JavaScript Basics']);
 
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->set('search', 'PHP')
             ->assertSee('PHP Fundamentals')
             ->assertDontSee('JavaScript Basics');
@@ -98,6 +107,7 @@ class CoursesIndexTest extends TestCase
             ->create(['title' => 'JavaScript Basics']);
 
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->set('search', 'php fundamentals')
             ->assertSee('PHP Fundamentals')
             ->assertDontSee('JavaScript Basics');
@@ -115,6 +125,7 @@ class CoursesIndexTest extends TestCase
             ->create(['title' => 'Course B', 'description' => 'Learn mobile development']);
 
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->set('search', 'web')
             ->assertSee('Course A')
             ->assertDontSee('Course B');
@@ -125,6 +136,7 @@ class CoursesIndexTest extends TestCase
         $this->teacher->givePermissionTo('courses.view');
 
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->assertSee('No courses yet');
     }
 
@@ -137,6 +149,7 @@ class CoursesIndexTest extends TestCase
             ->create(['title' => 'Python Basics']);
 
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->set('search', 'JavaScript')
             ->assertSee('No courses found');
     }
@@ -150,6 +163,7 @@ class CoursesIndexTest extends TestCase
             ->create(['title' => 'Complete Course']);
 
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->assertSee('0 sessions');
     }
 
@@ -165,6 +179,7 @@ class CoursesIndexTest extends TestCase
             ->create(['title' => 'Draft Course', 'is_published' => false]);
 
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->assertSee('Published')
             ->assertSee('Draft');
     }
@@ -179,6 +194,7 @@ class CoursesIndexTest extends TestCase
             ->create(['title' => 'My Course']);
 
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->assertSee('My Course');
     }
 
@@ -191,7 +207,8 @@ class CoursesIndexTest extends TestCase
             ->count(15)
             ->create();
 
-        $component = Livewire::test(CoursesIndex::class);
+        $component = Livewire::test(CoursesIndex::class)
+            ->call('loadCourses');
         $courses = $component->viewData('courses');
 
         $this->assertEquals(10, $courses->count());
@@ -208,6 +225,7 @@ class CoursesIndexTest extends TestCase
             ->create(['title' => 'Course']);
 
         $component = Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->set('search', 'Course');
 
         $courses = $component->viewData('courses');
@@ -223,6 +241,7 @@ class CoursesIndexTest extends TestCase
             ->create(['title' => 'Course To Delete']);
 
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->call('destroy', $course->id)
             ->assertSet('successMessage', 'Course deleted successfully.');
 
@@ -240,6 +259,7 @@ class CoursesIndexTest extends TestCase
         // Livewire's ->call() captures abort_unless(..., 403) as a response status
         // rather than re-throwing to PHPUnit — assertStatus is the correct check here.
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->call('destroy', $course->id)
             ->assertStatus(403);
 
@@ -256,6 +276,7 @@ class CoursesIndexTest extends TestCase
             ->create();
 
         Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
             ->call('destroy', $course->id)
             ->assertSet('errorMessage', 'Course not found.');
 
@@ -266,5 +287,53 @@ class CoursesIndexTest extends TestCase
     {
         Livewire::test(CoursesIndex::class)
             ->assertStatus(403);
+    }
+
+    public function test_student_does_not_see_draft_courses_or_published_status(): void
+    {
+        $student = User::factory()->forSchool($this->school)->create();
+        $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $student->assignRole($studentRole);
+        $student->givePermissionTo('courses.view');
+
+        Course::factory()->for($this->school)->create(['title' => 'Intro to Web Development', 'is_published' => true]);
+        Course::factory()->for($this->school)->create(['title' => 'Unfinished Course', 'is_published' => false]);
+
+        $this->actingAs($student);
+
+        Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
+            ->assertSee('Intro to Web Development')
+            ->assertDontSee('Unfinished Course')
+            ->assertDontSee('Published')
+            ->assertDontSee('Draft');
+    }
+
+    public function test_student_sees_course_progress_percentage(): void
+    {
+        $student = User::factory()->forSchool($this->school)->create();
+        $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $student->assignRole($studentRole);
+        $student->givePermissionTo('courses.view');
+
+        $course = Course::factory()->for($this->school)->create(['title' => 'Progress Course', 'is_published' => true]);
+        $session = Session::factory()->for($course)->create();
+        $materialOne = MediaLibraryItem::factory()->for($this->school)->create();
+        $materialTwo = MediaLibraryItem::factory()->for($this->school)->create();
+        $session->materials()->attach([$materialOne->id => ['order' => 1], $materialTwo->id => ['order' => 2]]);
+
+        SessionMaterialCompletion::create([
+            'session_id' => $session->id,
+            'media_library_item_id' => $materialOne->id,
+            'user_id' => $student->id,
+            'completed_at' => now(),
+        ]);
+
+        $this->actingAs($student);
+
+        Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
+            ->assertSee('Progress Course')
+            ->assertSee('50%');
     }
 }

@@ -2,7 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Enums\CourseMembershipStatus;
+use App\Enums\RoleInCourse;
 use App\Models\Course;
+use App\Models\CoursePerson;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -36,7 +39,7 @@ class CourseSeeder extends Seeder
             $teacher = $teachers->random();
             $title = $courseData['title'];
 
-            Course::create([
+            $course = Course::create([
                 'id' => (string) Str::uuid(),
                 'school_id' => $school->id,
                 'created_by' => $teacher->id,
@@ -44,6 +47,15 @@ class CourseSeeder extends Seeder
                 'slug' => Str::slug($title).'-'.Str::random(6),
                 'description' => $courseData['description'],
                 'is_published' => $courseData['is_published'],
+            ]);
+
+            CoursePerson::create([
+                'id' => (string) Str::uuid(),
+                'course_id' => $course->id,
+                'user_id' => $teacher->id,
+                'role_in_course' => RoleInCourse::Teacher,
+                'enrolled_at' => now(),
+                'status' => CourseMembershipStatus::Active,
             ]);
         }
     }

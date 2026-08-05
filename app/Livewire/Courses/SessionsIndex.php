@@ -8,6 +8,7 @@ use App\Enums\RoleName;
 use App\Models\Course;
 use App\Models\MediaLibraryItem;
 use App\Models\Session;
+use App\Services\CoursePersonService;
 use App\Services\SessionMaterialCompletionService;
 use App\Services\SessionService;
 use App\Services\VideoConferenceParticipationService;
@@ -144,7 +145,7 @@ class SessionsIndex extends Component
         ];
     }
 
-    public function render(SessionService $sessionService, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService)
+    public function render(SessionService $sessionService, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService, CoursePersonService $coursePersonService)
     {
         if (! $this->sessionsLoaded) {
             return view('livewire.courses.sessions-index-placeholder', [
@@ -170,6 +171,7 @@ class SessionsIndex extends Component
 
         if ($this->isStudent) {
             $viewData = array_merge($viewData, $this->buildStudentViewData($sessions, $completionService, $participationService));
+            $viewData['teacher'] = $coursePersonService->teachersForCourse($this->course->id)->first()?->user;
         }
 
         return view($this->isStudent ? 'livewire.courses.sessions-index-student' : 'livewire.courses.sessions-index', $viewData)
@@ -231,16 +233,6 @@ class SessionsIndex extends Component
                 'user_id' => auth()->id(),
             ])->whereIn('video_conference_id', $activeSession->videoConferences->pluck('id'))->pluck('video_conference_id')
             : collect();
-
-        if ($showVideoConferences) {
-            $chips[] = [
-                'key' => 'video-conference',
-                'label' => 'Video Conference',
-                'completed' => $activeSession->videoConferences->every(fn ($videoConference) => $openedVideoConferenceIds->contains($videoConference->id)),
-                'type' => 'video-conference',
-                'id' => null,
-            ];
-        }
 
         $activeMaterial = $this->activeMaterialId
             ? $activeSession->materials->firstWhere('id', $this->activeMaterialId)

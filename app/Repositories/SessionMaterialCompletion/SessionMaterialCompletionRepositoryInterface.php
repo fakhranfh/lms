@@ -14,4 +14,11 @@ interface SessionMaterialCompletionRepositoryInterface
     public function markCompleted(string $sessionId, string $mediaLibraryItemId, string $userId): void;
 
     public function markIncomplete(string $sessionId, string $mediaLibraryItemId, string $userId): void;
+
+    /**
+     * Count of the given sessions' materials the user has completed.
+     *
+     * @param  Collection<int, string>  $sessionIds
+     */
+    public function completedCountForSessions(Collection $sessionIds, string $userId): int;
 }

@@ -59,6 +59,9 @@
                         <div class="h-3 bg-surface-container rounded w-full"></div>
                         <div class="h-3 bg-surface-container rounded w-4/5"></div>
                     </div>
+                    @if ($isStudent)
+                        <div class="h-1.5 bg-surface-container rounded-full w-full"></div>
+                    @endif
                 </div>
                 <div class="px-space-lg py-space-md space-y-space-sm flex-1">
                     <div class="h-3 bg-surface-container rounded w-3/4"></div>
@@ -112,21 +115,23 @@
                                     {{ $course->title }}
                                 </h3>
                             </a>
-                            @if ($course->is_published)
-                                <span
-                                    class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-success/10 border border-success/20 text-success whitespace-nowrap"
-                                    @if ($course->published_at) title="Published on {{ $course->published_at->format('M j, Y') }}" @endif
-                                >
-                                    Published
-                                </span>
-                            @else
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant whitespace-nowrap">
-                                    Draft
-                                </span>
-                            @endif
+                            @unless ($isStudent)
+                                @if ($course->is_published)
+                                    <span
+                                        class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-success/10 border border-success/20 text-success whitespace-nowrap"
+                                        @if ($course->published_at) title="Published on {{ $course->published_at->format('M j, Y') }}" @endif
+                                    >
+                                        Published
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant whitespace-nowrap">
+                                        Draft
+                                    </span>
+                                @endif
+                            @endunless
                         </div>
 
-                        @if ($course->is_published && $course->published_at)
+                        @if (! $isStudent && $course->is_published && $course->published_at)
                             <p class="text-body-xs text-on-surface-variant mb-space-sm">
                                 Published on {{ $course->published_at->format('M j, Y') }}
                             </p>
@@ -136,6 +141,18 @@
                             <p class="text-body-sm text-on-surface-variant line-clamp-2">
                                 {{ $course->description }}
                             </p>
+                        @endif
+
+                        @if ($isStudent)
+                            <div class="mt-space-md">
+                                <div class="flex items-center justify-between mb-1">
+                                    <p class="text-body-xs text-on-surface-variant">Progress</p>
+                                    <p class="text-body-xs text-on-surface font-medium">{{ $courseProgress[$course->id] ?? 0 }}%</p>
+                                </div>
+                                <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                                    <div class="h-full bg-success transition-all duration-300" style="width: {{ $courseProgress[$course->id] ?? 0 }}%"></div>
+                                </div>
+                            </div>
                         @endif
                     </div>
 

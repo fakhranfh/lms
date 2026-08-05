@@ -37,6 +37,7 @@ class SessionsIndexTest extends TestCase
 
         Livewire::test(SessionsIndex::class, ['course' => $this->course])
             ->assertStatus(200)
+            ->call('loadSessions')
             ->assertSee('Session 1');
     }
 

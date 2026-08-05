@@ -99,6 +99,8 @@ use App\Repositories\SchoolTier\SchoolTierRepository;
 use App\Repositories\SchoolTier\SchoolTierRepositoryInterface;
 use App\Repositories\Session\SessionRepository;
 use App\Repositories\Session\SessionRepositoryInterface;
+use App\Repositories\SessionMaterialCompletion\SessionMaterialCompletionRepository;
+use App\Repositories\SessionMaterialCompletion\SessionMaterialCompletionRepositoryInterface;
 use App\Repositories\SessionSubtopic\SessionSubtopicRepository;
 use App\Repositories\SessionSubtopic\SessionSubtopicRepositoryInterface;
 use App\Repositories\StorageUsageLog\StorageUsageLogRepository;
@@ -223,6 +225,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(SessionRepositoryInterface::class, SessionRepository::class);
         $this->app->bind(SessionSubtopicRepositoryInterface::class, SessionSubtopicRepository::class);
+        $this->app->bind(SessionMaterialCompletionRepositoryInterface::class, SessionMaterialCompletionRepository::class);
         $this->app->bind(VideoConferenceRepositoryInterface::class, VideoConferenceRepository::class);
         $this->app->bind(VideoConferenceParticipationRepositoryInterface::class, VideoConferenceParticipationRepository::class);
         $this->app->bind(PeriodRepositoryInterface::class, PeriodRepository::class);

@@ -62,4 +62,20 @@ class Session extends Model
     {
         return $this->hasMany(VideoConference::class);
     }
+
+    /**
+     * @return HasMany<Assessment, $this>
+     */
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(Assessment::class);
+    }
+
+    /**
+     * @return HasMany<Forum, $this>
+     */
+    public function forums(): HasMany
+    {
+        return $this->hasMany(Forum::class);
+    }
 }

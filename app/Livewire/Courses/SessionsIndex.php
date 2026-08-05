@@ -2,10 +2,15 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\MaterialType;
 use App\Enums\RoleName;
 use App\Models\Course;
+use App\Models\MediaLibraryItem;
+use App\Models\Session;
+use App\Services\SessionMaterialCompletionService;
 use App\Services\SessionService;
 use App\Support\CurrentSchool;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
 
 class SessionsIndex extends Component
@@ -21,6 +26,18 @@ class SessionsIndex extends Component
     /** @var array<string, bool> */
     public array $expandedSessions = [];
 
+    public ?string $activeSessionId = null;
+
+    public string $activeCategory = 'material';
+
+    public ?string $activeMaterialId = null;
+
+    /**
+     * Sessions are queried lazily via wire:init (loadSessions), so the initial
+     * page render is a cheap skeleton instead of blocking on the query.
+     */
+    public bool $sessionsLoaded = false;
+
     public function mount(CurrentSchool $currentSchool, Course $course): void
     {
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
@@ -30,9 +47,32 @@ class SessionsIndex extends Component
         $this->isStudent = auth()->user()->hasRole(RoleName::Student);
     }
 
+    public function loadSessions(): void
+    {
+        $this->sessionsLoaded = true;
+    }
+
     public function toggleSession(string $sessionId): void
     {
         $this->expandedSessions[$sessionId] = ! ($this->expandedSessions[$sessionId] ?? false);
+    }
+
+    public function selectSession(string $sessionId): void
+    {
+        $this->activeSessionId = $sessionId;
+        $this->activeCategory = 'material';
+        $this->activeMaterialId = null;
+    }
+
+    /**
+     * Marks a material as completed once viewed. One-way: a material that is
+     * already completed cannot be marked incomplete again.
+     */
+    public function markMaterialCompleted(string $mediaLibraryItemId, SessionMaterialCompletionService $completionService): void
+    {
+        abort_unless($this->activeSessionId !== null, 404);
+
+        $completionService->toggle($this->activeSessionId, $mediaLibraryItemId, auth()->id(), true);
     }
 
     public function confirmDelete(string $sessionId, SessionService $sessionService): void
@@ -51,12 +91,141 @@ class SessionsIndex extends Component
         $this->successMessage = __('Session deleted successfully.');
     }
 
-    public function render(SessionService $sessionService)
+    public function getMaterialIcon(MaterialType $type): string
     {
-        return view('livewire.courses.sessions-index', [
-            'sessions' => $sessionService->forCourse($this->course->id, ['subtopics', 'materials', 'videoConferences']),
-        ])
+        return match ($type) {
+            MaterialType::Video => '🎥',
+            MaterialType::PDF => '📄',
+            MaterialType::Document => '📝',
+            MaterialType::Audio => '🎵',
+            MaterialType::Presentation => '📊',
+            MaterialType::Image => '🖼️',
+            MaterialType::Interactive => '🎮',
+            MaterialType::Markdown => '📄',
+        };
+    }
+
+    /**
+     * @return array{id: string, title: string, type: string, icon: string, isImage: bool, url: string|null}
+     */
+    public function toPreviewPayload(MediaLibraryItem $material): array
+    {
+        return [
+            'id' => (string) $material->id,
+            'title' => $material->title,
+            'type' => $material->type->value,
+            'icon' => $this->getMaterialIcon($material->type),
+            'isImage' => $material->type->value === 'Image',
+            'url' => $material->file_url,
+        ];
+    }
+
+    public function render(SessionService $sessionService, SessionMaterialCompletionService $completionService)
+    {
+        if (! $this->sessionsLoaded) {
+            return view('livewire.courses.sessions-index-placeholder', [
+                'course' => $this->course,
+                'isStudent' => $this->isStudent,
+            ])
+                ->extends('layouts.app', ['topbarTitle' => $this->course->title])
+                ->section('app-content');
+        }
+
+        $with = ['subtopics', 'materials', 'videoConferences'];
+
+        if ($this->isStudent) {
+            $with[] = 'assessments';
+            $with[] = 'forums';
+        }
+
+        $sessions = $sessionService->forCourse($this->course->id, $with);
+
+        $viewData = [
+            'sessions' => $sessions,
+        ];
+
+        if ($this->isStudent) {
+            $viewData = array_merge($viewData, $this->buildStudentViewData($sessions, $completionService));
+        }
+
+        return view($this->isStudent ? 'livewire.courses.sessions-index-student' : 'livewire.courses.sessions-index', $viewData)
             ->extends('layouts.app', ['topbarTitle' => $this->course->title])
             ->section('app-content');
+    }
+
+    /**
+     * @param  Collection<int, Session>  $sessions
+     * @return array<string, mixed>
+     */
+    private function buildStudentViewData(Collection $sessions, SessionMaterialCompletionService $completionService): array
+    {
+        $activeSession = $sessions->firstWhere('id', $this->activeSessionId) ?? $sessions->first();
+
+        if (! $activeSession) {
+            return [
+                'activeSession' => null,
+                'activeCategory' => $this->activeCategory,
+                'completedMaterialIds' => collect(),
+                'progressPercent' => 0,
+                'chips' => [],
+                'activeChipKey' => null,
+                'activeItem' => null,
+                'materialPayloads' => [],
+            ];
+        }
+
+        $this->activeSessionId = $activeSession->id;
+
+        $completedMaterialIds = $completionService->completedMaterialIds($activeSession->id, auth()->id());
+
+        $totalMaterials = $activeSession->materials->count();
+        $progressPercent = $totalMaterials > 0
+            ? (int) round($completedMaterialIds->intersect($activeSession->materials->pluck('id'))->count() / $totalMaterials * 100)
+            : 0;
+
+        $nextMaterial = $activeSession->materials->first(fn ($material) => ! $completedMaterialIds->contains($material->id))
+            ?? $activeSession->materials->first();
+
+        $chips = $activeSession->materials->map(fn ($material) => [
+            'key' => 'material:'.$material->id,
+            'label' => $material->title,
+            'completed' => $completedMaterialIds->contains($material->id),
+            'type' => 'material',
+            'id' => (string) $material->id,
+        ])->values()->all();
+
+        $chips[] = ['key' => 'assessment', 'label' => 'Assessment', 'completed' => false, 'type' => 'assessment', 'id' => null];
+        $chips[] = ['key' => 'forum', 'label' => 'Forum', 'completed' => false, 'type' => 'forum', 'id' => null];
+
+        $activeMaterial = $this->activeMaterialId
+            ? $activeSession->materials->firstWhere('id', $this->activeMaterialId)
+            : null;
+
+        $activeItem = match ($this->activeCategory) {
+            'assessment' => $activeSession->assessments->first(),
+            'forum' => $activeSession->forums->first(),
+            default => $activeMaterial ?? $nextMaterial,
+        };
+
+        $activeChipKey = match (true) {
+            $this->activeCategory === 'material' && $activeItem !== null => 'material:'.$activeItem->id,
+            $activeItem !== null => $this->activeCategory,
+            default => $chips[0]['key'] ?? $this->activeCategory,
+        };
+
+        $materialPayloads = $activeSession->materials->mapWithKeys(
+            fn ($material) => [(string) $material->id => $this->toPreviewPayload($material)]
+        )->all();
+
+        return [
+            'activeSession' => $activeSession,
+            'activeCategory' => $this->activeCategory,
+            'completedMaterialIds' => $completedMaterialIds,
+            'progressPercent' => $progressPercent,
+            'chips' => $chips,
+            'activeChipKey' => $activeChipKey,
+            'activeItem' => $activeItem,
+            'materialPayloads' => $materialPayloads,
+        ];
     }
 }

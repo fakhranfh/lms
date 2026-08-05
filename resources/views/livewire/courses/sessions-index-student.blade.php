@@ -6,6 +6,7 @@
         viewingPayload: null,
         viewerLoading: false,
         pendingSessionId: null,
+        sessionDeliveryModes: @js($sessions->mapWithKeys(fn ($session) => [(string) $session->id => $session->delivery_mode->value])),
         async selectSession(id) {
             this.pendingSessionId = id;
             this.viewingPayload = null;
@@ -60,7 +61,7 @@
                     <div class="h-6 bg-surface-container rounded w-1/3"></div>
                     <div class="flex flex-col items-stretch gap-space-sm flex-shrink-0">
                         <div class="h-9 w-40 bg-surface-container rounded-lg"></div>
-                        <div class="h-9 w-40 bg-surface-container rounded-lg"></div>
+                        <div class="h-9 w-40 bg-surface-container rounded-lg" x-show="sessionDeliveryModes[pendingSessionId] === 'virtual_class'"></div>
                     </div>
                 </div>
 

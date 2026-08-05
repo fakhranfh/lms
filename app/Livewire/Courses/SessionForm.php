@@ -4,6 +4,7 @@ namespace App\Livewire\Courses;
 
 use App\Enums\DeliveryMode;
 use App\Models\Course;
+use App\Models\MediaLibraryItem;
 use App\Models\Session;
 use App\Services\MediaLibraryService;
 use App\Services\SessionService;
@@ -41,6 +42,8 @@ class SessionForm extends Component
 
     /** @var array<int, string> */
     public array $selectedMaterialIds = [];
+
+    public string $materialSearch = '';
 
     /**
      * @var array<int, array{title: string, scheduled_start_at: string, scheduled_end_at: string, meeting_url: string, required_duration_minutes: string}>
@@ -184,7 +187,10 @@ class SessionForm extends Component
         return view('livewire.courses.session-form', [
             'pageTitle' => $this->session ? 'Edit Session' : 'Create Session',
             'deliveryModes' => DeliveryMode::cases(),
-            'mediaItems' => Collection::make($mediaLibraryService->list($schoolId)->get()),
+            'mediaItems' => Collection::make($mediaLibraryService->list($schoolId, null, $this->materialSearch ?: null)->get()),
+            'selectedMediaItems' => $this->selectedMaterialIds === []
+                ? Collection::make()
+                : MediaLibraryItem::whereIn('id', $this->selectedMaterialIds)->get(),
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->session ? 'Edit Session' : 'Create Session'])
             ->section('app-content');

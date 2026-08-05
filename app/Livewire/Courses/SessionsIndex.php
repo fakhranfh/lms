@@ -12,6 +12,7 @@ use App\Services\CoursePersonService;
 use App\Services\SessionMaterialCompletionService;
 use App\Services\SessionService;
 use App\Services\VideoConferenceParticipationService;
+use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
@@ -167,6 +168,7 @@ class SessionsIndex extends Component
 
         $viewData = [
             'sessions' => $sessions,
+            'courseTabs' => CourseTabs::build($this->course, 'session'),
         ];
 
         if ($this->isStudent) {

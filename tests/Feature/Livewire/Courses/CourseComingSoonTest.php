@@ -31,7 +31,7 @@ class CourseComingSoonTest extends TestCase
 
     public function test_renders_coming_soon_for_known_tab(): void
     {
-        Livewire::test(CourseComingSoon::class, ['course' => $this->course, 'tab' => 'syllabus'])
+        Livewire::test(CourseComingSoon::class, ['course' => $this->course, 'tab' => 'forum'])
             ->assertStatus(200)
             ->assertSee('Coming Soon');
     }

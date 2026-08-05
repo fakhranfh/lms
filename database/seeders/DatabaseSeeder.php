@@ -25,6 +25,9 @@ class DatabaseSeeder extends Seeder
         // Seed sessions (with subtopics, media, video conferences) for those courses
         $this->call(SessionSeeder::class);
 
+        // Seed syllabuses (class policies, learning outcomes, evaluations, rubric) for those courses
+        $this->call(SyllabusSeeder::class);
+
         // $this->call(ProductSeeder::class);
     }
 }

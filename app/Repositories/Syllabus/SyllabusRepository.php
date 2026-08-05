@@ -4,6 +4,7 @@ namespace App\Repositories\Syllabus;
 
 use App\Models\Syllabus;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class SyllabusRepository implements SyllabusRepositoryInterface
 {
@@ -48,5 +49,35 @@ class SyllabusRepository implements SyllabusRepositoryInterface
     public function findByCourse(string $courseId, array $with = []): ?Syllabus
     {
         return Syllabus::with($with)->where('course_id', $courseId)->first();
+    }
+
+    /**
+     * Rebuilds the syllabus_materials pivot rows for a syllabus. Not a plain
+     * `sync()` because a single media item can legitimately attach to more
+     * than one section, keyed by the `section` pivot column.
+     *
+     * @param  array<string, array<int, string>>  $selectedMaterialIdsBySection
+     */
+    public function replaceMaterials(string $syllabusId, array $selectedMaterialIdsBySection): void
+    {
+        DB::table('syllabus_materials')->where('syllabus_id', $syllabusId)->delete();
+
+        $rows = [];
+        foreach ($selectedMaterialIdsBySection as $section => $materialIds) {
+            foreach (array_values($materialIds) as $order => $materialId) {
+                $rows[] = [
+                    'syllabus_id' => $syllabusId,
+                    'section' => $section,
+                    'media_library_item_id' => $materialId,
+                    'order' => $order + 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        if ($rows !== []) {
+            DB::table('syllabus_materials')->insert($rows);
+        }
     }
 }

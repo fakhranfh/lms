@@ -18,4 +18,9 @@ interface SyllabusRepositoryInterface
     public function delete(string $id): int;
 
     public function findByCourse(string $courseId, array $with = []): ?Syllabus;
+
+    /**
+     * @param  array<string, array<int, string>>  $selectedMaterialIdsBySection
+     */
+    public function replaceMaterials(string $syllabusId, array $selectedMaterialIdsBySection): void;
 }

@@ -1,7 +1,7 @@
 @section('title', $course->title)
 
 <div class="space-y-space-lg">
-    @include('livewire.courses.partials.course-tabs', ['course' => $course, 'activeTab' => $tab])
+    @include('livewire.courses.partials.course-tabs', ['tabs' => $courseTabs])
 
     <div class="bg-surface border border-outline-variant rounded-lg p-8 text-center">
         <span class="material-symbols-outlined text-on-surface-variant text-[48px] block mx-auto mb-4">construction</span>

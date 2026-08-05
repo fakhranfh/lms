@@ -12,6 +12,8 @@ use App\Livewire\Courses\CourseForm;
 use App\Livewire\Courses\CoursesIndex;
 use App\Livewire\Courses\SessionForm;
 use App\Livewire\Courses\SessionsIndex;
+use App\Livewire\Courses\SyllabusForm;
+use App\Livewire\Courses\SyllabusIndex;
 use App\Livewire\Dashboard;
 use App\Livewire\EditProfile;
 use App\Livewire\MediaLibrary\MediaLibraryIndex;
@@ -72,6 +74,9 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/courses/{course}/sessions', SessionsIndex::class)->middleware('permission:sessions.view')->name('sessions.index');
         Route::get('/courses/{course}/sessions/create', SessionForm::class)->middleware('permission:sessions.create')->name('sessions.create');
         Route::get('/sessions/{session}/edit', SessionForm::class)->middleware('permission:sessions.edit')->name('sessions.edit');
+
+        Route::get('/courses/{course}/syllabus', SyllabusIndex::class)->middleware('permission:syllabus.view')->name('syllabus.index');
+        Route::get('/courses/{course}/syllabus/edit', SyllabusForm::class)->middleware('permission:syllabus.edit')->name('syllabus.edit');
 
         Route::get('/courses/{course}/tabs/{tab}', CourseComingSoon::class)->middleware('permission:courses.view')->name('course-tabs.coming-soon');
 

@@ -33,13 +33,19 @@ Full backend schema for all 7 components + supporting components, built across t
 
 School Admin UI was explicitly deferred (per user decision) — the tab shell and permissions still account for it, but no dedicated screens exist yet.
 
+### UI — Batch 2: Syllabus (Teacher & Student)
+
+- **Syllabus**: 11-section editor (`SyllabusForm`) and viewer (`SyllabusIndex`, split teacher/student rendering via a shared `syllabus-sections-readonly` partial) covering all sections — Course Description, Class Policies (scoped F2F/Video/Online/General), Submission & Collection, Tutorial Activity Plan, Learning Outcomes, Evaluation (class-type groups with weight-sums-to-100 validation and activity↔Learning Outcome mapping), Assessment Rubric (key indicators × proficiency levels matrix), Teaching & Learning Strategies, Textbooks, Competency Map, Video Overview. Per-section optional Media Library attachments via `syllabus_materials`.
+- `syllabus.view` / `syllabus.edit` permissions (Teacher & School Admin: both; Student: view-only), routes registered (`syllabus.index`, `syllabus.edit`).
+- Extracted `App\Support\CourseTabs::build()` to keep tab-href logic out of Blade (repo convention), reused by Session/Syllabus/CourseComingSoon.
+- 26 Livewire feature tests for Syllabus; full `Courses` test folder (Session + Syllabus + CourseComingSoon) 70/70 green; Pint clean; Larastan 0 errors.
+
 ---
 
 ## Not Done
 
 ### UI — remaining components (Teacher & Student), one batch at a time
 
-- **Syllabus** — 11-section editor/viewer (Course Description, Class Policies, Submission & Collection, Tutorial Activity Plan, Learning Outcomes, Evaluation table, Assessment Rubric table, Teaching & Learning Strategies, Textbooks, Competency Map, Video Overview).
 - **Forum** — thread list/create, comment + like UI, per-session vs general course forum.
 - **Assessment** — assessment list; builders/attempt UIs for:
   - THEORY: Personal Assignment

@@ -3,6 +3,7 @@
 namespace App\Livewire\Courses;
 
 use App\Models\Course;
+use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use Livewire\Component;
 
@@ -14,7 +15,6 @@ class CourseComingSoon extends Component
 
     /** @var array<string, string> */
     public array $tabLabels = [
-        'syllabus' => 'Syllabus',
         'forum' => 'Forum',
         'assessment' => 'Assessment',
         'gradebook' => 'Gradebook',
@@ -39,6 +39,7 @@ class CourseComingSoon extends Component
     {
         return view('livewire.courses.course-coming-soon', [
             'tabLabel' => $this->tabLabels[$this->tab],
+            'courseTabs' => CourseTabs::build($this->course, $this->tab),
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->course->title])
             ->section('app-content');

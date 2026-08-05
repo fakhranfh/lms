@@ -43,7 +43,7 @@
         </div>
     @endif
 
-    @include('livewire.courses.partials.course-tabs', ['course' => $course, 'activeTab' => 'session'])
+    @include('livewire.courses.partials.course-tabs', ['tabs' => $courseTabs])
 
     @if ($successMessage)
         <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">

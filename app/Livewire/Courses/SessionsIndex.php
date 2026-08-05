@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\DeliveryMode;
 use App\Enums\MaterialType;
 use App\Enums\RoleName;
 use App\Models\Course;
@@ -9,6 +10,7 @@ use App\Models\MediaLibraryItem;
 use App\Models\Session;
 use App\Services\SessionMaterialCompletionService;
 use App\Services\SessionService;
+use App\Services\VideoConferenceParticipationService;
 use App\Support\CurrentSchool;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
@@ -75,6 +77,28 @@ class SessionsIndex extends Component
         $completionService->toggle($this->activeSessionId, $mediaLibraryItemId, auth()->id(), true);
     }
 
+    /**
+     * Marks a video conference as opened once its link is clicked. One-way,
+     * like material completion, and idempotent (won't duplicate the record).
+     */
+    public function markVideoConferenceOpened(string $videoConferenceId, VideoConferenceParticipationService $participationService): void
+    {
+        $alreadyOpened = $participationService->get([
+            'video_conference_id' => $videoConferenceId,
+            'user_id' => auth()->id(),
+        ])->isNotEmpty();
+
+        if ($alreadyOpened) {
+            return;
+        }
+
+        $participationService->create([
+            'video_conference_id' => $videoConferenceId,
+            'user_id' => auth()->id(),
+            'joined_at' => now(),
+        ]);
+    }
+
     public function confirmDelete(string $sessionId, SessionService $sessionService): void
     {
         abort_unless(auth()->user()->can('sessions.delete'), 403);
@@ -120,7 +144,7 @@ class SessionsIndex extends Component
         ];
     }
 
-    public function render(SessionService $sessionService, SessionMaterialCompletionService $completionService)
+    public function render(SessionService $sessionService, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService)
     {
         if (! $this->sessionsLoaded) {
             return view('livewire.courses.sessions-index-placeholder', [
@@ -145,7 +169,7 @@ class SessionsIndex extends Component
         ];
 
         if ($this->isStudent) {
-            $viewData = array_merge($viewData, $this->buildStudentViewData($sessions, $completionService));
+            $viewData = array_merge($viewData, $this->buildStudentViewData($sessions, $completionService, $participationService));
         }
 
         return view($this->isStudent ? 'livewire.courses.sessions-index-student' : 'livewire.courses.sessions-index', $viewData)
@@ -157,7 +181,7 @@ class SessionsIndex extends Component
      * @param  Collection<int, Session>  $sessions
      * @return array<string, mixed>
      */
-    private function buildStudentViewData(Collection $sessions, SessionMaterialCompletionService $completionService): array
+    private function buildStudentViewData(Collection $sessions, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService): array
     {
         $activeSession = $sessions->firstWhere('id', $this->activeSessionId) ?? $sessions->first();
 
@@ -171,6 +195,8 @@ class SessionsIndex extends Component
                 'activeChipKey' => null,
                 'activeItem' => null,
                 'materialPayloads' => [],
+                'openedVideoConferenceIds' => collect(),
+                'showVideoConferences' => false,
             ];
         }
 
@@ -196,6 +222,25 @@ class SessionsIndex extends Component
 
         $chips[] = ['key' => 'assessment', 'label' => 'Assessment', 'completed' => false, 'type' => 'assessment', 'id' => null];
         $chips[] = ['key' => 'forum', 'label' => 'Forum', 'completed' => false, 'type' => 'forum', 'id' => null];
+
+        $showVideoConferences = $activeSession->delivery_mode === DeliveryMode::Online
+            && $activeSession->videoConferences->isNotEmpty();
+
+        $openedVideoConferenceIds = $showVideoConferences
+            ? $participationService->get([
+                'user_id' => auth()->id(),
+            ])->whereIn('video_conference_id', $activeSession->videoConferences->pluck('id'))->pluck('video_conference_id')
+            : collect();
+
+        if ($showVideoConferences) {
+            $chips[] = [
+                'key' => 'video-conference',
+                'label' => 'Video Conference',
+                'completed' => $activeSession->videoConferences->every(fn ($videoConference) => $openedVideoConferenceIds->contains($videoConference->id)),
+                'type' => 'video-conference',
+                'id' => null,
+            ];
+        }
 
         $activeMaterial = $this->activeMaterialId
             ? $activeSession->materials->firstWhere('id', $this->activeMaterialId)
@@ -226,6 +271,8 @@ class SessionsIndex extends Component
             'activeChipKey' => $activeChipKey,
             'activeItem' => $activeItem,
             'materialPayloads' => $materialPayloads,
+            'openedVideoConferenceIds' => $openedVideoConferenceIds,
+            'showVideoConferences' => $showVideoConferences,
         ];
     }
 }

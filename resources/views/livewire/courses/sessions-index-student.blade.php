@@ -58,7 +58,10 @@
             <div class="w-full bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
                 <div class="flex items-start justify-between gap-space-md">
                     <div class="h-6 bg-surface-container rounded w-1/3"></div>
-                    <div class="h-9 w-40 bg-surface-container rounded-lg flex-shrink-0"></div>
+                    <div class="flex flex-col items-stretch gap-space-sm flex-shrink-0">
+                        <div class="h-9 w-40 bg-surface-container rounded-lg"></div>
+                        <div class="h-9 w-40 bg-surface-container rounded-lg"></div>
+                    </div>
                 </div>
 
                 <div class="space-y-space-sm">
@@ -113,6 +116,7 @@
                         <div class="h-7 bg-surface-container rounded-full w-28"></div>
                         <div class="h-7 bg-surface-container rounded-full w-24"></div>
                         <div class="h-7 bg-surface-container rounded-full w-20"></div>
+                        <div class="h-7 bg-surface-container rounded-full w-32"></div>
                     </div>
                 </div>
 
@@ -130,20 +134,41 @@
 
         @if ($activeSession)
             <!-- Session Detail -->
-            <div wire:loading.remove wire:target="selectSession" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
-                <div class="flex items-start justify-between gap-space-md">
-                    <h1 class="font-headline-sm text-headline-sm text-on-surface">{{ $activeSession->title }}</h1>
+            <div wire:loading.remove wire:target="selectSession" class="relative bg-surface border border-outline-variant rounded-lg p-space-lg">
+                <div class="flex flex-col items-stretch gap-space-sm absolute top-space-lg right-space-lg">
                     <a
                         href="#progress-{{ $activeSession->id }}"
-                        class="flex-shrink-0 px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity inline-flex items-center gap-space-xs"
+                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity inline-flex items-center justify-center gap-space-xs"
                     >
                         <span class="material-symbols-outlined text-[18px]">expand_more</span>
                         Go to Resources
                     </a>
+
+                    @if ($showVideoConferences)
+                        @foreach ($activeSession->videoConferences as $videoConference)
+                            <a
+                                wire:key="video-conference-{{ $videoConference->id }}"
+                                wire:click="markVideoConferenceOpened('{{ $videoConference->id }}')"
+                                href="{{ $videoConference->meeting_url }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="px-space-lg py-space-sm border border-outline text-on-surface rounded-lg font-label-sm text-label-sm hover:bg-surface-container transition-colors inline-flex items-center justify-center gap-space-xs"
+                            >
+                                @if ($openedVideoConferenceIds->contains($videoConference->id))
+                                    <span class="material-symbols-outlined text-success text-[18px]" data-weight="fill">check_circle</span>
+                                @else
+                                    <span class="material-symbols-outlined text-[18px]">videocam</span>
+                                @endif
+                                {{ $videoConference->title ?: 'Video Conference' }}
+                            </a>
+                        @endforeach
+                    @endif
                 </div>
 
+                <h1 class="font-headline-sm text-headline-sm text-on-surface pr-48">{{ $activeSession->title }}</h1>
+
                 @if ($activeSession->learning_outcome)
-                    <div>
+                    <div class="mt-space-sm">
                         <h3 class="font-label-md text-label-md text-on-surface mb-space-sm">Learning Outcome</h3>
                         <ul class="space-y-space-xs">
                             <li class="flex items-start gap-space-sm text-body-sm text-primary">
@@ -155,7 +180,7 @@
                 @endif
 
                 @if ($activeSession->subtopics->isNotEmpty())
-                    <div>
+                    <div class="mt-space-lg">
                         <h3 class="font-label-md text-label-md text-on-surface mb-space-sm">Sub Topic</h3>
                         <ul class="space-y-space-xs">
                             @foreach ($activeSession->subtopics as $subtopic)
@@ -168,7 +193,7 @@
                     </div>
                 @endif
 
-                <div class="grid grid-cols-3 gap-space-md pt-space-md border-t border-outline-variant">
+                <div class="grid grid-cols-3 gap-space-md mt-space-lg pt-space-md border-t border-outline-variant">
                     <div>
                         <p class="text-body-xs text-on-surface-variant uppercase mb-1">Start</p>
                         <p class="text-body-sm text-on-surface">{{ $activeSession->date_start->format('d M Y, H:i') }}</p>
@@ -229,7 +254,7 @@
                     </div>
                 </div>
 
-                @if ($activeSession->materials->isEmpty() && $activeSession->assessments->isEmpty() && $activeSession->forums->isEmpty())
+                @if ($activeSession->materials->isEmpty() && $activeSession->assessments->isEmpty() && $activeSession->forums->isEmpty() && ! $showVideoConferences)
                     <p class="pt-space-md border-t border-outline-variant text-body-sm text-on-surface-variant text-center">
                         Nothing here yet.
                     </p>
@@ -280,6 +305,35 @@
                                 </p>
                             </div>
                         </div>
+
+                        @if ($showVideoConferences)
+                            <div x-show="activeChipKey === 'video-conference'" x-cloak class="space-y-space-xs">
+                                @foreach ($activeSession->videoConferences as $videoConference)
+                                    <div wire:key="video-conference-chip-{{ $videoConference->id }}" class="flex items-center gap-space-md">
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-body-xs text-on-surface-variant flex items-center gap-space-xs">
+                                                <span class="material-symbols-outlined text-[14px]">videocam</span>
+                                                {{ $videoConference->title ?: 'Video Conference' }}
+                                            </p>
+                                        </div>
+                                        @if ($openedVideoConferenceIds->contains($videoConference->id))
+                                            <span class="material-symbols-outlined text-success text-[18px]" data-weight="fill">check_circle</span>
+                                        @else
+                                            <a
+                                                wire:click="markVideoConferenceOpened('{{ $videoConference->id }}')"
+                                                href="{{ $videoConference->meeting_url }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="w-9 h-9 flex items-center justify-center rounded-full border border-outline-variant hover:bg-surface-container transition-colors text-on-surface-variant flex-shrink-0"
+                                                title="Join video conference"
+                                            >
+                                                <span class="material-symbols-outlined text-[18px]">videocam</span>
+                                            </a>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 @endif
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\DeliveryMode;
 use App\Enums\MaterialType;
 use App\Enums\RoleName;
 use App\Livewire\Courses\SessionsIndex;
@@ -11,6 +12,7 @@ use App\Models\Role;
 use App\Models\School;
 use App\Models\Session;
 use App\Models\User;
+use App\Models\VideoConference;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -81,5 +83,34 @@ class SessionsIndexStudentTest extends TestCase
             'media_library_item_id' => $material->id,
             'user_id' => $this->student->id,
         ]);
+    }
+
+    public function test_video_conference_shows_only_for_online_sessions_and_tracks_opened_state(): void
+    {
+        $onlineSession = Session::factory()->for($this->course)->create(['delivery_mode' => DeliveryMode::Online]);
+        $videoConference = VideoConference::factory()->for($onlineSession)->create(['title' => 'Main Meeting']);
+
+        $offlineSession = Session::factory()->for($this->course)->create(['delivery_mode' => DeliveryMode::Offline]);
+        VideoConference::factory()->for($offlineSession)->create(['title' => 'Should Not Show']);
+
+        $component = Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $offlineSession->id)
+            ->assertDontSee('Should Not Show');
+
+        $component->call('selectSession', $onlineSession->id)
+            ->assertSee('Main Meeting');
+
+        $component->call('markVideoConferenceOpened', $videoConference->id);
+
+        $this->assertDatabaseHas('video_conference_participations', [
+            'video_conference_id' => $videoConference->id,
+            'user_id' => $this->student->id,
+        ]);
+
+        // Calling it again must not create a duplicate participation row.
+        $component->call('markVideoConferenceOpened', $videoConference->id);
+
+        $this->assertDatabaseCount('video_conference_participations', 1);
     }
 }

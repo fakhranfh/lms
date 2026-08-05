@@ -23,7 +23,10 @@
         <div class="w-full bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
             <div class="flex items-start justify-between gap-space-md">
                 <div class="h-6 bg-surface-container rounded w-1/3"></div>
-                <div class="h-9 w-40 bg-surface-container rounded-lg flex-shrink-0"></div>
+                <div class="flex flex-col items-stretch gap-space-sm flex-shrink-0">
+                    <div class="h-9 w-40 bg-surface-container rounded-lg"></div>
+                    <div class="h-9 w-40 bg-surface-container rounded-lg"></div>
+                </div>
             </div>
 
             <div class="space-y-space-sm">
@@ -66,6 +69,7 @@
                     <div class="h-7 bg-surface-container rounded-full w-28"></div>
                     <div class="h-7 bg-surface-container rounded-full w-24"></div>
                     <div class="h-7 bg-surface-container rounded-full w-20"></div>
+                    <div class="h-7 bg-surface-container rounded-full w-32"></div>
                 </div>
             </div>
 

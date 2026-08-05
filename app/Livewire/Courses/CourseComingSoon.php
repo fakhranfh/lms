@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\RoleName;
 use App\Models\Course;
+use App\Services\CoursePersonService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use Livewire\Component;
@@ -12,6 +14,8 @@ class CourseComingSoon extends Component
     public Course $course;
 
     public string $tab;
+
+    public bool $isStudent = false;
 
     /** @var array<string, string> */
     public array $tabLabels = [
@@ -33,13 +37,17 @@ class CourseComingSoon extends Component
 
         $this->course = $course;
         $this->tab = $tab;
+        $this->isStudent = auth()->user()->hasRole(RoleName::Student);
     }
 
-    public function render()
+    public function render(CoursePersonService $coursePersonService)
     {
         return view('livewire.courses.course-coming-soon', [
             'tabLabel' => $this->tabLabels[$this->tab],
             'courseTabs' => CourseTabs::build($this->course, $this->tab),
+            'teacher' => $this->isStudent
+                ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
+                : null,
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->course->title])
             ->section('app-content');

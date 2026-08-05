@@ -152,6 +152,10 @@ class SessionsIndex extends Component
             return view('livewire.courses.sessions-index-placeholder', [
                 'course' => $this->course,
                 'isStudent' => $this->isStudent,
+                'courseTabs' => CourseTabs::build($this->course, 'session'),
+                'teacher' => $this->isStudent
+                    ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
+                    : null,
             ])
                 ->extends('layouts.app', ['topbarTitle' => $this->course->title])
                 ->section('app-content');
@@ -169,6 +173,7 @@ class SessionsIndex extends Component
         $viewData = [
             'sessions' => $sessions,
             'courseTabs' => CourseTabs::build($this->course, 'session'),
+            'teacher' => null,
         ];
 
         if ($this->isStudent) {

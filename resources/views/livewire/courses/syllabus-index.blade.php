@@ -1,13 +1,10 @@
 @section('title', $course->title)
 
 <div class="space-y-space-lg">
-    @include('livewire.courses.partials.course-tabs', ['tabs' => $courseTabs])
+    @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => $teacher])
 
     <div class="flex items-start justify-between">
-        <div>
-            <h1 class="font-headline-md text-headline-md text-on-surface">Syllabus</h1>
-            <p class="text-body-sm text-on-surface-variant mt-space-xs">{{ $course->title }}</p>
-        </div>
+        <h2 class="font-label-lg text-label-lg text-on-surface">Syllabus</h2>
 
         @if ($canEdit && $syllabus)
             <a

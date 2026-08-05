@@ -1,33 +1,9 @@
 @section('title', $course->title)
 
-<div wire:init="loadSessions" class="space-y-space-lg animate-pulse">
-    @if ($isStudent)
-        <!-- Course title + back button skeleton -->
-        <div class="flex items-center justify-between gap-space-md">
-            <div class="h-6 bg-surface-container rounded w-56"></div>
-            <div class="h-8 w-20 bg-surface-container rounded-lg flex-shrink-0"></div>
-        </div>
+<div wire:init="loadSessions" class="space-y-space-lg">
+    @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => $teacher])
 
-        <!-- Teacher skeleton -->
-        <div class="flex items-center gap-space-md">
-            <div class="w-10 h-10 rounded-full bg-surface-container flex-shrink-0"></div>
-            <div class="space-y-space-xs">
-                <div class="h-3 bg-surface-container rounded w-28"></div>
-                <div class="h-2 bg-surface-container rounded w-14"></div>
-            </div>
-        </div>
-    @endif
-
-    <!-- Course tabs -->
-    <div class="border-b border-outline-variant mb-space-lg">
-        <div class="flex gap-space-lg">
-            <div class="h-9 w-20 bg-surface-container rounded"></div>
-            <div class="h-9 w-20 bg-surface-container rounded"></div>
-            <div class="h-9 w-20 bg-surface-container rounded"></div>
-            <div class="h-9 w-20 bg-surface-container rounded"></div>
-        </div>
-    </div>
-
+    <div class="space-y-space-lg animate-pulse">
     @if ($isStudent)
         <!-- Session tabs -->
         <div class="flex gap-space-xs pb-space-xs border-b border-outline-variant">
@@ -119,4 +95,5 @@
             @endfor
         </div>
     @endif
+    </div>
 </div>

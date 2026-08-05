@@ -45,6 +45,9 @@ class SyllabusIndex extends Component
                 'course' => $this->course,
                 'isStudent' => $this->isStudent,
                 'courseTabs' => CourseTabs::build($this->course, 'syllabus'),
+                'teacher' => $this->isStudent
+                    ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
+                    : null,
             ])
                 ->extends('layouts.app', ['topbarTitle' => $this->course->title])
                 ->section('app-content');
@@ -77,6 +80,7 @@ class SyllabusIndex extends Component
             'submissionPoints' => $this->splitIntoPoints($syllabus?->submission_and_collection),
             'teachingLearningStrategyPoints' => $this->splitIntoPoints($syllabus?->teaching_learning_strategies),
             'textbookPoints' => $this->splitIntoPoints($syllabus?->textbooks),
+            'teacher' => null,
         ];
 
         if ($this->isStudent) {

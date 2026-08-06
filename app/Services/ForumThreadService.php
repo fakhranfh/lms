@@ -50,4 +50,9 @@ class ForumThreadService
     {
         return $this->forumThreadRepository->totalPostsForForum($forumId);
     }
+
+    public function myPostsCountForForum(string $forumId, string $userId): int
+    {
+        return $this->forumThreadRepository->myPostsCountForForum($forumId, $userId);
+    }
 }

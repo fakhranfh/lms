@@ -2,6 +2,7 @@
 
 namespace App\Repositories\ForumThread;
 
+use App\Models\ForumComment;
 use App\Models\ForumThread;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -80,5 +81,19 @@ class ForumThreadRepository implements ForumThreadRepositoryInterface
             'threads' => (int) ($totals->threads ?? 0),
             'comments' => (int) ($totals->comments ?? 0),
         ];
+    }
+
+    public function myPostsCountForForum(string $forumId, string $userId): int
+    {
+        $threadIds = ForumThread::where('forum_id', $forumId)->pluck('id');
+
+        if ($threadIds->isEmpty()) {
+            return 0;
+        }
+
+        $threadsByUser = ForumThread::whereIn('id', $threadIds)->where('user_id', $userId)->count();
+        $commentsByUser = ForumComment::whereIn('thread_id', $threadIds)->where('user_id', $userId)->count();
+
+        return $threadsByUser + $commentsByUser;
     }
 }

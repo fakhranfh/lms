@@ -33,4 +33,6 @@ interface ForumThreadRepositoryInterface
      * @return array{threads: int, comments: int}
      */
     public function totalPostsForForum(string $forumId): array;
+
+    public function myPostsCountForForum(string $forumId, string $userId): int;
 }

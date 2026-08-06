@@ -6,19 +6,25 @@ use App\Enums\DeliveryMode;
 use App\Enums\MaterialType;
 use App\Enums\RoleName;
 use App\Models\Course;
+use App\Models\ForumThread;
 use App\Models\MediaLibraryItem;
+use App\Models\Role;
 use App\Models\Session;
 use App\Services\CoursePersonService;
+use App\Services\ForumThreadService;
 use App\Services\SessionMaterialCompletionService;
 use App\Services\SessionService;
 use App\Services\VideoConferenceParticipationService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
+use App\Support\HtmlSanitizer;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
 
 class SessionsIndex extends Component
 {
+    private const REQUIRED_FORUM_POSTS = 2;
+
     public Course $course;
 
     public ?string $successMessage = null;
@@ -35,6 +41,16 @@ class SessionsIndex extends Component
     public string $activeCategory = 'material';
 
     public ?string $activeMaterialId = null;
+
+    public ?string $activeForumId = null;
+
+    public string $newThreadTitle = '';
+
+    public string $newThreadDescription = '';
+
+    public int $forumPerPage = 5;
+
+    public int $forumPage = 1;
 
     /**
      * Sessions are queried lazily via wire:init (loadSessions), so the initial
@@ -66,6 +82,26 @@ class SessionsIndex extends Component
         $this->activeSessionId = $sessionId;
         $this->activeCategory = 'material';
         $this->activeMaterialId = null;
+        $this->forumPage = 1;
+    }
+
+    public function updatedForumPerPage(): void
+    {
+        $this->forumPage = 1;
+    }
+
+    public function gotoForumPage(int $page): void
+    {
+        $this->forumPage = max(1, $page);
+    }
+
+    /**
+     * No-op action so opening the Forum chip triggers a Livewire round trip,
+     * letting wire:loading show the forum skeleton on click.
+     */
+    public function viewForumTab(): void
+    {
+        //
     }
 
     /**
@@ -99,6 +135,35 @@ class SessionsIndex extends Component
             'user_id' => auth()->id(),
             'joined_at' => now(),
         ]);
+    }
+
+    public function createThread(ForumThreadService $forumThreadService): void
+    {
+        abort_unless(auth()->user()->can('forum.create'), 403);
+        abort_unless($this->activeForumId !== null, 404);
+
+        $this->validate([
+            'newThreadTitle' => 'required|string|max:255',
+            'newThreadDescription' => 'nullable|string',
+        ]);
+
+        $forumThreadService->create([
+            'forum_id' => $this->activeForumId,
+            'user_id' => auth()->id(),
+            'title' => $this->newThreadTitle,
+            'description' => HtmlSanitizer::forum($this->newThreadDescription),
+        ]);
+
+        $this->forumPage = 1;
+        $this->resetThreadForm();
+        $this->dispatch('thread-created');
+    }
+
+    private function resetThreadForm(): void
+    {
+        $this->newThreadTitle = '';
+        $this->newThreadDescription = '';
+        $this->resetErrorBag(['newThreadTitle', 'newThreadDescription']);
     }
 
     public function confirmDelete(string $sessionId, SessionService $sessionService): void
@@ -146,7 +211,7 @@ class SessionsIndex extends Component
         ];
     }
 
-    public function render(SessionService $sessionService, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService, CoursePersonService $coursePersonService)
+    public function render(SessionService $sessionService, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService, CoursePersonService $coursePersonService, ForumThreadService $forumThreadService)
     {
         if (! $this->sessionsLoaded) {
             return view('livewire.courses.sessions-index-placeholder', [
@@ -177,7 +242,7 @@ class SessionsIndex extends Component
         ];
 
         if ($this->isStudent) {
-            $viewData = array_merge($viewData, $this->buildStudentViewData($sessions, $completionService, $participationService));
+            $viewData = array_merge($viewData, $this->buildStudentViewData($sessions, $completionService, $participationService, $forumThreadService));
             $viewData['teacher'] = $coursePersonService->teachersForCourse($this->course->id)->first()?->user;
         }
 
@@ -190,7 +255,7 @@ class SessionsIndex extends Component
      * @param  Collection<int, Session>  $sessions
      * @return array<string, mixed>
      */
-    private function buildStudentViewData(Collection $sessions, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService): array
+    private function buildStudentViewData(Collection $sessions, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService, ForumThreadService $forumThreadService): array
     {
         $activeSession = $sessions->firstWhere('id', $this->activeSessionId) ?? $sessions->first();
 
@@ -206,6 +271,12 @@ class SessionsIndex extends Component
                 'materialPayloads' => [],
                 'openedVideoConferenceIds' => collect(),
                 'showVideoConferences' => false,
+                'forumTotalPosts' => 0,
+                'forumMyPostsCount' => 0,
+                'forumRequiredPosts' => self::REQUIRED_FORUM_POSTS,
+                'forumThreadPreviews' => [],
+                'canCreateForumThread' => auth()->user()->can('forum.create'),
+                'forumPagination' => null,
             ];
         }
 
@@ -261,6 +332,31 @@ class SessionsIndex extends Component
             fn ($material) => [(string) $material->id => $this->toPreviewPayload($material)]
         )->all();
 
+        $forum = $activeSession->forums->first();
+
+        $forumTotalPosts = 0;
+        $forumMyPostsCount = 0;
+        $forumThreadPreviews = [];
+        $forumPagination = null;
+
+        $this->activeForumId = $forum?->id;
+
+        if ($forum) {
+            $totals = $forumThreadService->totalPostsForForum($forum->id);
+            $forumTotalPosts = $totals['threads'] + $totals['comments'];
+            $forumMyPostsCount = $forumThreadService->myPostsCountForForum($forum->id, auth()->id());
+
+            $forumThreads = $forumThreadService->paginateForForum($forum->id, $this->forumPerPage, $this->forumPage, ['user', 'user.roles']);
+            $forumThreadPreviews = $this->toForumThreadPreviews($forumThreads->items());
+            $forumPagination = [
+                'total' => $forumThreads->total(),
+                'currentPage' => $forumThreads->currentPage(),
+                'lastPage' => $forumThreads->lastPage(),
+                'onFirstPage' => $forumThreads->onFirstPage(),
+                'hasMorePages' => $forumThreads->hasMorePages(),
+            ];
+        }
+
         return [
             'activeSession' => $activeSession,
             'activeCategory' => $this->activeCategory,
@@ -272,6 +368,39 @@ class SessionsIndex extends Component
             'materialPayloads' => $materialPayloads,
             'openedVideoConferenceIds' => $openedVideoConferenceIds,
             'showVideoConferences' => $showVideoConferences,
+            'forumTotalPosts' => $forumTotalPosts,
+            'forumMyPostsCount' => $forumMyPostsCount,
+            'forumRequiredPosts' => self::REQUIRED_FORUM_POSTS,
+            'forumThreadPreviews' => $forumThreadPreviews,
+            'canCreateForumThread' => auth()->user()->can('forum.create'),
+            'forumPagination' => $forumPagination,
         ];
+    }
+
+    /**
+     * @param  array<int, ForumThread>  $threads
+     * @return array<int, array{id: string, title: string, commentsCount: int, createdAtLabel: string, userName: string, userInitial: string, userAvatarUrl: string|null, roleLabel: string|null}>
+     */
+    private function toForumThreadPreviews(array $threads): array
+    {
+        $rows = [];
+
+        foreach ($threads as $thread) {
+            /** @var Role|null $role */
+            $role = $thread->user->roles->first();
+
+            $rows[] = [
+                'id' => $thread->id,
+                'title' => $thread->title,
+                'commentsCount' => $thread->comments_count,
+                'createdAtLabel' => $thread->created_at_display->format('d M Y, H:i'),
+                'userName' => $thread->user->name,
+                'userInitial' => strtoupper(substr($thread->user->name ?: 'U', 0, 1)),
+                'userAvatarUrl' => $thread->user->profile_photo_path,
+                'roleLabel' => $role?->name,
+            ];
+        }
+
+        return $rows;
     }
 }

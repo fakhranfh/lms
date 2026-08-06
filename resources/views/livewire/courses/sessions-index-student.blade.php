@@ -6,15 +6,18 @@
         viewingPayload: null,
         viewerLoading: false,
         pendingSessionId: null,
+        showThreadForm: false,
         sessionDeliveryModes: @js($sessions->mapWithKeys(fn ($session) => [(string) $session->id => $session->delivery_mode->value])),
         async selectSession(id) {
             this.pendingSessionId = id;
             this.viewingPayload = null;
             this.viewerLoading = false;
+            this.showThreadForm = false;
             await this.$wire.selectSession(id);
             this.pendingSessionId = null;
         },
     }"
+    x-on:thread-created.window="showThreadForm = false"
 >
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => $teacher])
 
@@ -239,6 +242,7 @@
                             <button
                                 type="button"
                                 @click="activeChipKey = '{{ $chip['key'] }}'; viewingPayload = null; viewerLoading = false"
+                                @if ($chip['key'] === 'forum') wire:click="viewForumTab" @endif
                                 wire:key="chip-{{ $chip['key'] }}"
                                 class="inline-flex items-center h-7 gap-space-xs {{ $chip['completed'] ? 'pl-space-xs' : 'pl-space-md' }} pr-space-md rounded-full border font-label-sm text-label-sm transition-colors"
                                 :class="activeChipKey === '{{ $chip['key'] }}' ? 'border-primary bg-primary/5 text-on-surface' : 'border-outline-variant text-on-surface hover:bg-surface-container/50'"
@@ -293,26 +297,217 @@
                             </div>
                         </div>
 
-                        <div x-show="activeChipKey === 'forum'" x-cloak class="flex items-center gap-space-md">
-                            <div class="min-w-0 flex-1">
-                                <p class="text-body-xs text-on-surface-variant flex items-center gap-space-xs">
-                                    <span class="material-symbols-outlined text-[14px]">forum</span>
-                                    @if ($activeSession->forums->isNotEmpty())
-                                        <a href="{{ route('forum.index', [$course, 'session' => $activeSession->id]) }}" wire:navigate class="text-primary hover:underline">
-                                            Go to session forum
-                                        </a>
-                                    @else
-                                        No forum yet.
-                                    @endif
-                                </p>
+                        <div x-show="activeChipKey === 'forum'" x-cloak class="space-y-space-md">
+                            <!-- Forum skeleton loading (opening the tab) -->
+                            <div wire:loading wire:target="viewForumTab" class="w-full space-y-space-md animate-pulse">
+                                <div class="w-full flex flex-wrap gap-space-xl">
+                                    @for ($i = 0; $i < 4; $i++)
+                                        <div class="space-y-space-xs">
+                                            <div class="h-3 bg-surface-container rounded w-10"></div>
+                                            <div class="h-4 bg-surface-container rounded w-32"></div>
+                                        </div>
+                                    @endfor
+                                </div>
+
+                                <div class="h-10 w-44 bg-surface-container rounded-lg"></div>
+
+                                <div class="w-full flex flex-wrap items-center justify-between gap-space-md pb-space-sm border-b border-outline-variant">
+                                    <div class="h-4 bg-surface-container rounded w-20"></div>
+                                    <div class="h-9 w-40 bg-surface-container rounded-lg"></div>
+                                </div>
+
+                                <div class="w-full border border-outline-variant rounded-lg divide-y divide-outline-variant overflow-hidden">
+                                    @for ($i = 0; $i < 3; $i++)
+                                        <div class="w-full p-space-md flex items-start gap-space-md">
+                                            <div class="w-10 h-10 rounded-full bg-surface-container flex-shrink-0"></div>
+                                            <div class="min-w-0 flex-1 space-y-space-xs">
+                                                <div class="h-3 bg-surface-container rounded w-1/4"></div>
+                                                <div class="h-3 bg-surface-container rounded w-1/3"></div>
+                                                <div class="h-4 bg-surface-container rounded w-2/3"></div>
+                                            </div>
+                                            <div class="h-4 w-8 bg-surface-container rounded flex-shrink-0"></div>
+                                        </div>
+                                    @endfor
+                                </div>
                             </div>
+
+                            <div wire:loading.remove wire:target="viewForumTab" class="w-full space-y-space-md">
+                            @if ($activeSession->forums->isNotEmpty())
+                                <div class="flex flex-wrap gap-space-xl">
+                                    <div>
+                                        <p class="text-body-xs text-on-surface-variant">Start</p>
+                                        <p class="text-body-sm text-on-surface">{{ $activeSession->date_start->format('d M Y, H:i') }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-body-xs text-on-surface-variant">End</p>
+                                        <p class="text-body-sm text-on-surface">{{ $activeSession->date_end->format('d M Y, H:i') }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-body-xs text-on-surface-variant">Total Post</p>
+                                        <p class="text-body-sm text-on-surface">{{ $forumTotalPosts }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-body-xs text-on-surface-variant">My Post</p>
+                                        <p class="text-body-sm text-on-surface inline-flex items-center gap-1">
+                                            {{ min($forumMyPostsCount, $forumRequiredPosts) }} of {{ $forumRequiredPosts }}
+                                            @if ($forumMyPostsCount >= $forumRequiredPosts)
+                                                <span class="material-symbols-outlined text-[16px] text-green-600" data-weight="fill">check_circle</span>
+                                            @endif
+                                        </p>
+                                    </div>
+                                </div>
+
+                                @if ($canCreateForumThread)
+                                    <button
+                                        @click="showThreadForm = true"
+                                        x-show="! showThreadForm"
+                                        type="button"
+                                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm"
+                                    >
+                                        Create New Thread
+                                    </button>
+
+                                    <div x-show="showThreadForm" x-cloak class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+                                        <div>
+                                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Title</label>
+                                            <input
+                                                type="text"
+                                                wire:model="newThreadTitle"
+                                                class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                            />
+                                            @error('newThreadTitle') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                                        </div>
+
+                                        <div>
+                                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Description</label>
+                                            <x-rich-text-editor id="new-thread-session" wire-model="newThreadDescription" :value="$newThreadDescription" />
+                                            @error('newThreadDescription') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                                        </div>
+
+                                        <div class="flex gap-space-md">
+                                            <button
+                                                @click="showThreadForm = false"
+                                                type="button"
+                                                class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                wire:click="createThread"
+                                                wire:loading.attr="disabled"
+                                                wire:target="createThread"
+                                                type="button"
+                                                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                            >
+                                                <span wire:loading.remove wire:target="createThread">Post Thread</span>
+                                                <span wire:loading wire:target="createThread">Posting…</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if ($forumPagination)
+                                    <div class="flex flex-wrap items-center justify-between gap-space-md pb-space-sm border-b border-outline-variant">
+                                        <p class="text-body-sm text-on-surface-variant">{{ $forumPagination['total'] }} Result{{ $forumPagination['total'] !== 1 ? 's' : '' }}</p>
+
+                                        <div class="flex items-center gap-space-lg">
+                                            <label class="flex items-center gap-space-sm">
+                                                <span class="text-body-sm text-on-surface-variant">Show:</span>
+                                                <select wire:model.live="forumPerPage" class="h-[36px] px-2 rounded-lg border border-outline-variant bg-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                                    <option value="5">5</option>
+                                                    <option value="10">10</option>
+                                                    <option value="25">25</option>
+                                                </select>
+                                            </label>
+
+                                            @if ($forumPagination['lastPage'] > 1)
+                                                <div class="flex items-center gap-space-xs">
+                                                    <button wire:click="gotoForumPage(1)" type="button" class="w-8 h-8 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container disabled:opacity-40" @disabled($forumPagination['onFirstPage'])>«</button>
+                                                    <button wire:click="gotoForumPage({{ $forumPagination['currentPage'] - 1 }})" type="button" class="w-8 h-8 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container disabled:opacity-40" @disabled($forumPagination['onFirstPage'])>‹</button>
+                                                    <button wire:click="gotoForumPage({{ $forumPagination['currentPage'] + 1 }})" type="button" class="w-8 h-8 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container disabled:opacity-40" @disabled(! $forumPagination['hasMorePages'])>›</button>
+                                                    <button wire:click="gotoForumPage({{ $forumPagination['lastPage'] }})" type="button" class="w-8 h-8 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container disabled:opacity-40" @disabled(! $forumPagination['hasMorePages'])>»</button>
+                                                </div>
+
+                                                <label class="flex items-center gap-space-sm">
+                                                    <span class="text-body-sm text-on-surface-variant">Page:</span>
+                                                    <select wire:model.live="forumPage" class="h-[36px] px-2 rounded-lg border border-outline-variant bg-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                                        @for ($i = 1; $i <= $forumPagination['lastPage']; $i++)
+                                                            <option value="{{ $i }}">{{ $i }}</option>
+                                                        @endfor
+                                                    </select>
+                                                </label>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <!-- Thread list skeleton while changing per-page/page -->
+                                <div wire:loading wire:target="forumPerPage, gotoForumPage, forumPage" class="w-full border border-outline-variant rounded-lg divide-y divide-outline-variant overflow-hidden animate-pulse">
+                                    @for ($i = 0; $i < 3; $i++)
+                                        <div class="w-full p-space-md flex items-start gap-space-md">
+                                            <div class="w-10 h-10 rounded-full bg-surface-container flex-shrink-0"></div>
+                                            <div class="min-w-0 flex-1 space-y-space-xs">
+                                                <div class="h-3 bg-surface-container rounded w-1/4"></div>
+                                                <div class="h-3 bg-surface-container rounded w-1/3"></div>
+                                                <div class="h-4 bg-surface-container rounded w-2/3"></div>
+                                            </div>
+                                            <div class="h-4 w-8 bg-surface-container rounded flex-shrink-0"></div>
+                                        </div>
+                                    @endfor
+                                </div>
+
+                                <div wire:loading.remove wire:target="forumPerPage, gotoForumPage, forumPage">
+                                @if (! empty($forumThreadPreviews))
+                                    <div class="border border-outline-variant rounded-lg divide-y divide-outline-variant overflow-hidden">
+                                        @foreach ($forumThreadPreviews as $thread)
+                                                <a
+                                                    href="{{ route('forum.thread.show', [$course, $thread['id']]) }}"
+                                                    wire:navigate
+                                                    wire:key="forum-preview-{{ $thread['id'] }}"
+                                                    class="flex items-start gap-space-md p-space-md hover:bg-surface-container/50 transition-colors"
+                                                >
+                                                    @if ($thread['userAvatarUrl'])
+                                                        <img src="{{ $thread['userAvatarUrl'] }}" alt="{{ $thread['userName'] }}" class="w-10 h-10 rounded-full object-cover border border-outline-variant flex-shrink-0">
+                                                    @else
+                                                        <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-label-md text-label-md flex-shrink-0">
+                                                            {{ $thread['userInitial'] }}
+                                                        </div>
+                                                    @endif
+
+                                                    <div class="min-w-0 flex-1">
+                                                        <p class="text-body-sm text-on-surface">
+                                                            <span class="font-medium">{{ $thread['userName'] }}</span>
+                                                            @if ($thread['roleLabel'])
+                                                                <span class="text-on-surface-variant">&middot;</span>
+                                                                <span class="text-primary">{{ $thread['roleLabel'] }}</span>
+                                                            @endif
+                                                        </p>
+                                                        <p class="text-body-xs text-on-surface-variant">{{ $thread['createdAtLabel'] }}</p>
+                                                        <h3 class="font-body-md text-body-md text-on-surface mt-1">{{ $thread['title'] }}</h3>
+                                                    </div>
+
+                                                    <span class="inline-flex items-center gap-1 text-body-sm text-on-surface-variant flex-shrink-0">
+                                                        <span class="material-symbols-outlined text-[18px]">chat_bubble_outline</span>
+                                                        {{ $thread['commentsCount'] }}
+                                                    </span>
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            @else
+                                <p class="text-body-sm text-on-surface-variant flex items-center gap-space-xs">
+                                    <span class="material-symbols-outlined text-[14px]">forum</span>
+                                    No forum yet.
+                                </p>
+                            @endif
                         </div>
 
                     </div>
                 @endif
 
                 <!-- Idle state: illustration + Start Learning -->
-                <div class="flex flex-col items-center text-center gap-space-lg py-space-lg" x-show="!viewingPayload && !viewerLoading">
+                <div class="flex flex-col items-center text-center gap-space-lg py-space-lg" x-show="!viewingPayload && !viewerLoading && activeChipKey !== 'forum'">
                     <div class="w-40 h-40 rounded-full bg-primary/10 flex items-center justify-center">
                         <span class="material-symbols-outlined text-primary text-[72px]">school</span>
                     </div>

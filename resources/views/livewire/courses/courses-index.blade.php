@@ -32,12 +32,12 @@
     <!-- Search -->
     <div class="flex gap-space-md">
         <div class="flex-1 relative">
-            <span class="material-symbols-outlined absolute left-space-lg top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+            <span class="material-symbols-outlined absolute inset-y-0 left-space-md flex items-center leading-none text-on-surface-variant text-[18px]">search</span>
             <input
                 type="text"
                 wire:model.live.debounce.300ms="search"
                 placeholder="Search courses..."
-                class="w-full pl-12 pr-space-lg py-space-md border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                class="w-full pl-10 pr-space-lg py-space-md border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
         </div>
     </div>

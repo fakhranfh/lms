@@ -59,6 +59,6 @@ class ForumComment extends Model
      */
     public function replies(): HasMany
     {
-        return $this->hasMany(ForumComment::class, 'parent_id')->oldest();
+        return $this->hasMany(ForumComment::class, 'parent_id')->latest();
     }
 }

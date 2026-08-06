@@ -22,6 +22,24 @@ class ForumThreadShow extends Component
 
     public bool $commentsLoaded = false;
 
+    public int $perPage = 10;
+
+    public int $page = 1;
+
+    public string $sortBy = 'latest_comment';
+
+    /**
+     * @var array<string, string>
+     */
+    public array $sortOptions = [
+        'latest_comment' => 'Latest Comment',
+        'oldest_comment' => 'Oldest Comment',
+        'latest_reply' => 'Latest Reply',
+        'oldest_reply' => 'Oldest Reply',
+        'most_liked_comment' => 'Most Liked Comment',
+        'most_liked_reply' => 'Most Liked Reply',
+    ];
+
     public string $newCommentBody = '';
 
     public bool $editingThread = false;
@@ -30,11 +48,7 @@ class ForumThreadShow extends Component
 
     public string $editThreadDescription = '';
 
-    public ?string $editingCommentId = null;
-
     public string $editCommentBody = '';
-
-    public ?string $replyingToCommentId = null;
 
     public string $newReplyBody = '';
 
@@ -55,6 +69,21 @@ class ForumThreadShow extends Component
         $this->commentsLoaded = true;
     }
 
+    public function updatedPerPage(): void
+    {
+        $this->page = 1;
+    }
+
+    public function updatedSortBy(): void
+    {
+        $this->page = 1;
+    }
+
+    public function gotoPage(int $page): void
+    {
+        $this->page = max(1, $page);
+    }
+
     public function addComment(ForumCommentService $forumCommentService): void
     {
         abort_unless(auth()->user()->can('forum.create'), 403);
@@ -71,6 +100,7 @@ class ForumThreadShow extends Component
 
         $this->newCommentBody = '';
         $this->thread->refresh();
+        $this->dispatch('rich-text-cleared', id: 'new-comment');
     }
 
     public function deleteComment(string $commentId, ForumCommentService $forumCommentService): void
@@ -87,36 +117,11 @@ class ForumThreadShow extends Component
         $this->thread->refresh();
     }
 
-    public function startEditComment(string $commentId, ForumCommentService $forumCommentService): void
+    public function updateComment(string $commentId, ForumCommentService $forumCommentService): void
     {
         $comment = $forumCommentService->find($commentId);
 
         if (! $comment) {
-            return;
-        }
-
-        abort_unless($comment->user_id === auth()->id() || auth()->user()->can('forum.moderate'), 403);
-
-        $this->editingCommentId = $comment->id;
-        $this->editCommentBody = $comment->body;
-    }
-
-    public function cancelEditComment(): void
-    {
-        $this->editingCommentId = null;
-        $this->editCommentBody = '';
-        $this->resetErrorBag(['editCommentBody']);
-    }
-
-    public function updateComment(ForumCommentService $forumCommentService): void
-    {
-        abort_unless($this->editingCommentId !== null, 404);
-
-        $comment = $forumCommentService->find($this->editingCommentId);
-
-        if (! $comment) {
-            $this->cancelEditComment();
-
             return;
         }
 
@@ -130,28 +135,16 @@ class ForumThreadShow extends Component
             'body' => HtmlSanitizer::forum($this->editCommentBody),
         ]);
 
-        $this->cancelEditComment();
+        $this->editCommentBody = '';
+        $this->resetErrorBag(['editCommentBody']);
+        $this->dispatch('comment-updated');
     }
 
-    public function startReply(string $commentId): void
-    {
-        $this->replyingToCommentId = $commentId;
-        $this->newReplyBody = '';
-    }
-
-    public function cancelReply(): void
-    {
-        $this->replyingToCommentId = null;
-        $this->newReplyBody = '';
-        $this->resetErrorBag(['newReplyBody']);
-    }
-
-    public function addReply(ForumCommentService $forumCommentService): void
+    public function addReply(string $commentId, ForumCommentService $forumCommentService): void
     {
         abort_unless(auth()->user()->can('forum.create'), 403);
-        abort_unless($this->replyingToCommentId !== null, 404);
 
-        $parent = $forumCommentService->find($this->replyingToCommentId);
+        $parent = $forumCommentService->find($commentId);
 
         abort_unless($parent !== null && $parent->parent_id === null, 404);
 
@@ -166,8 +159,11 @@ class ForumThreadShow extends Component
             'body' => HtmlSanitizer::forum($this->newReplyBody),
         ]);
 
-        $this->cancelReply();
+        $this->newReplyBody = '';
+        $this->resetErrorBag(['newReplyBody']);
         $this->thread->refresh();
+        $this->dispatch('reply-added');
+        $this->dispatch('rich-text-cleared', id: 'reply-'.$commentId);
     }
 
     public function startEditThread(): void
@@ -218,21 +214,38 @@ class ForumThreadShow extends Component
     {
         $comments = collect();
         $likedCommentIds = collect();
+        $pagination = null;
 
         if ($this->commentsLoaded) {
-            $comments = $forumCommentService->topLevelForThread($this->thread->id, ['user', 'replies.user']);
+            $paginatedComments = $forumCommentService->paginateTopLevelForThread(
+                $this->thread->id,
+                $this->perPage,
+                $this->page,
+                ['user', 'replies.user'],
+                $this->sortBy
+            );
+            $comments = collect($paginatedComments->items());
 
             $allCommentIds = $comments->pluck('id')
                 ->concat($comments->flatMap(fn (ForumComment $comment) => $comment->replies->pluck('id')))
                 ->all();
 
             $likedCommentIds = $forumCommentLikeService->likedCommentIdsForUser($allCommentIds, auth()->id());
+
+            $pagination = [
+                'total' => $paginatedComments->total(),
+                'currentPage' => $paginatedComments->currentPage(),
+                'lastPage' => $paginatedComments->lastPage(),
+                'onFirstPage' => $paginatedComments->onFirstPage(),
+                'hasMorePages' => $paginatedComments->hasMorePages(),
+            ];
         }
 
         return view('livewire.courses.forum-thread-show', [
             'course' => $this->course,
             'thread' => $this->thread,
             'comments' => $comments,
+            'pagination' => $pagination,
             'likedCommentIds' => $likedCommentIds,
             'canCreate' => auth()->user()->can('forum.create'),
             'canModerate' => auth()->user()->can('forum.moderate'),

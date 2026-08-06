@@ -6,7 +6,9 @@
         class="trix-content bg-surface border border-outline rounded-lg"
         x-data
         x-init="
-            $el.editor.loadHTML(@js($value));
+            $el.addEventListener('trix-initialize', () => {
+                $el.editor.loadHTML(@js($value));
+            });
             $el.addEventListener('trix-change', () => {
                 $wire.set('{{ $wireModel }}', $el.innerHTML, false);
             });

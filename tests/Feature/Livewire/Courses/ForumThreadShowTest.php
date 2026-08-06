@@ -216,9 +216,8 @@ class ForumThreadShowTest extends TestCase
 
         Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread])
             ->call('loadComments')
-            ->call('startEditComment', $comment->id)
             ->set('editCommentBody', 'Edited body')
-            ->call('updateComment')
+            ->call('updateComment', $comment->id)
             ->assertSee('Edited body');
 
         $this->assertSame('Edited body', $comment->fresh()->body);
@@ -233,9 +232,8 @@ class ForumThreadShowTest extends TestCase
 
         Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread])
             ->call('loadComments')
-            ->call('startReply', $comment->id)
             ->set('newReplyBody', 'A reply')
-            ->call('addReply')
+            ->call('addReply', $comment->id)
             ->assertSee('A reply');
 
         $this->assertDatabaseHas('forum_comments', ['parent_id' => $comment->id, 'body' => 'A reply']);
@@ -251,9 +249,23 @@ class ForumThreadShowTest extends TestCase
 
         Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread])
             ->call('loadComments')
-            ->call('startReply', $reply->id)
             ->set('newReplyBody', 'Nested reply')
-            ->call('addReply')
+            ->call('addReply', $reply->id)
             ->assertStatus(404);
+    }
+
+    public function test_comment_list_can_be_sorted_by_every_option(): void
+    {
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        $comment = ForumComment::factory()->for($this->thread, 'thread')->create(['likes_count' => 1]);
+        ForumComment::factory()->for($this->thread, 'thread')->create(['parent_id' => $comment->id, 'likes_count' => 2]);
+
+        foreach (['latest_comment', 'oldest_comment', 'most_liked_comment', 'latest_reply', 'oldest_reply', 'most_liked_reply'] as $sortBy) {
+            Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread])
+                ->call('loadComments')
+                ->set('sortBy', $sortBy)
+                ->assertOk();
+        }
     }
 }

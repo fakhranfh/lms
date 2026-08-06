@@ -6,6 +6,7 @@ use App\Models\ForumComment;
 use App\Repositories\ForumComment\ForumCommentRepositoryInterface;
 use App\Repositories\ForumThread\ForumThreadRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class ForumCommentService
@@ -62,5 +63,10 @@ class ForumCommentService
     public function topLevelForThread(string $threadId, array $with = []): Collection
     {
         return $this->forumCommentRepository->topLevelForThread($threadId, $with);
+    }
+
+    public function paginateTopLevelForThread(string $threadId, int $perPage, int $page, array $with = [], string $sortBy = 'latest_comment'): LengthAwarePaginator
+    {
+        return $this->forumCommentRepository->paginateTopLevelForThread($threadId, $perPage, $page, $with, $sortBy);
     }
 }

@@ -220,66 +220,96 @@
             </div>
         </div>
 
-        <!-- Thread list -->
-        @if (empty($threadRows))
-            <div class="bg-surface border border-outline-variant rounded-lg p-8 text-center">
-                <span class="material-symbols-outlined text-on-surface-variant text-[48px] block mx-auto mb-4">forum</span>
-                <p class="text-body-md text-on-surface-variant mb-4">No threads yet.</p>
-                @if ($canCreate)
-                    <button @click="showThreadForm = true" type="button" class="text-primary font-medium hover:underline">
-                        Start First Thread
-                    </button>
-                @endif
-            </div>
-        @else
-            <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-                @foreach ($threadRows as $row)
-                    <div wire:key="thread-{{ $row['id'] }}" class="p-space-lg border-b border-outline-variant last:border-0 flex items-start gap-space-md">
-                        <div class="relative flex-shrink-0">
-                            @if ($row['isUnread'])
-                                <span class="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-error border-2 border-surface z-10"></span>
-                            @endif
-                            @if ($row['userAvatarUrl'])
-                                <img src="{{ $row['userAvatarUrl'] }}" alt="{{ $row['userName'] }}" class="w-10 h-10 rounded-full object-cover border border-outline-variant">
-                            @else
-                                <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-label-md text-label-md">
-                                    {{ $row['userInitial'] }}
-                                </div>
-                            @endif
-                        </div>
-
-                        <a href="{{ route('forum.thread.show', [$course, $row['id']]) }}" wire:navigate class="min-w-0 flex-1">
-                            <p class="text-body-sm text-on-surface">
-                                <span class="font-medium">{{ $row['userName'] }}</span>
-                                @if ($row['roleLabel'])
-                                    <span class="text-on-surface-variant">&middot;</span>
-                                    <span class="text-primary">{{ $row['roleLabel'] }}</span>
-                                @endif
-                            </p>
-                            <p class="text-body-xs text-on-surface-variant">{{ $row['createdAtLabel'] }}</p>
-                            <h3 class="font-body-md text-body-md text-on-surface mt-1 {{ $row['isUnread'] ? 'font-semibold' : 'font-normal' }}">{{ $row['title'] }}</h3>
-                        </a>
-
-                        <div class="flex items-center gap-space-md flex-shrink-0">
-                            <span class="inline-flex items-center gap-1 text-body-sm text-on-surface-variant">
-                                <span class="material-symbols-outlined text-[18px]">chat_bubble_outline</span>
-                                {{ $row['commentsCount'] }}
-                            </span>
-
-                            @if ($row['canDelete'])
-                                <button
-                                    @click="deleteId = @js($row['id']); deleteName = @js($row['title']); deleteConfirmText = ''; showDeleteModal = true"
-                                    type="button"
-                                    class="p-space-sm text-on-surface-variant hover:text-error transition"
-                                >
-                                    <span class="material-symbols-outlined text-[20px]">delete</span>
-                                </button>
-                            @endif
-                        </div>
+        <!-- Thread list skeleton while changing per-page or page -->
+        <div wire:loading wire:target="perPage, gotoPage, page" class="w-full bg-surface border border-outline-variant rounded-lg overflow-hidden animate-pulse">
+            @for ($i = 0; $i < 4; $i++)
+                <div class="w-full p-space-lg border-b border-outline-variant last:border-0 flex items-start gap-space-md">
+                    <div class="w-10 h-10 rounded-full bg-surface-container flex-shrink-0"></div>
+                    <div class="min-w-0 flex-1 space-y-space-xs">
+                        <div class="h-3 bg-surface-container rounded w-1/4"></div>
+                        <div class="h-3 bg-surface-container rounded w-1/3"></div>
+                        <div class="h-4 bg-surface-container rounded w-full"></div>
                     </div>
-                @endforeach
-            </div>
-        @endif
+                    <div class="flex items-center gap-space-md flex-shrink-0">
+                        <div class="h-4 w-8 bg-surface-container rounded"></div>
+                    </div>
+                </div>
+            @endfor
+        </div>
+
+        <!-- Thread list -->
+        <div wire:loading.remove wire:target="perPage, gotoPage, page">
+            @if (empty($threadRows))
+                <div class="bg-surface border border-outline-variant rounded-lg p-8 text-center">
+                    <span class="material-symbols-outlined text-on-surface-variant text-[48px] block mx-auto mb-4">forum</span>
+                    <p class="text-body-md text-on-surface-variant mb-4">No threads yet.</p>
+                    @if ($canCreate)
+                        <button @click="showThreadForm = true" type="button" class="text-primary font-medium hover:underline">
+                            Start First Thread
+                        </button>
+                    @endif
+                </div>
+            @else
+                <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
+                    @foreach ($threadRows as $row)
+                        <div wire:key="thread-{{ $row['id'] }}" class="p-space-lg border-b border-outline-variant last:border-0">
+                            <div wire:loading wire:target="confirmDeleteThread('{{ $row['id'] }}')" class="flex items-start gap-space-md animate-pulse">
+                                <div class="w-10 h-10 rounded-full bg-surface-container flex-shrink-0"></div>
+                                <div class="min-w-0 flex-1 space-y-space-xs">
+                                    <div class="h-3 bg-surface-container rounded w-1/4"></div>
+                                    <div class="h-3 bg-surface-container rounded w-1/3"></div>
+                                    <div class="h-4 bg-surface-container rounded w-full"></div>
+                                </div>
+                                <div class="h-4 w-8 bg-surface-container rounded flex-shrink-0"></div>
+                            </div>
+                            <div wire:loading.remove wire:target="confirmDeleteThread('{{ $row['id'] }}')" class="flex items-start gap-space-md">
+                            <div class="relative flex-shrink-0">
+                                @if ($row['isUnread'])
+                                    <span class="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-error border-2 border-surface z-10"></span>
+                                @endif
+                                @if ($row['userAvatarUrl'])
+                                    <img src="{{ $row['userAvatarUrl'] }}" alt="{{ $row['userName'] }}" class="w-10 h-10 rounded-full object-cover border border-outline-variant">
+                                @else
+                                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary font-label-md text-label-md">
+                                        {{ $row['userInitial'] }}
+                                    </div>
+                                @endif
+                            </div>
+
+                            <a href="{{ route('forum.thread.show', [$course, $row['id']]) }}" wire:navigate class="min-w-0 flex-1">
+                                <p class="text-body-sm text-on-surface">
+                                    <span class="font-medium">{{ $row['userName'] }}</span>
+                                    @if ($row['roleLabel'])
+                                        <span class="text-on-surface-variant">&middot;</span>
+                                        <span class="text-primary">{{ $row['roleLabel'] }}</span>
+                                    @endif
+                                </p>
+                                <p class="text-body-xs text-on-surface-variant">{{ $row['createdAtLabel'] }}</p>
+                                <h3 class="font-body-md text-body-md text-on-surface mt-1 {{ $row['isUnread'] ? 'font-semibold' : 'font-normal' }}">{{ $row['title'] }}</h3>
+                            </a>
+
+                            <div class="flex items-center gap-space-md flex-shrink-0">
+                                <span class="inline-flex items-center gap-1 text-body-sm text-on-surface-variant">
+                                    <span class="material-symbols-outlined text-[18px]">chat_bubble_outline</span>
+                                    {{ $row['commentsCount'] }}
+                                </span>
+
+                                @if ($row['canDelete'])
+                                    <button
+                                        @click="deleteId = @js($row['id']); deleteName = @js($row['title']); deleteConfirmText = ''; showDeleteModal = true"
+                                        type="button"
+                                        class="p-space-sm text-on-surface-variant hover:text-error transition"
+                                    >
+                                        <span class="material-symbols-outlined text-[20px]">delete</span>
+                                    </button>
+                                @endif
+                            </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
     </div>
 
     <!-- Delete Confirmation Modal -->

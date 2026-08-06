@@ -4,6 +4,7 @@ namespace App\Repositories\ForumComment;
 
 use App\Models\ForumComment;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ForumCommentRepository implements ForumCommentRepositoryInterface
 {
@@ -65,5 +66,29 @@ class ForumCommentRepository implements ForumCommentRepositoryInterface
             ->with($with)
             ->oldest()
             ->get();
+    }
+
+    public function paginateTopLevelForThread(string $threadId, int $perPage, int $page, array $with = [], string $sortBy = 'latest_comment'): LengthAwarePaginator
+    {
+        $query = ForumComment::where('thread_id', $threadId)
+            ->whereNull('parent_id')
+            ->with($with);
+
+        match ($sortBy) {
+            'oldest_comment' => $query->oldest(),
+            'most_liked_comment' => $query->orderByDesc('likes_count'),
+            'latest_reply' => $query->orderByRaw(
+                'COALESCE((select max(created_at) from forum_comments as replies where replies.parent_id = forum_comments.id), created_at) desc'
+            ),
+            'oldest_reply' => $query->orderByRaw(
+                'COALESCE((select min(created_at) from forum_comments as replies where replies.parent_id = forum_comments.id), created_at) asc'
+            ),
+            'most_liked_reply' => $query->orderByRaw(
+                'COALESCE((select max(likes_count) from forum_comments as replies where replies.parent_id = forum_comments.id), 0) desc'
+            ),
+            default => $query->latest(),
+        };
+
+        return $query->paginate($perPage, ['*'], 'page', $page);
     }
 }

@@ -68,6 +68,24 @@
     <div wire:init="loadComments" class="space-y-space-md">
         <h2 class="font-headline-sm text-headline-sm text-on-surface">Comments ({{ $thread->comments_count }})</h2>
 
+        @if ($canCreate)
+            <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+                <x-rich-text-editor id="new-comment" wire-model="newCommentBody" :value="$newCommentBody" />
+                @error('newCommentBody') <p class="text-body-xs text-error">{{ $message }}</p> @enderror
+
+                <button
+                    wire:click="addComment"
+                    wire:loading.attr="disabled"
+                    wire:target="addComment"
+                    type="button"
+                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                    <span wire:loading.remove wire:target="addComment">Post Comment</span>
+                    <span wire:loading wire:target="addComment">Posting…</span>
+                </button>
+            </div>
+        @endif
+
         @if (! $commentsLoaded)
             <div class="space-y-space-md animate-pulse">
                 @for ($i = 0; $i < 3; $i++)
@@ -231,24 +249,6 @@
                             @endif
                         </div>
                     @endforeach
-                </div>
-            @endif
-
-            @if ($canCreate)
-                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
-                    <x-rich-text-editor id="new-comment" wire-model="newCommentBody" :value="$newCommentBody" />
-                    @error('newCommentBody') <p class="text-body-xs text-error">{{ $message }}</p> @enderror
-
-                    <button
-                        wire:click="addComment"
-                        wire:loading.attr="disabled"
-                        wire:target="addComment"
-                        type="button"
-                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
-                    >
-                        <span wire:loading.remove wire:target="addComment">Post Comment</span>
-                        <span wire:loading wire:target="addComment">Posting…</span>
-                    </button>
                 </div>
             @endif
         @endif

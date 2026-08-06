@@ -44,6 +44,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 ## Verification Scripts
 
 - Do not create verification scripts or tinker when tests cover that functionality and prove they work. Unit and feature tests are more important.
+- After developing a feature, run static analysis with `vendor/bin/phpstan analyse --memory-limit=1G` (Larastan) and fix any reported errors before finalizing changes.
 
 ## Application Structure &amp; Architecture
 

@@ -226,7 +226,7 @@
                         <h3 class="font-label-md text-label-md text-on-surface">Learning Progress</h3>
                         <span class="relative group">
                             <span class="material-symbols-outlined text-on-surface-variant text-[16px] bg-surface-container rounded p-0.5 cursor-help">info</span>
-                            <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-space-xs hidden group-hover:block w-56 p-space-sm bg-on-surface text-surface text-body-xs rounded-lg shadow-lg z-10">
+                            <span class="pointer-events-none absolute left-0 bottom-full mb-space-xs hidden group-hover:block w-56 p-space-sm bg-on-surface text-surface text-body-xs rounded-lg shadow-lg z-10">
                                 Tracks your progress across this session's learning material, assessment, and forum.
                             </span>
                         </span>

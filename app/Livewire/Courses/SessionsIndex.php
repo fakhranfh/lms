@@ -284,9 +284,19 @@ class SessionsIndex extends Component
 
         $completedMaterialIds = $completionService->completedMaterialIds($activeSession->id, auth()->id());
 
+        $forum = $activeSession->forums->first();
+        $forumMyPostsCount = $forum ? $forumThreadService->myPostsCountForForum($forum->id, auth()->id()) : 0;
+        $forumCompleted = $forum && $forumMyPostsCount >= self::REQUIRED_FORUM_POSTS;
+
         $totalMaterials = $activeSession->materials->count();
-        $progressPercent = $totalMaterials > 0
-            ? (int) round($completedMaterialIds->intersect($activeSession->materials->pluck('id'))->count() / $totalMaterials * 100)
+        $completedMaterialsCount = $completedMaterialIds->intersect($activeSession->materials->pluck('id'))->count();
+        $forumProgressFraction = $forum ? min($forumMyPostsCount, self::REQUIRED_FORUM_POSTS) / self::REQUIRED_FORUM_POSTS : 0;
+
+        $totalProgressUnits = $totalMaterials + ($forum ? 1 : 0);
+        $completedProgressUnits = $completedMaterialsCount + $forumProgressFraction;
+
+        $progressPercent = $totalProgressUnits > 0
+            ? (int) round($completedProgressUnits / $totalProgressUnits * 100)
             : 0;
 
         $nextMaterial = $activeSession->materials->first(fn ($material) => ! $completedMaterialIds->contains($material->id))
@@ -301,7 +311,7 @@ class SessionsIndex extends Component
         ])->values()->all();
 
         $chips[] = ['key' => 'assessment', 'label' => 'Assessment', 'completed' => false, 'type' => 'assessment', 'id' => null];
-        $chips[] = ['key' => 'forum', 'label' => 'Forum', 'completed' => false, 'type' => 'forum', 'id' => null];
+        $chips[] = ['key' => 'forum', 'label' => 'Forum', 'completed' => $forumCompleted, 'type' => 'forum', 'id' => null];
 
         $showVideoConferences = $activeSession->delivery_mode === DeliveryMode::VirtualClass
             && $activeSession->videoConferences->isNotEmpty();
@@ -332,10 +342,7 @@ class SessionsIndex extends Component
             fn ($material) => [(string) $material->id => $this->toPreviewPayload($material)]
         )->all();
 
-        $forum = $activeSession->forums->first();
-
         $forumTotalPosts = 0;
-        $forumMyPostsCount = 0;
         $forumThreadPreviews = [];
         $forumPagination = null;
 
@@ -344,7 +351,6 @@ class SessionsIndex extends Component
         if ($forum) {
             $totals = $forumThreadService->totalPostsForForum($forum->id);
             $forumTotalPosts = $totals['threads'] + $totals['comments'];
-            $forumMyPostsCount = $forumThreadService->myPostsCountForForum($forum->id, auth()->id());
 
             $forumThreads = $forumThreadService->paginateForForum($forum->id, $this->forumPerPage, $this->forumPage, ['user', 'user.roles']);
             $forumThreadPreviews = $this->toForumThreadPreviews($forumThreads->items());

@@ -3,7 +3,7 @@
 <div
     class="space-y-space-lg"
     x-data="{
-        deleteId: null, deleteName: null, showDeleteModal: false, deleteConfirmText: '',
+        deleteId: null, deleteName: null, showDeleteModal: false,
         showOverflow: false,
         showThreadForm: false,
         pendingSessionId: null,
@@ -253,7 +253,7 @@
                 <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
                     @foreach ($threadRows as $row)
                         <div wire:key="thread-{{ $row['id'] }}" class="p-space-lg border-b border-outline-variant last:border-0">
-                            <div wire:loading wire:target="confirmDeleteThread('{{ $row['id'] }}')" class="flex items-start gap-space-md animate-pulse">
+                            <div wire:loading wire:target="confirmDeleteThread('{{ $row['id'] }}')" class="w-full flex items-start gap-space-md animate-pulse">
                                 <div class="w-10 h-10 rounded-full bg-surface-container flex-shrink-0"></div>
                                 <div class="min-w-0 flex-1 space-y-space-xs">
                                     <div class="h-3 bg-surface-container rounded w-1/4"></div>
@@ -296,7 +296,7 @@
 
                                 @if ($row['canDelete'])
                                     <button
-                                        @click="deleteId = @js($row['id']); deleteName = @js($row['title']); deleteConfirmText = ''; showDeleteModal = true"
+                                        @click="deleteId = @js($row['id']); deleteName = @js($row['title']); showDeleteModal = true"
                                         type="button"
                                         class="p-space-sm text-on-surface-variant hover:text-error transition"
                                     >
@@ -336,18 +336,6 @@
                         </p>
                     </div>
 
-                    <div class="text-left">
-                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
-                            Type <span class="font-medium" x-text="deleteName"></span> to confirm
-                        </label>
-                        <input
-                            type="text"
-                            x-model="deleteConfirmText"
-                            autocomplete="off"
-                            class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        />
-                    </div>
-
                     <div class="flex gap-space-md pt-space-md">
                         <button
                             @click="showDeleteModal = false"
@@ -357,11 +345,9 @@
                             Cancel
                         </button>
                         <button
-                            :disabled="deleteConfirmText !== deleteName"
-                            :class="deleteConfirmText !== deleteName ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'"
                             @click="showDeleteModal = false; $wire.call('confirmDeleteThread', deleteId)"
                             type="button"
-                            class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md transition-opacity"
+                            class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                         >
                             Delete
                         </button>

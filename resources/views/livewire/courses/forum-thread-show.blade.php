@@ -167,7 +167,7 @@
                 <div class="space-y-space-md">
                     @foreach ($comments as $comment)
                         <div wire:key="comment-{{ $comment->id }}" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
-                            <div wire:loading wire:target="deleteComment('{{ $comment->id }}')" class="space-y-space-sm animate-pulse">
+                            <div wire:loading wire:target="deleteComment('{{ $comment->id }}')" class="w-full space-y-space-sm animate-pulse">
                                 <div class="flex items-start justify-between gap-space-md">
                                     <div class="h-3 bg-surface-container rounded w-1/3"></div>
                                     <div class="flex items-center gap-space-xs">
@@ -265,7 +265,7 @@
                                 <div class="ml-space-lg space-y-space-sm border-l-2 border-outline-variant pl-space-md">
                                     @foreach ($comment->replies as $reply)
                                         <div wire:key="reply-{{ $reply->id }}" class="space-y-space-xs">
-                                            <div wire:loading wire:target="deleteComment('{{ $reply->id }}')" class="space-y-space-xs animate-pulse">
+                                            <div wire:loading wire:target="deleteComment('{{ $reply->id }}')" class="w-full space-y-space-xs animate-pulse">
                                                 <div class="flex items-start justify-between gap-space-md">
                                                     <div class="h-3 bg-surface-container rounded w-1/3"></div>
                                                     <div class="flex items-center gap-space-xs">

@@ -1,4 +1,5 @@
 <laravel-boost-guidelines>
+
 === foundation rules ===
 
 # Laravel Boost Guidelines
@@ -7,7 +8,7 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 
 ## Foundational Context
 
-This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
+This application is a Laravel application and its main Laravel ecosystems package &amp; versions are below. You are an expert with them all. Ensure you abide by these specific packages &amp; versions.
 
 - php - 8.3
 - laravel/fortify (FORTIFY) - v1
@@ -36,12 +37,15 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
 - Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
 - Check for existing components to reuse before writing a new one.
+- Every submit button must show a loading state while its action is in flight.
+- Every table or data list must show a skeleton loading state while its data is loading.
+- If a Claude Code hook check reports a warning, it must be fixed before proceeding with any further changes.
 
 ## Verification Scripts
 
 - Do not create verification scripts or tinker when tests cover that functionality and prove they work. Unit and feature tests are more important.
 
-## Application Structure & Architecture
+## Application Structure &amp; Architecture
 
 - Stick to existing directory structure; don't create new base folders without approval.
 - Do not change the application's dependencies without approval.
@@ -132,7 +136,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `php artisan make:model --help` to check the available options.
 
-## APIs & Eloquent Resources
+## APIs &amp; Eloquent Resources
 
 - For APIs, default to using Eloquent API Resources and API versioning unless existing API routes do not, then you should follow existing application convention.
 
@@ -181,7 +185,9 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
 
 Rules:
+
 - For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+

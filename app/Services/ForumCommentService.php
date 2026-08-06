@@ -42,16 +42,25 @@ class ForumCommentService
 
     public function delete(string $id): int
     {
-        $comment = $this->forumCommentRepository->find($id);
+        $comment = $this->forumCommentRepository->find($id, ['replies']);
 
         return DB::transaction(function () use ($id, $comment) {
             $deleted = $this->forumCommentRepository->delete($id);
 
             if ($comment) {
-                $this->forumThreadRepository->decrementCommentsCount($comment->thread_id);
+                $postsRemoved = 1 + $comment->replies->count();
+                $this->forumThreadRepository->decrementCommentsCount($comment->thread_id, $postsRemoved);
             }
 
             return $deleted;
         });
+    }
+
+    /**
+     * @return Collection<int, ForumComment>
+     */
+    public function topLevelForThread(string $threadId, array $with = []): Collection
+    {
+        return $this->forumCommentRepository->topLevelForThread($threadId, $with);
     }
 }

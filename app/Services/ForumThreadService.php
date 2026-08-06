@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ForumThread;
 use App\Repositories\ForumThread\ForumThreadRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ForumThreadService
 {
@@ -35,5 +36,18 @@ class ForumThreadService
     public function delete(string $id): int
     {
         return $this->forumThreadRepository->delete($id);
+    }
+
+    public function paginateForForum(string $forumId, int $perPage, int $page, array $with = []): LengthAwarePaginator
+    {
+        return $this->forumThreadRepository->paginateForForum($forumId, $perPage, $page, $with);
+    }
+
+    /**
+     * @return array{threads: int, comments: int}
+     */
+    public function totalPostsForForum(string $forumId): array
+    {
+        return $this->forumThreadRepository->totalPostsForForum($forumId);
     }
 }

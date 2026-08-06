@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Course;
 use App\Models\Forum;
+use App\Models\Session;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -22,7 +23,7 @@ class ForumFactory extends Factory
         return [
             'id' => (string) Str::uuid(),
             'course_id' => Course::factory(),
-            'session_id' => null,
+            'session_id' => Session::factory(),
             'title' => fake()->sentence(3),
         ];
     }

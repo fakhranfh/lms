@@ -7,3 +7,13 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+trix-editor.trix-content {
+    min-height: 8rem;
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-sans);
+}
+
+trix-toolbar .trix-button-group {
+    border-color: var(--color-outline-variant, #ccc);
+}

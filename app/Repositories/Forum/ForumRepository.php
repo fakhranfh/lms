@@ -44,4 +44,9 @@ class ForumRepository implements ForumRepositoryInterface
     {
         return Forum::destroy($id);
     }
+
+    public function findBySessionAndCourse(string $sessionId, string $courseId): ?Forum
+    {
+        return Forum::where('course_id', $courseId)->where('session_id', $sessionId)->first();
+    }
 }

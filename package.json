@@ -20,6 +20,7 @@
   "dependencies": {
     "alpinejs": "^3.x.x",
     "datatables.net": "^2.1.8",
-    "datatables.net-dt": "^2.1.8"
+    "datatables.net-dt": "^2.1.8",
+    "trix": "^2.1.19"
   }
 }

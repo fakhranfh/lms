@@ -10,9 +10,9 @@
     "semantic_hash": "1809e0623672be424f0467b6d029b939"
   },
   ".claude/settings.json": {
-    "mtime": 1785592140.1254835,
-    "ast_hash": "0cc0afee044d88acc9943f5d8c51afff",
-    "semantic_hash": "0cc0afee044d88acc9943f5d8c51afff"
+    "mtime": 1785935932.4563909,
+    "ast_hash": "7098923979956d43ae0bb57681a578bc",
+    "semantic_hash": ""
   },
   ".claude/settings.local.json": {
     "mtime": 1785592263.2083142,
@@ -605,9 +605,9 @@
     "semantic_hash": "76469b9703da5a13f71058676d635d7f"
   },
   "app/Livewire/Courses/CourseComingSoon.php": {
-    "mtime": 1785918358.856472,
-    "ast_hash": "31c4a23ceb98a9d1fd07296ae6ad4c9e",
-    "semantic_hash": "31c4a23ceb98a9d1fd07296ae6ad4c9e"
+    "mtime": 1785984863.1449509,
+    "ast_hash": "7f5c5d7a99da691b31b5bfc49812f785",
+    "semantic_hash": ""
   },
   "app/Livewire/Courses/CourseForm.php": {
     "mtime": 1784380589.2996697,
@@ -1125,9 +1125,9 @@
     "semantic_hash": "89124f9efbc2b3b05e865fe8e15011d4"
   },
   "app/Providers/AppServiceProvider.php": {
-    "mtime": 1785893237.5550568,
-    "ast_hash": "9e0f133261919ec3a85db47d20517dbd",
-    "semantic_hash": "9e0f133261919ec3a85db47d20517dbd"
+    "mtime": 1785986349.7386532,
+    "ast_hash": "01e920a4aa1c355697f6fabd841a53f2",
+    "semantic_hash": ""
   },
   "app/Providers/AuditLogServiceProvider.php": {
     "mtime": 1785834370.8872902,
@@ -1285,14 +1285,14 @@
     "semantic_hash": "4cddc3d71e4c767574e1d1c84c483b35"
   },
   "app/Repositories/ForumCommentLike/ForumCommentLikeRepository.php": {
-    "mtime": 1785817464.7477133,
-    "ast_hash": "1aafd5ed568187031190d54e52a0b446",
-    "semantic_hash": "1aafd5ed568187031190d54e52a0b446"
+    "mtime": 1785984821.2801175,
+    "ast_hash": "3b7d677cac747aaa9da8fe4b56f52e95",
+    "semantic_hash": ""
   },
   "app/Repositories/ForumCommentLike/ForumCommentLikeRepositoryInterface.php": {
-    "mtime": 1785817461.4742343,
-    "ast_hash": "5daed22732c8202d735d8f29181c0847",
-    "semantic_hash": "5daed22732c8202d735d8f29181c0847"
+    "mtime": 1785984812.9086447,
+    "ast_hash": "0c1f35db76704f074eee0b709133fa47",
+    "semantic_hash": ""
   },
   "app/Repositories/ForumComment/ForumCommentRepository.php": {
     "mtime": 1785817455.4037871,
@@ -1305,24 +1305,24 @@
     "semantic_hash": "db956cf03c209e9f75af9ae29809e50d"
   },
   "app/Repositories/ForumThread/ForumThreadRepository.php": {
-    "mtime": 1785817442.936131,
-    "ast_hash": "e2fa7a213b440023fb6d0672d41fe7f9",
-    "semantic_hash": "e2fa7a213b440023fb6d0672d41fe7f9"
+    "mtime": 1785986726.3378453,
+    "ast_hash": "c22281465ce69a12e82b8cad68e1dc40",
+    "semantic_hash": ""
   },
   "app/Repositories/ForumThread/ForumThreadRepositoryInterface.php": {
-    "mtime": 1785817439.6525598,
-    "ast_hash": "5770d0c2fa44f62d3241e6ef93d41425",
-    "semantic_hash": "5770d0c2fa44f62d3241e6ef93d41425"
+    "mtime": 1785986360.4828644,
+    "ast_hash": "f920b21bd8d90f8856d5137827de42f6",
+    "semantic_hash": ""
   },
   "app/Repositories/Forum/ForumRepository.php": {
-    "mtime": 1785817435.2906156,
-    "ast_hash": "71901621e957475ca0a91a826440fd7d",
-    "semantic_hash": "71901621e957475ca0a91a826440fd7d"
+    "mtime": 1785984807.0422628,
+    "ast_hash": "c31a5e124d8d1c6ddfb0fd125615cc2a",
+    "semantic_hash": ""
   },
   "app/Repositories/Forum/ForumRepositoryInterface.php": {
-    "mtime": 1785817432.7479136,
-    "ast_hash": "c59ed56cb7a006a85ea1bbe87f00cd01",
-    "semantic_hash": "c59ed56cb7a006a85ea1bbe87f00cd01"
+    "mtime": 1785984803.4609995,
+    "ast_hash": "2f8b3f21b949016c278d4f0855c65265",
+    "semantic_hash": ""
   },
   "app/Repositories/GradebookEntry/GradebookEntryRepository.php": {
     "mtime": 1785817629.6284957,
@@ -1815,9 +1815,9 @@
     "semantic_hash": "587bd775d9b2a23fe6902afe5a0fc0d0"
   },
   "app/Services/ForumCommentLikeService.php": {
-    "mtime": 1785817468.802673,
-    "ast_hash": "2d669d3134bfc59df8ae1568313c70a6",
-    "semantic_hash": "2d669d3134bfc59df8ae1568313c70a6"
+    "mtime": 1785984834.498069,
+    "ast_hash": "c81d8bf3d2bbd1904dd0240fd31cd19c",
+    "semantic_hash": ""
   },
   "app/Services/ForumCommentService.php": {
     "mtime": 1785817459.2907462,
@@ -1825,14 +1825,14 @@
     "semantic_hash": "e8af8663c97160d594217167a1ea4d4b"
   },
   "app/Services/ForumService.php": {
-    "mtime": 1785817437.831195,
-    "ast_hash": "d6bd34facea910636fdc6105dfb844d3",
-    "semantic_hash": "d6bd34facea910636fdc6105dfb844d3"
+    "mtime": 1785984826.5484853,
+    "ast_hash": "5f7863656df8304dfe84cd221d99f080",
+    "semantic_hash": ""
   },
   "app/Services/ForumThreadService.php": {
-    "mtime": 1785817445.1649234,
-    "ast_hash": "433a5a954e970e355cd216400f7993f9",
-    "semantic_hash": "433a5a954e970e355cd216400f7993f9"
+    "mtime": 1785986382.2321851,
+    "ast_hash": "589745ce4e6e5aba26e005aed0ddf6cc",
+    "semantic_hash": ""
   },
   "app/Services/GradebookEntryService.php": {
     "mtime": 1785817632.533861,
@@ -1985,9 +1985,9 @@
     "semantic_hash": "9c9dcda08d152138452d6014ecc9843d"
   },
   "app/Services/SessionService.php": {
-    "mtime": 1785903809.592962,
-    "ast_hash": "bbbb729ab4473fd46605df2c33e373bd",
-    "semantic_hash": "bbbb729ab4473fd46605df2c33e373bd"
+    "mtime": 1785984842.9360795,
+    "ast_hash": "ad15fb0417a479019a48b0e8885f1992",
+    "semantic_hash": ""
   },
   "app/Services/SessionSubtopicService.php": {
     "mtime": 1785817135.627653,
@@ -2080,9 +2080,9 @@
     "semantic_hash": "7647016836cbdb1575200f70f2172cb3"
   },
   "app/Support/CourseTabs.php": {
-    "mtime": 1785911671.0249386,
-    "ast_hash": "b478e32c1fad4784075ff5fb2919f009",
-    "semantic_hash": "b478e32c1fad4784075ff5fb2919f009"
+    "mtime": 1785984857.66239,
+    "ast_hash": "4dbdb2e10f777fb78afdf188d1046825",
+    "semantic_hash": ""
   },
   "app/Support/CurrentSchool.php": {
     "mtime": 1784380589.3506703,
@@ -3140,9 +3140,9 @@
     "semantic_hash": "30437a44fc763d145ad45f76f119fc47"
   },
   "database/seeders/DatabaseSeeder.php": {
-    "mtime": 1785913414.9481647,
-    "ast_hash": "648398960bdebd09fa843b09f6eec129",
-    "semantic_hash": "648398960bdebd09fa843b09f6eec129"
+    "mtime": 1785987151.8498855,
+    "ast_hash": "43eec9b4984397761ae2929003ac0bff",
+    "semantic_hash": ""
   },
   "database/seeders/DefaultRoleSeeder.php": {
     "mtime": 1784969163.0157914,
@@ -3565,9 +3565,9 @@
     "semantic_hash": "bcf2afe8b4ff785865af28519898ccdd"
   },
   "resources/views/livewire/courses/sessions-index-student.blade.php": {
-    "mtime": 1785918241.7834852,
-    "ast_hash": "381b3fb4c5746438de3f4eb39d10f0ff",
-    "semantic_hash": "381b3fb4c5746438de3f4eb39d10f0ff"
+    "mtime": 1785985005.0677378,
+    "ast_hash": "dc16a3c1b0366de4ff752f942f9a4f4a",
+    "semantic_hash": ""
   },
   "resources/views/livewire/courses/sessions-index.blade.php": {
     "mtime": 1785918217.2720091,
@@ -3780,9 +3780,9 @@
     "semantic_hash": "ea3f06c3cfa323393b3e69aebc9f56a5"
   },
   "routes/web/authenticated.php": {
-    "mtime": 1785912880.0875473,
-    "ast_hash": "8569de06cc38e5171eacf5e80c025a42",
-    "semantic_hash": "8569de06cc38e5171eacf5e80c025a42"
+    "mtime": 1785984933.1800585,
+    "ast_hash": "4c29d97871afc55fe961d23dbc81d748",
+    "semantic_hash": ""
   },
   "routes/web/public.php": {
     "mtime": 1785472752.164635,
@@ -3955,9 +3955,9 @@
     "semantic_hash": "feb866c6e81bda59bfb57dc666677363"
   },
   "tests/Feature/CourseRestructure/ForumServiceTest.php": {
-    "mtime": 1785818604.6438923,
-    "ast_hash": "d50bdb996b6a4890e1f2ee1c98363f3d",
-    "semantic_hash": "d50bdb996b6a4890e1f2ee1c98363f3d"
+    "mtime": 1785985099.330559,
+    "ast_hash": "d37740de91f63690a231a5a9f4f8d7ec",
+    "semantic_hash": ""
   },
   "tests/Feature/CourseRestructure/GradebookServiceTest.php": {
     "mtime": 1785818658.2602544,
@@ -4065,9 +4065,9 @@
     "semantic_hash": "584c6d6c036d81ea6ca82dfe54687531"
   },
   "tests/Feature/Livewire/Courses/CourseComingSoonTest.php": {
-    "mtime": 1785912880.0883825,
-    "ast_hash": "ec7fbd7962e62feded8e9f51dcab237f",
-    "semantic_hash": "ec7fbd7962e62feded8e9f51dcab237f"
+    "mtime": 1785985075.6567526,
+    "ast_hash": "373cd116e6921dc70b125cb7f1dd2570",
+    "semantic_hash": ""
   },
   "tests/Feature/Livewire/Courses/CourseFormTest.php": {
     "mtime": 1785472749.3567538,
@@ -4240,9 +4240,9 @@
     "semantic_hash": "fb00ef86fe861ba9458dc433aa906d01"
   },
   "tests/Feature/SchoolAdminPermissionScopeTest.php": {
-    "mtime": 1785822844.3331187,
-    "ast_hash": "bf7c631c1ccdee53096f2c1e0e17c0e5",
-    "semantic_hash": "bf7c631c1ccdee53096f2c1e0e17c0e5"
+    "mtime": 1785937221.6235785,
+    "ast_hash": "8626e8907d1773f3957b502c7212366b",
+    "semantic_hash": ""
   },
   "tests/Feature/SchoolAdminRegisterTest.php": {
     "mtime": 1784969423.878166,
@@ -4855,9 +4855,9 @@
     "semantic_hash": "6fa0266862e94577f5404f2ed7c51a4a"
   },
   "CLAUDE.md": {
-    "mtime": 1785649918.059172,
-    "ast_hash": "587deb1482a230dbb07b35a32bf28dad",
-    "semantic_hash": "587deb1482a230dbb07b35a32bf28dad"
+    "mtime": 1785935932.440392,
+    "ast_hash": "9881ba9b56738db938f81315f5c9cc52",
+    "semantic_hash": ""
   },
   "DESIGN.md": {
     "mtime": 1784380589.251671,
@@ -5060,9 +5060,9 @@
     "semantic_hash": "4ffa00ca20423ff56b125e29c470f748"
   },
   "docs/tasks/course-restructure-progress.md": {
-    "mtime": 1785913282.4374094,
-    "ast_hash": "5420da6a1cf485150d5bcb9c47d44e86",
-    "semantic_hash": "5420da6a1cf485150d5bcb9c47d44e86"
+    "mtime": 1785985837.4507551,
+    "ast_hash": "353433b96b1b0715ee35a4ecc784d080",
+    "semantic_hash": ""
   },
   "docs/tasks/course-restructure-role-flows.md": {
     "mtime": 1785815123.9795372,
@@ -5138,5 +5138,255 @@
     "mtime": 1784517208.4622295,
     "ast_hash": "d9061d3da8601932e98f79ec8ba1c877",
     "semantic_hash": "d9061d3da8601932e98f79ec8ba1c877"
+  },
+  "app/Livewire/Courses/ForumIndex.php": {
+    "mtime": 1785986910.8498454,
+    "ast_hash": "217e94ca82ca80d1e2e4327040313060",
+    "semantic_hash": ""
+  },
+  "app/Livewire/Courses/ForumThreadShow.php": {
+    "mtime": 1785986422.2032092,
+    "ast_hash": "0b44c306c31c2fabd377d033e45c62ce",
+    "semantic_hash": ""
+  },
+  "database/migrations/2026_08_06_000001_add_forum_permissions.php": {
+    "mtime": 1785984800.3465424,
+    "ast_hash": "155bbafaf88348bf9aaee95c07104b96",
+    "semantic_hash": ""
+  },
+  "resources/views/livewire/courses/forum-index-placeholder.blade.php": {
+    "mtime": 1785984940.6598327,
+    "ast_hash": "6ac0505e72cd65b17008b6fce7f6eb44",
+    "semantic_hash": ""
+  },
+  "resources/views/livewire/courses/forum-index.blade.php": {
+    "mtime": 1785986605.0756178,
+    "ast_hash": "e80ef9beb84a1052d7458e21e76e86de",
+    "semantic_hash": ""
+  },
+  "resources/views/livewire/courses/forum-thread-show.blade.php": {
+    "mtime": 1785984992.0300992,
+    "ast_hash": "da078678a4f1ad0808895009db4fb14e",
+    "semantic_hash": ""
+  },
+  "tests/Feature/Livewire/Courses/ForumIndexTest.php": {
+    "mtime": 1785987503.8709967,
+    "ast_hash": "034e09cbed33a135a31008984390b80b",
+    "semantic_hash": ""
+  },
+  "tests/Feature/Livewire/Courses/ForumThreadShowTest.php": {
+    "mtime": 1785987471.5379882,
+    "ast_hash": "2bdf438e2beeb0b89d7159d4e27749cf",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/change-password-page.png": {
+    "mtime": 1784380589.414672,
+    "ast_hash": "a15d4d80394e1865c19b6ffac0c8f434",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/change-password-success.png": {
+    "mtime": 1784380589.415672,
+    "ast_hash": "8e730909193f320632342d78317405dc",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/crud/failure-P_Tests_Browser_CaptureProductCrudScreenshotsTest___pest_evaluable_capture_product_create_page_screenshot-0.png": {
+    "mtime": 1784380589.4166718,
+    "ast_hash": "27a9f302f13396e094f66cf91767663a",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/crud/failure-P_Tests_Browser_CaptureProductCrudScreenshotsTest___pest_evaluable_capture_product_edit_page_screenshot-0.png": {
+    "mtime": 1784380589.417671,
+    "ast_hash": "309c9ffb198210919940a9b20c4f8a29",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/crud/failure-P_Tests_Browser_CaptureProductCrudScreenshotsTest___pest_evaluable_capture_product_index_page_screenshot-0.png": {
+    "mtime": 1784380589.4186711,
+    "ast_hash": "1d3d3a2bf54a6ec8e83e286ab9c196b7",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/crud/failure-P_Tests_Browser_CaptureProductCrudScreenshotsTest___pest_evaluable_capture_product_show_page_screenshot-0.png": {
+    "mtime": 1784380589.4186711,
+    "ast_hash": "6b71b05e303c9d0ead2f04b436c6e3ed",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/crud/product-create.png": {
+    "mtime": 1784380589.4196713,
+    "ast_hash": "57f50aacd40d2ffc3dee894af47609da",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/crud/product-edit.png": {
+    "mtime": 1784380589.420673,
+    "ast_hash": "aa228359b4241cead48ea7ef53b4695c",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/crud/product-index.png": {
+    "mtime": 1784380589.420673,
+    "ast_hash": "42603fd2dab90273b8cd3540b0885c1a",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/crud/product-show.png": {
+    "mtime": 1784380589.4216712,
+    "ast_hash": "54cd4e0e384b9c3aea5671e9ebbe3b89",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/dashboard.png": {
+    "mtime": 1784380589.4226706,
+    "ast_hash": "3dbf80058abaf2f1ee36d30de681090c",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/edit-profile-page.png": {
+    "mtime": 1784380589.4236715,
+    "ast_hash": "8310fff2a2a2179bb0d441ae9adb7fd4",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/edit-profile-success.png": {
+    "mtime": 1784380589.4246712,
+    "ast_hash": "33e9b265a64f9c19d42989acbaa57490",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/email-verify-notice.png": {
+    "mtime": 1784380589.425671,
+    "ast_hash": "8f7f4093e3aeb7aec2f697ab578e2603",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/failure-P_Tests_Browser_CaptureDocScreenshotsTest___pest_evaluable_capture_change_password_page_screenshot-0.png": {
+    "mtime": 1784380589.425671,
+    "ast_hash": "68f417b8b6f5be29df3833dc610acaf0",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/failure-P_Tests_Browser_CaptureDocScreenshotsTest___pest_evaluable_capture_change_password_success_screenshot-0.png": {
+    "mtime": 1784380589.425671,
+    "ast_hash": "4f9c7b98aa8baa1e5e00f6b7f92371a1",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/failure-P_Tests_Browser_CaptureDocScreenshotsTest___pest_evaluable_capture_dashboard_screenshot-0.png": {
+    "mtime": 1784380589.4266717,
+    "ast_hash": "cbf3a68de991d03818d621208c0f5d5e",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/failure-P_Tests_Browser_CaptureDocScreenshotsTest___pest_evaluable_capture_edit_profile_page_screenshot-0.png": {
+    "mtime": 1784380589.4266717,
+    "ast_hash": "980cc7d427fcd30ab31d96d60cd1a997",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/failure-P_Tests_Browser_CaptureDocScreenshotsTest___pest_evaluable_capture_edit_profile_success_screenshot-0.png": {
+    "mtime": 1784380589.4276724,
+    "ast_hash": "6f3aa7b476e93d4b08b963c943977acc",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/failure-P_Tests_Browser_CaptureDocScreenshotsTest___pest_evaluable_capture_email_verify_notice_screenshot-0.png": {
+    "mtime": 1784380589.428671,
+    "ast_hash": "547dd2e3a847b716f1b1b962386dde8d",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/failure-P_Tests_Browser_CaptureDocScreenshotsTest___pest_evaluable_capture_forgot_password_page_screenshot-0.png": {
+    "mtime": 1784380589.428671,
+    "ast_hash": "43cff309901cc085f77a7df2576344fb",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/failure-P_Tests_Browser_CaptureDocScreenshotsTest___pest_evaluable_capture_login_error_screenshot-0.png": {
+    "mtime": 1784380589.4296708,
+    "ast_hash": "905cd7b568e90748dd781fbf2c030ebd",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/failure-P_Tests_Browser_CaptureDocScreenshotsTest___pest_evaluable_capture_login_page_screenshot-0.png": {
+    "mtime": 1784380589.4296708,
+    "ast_hash": "309c9ffb198210919940a9b20c4f8a29",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/failure-P_Tests_Browser_CaptureDocScreenshotsTest___pest_evaluable_capture_register_error_screenshot-0.png": {
+    "mtime": 1784380589.4306726,
+    "ast_hash": "6b71b05e303c9d0ead2f04b436c6e3ed",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/failure-P_Tests_Browser_CaptureDocScreenshotsTest___pest_evaluable_capture_register_page_screenshot-0.png": {
+    "mtime": 1784380589.4306726,
+    "ast_hash": "623adcee5a1b94072efc4e186e6f7a0b",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/failure-P_Tests_Browser_CaptureDocScreenshotsTest___pest_evaluable_capture_reset_password_page_screenshot-0.png": {
+    "mtime": 1784380589.4316714,
+    "ast_hash": "6ddfdce1f9892042601bbf361b8e5260",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/forgot-password-page.png": {
+    "mtime": 1784380589.4316714,
+    "ast_hash": "b79413578e7821a7b8c8a2a05b2582ec",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/landing-page.png": {
+    "mtime": 1784380589.4336727,
+    "ast_hash": "96cb5395a415eec8ea9427d1fcc5316e",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/login-error.png": {
+    "mtime": 1784380589.4336727,
+    "ast_hash": "f14f39ebe8166bad8bf816ca774d717a",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/login-page.png": {
+    "mtime": 1784380589.4346712,
+    "ast_hash": "cfb969557f2dbc654baddf05db9f8f36",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/register-error.png": {
+    "mtime": 1784380589.4356732,
+    "ast_hash": "402d42ae681e1848e4c8429d0e6e19f6",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/register-page.png": {
+    "mtime": 1784380589.4356732,
+    "ast_hash": "c178a6ead16e2129c048701fd9971e2a",
+    "semantic_hash": ""
+  },
+  "docs/dusk/images/reset-password-page.png": {
+    "mtime": 1784380589.4366763,
+    "ast_hash": "e16b1a3cd18759e0a4c987d36c6b0a49",
+    "semantic_hash": ""
+  },
+  "public/logo.png": {
+    "mtime": 1784380589.446673,
+    "ast_hash": "00ce06e43ada783df42277ef882708c6",
+    "semantic_hash": ""
+  },
+  "storage/dummy-materials/file_example_JPG_100kB.jpg": {
+    "mtime": 1784517251.989394,
+    "ast_hash": "5aa858befc56dee1effe7eae1c0f88bb",
+    "semantic_hash": ""
+  },
+  "app/Models/ForumThreadRead.php": {
+    "mtime": 1785986216.3102117,
+    "ast_hash": "bbef985f38e96dd303af8fee3deba5ca",
+    "semantic_hash": ""
+  },
+  "app/Repositories/ForumThreadRead/ForumThreadReadRepository.php": {
+    "mtime": 1785986234.965482,
+    "ast_hash": "eee7f69e291b3ebadfeea34d59f4fe9f",
+    "semantic_hash": ""
+  },
+  "app/Repositories/ForumThreadRead/ForumThreadReadRepositoryInterface.php": {
+    "mtime": 1785986622.0254533,
+    "ast_hash": "b355fdfebfda0ada48d939b4418b0e95",
+    "semantic_hash": ""
+  },
+  "app/Services/ForumThreadReadService.php": {
+    "mtime": 1785987016.3939035,
+    "ast_hash": "30dc927930c22f86fab3e76f1e9dd05d",
+    "semantic_hash": ""
+  },
+  "database/factories/ForumThreadReadFactory.php": {
+    "mtime": 1785986221.0750527,
+    "ast_hash": "ea6af3eba7362c9ed2e9152a2ccd6226",
+    "semantic_hash": ""
+  },
+  "database/migrations/2026_08_06_000002_create_forum_thread_reads_table.php": {
+    "mtime": 1785986210.3448336,
+    "ast_hash": "d15968e8d482fb93cb0693ec9e24a239",
+    "semantic_hash": ""
+  },
+  "database/seeders/ForumSeeder.php": {
+    "mtime": 1785987224.16711,
+    "ast_hash": "b16e7dad0a8237f3cd27936dbe618921",
+    "semantic_hash": ""
   }
 }

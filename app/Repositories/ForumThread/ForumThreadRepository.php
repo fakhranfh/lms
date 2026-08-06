@@ -4,6 +4,7 @@ namespace App\Repositories\ForumThread;
 
 use App\Models\ForumThread;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ForumThreadRepository implements ForumThreadRepositoryInterface
 {
@@ -50,8 +51,34 @@ class ForumThreadRepository implements ForumThreadRepositoryInterface
         ForumThread::whereKey($id)->increment('comments_count');
     }
 
-    public function decrementCommentsCount(string $id): void
+    public function decrementCommentsCount(string $id, int $by = 1): void
     {
-        ForumThread::whereKey($id)->decrement('comments_count');
+        ForumThread::whereKey($id)->decrement('comments_count', $by);
+    }
+
+    public function forForums(array $forumIds, array $with = []): Collection
+    {
+        return ForumThread::whereIn('forum_id', $forumIds)->with($with)->get();
+    }
+
+    public function paginateForForum(string $forumId, int $perPage, int $page, array $with = []): LengthAwarePaginator
+    {
+        return ForumThread::where('forum_id', $forumId)
+            ->with($with)
+            ->latest()
+            ->paginate($perPage, ['*'], 'page', $page);
+    }
+
+    public function totalPostsForForum(string $forumId): array
+    {
+        $totals = ForumThread::where('forum_id', $forumId)
+            ->toBase()
+            ->selectRaw('count(*) as threads, coalesce(sum(comments_count), 0) as comments')
+            ->first();
+
+        return [
+            'threads' => (int) ($totals->threads ?? 0),
+            'comments' => (int) ($totals->comments ?? 0),
+        ];
     }
 }

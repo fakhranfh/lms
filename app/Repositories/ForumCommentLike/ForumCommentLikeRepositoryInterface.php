@@ -4,6 +4,7 @@ namespace App\Repositories\ForumCommentLike;
 
 use App\Models\ForumCommentLike;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as BaseCollection;
 
 interface ForumCommentLikeRepositoryInterface
 {
@@ -18,4 +19,10 @@ interface ForumCommentLikeRepositoryInterface
     public function delete(string $id): int;
 
     public function findByCommentAndUser(string $commentId, string $userId): ?ForumCommentLike;
+
+    /**
+     * @param  array<int, string>  $commentIds
+     * @return BaseCollection<int, string>
+     */
+    public function likedCommentIdsForUser(array $commentIds, string $userId): BaseCollection;
 }

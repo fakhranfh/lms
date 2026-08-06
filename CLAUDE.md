@@ -36,9 +36,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
 - Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
 - Check for existing components to reuse before writing a new one.
-- Every submit button must show a loading state while its action is in flight.
-- Every table or data list must show a skeleton loading state while its data is loading.
-- If a Claude Code hook check reports a warning, it must be fixed before proceeding with any further changes.
 
 ## Verification Scripts
 
@@ -122,7 +119,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
 - Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
-- After developing a feature, run static analysis with `vendor/bin/phpstan analyse --memory-limit=1G` (Larastan) and fix any reported errors before finalizing changes.
 
 === laravel/core rules ===
 

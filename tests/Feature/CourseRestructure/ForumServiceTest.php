@@ -1,10 +1,14 @@
 <?php
 
+use App\Models\Course;
 use App\Models\Forum;
 use App\Models\ForumComment;
 use App\Models\ForumThread;
+use App\Models\Session;
 use App\Services\ForumCommentLikeService;
 use App\Services\ForumCommentService;
+use App\Services\ForumService;
+use App\Services\SessionService;
 
 test('creating a comment increments the thread comments_count', function () {
     $thread = ForumThread::factory()->create();
@@ -52,4 +56,29 @@ test('force deleting a course cascades to its forums and threads', function () {
 
     expect(Forum::find($forum->id))->toBeNull();
     expect(ForumThread::find($thread->id))->toBeNull();
+});
+
+test('creating a session auto-creates its linked forum', function () {
+    $course = Course::factory()->create();
+
+    $session = app(SessionService::class)->create(
+        Session::factory()->for($course)->raw()
+    );
+
+    $forum = Forum::where('session_id', $session->id)->first();
+
+    expect($forum)->not->toBeNull();
+    expect($forum->course_id)->toBe($course->id);
+});
+
+test('findOrCreateForSession is idempotent for a session', function () {
+    $course = Course::factory()->create();
+    $session = Session::factory()->for($course)->create();
+    $service = app(ForumService::class);
+
+    $first = $service->findOrCreateForSession($session->id, $course->id);
+    $second = $service->findOrCreateForSession($session->id, $course->id);
+
+    expect($second->id)->toBe($first->id);
+    expect(Forum::where('session_id', $session->id)->count())->toBe(1);
 });

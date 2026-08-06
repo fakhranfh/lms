@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DeliveryMode;
+use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\SessionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -11,12 +12,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property-read Carbon $date_start_display
+ * @property-read Carbon $date_end_display
+ */
 #[Fillable(['course_id', 'title', 'learning_outcome', 'date_start', 'date_end', 'delivery_mode'])]
 class Session extends Model
 {
     /** @use HasFactory<SessionFactory> */
-    use HasFactory, HasUuid;
+    use HasFactory, HasUuid, HasViewerTimezoneDates;
 
     protected $table = 'course_sessions';
 

@@ -16,4 +16,6 @@ interface ForumRepositoryInterface
     public function update(string $id, array $data): Forum;
 
     public function delete(string $id): int;
+
+    public function findBySessionAndCourse(string $sessionId, string $courseId): ?Forum;
 }

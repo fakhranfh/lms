@@ -5,11 +5,13 @@ namespace App\Services;
 use App\Models\Session;
 use App\Repositories\Session\SessionRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class SessionService
 {
     public function __construct(
-        private SessionRepositoryInterface $sessionRepository
+        private SessionRepositoryInterface $sessionRepository,
+        private ForumService $forumService,
     ) {}
 
     public function get(array $filters = [], array $with = []): Collection
@@ -24,7 +26,18 @@ class SessionService
 
     public function create(array $data): Session
     {
-        return $this->sessionRepository->create($data);
+        return DB::transaction(function () use ($data) {
+            $session = $this->sessionRepository->create($data);
+
+            $this->forumService->create([
+                'course_id' => $session->course_id,
+                'session_id' => $session->id,
+                'title' => null,
+                'created_by' => auth()->id(),
+            ]);
+
+            return $session;
+        });
     }
 
     public function update(string $id, array $data): Session

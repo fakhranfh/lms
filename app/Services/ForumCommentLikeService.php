@@ -6,6 +6,7 @@ use App\Models\ForumCommentLike;
 use App\Repositories\ForumComment\ForumCommentRepositoryInterface;
 use App\Repositories\ForumCommentLike\ForumCommentLikeRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as BaseCollection;
 use Illuminate\Support\Facades\DB;
 
 class ForumCommentLikeService
@@ -53,5 +54,14 @@ class ForumCommentLikeService
     public function findByCommentAndUser(string $commentId, string $userId): ?ForumCommentLike
     {
         return $this->forumCommentLikeRepository->findByCommentAndUser($commentId, $userId);
+    }
+
+    /**
+     * @param  array<int, string>  $commentIds
+     * @return BaseCollection<int, string>
+     */
+    public function likedCommentIdsForUser(array $commentIds, string $userId): BaseCollection
+    {
+        return $this->forumCommentLikeRepository->likedCommentIdsForUser($commentIds, $userId);
     }
 }

@@ -36,4 +36,20 @@ class ForumService
     {
         return $this->forumRepository->delete($id);
     }
+
+    public function findOrCreateForSession(string $sessionId, string $courseId): Forum
+    {
+        $existing = $this->forumRepository->findBySessionAndCourse($sessionId, $courseId);
+
+        if ($existing) {
+            return $existing;
+        }
+
+        return $this->forumRepository->create([
+            'course_id' => $courseId,
+            'session_id' => $sessionId,
+            'title' => null,
+            'created_by' => auth()->id(),
+        ]);
+    }
 }

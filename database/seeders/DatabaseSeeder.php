@@ -28,6 +28,9 @@ class DatabaseSeeder extends Seeder
         // Seed syllabuses (class policies, learning outcomes, evaluations, rubric) for those courses
         $this->call(SyllabusSeeder::class);
 
+        // Seed forum threads, comments, and likes for those courses
+        $this->call(ForumSeeder::class);
+
         // $this->call(ProductSeeder::class);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Repositories\ForumCommentLike;
 
 use App\Models\ForumCommentLike;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as BaseCollection;
 
 class ForumCommentLikeRepository implements ForumCommentLikeRepositoryInterface
 {
@@ -48,5 +49,10 @@ class ForumCommentLikeRepository implements ForumCommentLikeRepositoryInterface
     public function findByCommentAndUser(string $commentId, string $userId): ?ForumCommentLike
     {
         return ForumCommentLike::where('comment_id', $commentId)->where('user_id', $userId)->first();
+    }
+
+    public function likedCommentIdsForUser(array $commentIds, string $userId): BaseCollection
+    {
+        return ForumCommentLike::where('user_id', $userId)->whereIn('comment_id', $commentIds)->pluck('comment_id');
     }
 }

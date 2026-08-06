@@ -298,7 +298,9 @@
                                 <p class="text-body-xs text-on-surface-variant flex items-center gap-space-xs">
                                     <span class="material-symbols-outlined text-[14px]">forum</span>
                                     @if ($activeSession->forums->isNotEmpty())
-                                        Forum
+                                        <a href="{{ route('forum.index', [$course, 'session' => $activeSession->id]) }}" wire:navigate class="text-primary hover:underline">
+                                            Go to session forum
+                                        </a>
                                     @else
                                         No forum yet.
                                     @endif

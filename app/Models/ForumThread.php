@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\ForumThreadFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -9,12 +10,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property-read Carbon $created_at_display
+ * @property-read Carbon $updated_at_display
+ */
 #[Fillable(['forum_id', 'user_id', 'title', 'description'])]
 class ForumThread extends Model
 {
     /** @use HasFactory<ForumThreadFactory> */
-    use HasFactory, HasUuid;
+    use HasFactory, HasUuid, HasViewerTimezoneDates;
 
     /**
      * @return BelongsTo<Forum, $this>

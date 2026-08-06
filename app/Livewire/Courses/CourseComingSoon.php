@@ -19,7 +19,6 @@ class CourseComingSoon extends Component
 
     /** @var array<string, string> */
     public array $tabLabels = [
-        'forum' => 'Forum',
         'assessment' => 'Assessment',
         'gradebook' => 'Gradebook',
         'people' => 'People',

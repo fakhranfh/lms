@@ -18,7 +18,7 @@ class CourseTabs
         $definitions = [
             'session' => ['label' => 'Session', 'route' => 'sessions.index', 'icon' => 'calendar_month'],
             'syllabus' => ['label' => 'Syllabus', 'route' => 'syllabus.index', 'icon' => 'menu_book'],
-            'forum' => ['label' => 'Forum', 'route' => 'course-tabs.coming-soon', 'icon' => 'forum'],
+            'forum' => ['label' => 'Forum', 'route' => 'forum.index', 'icon' => 'forum'],
             'assessment' => ['label' => 'Assessment', 'route' => 'course-tabs.coming-soon', 'icon' => 'assignment'],
             'gradebook' => ['label' => 'Gradebook', 'route' => 'course-tabs.coming-soon', 'icon' => 'grade'],
             'people' => ['label' => 'People', 'route' => 'course-tabs.coming-soon', 'icon' => 'groups'],

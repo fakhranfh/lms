@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DemoLmsController;
+use App\Http\Controllers\ForumCommentLikeController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SchoolPaymentController;
@@ -10,6 +11,8 @@ use App\Livewire\ChangePassword;
 use App\Livewire\Courses\CourseComingSoon;
 use App\Livewire\Courses\CourseForm;
 use App\Livewire\Courses\CoursesIndex;
+use App\Livewire\Courses\ForumIndex;
+use App\Livewire\Courses\ForumThreadShow;
 use App\Livewire\Courses\SessionForm;
 use App\Livewire\Courses\SessionsIndex;
 use App\Livewire\Courses\SyllabusForm;
@@ -77,6 +80,10 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
 
         Route::get('/courses/{course}/syllabus', SyllabusIndex::class)->middleware('permission:syllabus.view')->name('syllabus.index');
         Route::get('/courses/{course}/syllabus/edit', SyllabusForm::class)->middleware('permission:syllabus.edit')->name('syllabus.edit');
+
+        Route::get('/courses/{course}/forum', ForumIndex::class)->middleware('permission:forum.view')->name('forum.index');
+        Route::get('/courses/{course}/forum/threads/{thread}', ForumThreadShow::class)->middleware('permission:forum.view')->name('forum.thread.show');
+        Route::post('/forum/comments/{comment}/toggle-like', [ForumCommentLikeController::class, 'toggle'])->middleware('permission:forum.create')->name('forum.comment.toggle-like');
 
         Route::get('/courses/{course}/tabs/{tab}', CourseComingSoon::class)->middleware('permission:courses.view')->name('course-tabs.coming-soon');
 

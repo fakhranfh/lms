@@ -40,13 +40,28 @@ School Admin UI was explicitly deferred (per user decision) — the tab shell an
 - Extracted `App\Support\CourseTabs::build()` to keep tab-href logic out of Blade (repo convention), reused by Session/Syllabus/CourseComingSoon.
 - 26 Livewire feature tests for Syllabus; full `Courses` test folder (Session + Syllabus + CourseComingSoon) 70/70 green; Pint clean; Larastan 0 errors.
 
+### UI — Batch 3: Forum (Teacher & Student)
+
+- **Forum**: `ForumIndex` (session tab bar, thread list with create/delete, pagination) and `ForumThreadShow` (thread detail with edit, comments with add/edit/delete, single-level replies, like/unlike toggle). One shared Blade per screen for both roles — differences are button-visibility only (`canCreate`/`canModerate`), not full layout splits.
+- **No course-wide "General" forum** — forums are strictly session-scoped (`forums.session_id` is NOT NULL at the DB level; the general-forum concept was built then removed per user feedback). Session-scoped forums are auto-created by `SessionService::create()` whenever a `Session` is created.
+- Deletion model: thread/comment owner can delete their own; Teacher/School Admin can delete anyone's via `forum.moderate`. Deleting a comment with replies decrements the thread's `comments_count` by the full removed-post count.
+- Single-level comment replies (`forum_comments.parent_id`, self-referencing FK, cascade delete) — replying to a reply is blocked.
+- Thread and comment edit capability (`updateThread`/`updateComment`), rich text via Trix (`resources/views/components/rich-text-editor.blade.php`), sanitized server-side on write via `App\Support\HtmlSanitizer` (`mews/purifier`, `forum` config in `config/purifier.php`).
+- Per-user read tracking (`forum_thread_reads`) drives unread-post badges on session tabs and unbolds a thread's title once read.
+- All forum/session dates render in the viewer's timezone via `HasViewerTimezoneDates` (`_display` accessors), no hardcoded "GMT+7" label.
+- Like button is an Alpine-optimistic toggle (instant fill/count change client-side, `$wire.call` in the background).
+- `forum.view` / `forum.create` / `forum.moderate` permissions (Teacher & School Admin: all three; Student: view + create), routes registered (`forum.index`, `forum.thread.show`).
+- `CourseTabs::build()` and `CourseComingSoon` updated to route Forum to its real screens; the Session tab's per-session forum chip links to the session-scoped forum.
+- Session tab bar styling unified with the Session tab's own pill pattern (`rounded-t-lg border-b-2`, Alpine `pendingSessionId` optimistic active state).
+- `database/seeders/ForumSeeder.php` seeds per-session threads, comments, replies, and likes (no general forum).
+- 37 Livewire feature tests + 3 service-level tests; full suite 691/691 green; Pint clean; Larastan 0 errors.
+
 ---
 
 ## Not Done
 
 ### UI — remaining components (Teacher & Student), one batch at a time
 
-- **Forum** — thread list/create, comment + like UI, per-session vs general course forum.
 - **Assessment** — assessment list; builders/attempt UIs for:
   - THEORY: Personal Assignment
   - THEORY: Team Assignment (+ Group management UI)

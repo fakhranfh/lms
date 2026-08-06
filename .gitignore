@@ -29,3 +29,4 @@ Thumbs.db
 /tests/k6/tokens.json
 /docs/pentest-reports/*
 .env.testing
+/graphify-out/**

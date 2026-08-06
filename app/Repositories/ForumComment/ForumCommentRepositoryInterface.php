@@ -20,4 +20,9 @@ interface ForumCommentRepositoryInterface
     public function incrementLikesCount(string $id): void;
 
     public function decrementLikesCount(string $id): void;
+
+    /**
+     * @return Collection<int, ForumComment>
+     */
+    public function topLevelForThread(string $threadId, array $with = []): Collection;
 }

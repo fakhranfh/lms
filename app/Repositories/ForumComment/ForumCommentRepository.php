@@ -54,4 +54,16 @@ class ForumCommentRepository implements ForumCommentRepositoryInterface
     {
         ForumComment::whereKey($id)->decrement('likes_count');
     }
+
+    /**
+     * @return Collection<int, ForumComment>
+     */
+    public function topLevelForThread(string $threadId, array $with = []): Collection
+    {
+        return ForumComment::where('thread_id', $threadId)
+            ->whereNull('parent_id')
+            ->with($with)
+            ->oldest()
+            ->get();
+    }
 }

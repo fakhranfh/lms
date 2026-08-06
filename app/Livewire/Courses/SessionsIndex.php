@@ -13,6 +13,7 @@ use App\Models\Session;
 use App\Services\CoursePersonService;
 use App\Services\ForumThreadService;
 use App\Services\SessionMaterialCompletionService;
+use App\Services\SessionProgressService;
 use App\Services\SessionService;
 use App\Services\VideoConferenceParticipationService;
 use App\Support\CourseTabs;
@@ -23,8 +24,6 @@ use Livewire\Component;
 
 class SessionsIndex extends Component
 {
-    private const REQUIRED_FORUM_POSTS = 2;
-
     public Course $course;
 
     public ?string $successMessage = null;
@@ -211,7 +210,7 @@ class SessionsIndex extends Component
         ];
     }
 
-    public function render(SessionService $sessionService, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService, CoursePersonService $coursePersonService, ForumThreadService $forumThreadService)
+    public function render(SessionService $sessionService, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService, CoursePersonService $coursePersonService, ForumThreadService $forumThreadService, SessionProgressService $sessionProgressService)
     {
         if (! $this->sessionsLoaded) {
             return view('livewire.courses.sessions-index-placeholder', [
@@ -242,7 +241,7 @@ class SessionsIndex extends Component
         ];
 
         if ($this->isStudent) {
-            $viewData = array_merge($viewData, $this->buildStudentViewData($sessions, $completionService, $participationService, $forumThreadService));
+            $viewData = array_merge($viewData, $this->buildStudentViewData($sessions, $completionService, $participationService, $forumThreadService, $sessionProgressService));
             $viewData['teacher'] = $coursePersonService->teachersForCourse($this->course->id)->first()?->user;
         }
 
@@ -255,7 +254,7 @@ class SessionsIndex extends Component
      * @param  Collection<int, Session>  $sessions
      * @return array<string, mixed>
      */
-    private function buildStudentViewData(Collection $sessions, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService, ForumThreadService $forumThreadService): array
+    private function buildStudentViewData(Collection $sessions, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService, ForumThreadService $forumThreadService, SessionProgressService $sessionProgressService): array
     {
         $activeSession = $sessions->firstWhere('id', $this->activeSessionId) ?? $sessions->first();
 
@@ -273,7 +272,7 @@ class SessionsIndex extends Component
                 'showVideoConferences' => false,
                 'forumTotalPosts' => 0,
                 'forumMyPostsCount' => 0,
-                'forumRequiredPosts' => self::REQUIRED_FORUM_POSTS,
+                'forumRequiredPosts' => 0,
                 'forumThreadPreviews' => [],
                 'canCreateForumThread' => auth()->user()->can('forum.create'),
                 'forumPagination' => null,
@@ -282,15 +281,21 @@ class SessionsIndex extends Component
 
         $this->activeSessionId = $activeSession->id;
 
+        $requiredForumPosts = $activeSession->required_forum_posts;
+
         $completedMaterialIds = $completionService->completedMaterialIds($activeSession->id, auth()->id());
 
         $forum = $activeSession->forums->first();
         $forumMyPostsCount = $forum ? $forumThreadService->myPostsCountForForum($forum->id, auth()->id()) : 0;
-        $forumCompleted = $forum && $forumMyPostsCount >= self::REQUIRED_FORUM_POSTS;
+        $forumCompleted = $forum && $forumMyPostsCount >= $requiredForumPosts;
 
         $totalMaterials = $activeSession->materials->count();
         $completedMaterialsCount = $completedMaterialIds->intersect($activeSession->materials->pluck('id'))->count();
-        $forumProgressFraction = $forum ? min($forumMyPostsCount, self::REQUIRED_FORUM_POSTS) / self::REQUIRED_FORUM_POSTS : 0;
+        $forumProgressFraction = match (true) {
+            ! $forum => 0,
+            $requiredForumPosts <= 0 => 1,
+            default => min($forumMyPostsCount, $requiredForumPosts) / $requiredForumPosts,
+        };
 
         $totalProgressUnits = $totalMaterials + ($forum ? 1 : 0);
         $completedProgressUnits = $completedMaterialsCount + $forumProgressFraction;
@@ -298,6 +303,8 @@ class SessionsIndex extends Component
         $progressPercent = $totalProgressUnits > 0
             ? (int) round($completedProgressUnits / $totalProgressUnits * 100)
             : 0;
+
+        $sessionProgressService->upsert($activeSession->id, auth()->id(), $progressPercent);
 
         $nextMaterial = $activeSession->materials->first(fn ($material) => ! $completedMaterialIds->contains($material->id))
             ?? $activeSession->materials->first();
@@ -376,7 +383,7 @@ class SessionsIndex extends Component
             'showVideoConferences' => $showVideoConferences,
             'forumTotalPosts' => $forumTotalPosts,
             'forumMyPostsCount' => $forumMyPostsCount,
-            'forumRequiredPosts' => self::REQUIRED_FORUM_POSTS,
+            'forumRequiredPosts' => $requiredForumPosts,
             'forumThreadPreviews' => $forumThreadPreviews,
             'canCreateForumThread' => auth()->user()->can('forum.create'),
             'forumPagination' => $forumPagination,

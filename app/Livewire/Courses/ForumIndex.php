@@ -85,11 +85,15 @@ class ForumIndex extends Component
         $this->forumLoaded = true;
     }
 
-    public function selectSession(string $sessionId): void
+    public function selectSession(string $sessionId, SessionService $sessionService): void
     {
         $this->sessionId = $sessionId;
         $this->page = 1;
         $this->resetThreadForm();
+
+        $session = $sessionService->find($sessionId);
+
+        $this->dispatch('rich-text-disabled-changed', id: 'new-thread', disabled: ! ($session?->isOngoing() ?? false));
     }
 
     public function updatedPerPage(): void

@@ -4,6 +4,7 @@
     wire:ignore
     x-data="richTextEditor(@js($value), '{{ $wireModel }}', '{{ $id }}', @js((bool) $disabled))"
     x-on:rich-text-cleared.window="if ($event.detail.id === id) { clear(); }"
+    x-on:rich-text-disabled-changed.window="if ($event.detail.id === id) { disabled = $event.detail.disabled; }"
     class="bg-surface border border-outline rounded-lg"
     :class="disabled && 'opacity-60'"
 >

@@ -160,7 +160,7 @@
 
                 <div>
                     <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Description</label>
-                    <x-rich-text-editor id="new-thread" wire-model="newThreadDescription" :value="$newThreadDescription" />
+                    <x-rich-text-editor id="new-thread" wire-model="newThreadDescription" :value="$newThreadDescription" :disabled="! $forumWindowOpen" />
                     @error('newThreadDescription') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                 </div>
 

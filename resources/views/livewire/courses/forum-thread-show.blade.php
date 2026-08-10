@@ -70,7 +70,7 @@
 
         @if ($canCreate)
             <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
-                <x-rich-text-editor id="new-comment" wire-model="newCommentBody" :value="$newCommentBody" />
+                <x-rich-text-editor id="new-comment" wire-model="newCommentBody" :value="$newCommentBody" :disabled="! $forumWindowOpen" />
                 @error('newCommentBody') <p class="text-body-xs text-error">{{ $message }}</p> @enderror
 
                 @if (! $forumWindowOpen)
@@ -254,7 +254,7 @@
 
                             @if ($comment->parent_id === null)
                                 <div x-show="replyingCommentId === '{{ $comment->id }}'" x-cloak class="ml-space-lg space-y-space-sm border-l-2 border-outline-variant pl-space-md">
-                                    <x-rich-text-editor id="reply-{{ $comment->id }}" wire-model="newReplyBody" :value="''" />
+                                    <x-rich-text-editor id="reply-{{ $comment->id }}" wire-model="newReplyBody" :value="''" :disabled="! $forumWindowOpen" />
                                     @error('newReplyBody') <p class="text-body-xs text-error">{{ $message }}</p> @enderror
                                     @if (! $forumWindowOpen)
                                         <p class="text-body-xs text-on-surface-variant">Posting is only available during the session's scheduled dates.</p>

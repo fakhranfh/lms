@@ -31,6 +31,9 @@ class DatabaseSeeder extends Seeder
         // Seed forum threads, comments, and likes for those courses
         $this->call(ForumSeeder::class);
 
+        // Seed Personal/Team Assignments (with groups, questions, and attempts) for those courses
+        $this->call(AssessmentSeeder::class);
+
         // $this->call(ProductSeeder::class);
     }
 }

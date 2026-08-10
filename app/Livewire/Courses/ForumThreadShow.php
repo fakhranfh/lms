@@ -84,7 +84,7 @@ class ForumThreadShow extends Component
         abort_unless($thread->forum->course_id === $course->id, 404);
 
         $this->course = $course;
-        $this->thread = $thread->loadMissing('forum.session');
+        $this->thread = $thread->loadMissing('forum.session', 'user.roles');
 
         $forumThreadReadService->markRead($thread->id, auth()->id());
     }
@@ -248,7 +248,7 @@ class ForumThreadShow extends Component
                 $this->thread->id,
                 $this->perPage,
                 $this->page,
-                ['user', 'replies.user'],
+                ['user.roles', 'replies.user.roles'],
                 $this->sortBy
             );
             $comments = collect($paginatedComments->items());

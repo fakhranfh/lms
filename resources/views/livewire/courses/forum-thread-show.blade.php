@@ -9,7 +9,38 @@
     </a>
 
     <!-- Thread -->
-    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
+    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+        <div class="flex items-start justify-between gap-space-md pb-space-md border-b border-outline-variant">
+            <div class="flex items-center gap-space-md">
+                <x-avatar :user="$thread->user" :size="12" />
+                <div>
+                    <div class="flex items-center gap-space-xs flex-wrap">
+                        <span class="font-label-lg text-label-lg text-on-surface">{{ $thread->user->name }}</span>
+                        @if ($thread->user->roles->isNotEmpty())
+                            <span class="text-on-surface-variant">&middot;</span>
+                            <span class="font-label-sm text-label-sm text-primary">{{ $thread->user->roles->first()->name }}</span>
+                        @endif
+                    </div>
+                    <p class="text-body-xs text-on-surface-variant">{{ $thread->created_at_display->format('d M Y, H:i') }}</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-space-sm flex-shrink-0 text-on-surface-variant">
+                @if (! $editingThread && ($thread->user_id === auth()->id() || $canModerate))
+                    <button wire:click="startEditThread" type="button" class="p-space-sm hover:text-primary transition">
+                        <span class="material-symbols-outlined text-[20px]">edit</span>
+                    </button>
+                    <button @click="showDeleteThreadModal = true" type="button" class="p-space-sm hover:text-error transition">
+                        <span class="material-symbols-outlined text-[20px]">delete</span>
+                    </button>
+                @endif
+                <span class="inline-flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[20px]">forum</span>
+                    <span class="font-label-md text-label-md">{{ $pagination['total'] ?? 0 }}</span>
+                </span>
+            </div>
+        </div>
+
         @if ($editingThread)
             <div class="space-y-space-md">
                 <div>
@@ -43,24 +74,9 @@
                 </div>
             </div>
         @else
-            <div class="flex items-start justify-between gap-space-md">
-                <h1 class="font-headline-md text-headline-md text-on-surface">{{ $thread->title }}</h1>
-
-                <div class="flex items-center gap-space-xs flex-shrink-0">
-                    @if ($thread->user_id === auth()->id() || $canModerate)
-                        <button wire:click="startEditThread" type="button" class="p-space-sm text-on-surface-variant hover:text-primary transition">
-                            <span class="material-symbols-outlined text-[20px]">edit</span>
-                        </button>
-                        <button @click="showDeleteThreadModal = true" type="button" class="p-space-sm text-on-surface-variant hover:text-error transition">
-                            <span class="material-symbols-outlined text-[20px]">delete</span>
-                        </button>
-                    @endif
-                </div>
-            </div>
+            <h1 class="font-headline-md text-headline-md text-on-surface">{{ $thread->title }}</h1>
+            <p class="font-label-md text-label-md text-on-surface-variant">Description</p>
             <div class="rte-content text-body-md text-on-surface">{!! $thread->description !!}</div>
-            <p class="text-body-xs text-on-surface-variant">
-                {{ $thread->user->name }} &middot; {{ $thread->created_at_display->format('d M Y, H:i') }}
-            </p>
         @endif
     </div>
 
@@ -200,10 +216,20 @@
                                 </div>
                             </div>
                             <div x-show="editingCommentId !== '{{ $comment->id }}'">
-                                <div class="flex items-start justify-between gap-space-md">
-                                    <p class="text-body-xs text-on-surface-variant">
-                                        {{ $comment->user->name }} &middot; {{ $comment->created_at_display->format('d M Y, H:i') }}
-                                    </p>
+                                <div class="flex items-start justify-between gap-space-md pb-space-sm border-b border-outline-variant">
+                                    <div class="flex items-center gap-space-sm">
+                                        <x-avatar :user="$comment->user" :size="10" />
+                                        <div>
+                                            <div class="flex items-center gap-space-xs flex-wrap">
+                                                <span class="font-label-md text-label-md text-on-surface">{{ $comment->user->name }}</span>
+                                                @if ($comment->user->roles->isNotEmpty())
+                                                    <span class="text-on-surface-variant">&middot;</span>
+                                                    <span class="font-label-sm text-label-sm text-primary">{{ $comment->user->roles->first()->name }}</span>
+                                                @endif
+                                            </div>
+                                            <p class="text-body-xs text-on-surface-variant">{{ $comment->created_at_display->format('d M Y, H:i') }}</p>
+                                        </div>
+                                    </div>
 
                                     <div class="flex items-center gap-space-xs flex-shrink-0">
                                         @if ($comment->user_id === auth()->id() || $canModerate)
@@ -297,10 +323,20 @@
                                                 </div>
                                             </div>
                                             <div x-show="editingCommentId !== '{{ $reply->id }}'">
-                                                <div class="flex items-start justify-between gap-space-md">
-                                                    <p class="text-body-xs text-on-surface-variant">
-                                                        {{ $reply->user->name }} &middot; {{ $reply->created_at_display->format('d M Y, H:i') }}
-                                                    </p>
+                                                <div class="flex items-start justify-between gap-space-md pb-space-xs border-b border-outline-variant">
+                                                    <div class="flex items-center gap-space-sm">
+                                                        <x-avatar :user="$reply->user" :size="8" />
+                                                        <div>
+                                                            <div class="flex items-center gap-space-xs flex-wrap">
+                                                                <span class="font-label-sm text-label-sm text-on-surface">{{ $reply->user->name }}</span>
+                                                                @if ($reply->user->roles->isNotEmpty())
+                                                                    <span class="text-on-surface-variant">&middot;</span>
+                                                                    <span class="font-label-sm text-label-sm text-primary">{{ $reply->user->roles->first()->name }}</span>
+                                                                @endif
+                                                            </div>
+                                                            <p class="text-body-xs text-on-surface-variant">{{ $reply->created_at_display->format('d M Y, H:i') }}</p>
+                                                        </div>
+                                                    </div>
 
                                                     <div class="flex items-center gap-space-xs flex-shrink-0">
                                                         @if ($reply->user_id === auth()->id() || $canModerate)

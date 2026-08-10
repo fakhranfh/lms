@@ -93,4 +93,9 @@ class Session extends Model
     {
         return $this->hasMany(SessionProgress::class, 'session_id');
     }
+
+    public function isOngoing(): bool
+    {
+        return now()->between($this->date_start, $this->date_end);
+    }
 }

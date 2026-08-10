@@ -29,7 +29,7 @@ class SessionSeeder extends Seeder
     {
         $mediaItems = $this->mediaItemsForSchool($course->school_id);
 
-        $start = Carbon::parse('2026-02-23 00:00:00');
+        $start = Carbon::now()->subWeeks(2)->startOfDay();
 
         foreach ($this->sessionBlueprints() as $index => $blueprint) {
             $dateStart = (clone $start)->addWeeks($index);

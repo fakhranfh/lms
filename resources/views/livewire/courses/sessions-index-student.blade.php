@@ -149,22 +149,36 @@
 
                     @if ($showVideoConferences)
                         @foreach ($activeSession->videoConferences as $videoConference)
-                            <a
-                                wire:key="video-conference-{{ $videoConference->id }}"
-                                wire:click="markVideoConferenceOpened('{{ $videoConference->id }}')"
-                                href="{{ $videoConference->meeting_url }}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="px-space-lg py-space-sm border border-outline text-on-surface rounded-lg font-label-sm text-label-sm hover:bg-surface-container transition-colors inline-flex items-center justify-center gap-space-xs"
-                            >
-                                @if ($openedVideoConferenceIds->contains($videoConference->id))
-                                    <span class="material-symbols-outlined text-success text-[18px]" data-weight="fill">check_circle</span>
-                                @else
-                                    <span class="material-symbols-outlined text-[18px]">videocam</span>
-                                @endif
-                                {{ $videoConference->title ?: 'Video Conference' }}
-                            </a>
+                            @if ($videoConferenceWindowOpen)
+                                <a
+                                    wire:key="video-conference-{{ $videoConference->id }}"
+                                    wire:click="markVideoConferenceOpened('{{ $videoConference->id }}')"
+                                    href="{{ $videoConference->meeting_url }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="px-space-lg py-space-sm border border-outline text-on-surface rounded-lg font-label-sm text-label-sm hover:bg-surface-container transition-colors inline-flex items-center justify-center gap-space-xs"
+                                >
+                                    @if ($openedVideoConferenceIds->contains($videoConference->id))
+                                        <span class="material-symbols-outlined text-success text-[18px]" data-weight="fill">check_circle</span>
+                                    @else
+                                        <span class="material-symbols-outlined text-[18px]">videocam</span>
+                                    @endif
+                                    {{ $videoConference->title ?: 'Video Conference' }}
+                                </a>
+                            @else
+                                <span
+                                    wire:key="video-conference-{{ $videoConference->id }}"
+                                    title="Available only during the session's scheduled dates"
+                                    class="px-space-lg py-space-sm border border-outline-variant text-on-surface-variant rounded-lg font-label-sm text-label-sm inline-flex items-center justify-center gap-space-xs opacity-50 cursor-not-allowed"
+                                >
+                                    <span class="material-symbols-outlined text-[18px]">videocam_off</span>
+                                    {{ $videoConference->title ?: 'Video Conference' }}
+                                </span>
+                            @endif
                         @endforeach
+                        @if (! $videoConferenceWindowOpen)
+                            <p class="text-body-xs text-on-surface-variant text-right">Available only during the session's scheduled dates.</p>
+                        @endif
                     @endif
                 </div>
 
@@ -384,6 +398,10 @@
                                             @error('newThreadDescription') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                                         </div>
 
+                                        @if (! $forumWindowOpen)
+                                            <p class="text-body-xs text-on-surface-variant">Posting is only available during the session's scheduled dates.</p>
+                                        @endif
+
                                         <div class="flex gap-space-md">
                                             <button
                                                 @click="showThreadForm = false"
@@ -397,6 +415,7 @@
                                                 wire:loading.attr="disabled"
                                                 wire:target="createThread"
                                                 type="button"
+                                                @disabled(! $forumWindowOpen)
                                                 class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
                                             >
                                                 <span wire:loading.remove wire:target="createThread">Post Thread</span>

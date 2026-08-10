@@ -164,6 +164,10 @@
                     @error('newThreadDescription') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                 </div>
 
+                @if (! $forumWindowOpen)
+                    <p class="text-body-xs text-on-surface-variant">Posting is only available during the session's scheduled dates.</p>
+                @endif
+
                 <div class="flex gap-space-md">
                     <button
                         @click="showThreadForm = false"
@@ -177,6 +181,7 @@
                         wire:loading.attr="disabled"
                         wire:target="createThread"
                         type="button"
+                        @disabled(! $forumWindowOpen)
                         class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
                     >
                         <span wire:loading.remove wire:target="createThread">Post Thread</span>

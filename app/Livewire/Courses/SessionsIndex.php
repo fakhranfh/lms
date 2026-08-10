@@ -11,11 +11,13 @@ use App\Models\MediaLibraryItem;
 use App\Models\Role;
 use App\Models\Session;
 use App\Services\CoursePersonService;
+use App\Services\ForumService;
 use App\Services\ForumThreadService;
 use App\Services\SessionMaterialCompletionService;
 use App\Services\SessionProgressService;
 use App\Services\SessionService;
 use App\Services\VideoConferenceParticipationService;
+use App\Services\VideoConferenceService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
@@ -118,8 +120,12 @@ class SessionsIndex extends Component
      * Marks a video conference as opened once its link is clicked. One-way,
      * like material completion, and idempotent (won't duplicate the record).
      */
-    public function markVideoConferenceOpened(string $videoConferenceId, VideoConferenceParticipationService $participationService): void
+    public function markVideoConferenceOpened(string $videoConferenceId, VideoConferenceParticipationService $participationService, VideoConferenceService $videoConferenceService): void
     {
+        $videoConference = $videoConferenceService->find($videoConferenceId, ['session']);
+
+        abort_unless($videoConference !== null && $videoConference->session->isOngoing(), 403);
+
         $alreadyOpened = $participationService->get([
             'video_conference_id' => $videoConferenceId,
             'user_id' => auth()->id(),
@@ -136,10 +142,14 @@ class SessionsIndex extends Component
         ]);
     }
 
-    public function createThread(ForumThreadService $forumThreadService): void
+    public function createThread(ForumThreadService $forumThreadService, ForumService $forumService): void
     {
         abort_unless(auth()->user()->can('forum.create'), 403);
         abort_unless($this->activeForumId !== null, 404);
+
+        $forum = $forumService->find($this->activeForumId, ['session']);
+
+        abort_unless($forum !== null && $forum->session->isOngoing(), 403);
 
         $this->validate([
             'newThreadTitle' => 'required|string|max:255',
@@ -270,6 +280,8 @@ class SessionsIndex extends Component
                 'materialPayloads' => [],
                 'openedVideoConferenceIds' => collect(),
                 'showVideoConferences' => false,
+                'videoConferenceWindowOpen' => false,
+                'forumWindowOpen' => false,
                 'forumTotalPosts' => 0,
                 'forumMyPostsCount' => 0,
                 'forumRequiredPosts' => 0,
@@ -381,6 +393,8 @@ class SessionsIndex extends Component
             'materialPayloads' => $materialPayloads,
             'openedVideoConferenceIds' => $openedVideoConferenceIds,
             'showVideoConferences' => $showVideoConferences,
+            'videoConferenceWindowOpen' => $activeSession->isOngoing(),
+            'forumWindowOpen' => $activeSession->isOngoing(),
             'forumTotalPosts' => $forumTotalPosts,
             'forumMyPostsCount' => $forumMyPostsCount,
             'forumRequiredPosts' => $requiredForumPosts,

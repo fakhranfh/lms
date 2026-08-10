@@ -35,7 +35,10 @@ class ForumIndexTest extends TestCase
         $this->teacher = User::factory()->forSchool($this->school)->create();
         $this->student = User::factory()->forSchool($this->school)->create();
         $this->course = Course::factory()->for($this->school)->create();
-        $this->session = Session::factory()->for($this->course)->create();
+        $this->session = Session::factory()->for($this->course)->create([
+            'date_start' => now()->subDay(),
+            'date_end' => now()->addDay(),
+        ]);
         $this->forum = Forum::factory()->for($this->course)->create(['session_id' => $this->session->id]);
 
         $this->actingAs($this->teacher);
@@ -133,6 +136,26 @@ class ForumIndexTest extends TestCase
             ->call('createThread');
 
         $this->assertDatabaseHas('forum_threads', ['title' => 'Student topic', 'user_id' => $this->student->id]);
+    }
+
+    public function test_cannot_create_thread_outside_session_window(): void
+    {
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        $pastSession = Session::factory()->for($this->course)->create([
+            'date_start' => now()->subWeeks(2),
+            'date_end' => now()->subWeek(),
+        ]);
+        $pastForum = Forum::factory()->for($this->course)->create(['session_id' => $pastSession->id]);
+
+        Livewire::test(ForumIndex::class, ['course' => $this->course])
+            ->call('loadForum')
+            ->call('selectSession', $pastSession->id)
+            ->set('newThreadTitle', 'Too late')
+            ->call('createThread')
+            ->assertStatus(403);
+
+        $this->assertDatabaseMissing('forum_threads', ['title' => 'Too late', 'forum_id' => $pastForum->id]);
     }
 
     public function test_owner_can_delete_own_thread(): void

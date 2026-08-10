@@ -100,7 +100,11 @@ class SessionsIndexStudentTest extends TestCase
 
     public function test_video_conference_shows_only_for_virtual_class_sessions_and_tracks_opened_state(): void
     {
-        $onlineSession = Session::factory()->for($this->course)->create(['delivery_mode' => DeliveryMode::VirtualClass]);
+        $onlineSession = Session::factory()->for($this->course)->create([
+            'delivery_mode' => DeliveryMode::VirtualClass,
+            'date_start' => now()->subDay(),
+            'date_end' => now()->addDay(),
+        ]);
         $videoConference = VideoConference::factory()->for($onlineSession)->create(['title' => 'Main Meeting']);
 
         $offlineSession = Session::factory()->for($this->course)->create(['delivery_mode' => DeliveryMode::Offline]);
@@ -125,5 +129,26 @@ class SessionsIndexStudentTest extends TestCase
         $component->call('markVideoConferenceOpened', $videoConference->id);
 
         $this->assertDatabaseCount('video_conference_participations', 1);
+    }
+
+    public function test_video_conference_cannot_be_opened_outside_session_window(): void
+    {
+        $pastSession = Session::factory()->for($this->course)->create([
+            'delivery_mode' => DeliveryMode::VirtualClass,
+            'date_start' => now()->subWeeks(2),
+            'date_end' => now()->subWeek(),
+        ]);
+        $videoConference = VideoConference::factory()->for($pastSession)->create();
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $pastSession->id)
+            ->call('markVideoConferenceOpened', $videoConference->id)
+            ->assertStatus(403);
+
+        $this->assertDatabaseMissing('video_conference_participations', [
+            'video_conference_id' => $videoConference->id,
+            'user_id' => $this->student->id,
+        ]);
     }
 }

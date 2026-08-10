@@ -59,7 +59,7 @@ class ForumThreadShow extends Component
         abort_unless($thread->forum->course_id === $course->id, 404);
 
         $this->course = $course;
-        $this->thread = $thread;
+        $this->thread = $thread->loadMissing('forum.session');
 
         $forumThreadReadService->markRead($thread->id, auth()->id());
     }
@@ -87,6 +87,7 @@ class ForumThreadShow extends Component
     public function addComment(ForumCommentService $forumCommentService): void
     {
         abort_unless(auth()->user()->can('forum.create'), 403);
+        abort_unless($this->thread->forum->session->isOngoing(), 403);
 
         $this->validate([
             'newCommentBody' => 'required|string|max:5000',
@@ -143,6 +144,7 @@ class ForumThreadShow extends Component
     public function addReply(string $commentId, ForumCommentService $forumCommentService): void
     {
         abort_unless(auth()->user()->can('forum.create'), 403);
+        abort_unless($this->thread->forum->session->isOngoing(), 403);
 
         $parent = $forumCommentService->find($commentId);
 
@@ -248,6 +250,7 @@ class ForumThreadShow extends Component
             'pagination' => $pagination,
             'likedCommentIds' => $likedCommentIds,
             'canCreate' => auth()->user()->can('forum.create'),
+            'forumWindowOpen' => $this->thread->forum->session->isOngoing(),
             'canModerate' => auth()->user()->can('forum.moderate'),
             'courseTabs' => CourseTabs::build($this->course, 'forum'),
         ])

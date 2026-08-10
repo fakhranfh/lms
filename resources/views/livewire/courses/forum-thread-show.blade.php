@@ -73,11 +73,16 @@
                 <x-rich-text-editor id="new-comment" wire-model="newCommentBody" :value="$newCommentBody" />
                 @error('newCommentBody') <p class="text-body-xs text-error">{{ $message }}</p> @enderror
 
+                @if (! $forumWindowOpen)
+                    <p class="text-body-xs text-on-surface-variant">Posting is only available during the session's scheduled dates.</p>
+                @endif
+
                 <button
                     wire:click="addComment"
                     wire:loading.attr="disabled"
                     wire:target="addComment"
                     type="button"
+                    @disabled(! $forumWindowOpen)
                     class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                     <span wire:loading.remove wire:target="addComment">Post Comment</span>
@@ -251,9 +256,12 @@
                                 <div x-show="replyingCommentId === '{{ $comment->id }}'" x-cloak class="ml-space-lg space-y-space-sm border-l-2 border-outline-variant pl-space-md">
                                     <x-rich-text-editor id="reply-{{ $comment->id }}" wire-model="newReplyBody" :value="''" />
                                     @error('newReplyBody') <p class="text-body-xs text-error">{{ $message }}</p> @enderror
+                                    @if (! $forumWindowOpen)
+                                        <p class="text-body-xs text-on-surface-variant">Posting is only available during the session's scheduled dates.</p>
+                                    @endif
                                     <div class="flex gap-space-sm">
                                         <button @click="replyingCommentId = null" type="button" class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition">Cancel</button>
-                                        <button wire:click="addReply('{{ $comment->id }}')" wire:loading.attr="disabled" wire:target="addReply('{{ $comment->id }}')" type="button" class="px-space-md py-space-xs bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50">
+                                        <button wire:click="addReply('{{ $comment->id }}')" wire:loading.attr="disabled" wire:target="addReply('{{ $comment->id }}')" type="button" @disabled(! $forumWindowOpen) class="px-space-md py-space-xs bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50">
                                             <span wire:loading.remove wire:target="addReply('{{ $comment->id }}')">Reply</span>
                                             <span wire:loading wire:target="addReply('{{ $comment->id }}')">Posting…</span>
                                         </button>

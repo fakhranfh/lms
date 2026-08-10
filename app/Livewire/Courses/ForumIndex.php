@@ -77,10 +77,14 @@ class ForumIndex extends Component
         $this->page = max(1, $page);
     }
 
-    public function createThread(ForumThreadService $forumThreadService): void
+    public function createThread(ForumThreadService $forumThreadService, ForumService $forumService): void
     {
         abort_unless(auth()->user()->can('forum.create'), 403);
         abort_unless($this->currentForumId !== null, 404);
+
+        $forum = $forumService->find($this->currentForumId, ['session']);
+
+        abort_unless($forum !== null && $forum->session->isOngoing(), 403);
 
         $this->validate([
             'newThreadTitle' => 'required|string|max:255',
@@ -191,6 +195,7 @@ class ForumIndex extends Component
             'totalComments' => $totals['comments'],
             'isStudent' => $this->isStudent,
             'canCreate' => auth()->user()->can('forum.create'),
+            'forumWindowOpen' => $activeSession->isOngoing(),
             'canModerate' => auth()->user()->can('forum.moderate'),
             'courseTabs' => CourseTabs::build($this->course, 'forum'),
             'teacher' => $this->isStudent

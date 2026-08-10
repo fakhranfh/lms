@@ -38,7 +38,10 @@ class ForumThreadShowTest extends TestCase
         $this->teacher = User::factory()->forSchool($this->school)->create();
         $this->student = User::factory()->forSchool($this->school)->create();
         $this->course = Course::factory()->for($this->school)->create();
-        $this->session = Session::factory()->for($this->course)->create();
+        $this->session = Session::factory()->for($this->course)->create([
+            'date_start' => now()->subDay(),
+            'date_end' => now()->addDay(),
+        ]);
         $this->forum = Forum::factory()->for($this->course)->create(['session_id' => $this->session->id]);
         $this->thread = ForumThread::factory()->for($this->forum)->create(['user_id' => $this->teacher->id]);
 
@@ -82,6 +85,30 @@ class ForumThreadShowTest extends TestCase
             ->assertSee('A helpful reply');
 
         $this->assertSame(1, $this->thread->fresh()->comments_count);
+    }
+
+    public function test_cannot_add_comment_or_reply_outside_session_window(): void
+    {
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        $this->session->update([
+            'date_start' => now()->subWeeks(2),
+            'date_end' => now()->subWeek(),
+        ]);
+
+        $comment = ForumComment::factory()->for($this->thread, 'thread')->create();
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread])
+            ->call('loadComments')
+            ->set('newCommentBody', 'Too late')
+            ->call('addComment')
+            ->assertStatus(403);
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread])
+            ->call('loadComments')
+            ->set('newReplyBody', 'Too late reply')
+            ->call('addReply', $comment->id)
+            ->assertStatus(403);
     }
 
     public function test_owner_can_delete_own_comment_and_decrements_count(): void

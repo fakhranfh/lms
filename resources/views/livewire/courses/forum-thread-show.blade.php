@@ -57,7 +57,7 @@
                     @endif
                 </div>
             </div>
-            <div class="text-body-md text-on-surface">{!! $thread->description !!}</div>
+            <div class="rte-content text-body-md text-on-surface">{!! $thread->description !!}</div>
             <p class="text-body-xs text-on-surface-variant">
                 {{ $thread->user->name }} &middot; {{ $thread->created_at_display->format('d M Y, H:i') }}
             </p>
@@ -221,7 +221,7 @@
                                     </div>
                                 </div>
 
-                                <div class="text-body-md text-on-surface mt-space-xs mb-space-sm">{!! $comment->body !!}</div>
+                                <div class="rte-content text-body-md text-on-surface mt-space-xs mb-space-sm">{!! $comment->body !!}</div>
 
                                 <div class="flex items-center gap-space-lg">
                                     @if ($canCreate)
@@ -318,7 +318,7 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="text-body-sm text-on-surface mt-space-xs mb-space-sm">{!! $reply->body !!}</div>
+                                                <div class="rte-content text-body-sm text-on-surface mt-space-xs mb-space-sm">{!! $reply->body !!}</div>
 
                                                 @if ($canCreate)
                                                     <button

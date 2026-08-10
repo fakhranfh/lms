@@ -744,6 +744,20 @@ class R2StorageService
     }
 
     /**
+     * Determine whether a URL points to a file stored in this R2 bucket
+     * (either the custom domain or the raw R2 endpoint), as opposed to an
+     * arbitrary external URL that happens to appear in stored content.
+     */
+    public function isManagedUrl(string $url): bool
+    {
+        if ($this->customDomain !== '' && str_starts_with($url, $this->customDomain)) {
+            return true;
+        }
+
+        return str_contains($url, "{$this->bucket}.{$this->accountId}.r2.cloudflarestorage.com");
+    }
+
+    /**
      * Extract S3 key from URL or return as-is
      */
     public function extractKeyFromPath(string $filePath): string

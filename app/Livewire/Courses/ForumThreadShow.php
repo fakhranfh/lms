@@ -9,13 +9,18 @@ use App\Services\ForumCommentLikeService;
 use App\Services\ForumCommentService;
 use App\Services\ForumThreadReadService;
 use App\Services\ForumThreadService;
+use App\Services\R2StorageService;
+use App\Services\RichTextAttachmentCleanupService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class ForumThreadShow extends Component
 {
+    use WithFileUploads;
+
     public Course $course;
 
     public ForumThread $thread;
@@ -51,6 +56,26 @@ class ForumThreadShow extends Component
     public string $editCommentBody = '';
 
     public string $newReplyBody = '';
+
+    public $pendingRichTextFile = null;
+
+    public function insertRichTextFile(R2StorageService $r2StorageService): string
+    {
+        $this->validate([
+            'pendingRichTextFile' => 'required|file|mimes:jpg,jpeg,png,gif,webp,pdf,zip|max:10240',
+        ]);
+
+        $url = $r2StorageService->uploadPublicFile($this->pendingRichTextFile, 'forum-attachments');
+
+        $this->pendingRichTextFile = null;
+
+        return $url;
+    }
+
+    public function deleteRichTextAttachment(string $url, RichTextAttachmentCleanupService $richTextAttachmentCleanupService): void
+    {
+        $richTextAttachmentCleanupService->deleteUrl($url);
+    }
 
     public function mount(CurrentSchool $currentSchool, Course $course, ForumThread $thread, ForumThreadReadService $forumThreadReadService): void
     {

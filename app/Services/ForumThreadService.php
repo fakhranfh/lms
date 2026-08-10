@@ -10,7 +10,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class ForumThreadService
 {
     public function __construct(
-        private ForumThreadRepositoryInterface $forumThreadRepository
+        private ForumThreadRepositoryInterface $forumThreadRepository,
+        private RichTextAttachmentCleanupService $richTextAttachmentCleanupService,
     ) {}
 
     public function get(array $filters = [], array $with = []): Collection
@@ -30,11 +31,26 @@ class ForumThreadService
 
     public function update(string $id, array $data): ForumThread
     {
+        if (array_key_exists('description', $data)) {
+            $existing = $this->forumThreadRepository->find($id);
+            $this->richTextAttachmentCleanupService->deleteRemoved($existing?->description, $data['description']);
+        }
+
         return $this->forumThreadRepository->update($id, $data);
     }
 
     public function delete(string $id): int
     {
+        $thread = $this->forumThreadRepository->find($id, ['comments']);
+
+        if ($thread) {
+            $this->richTextAttachmentCleanupService->deleteFromHtml($thread->description);
+
+            foreach ($thread->comments as $comment) {
+                $this->richTextAttachmentCleanupService->deleteFromHtml($comment->body);
+            }
+        }
+
         return $this->forumThreadRepository->delete($id);
     }
 

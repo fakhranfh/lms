@@ -36,7 +36,7 @@ return [
         ],
         'forum' => [
             'HTML.Doctype' => 'HTML 4.01 Transitional',
-            'HTML.Allowed' => 'p,br,b,strong,i,em,u,ul,ol,li,a[href|title],blockquote',
+            'HTML.Allowed' => 'p,br,b,strong,i,em,u,h1,h2,ul,ol,li,a[href|title|target|rel],blockquote,img[src|alt|width|height],table,thead,tbody,tr,th,td',
             'AutoFormat.AutoParagraph' => false,
             'AutoFormat.RemoveEmpty' => true,
         ],

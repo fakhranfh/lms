@@ -13,6 +13,8 @@ use App\Models\Session;
 use App\Services\CoursePersonService;
 use App\Services\ForumService;
 use App\Services\ForumThreadService;
+use App\Services\R2StorageService;
+use App\Services\RichTextAttachmentCleanupService;
 use App\Services\SessionMaterialCompletionService;
 use App\Services\SessionProgressService;
 use App\Services\SessionService;
@@ -23,9 +25,12 @@ use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class SessionsIndex extends Component
 {
+    use WithFileUploads;
+
     public Course $course;
 
     public ?string $successMessage = null;
@@ -52,6 +57,26 @@ class SessionsIndex extends Component
     public int $forumPerPage = 5;
 
     public int $forumPage = 1;
+
+    public $pendingRichTextFile = null;
+
+    public function insertRichTextFile(R2StorageService $r2StorageService): string
+    {
+        $this->validate([
+            'pendingRichTextFile' => 'required|file|mimes:jpg,jpeg,png,gif,webp,pdf,zip|max:10240',
+        ]);
+
+        $url = $r2StorageService->uploadPublicFile($this->pendingRichTextFile, 'forum-attachments');
+
+        $this->pendingRichTextFile = null;
+
+        return $url;
+    }
+
+    public function deleteRichTextAttachment(string $url, RichTextAttachmentCleanupService $richTextAttachmentCleanupService): void
+    {
+        $richTextAttachmentCleanupService->deleteUrl($url);
+    }
 
     /**
      * Sessions are queried lazily via wire:init (loadSessions), so the initial

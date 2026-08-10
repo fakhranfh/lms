@@ -14,6 +14,7 @@ class ForumCommentService
     public function __construct(
         private ForumCommentRepositoryInterface $forumCommentRepository,
         private ForumThreadRepositoryInterface $forumThreadRepository,
+        private RichTextAttachmentCleanupService $richTextAttachmentCleanupService,
     ) {}
 
     public function get(array $filters = [], array $with = []): Collection
@@ -38,6 +39,11 @@ class ForumCommentService
 
     public function update(string $id, array $data): ForumComment
     {
+        if (array_key_exists('body', $data)) {
+            $existing = $this->forumCommentRepository->find($id);
+            $this->richTextAttachmentCleanupService->deleteRemoved($existing?->body, $data['body']);
+        }
+
         return $this->forumCommentRepository->update($id, $data);
     }
 
@@ -51,6 +57,11 @@ class ForumCommentService
             if ($comment) {
                 $postsRemoved = 1 + $comment->replies->count();
                 $this->forumThreadRepository->decrementCommentsCount($comment->thread_id, $postsRemoved);
+
+                $this->richTextAttachmentCleanupService->deleteFromHtml($comment->body);
+                foreach ($comment->replies as $reply) {
+                    $this->richTextAttachmentCleanupService->deleteFromHtml($reply->body);
+                }
             }
 
             return $deleted;

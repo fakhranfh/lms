@@ -56,15 +56,26 @@ School Admin UI was explicitly deferred (per user decision) — the tab shell an
 - `database/seeders/ForumSeeder.php` seeds per-session threads, comments, replies, and likes (no general forum).
 - 37 Livewire feature tests + 3 service-level tests; full suite 691/691 green; Pint clean; Larastan 0 errors.
 
+### UI — Batch 4: Assessment shell + Personal/Team Assignment + Groups (Teacher & Student)
+
+- **Assessment list** (`AssessmentIndex`): grouped by `AssessmentType`, all 6 types shown (only Personal/Team have working create/edit/detail links this batch, others render as inert "coming soon" chips). Teacher gets create dropdown, edit/delete (delete blocked if any `AssessmentAttempt` exists — no soft-delete on `Assessment`), "Manage Groups" button. Student rows show computed status (not started / submitted / graded) via `AssessmentAttemptService`.
+- **Personal/Team Assignment builder** (`AssessmentForm`, shared via `assigned_to`): title/weight (defaulted from `AssessmentType::defaultWeight()`)/dates/session/status, question repeater (description via rich-text-editor + points + per-question Media Library picker syncing `assessment_question_files`). Type is immutable after create.
+- **Personal Assignment show** (`AssessmentPersonalShow`) / **Team Assignment show** (`AssessmentTeamShow`): single shared component per type, role-gated view data (Forum-style, not template-split). Student submits text answer (file upload deferred — see below), can resubmit until graded or until `end_date` passes (`attempt_number` increments each resubmission). Teacher sees per-student/per-group rows with inline grading (score + feedback via `AssessmentScore`). Team variant resolves the student's own `Group` and shows/accepts one shared submission per group (any member can submit; score attaches to the `AssessmentAttempt` and is visible live to all members, including ones who join after grading).
+- **Group management** (`GroupsManage`): standalone screen (not nested in the builder) since `Group`/`GroupMember` are course-scoped and reused across all Team Assignments and the future People batch. Create/rename/delete (delete blocked unless empty) groups; add/move/remove students; **one group per course per student enforced** — assigning to a new group auto-removes the prior membership in that course.
+- `assessment.{view,create,edit,delete,submit,grade}` + `groups.manage` permissions (Teacher/School Admin: all 7; Student: view + submit only), seeded via migration following the Forum-permissions pattern; routes registered under `assessments.*` / `groups.manage`.
+- `CourseTabs::build()` and `CourseComingSoon` updated to route Assessment to its real screen (`CourseComingSoonTest` updated to test against `gradebook` instead, plus an explicit "assessment tab is no longer coming soon" 404 case, mirroring the Forum batch's pattern).
+- **Known gap**: student file-upload on submission was scoped out of this batch — `AssessmentAnswer.answer_file_id` exists in schema but submission is currently text-only, since wiring a student-facing upload into the Media Library's presigned-URL + 3-layer-validation pipeline (designed for Teacher/Admin use) needs its own design pass.
+- Added missing `@return Collection<int, X>` generics to `AssessmentAttemptService`, `AssessmentService`, `GroupService`, `GroupMemberService` (pre-existing gap from the schema batch, following the convention already used by `SessionService::forCourse`) to keep Larastan clean against the new call sites.
+- 41 Livewire feature tests across 5 new test files; full suite 743/743 green; Pint clean; Larastan 0 errors.
+
 ---
 
 ## Not Done
 
 ### UI — remaining components (Teacher & Student), one batch at a time
 
-- **Assessment** — assessment list; builders/attempt UIs for:
-  - THEORY: Personal Assignment
-  - THEORY: Team Assignment (+ Group management UI)
+- **Assessment** — remaining builders/attempt UIs for:
+  - Student file-upload on Personal/Team Assignment submission (deferred from Batch 4, see note above)
   - THEORY: Quiz (+ global Instruction Page)
   - THEORY: FINAL EXAM (Open Book / Closed Book / Take Home) — Open/Closed Book requires **Proctor UI + actual client-side detection mechanism** (webcam, tab-switch, etc. — flagged in the schema batch as needing dedicated technical research)
   - Forum Discussion (auto-graded from Forum participation)

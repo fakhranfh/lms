@@ -12,6 +12,9 @@ class AssessmentAttemptService
         private AssessmentAttemptRepositoryInterface $assessmentAttemptRepository
     ) {}
 
+    /**
+     * @return Collection<int, AssessmentAttempt>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         return $this->assessmentAttemptRepository->get($filters, $with);
@@ -37,11 +40,17 @@ class AssessmentAttemptService
         return $this->assessmentAttemptRepository->delete($id);
     }
 
+    /**
+     * @return Collection<int, AssessmentAttempt>
+     */
     public function forAssessmentAndUser(string $assessmentId, string $userId): Collection
     {
         return $this->assessmentAttemptRepository->forAssessmentAndUser($assessmentId, $userId);
     }
 
+    /**
+     * @return Collection<int, AssessmentAttempt>
+     */
     public function forAssessmentAndGroup(string $assessmentId, string $groupId): Collection
     {
         return $this->assessmentAttemptRepository->forAssessmentAndGroup($assessmentId, $groupId);

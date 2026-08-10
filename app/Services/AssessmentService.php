@@ -12,6 +12,9 @@ class AssessmentService
         private AssessmentRepositoryInterface $assessmentRepository
     ) {}
 
+    /**
+     * @return Collection<int, Assessment>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         return $this->assessmentRepository->get($filters, $with);
@@ -37,6 +40,9 @@ class AssessmentService
         return $this->assessmentRepository->delete($id);
     }
 
+    /**
+     * @return Collection<int, Assessment>
+     */
     public function forCourse(string $courseId): Collection
     {
         return $this->assessmentRepository->forCourse($courseId);

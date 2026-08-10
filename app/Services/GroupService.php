@@ -12,6 +12,9 @@ class GroupService
         private GroupRepositoryInterface $groupRepository
     ) {}
 
+    /**
+     * @return Collection<int, Group>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         return $this->groupRepository->get($filters, $with);
@@ -37,6 +40,9 @@ class GroupService
         return $this->groupRepository->delete($id);
     }
 
+    /**
+     * @return Collection<int, Group>
+     */
     public function forCourse(string $courseId): Collection
     {
         return $this->groupRepository->forCourse($courseId);

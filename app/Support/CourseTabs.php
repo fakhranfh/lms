@@ -19,7 +19,7 @@ class CourseTabs
             'session' => ['label' => 'Session', 'route' => 'sessions.index', 'icon' => 'calendar_month'],
             'syllabus' => ['label' => 'Syllabus', 'route' => 'syllabus.index', 'icon' => 'menu_book'],
             'forum' => ['label' => 'Forum', 'route' => 'forum.index', 'icon' => 'forum'],
-            'assessment' => ['label' => 'Assessment', 'route' => 'course-tabs.coming-soon', 'icon' => 'assignment'],
+            'assessment' => ['label' => 'Assessment', 'route' => 'assessments.index', 'icon' => 'assignment'],
             'gradebook' => ['label' => 'Gradebook', 'route' => 'course-tabs.coming-soon', 'icon' => 'grade'],
             'people' => ['label' => 'People', 'route' => 'course-tabs.coming-soon', 'icon' => 'groups'],
             'attendance' => ['label' => 'Attendance', 'route' => 'course-tabs.coming-soon', 'icon' => 'fact_check'],

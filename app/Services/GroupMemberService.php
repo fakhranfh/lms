@@ -12,6 +12,9 @@ class GroupMemberService
         private GroupMemberRepositoryInterface $groupMemberRepository
     ) {}
 
+    /**
+     * @return Collection<int, GroupMember>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         return $this->groupMemberRepository->get($filters, $with);

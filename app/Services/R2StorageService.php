@@ -9,6 +9,7 @@ use App\Support\CurrentSchool;
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class R2StorageService
@@ -717,10 +718,10 @@ class R2StorageService
      */
     protected function buildS3Key(string $path, string $filename): string
     {
-        $timestamp = now()->format('YmdHis');
-        $hash = substr(hash('sha256', $filename.$timestamp), 0, 8);
+        $extension = pathinfo($filename, PATHINFO_EXTENSION);
+        $uuid = (string) Str::uuid();
 
-        return $this->schoolPrefix()."{$path}/{$hash}-{$filename}";
+        return $this->schoolPrefix()."{$path}/{$uuid}".($extension !== '' ? ".{$extension}" : '');
     }
 
     /**

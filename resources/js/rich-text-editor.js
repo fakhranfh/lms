@@ -139,6 +139,18 @@ export default (initialValue, wireModel, id, disabled = false) => ({
         this.exec('insertHTML', table);
     },
 
+    generateUuid() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+            return window.crypto.randomUUID();
+        }
+
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = (Math.random() * 16) | 0;
+            const v = c === 'x' ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+        });
+    },
+
     escapeHtml(value) {
         const div = document.createElement('div');
         div.textContent = value;
@@ -180,9 +192,10 @@ export default (initialValue, wireModel, id, disabled = false) => ({
     },
 
     buildFileChip(url, file) {
-        const badge = this.badgeForFile(file.name);
+        const uploadedName = decodeURIComponent(url.split('/').pop().split('?')[0]);
+        const badge = this.badgeForFile(uploadedName);
         const size = this.formatFileSize(file.size);
-        const name = this.escapeHtml(file.name);
+        const name = this.escapeHtml(uploadedName);
 
         return `<a href="${url}" target="_blank" rel="noopener" contenteditable="false" class="rte-file-chip">`
             + `<span class="rte-file-chip-icon rte-file-chip-icon--${badge.type}">${badge.label}</span>`
@@ -210,15 +223,20 @@ export default (initialValue, wireModel, id, disabled = false) => ({
 
         this.uploading = true;
 
+        const extension = (file.name.split('.').pop() || '').toLowerCase();
+        const uuid = this.generateUuid();
+        const uuidName = extension ? `${uuid}.${extension}` : uuid;
+        const uploadFile = new File([file], uuidName, { type: file.type });
+
         this.$wire.upload(
             'pendingRichTextFile',
-            file,
+            uploadFile,
             () => {
                 this.$wire.call('insertRichTextFile').then((url) => {
                     if (file.type.startsWith('image/')) {
                         this.exec('insertImage', url);
                     } else {
-                        this.exec('insertHTML', this.buildFileChip(url, file));
+                        this.exec('insertHTML', this.buildFileChip(url, uploadFile));
                     }
                     this.uploading = false;
                     event.target.value = '';

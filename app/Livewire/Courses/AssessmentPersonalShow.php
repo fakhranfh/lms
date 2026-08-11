@@ -36,6 +36,8 @@ class AssessmentPersonalShow extends Component
 
     public ?string $successMessage = null;
 
+    public bool $isModalOpen = false;
+
     public ?string $viewingAttemptId = null;
 
     public array $gradeQuestionScores = [];
@@ -132,18 +134,21 @@ class AssessmentPersonalShow extends Component
     public function openAttemptForViewing(string $attemptId): void
     {
         abort_unless(auth()->user()->can('assessment.view'), 403);
+        $this->isModalOpen = true;
         $this->viewingAttemptId = $attemptId;
     }
 
     public function openAttemptForSubmission(): void
     {
         abort_unless(auth()->user()->can('assessment.submit'), 403);
+        $this->isModalOpen = true;
         $this->viewingAttemptId = null;
         $this->answerText = '';
     }
 
     public function closeAttemptDetail(): void
     {
+        $this->isModalOpen = false;
         $this->viewingAttemptId = null;
         $this->answerText = '';
     }

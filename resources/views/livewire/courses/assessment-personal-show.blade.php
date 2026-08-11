@@ -315,7 +315,7 @@
     @endif
 
     <!-- Attempt Detail Slide-Over Modal -->
-    @if ($isStudent && $viewingAttemptId && ($viewingAttempt || $canResubmit))
+    @if ($isStudent && $isModalOpen)
             <div class="fixed inset-0 z-50 bg-black/50 overflow-hidden" x-data="{ open: true }" x-show="open" x-cloak @click="open = false; $wire.call('closeAttemptDetail')">
                 <div class="fixed inset-0 bg-surface flex flex-col" x-show="open" x-transition @click.stop>
                     <!-- Header -->

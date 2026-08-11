@@ -107,23 +107,74 @@
             </div>
         @endif
 
-        <!-- Status Message -->
+        <!-- Status Message & Action Button -->
         @if ($isStudent)
             @if ($latestScore)
                 <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
                     <p class="text-body-sm text-on-surface-variant">The score for this assessment has been approved. You cannot start another attempt.</p>
                 </div>
             @elseif (!$canResubmit && $latestAttempt)
-                <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
-                    <p class="text-body-sm text-on-surface-variant">Your submission is awaiting grading. You will be able to resubmit once graded.</p>
+                <div class="flex items-center justify-between gap-space-md">
+                    <div class="flex-1">
+                        <p class="text-body-sm text-on-surface-variant">Your submission is awaiting grading. You will be able to resubmit once graded.</p>
+                    </div>
+                    <button
+                        type="button"
+                        wire:click="openAttemptDetail('{{ $latestAttempt->id }}')"
+                        class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition flex-shrink-0"
+                    >
+                        View Attempt
+                    </button>
                 </div>
             @elseif ($isExpired)
-                <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
-                    <p class="text-body-sm text-on-surface-variant">The submission window for this assessment has closed.</p>
+                <div class="flex items-center justify-between gap-space-md">
+                    <div class="flex-1">
+                        <p class="text-body-sm text-on-surface-variant">The submission window for this assessment has closed.</p>
+                    </div>
+                    @if ($latestAttempt)
+                        <button
+                            type="button"
+                            wire:click="openAttemptDetail('{{ $latestAttempt->id }}')"
+                            class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition flex-shrink-0"
+                        >
+                            View Attempt
+                        </button>
+                    @endif
                 </div>
             @elseif ($attemptLimit && $attemptsUsed >= $attemptLimit)
-                <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
-                    <p class="text-body-sm text-on-surface-variant">You have reached the maximum number of attempts for this assessment.</p>
+                <div class="flex items-center justify-between gap-space-md">
+                    <div class="flex-1">
+                        <p class="text-body-sm text-on-surface-variant">You have reached the maximum number of attempts for this assessment.</p>
+                    </div>
+                    @if ($latestAttempt)
+                        <button
+                            type="button"
+                            wire:click="openAttemptDetail('{{ $latestAttempt->id }}')"
+                            class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition flex-shrink-0"
+                        >
+                            View Attempt
+                        </button>
+                    @endif
+                </div>
+            @elseif ($canSubmit && $canResubmit)
+                <div>
+                    @if ($latestAttempt)
+                        <button
+                            type="button"
+                            wire:click="openAttemptDetail('{{ $latestAttempt->id }}')"
+                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                        >
+                            Continue Attempt {{ $latestAttempt->attempt_number + 1 }}
+                        </button>
+                    @else
+                        <button
+                            type="button"
+                            wire:click="openAttemptDetail('')"
+                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                        >
+                            Start Attempt
+                        </button>
+                    @endif
                 </div>
             @endif
         @endif
@@ -264,7 +315,7 @@
     @endif
 
     <!-- Attempt Detail Slide-Over Modal -->
-    @if ($isStudent && $viewingAttemptId && $viewingAttempt)
+    @if ($isStudent && $viewingAttemptId && ($viewingAttempt || $canResubmit))
             <div class="fixed inset-0 z-50 overflow-hidden" x-data="{ open: true }" x-show="open" x-cloak>
                 <div @click="open = false; $wire.call('closeAttemptDetail')" class="fixed inset-0 bg-black/50 transition-opacity"></div>
 
@@ -272,8 +323,12 @@
                     <!-- Header -->
                     <div class="flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant">
                         <div>
-                            <h3 class="font-headline-sm text-headline-sm text-on-surface">Attempt {{ $viewingAttempt['attempt']->attempt_number }} - {{ $assessment->title }}</h3>
-                            <p class="text-body-sm text-on-surface-variant mt-1">{{ $viewingAttempt['attempt']->submitted_at?->format('j M Y, H:i') ?? '—' }}</p>
+                            @if ($viewingAttempt)
+                                <h3 class="font-headline-sm text-headline-sm text-on-surface">Attempt {{ $viewingAttempt['attempt']->attempt_number }} - {{ $assessment->title }}</h3>
+                                <p class="text-body-sm text-on-surface-variant mt-1">{{ $viewingAttempt['attempt']->submitted_at?->format('j M Y, H:i') ?? '—' }}</p>
+                            @else
+                                <h3 class="font-headline-sm text-headline-sm text-on-surface">{{ $latestAttempt ? 'Continue' : 'Start' }} Attempt - {{ $assessment->title }}</h3>
+                            @endif
                         </div>
                         <button type="button" @click="open = false; $wire.call('closeAttemptDetail')" class="p-2 hover:bg-surface-container rounded transition">
                             <span class="material-symbols-outlined text-on-surface-variant">close</span>
@@ -281,6 +336,7 @@
                     </div>
 
                     <!-- Content Area -->
+                    @if ($viewingAttempt)
                     <div class="flex-1 overflow-hidden flex">
                         <!-- Left Sidebar: Score & Question List -->
                         <div class="w-64 border-r border-outline-variant overflow-y-auto p-space-lg space-y-space-lg">
@@ -363,26 +419,38 @@
                                     <p class="text-body-xs text-on-surface-variant">Last saved {{ $viewingAttempt['attempt']->submitted_at->format('j M Y, H:i') }}</p>
                                 </div>
                             @endif
-
-                            @if ($canSubmit && $canResubmit)
-                                <form wire:submit="submit" class="pt-space-md border-t border-outline-variant space-y-space-md">
-                                    <label class="block font-label-md text-label-md text-on-surface">{{ $latestAttempt ? 'Resubmit' : 'Submit' }} Answer</label>
-                                    <div>
-                                        <x-rich-text-editor id="answer" wire-model="answerText" :value="$answerText" />
-                                        @error('answerText') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        wire:loading.attr="disabled"
-                                        wire:target="submit"
-                                        class="w-full px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
-                                    >
-                                        {{ $latestAttempt ? 'Resubmit' : 'Submit' }}
-                                    </button>
-                                </form>
-                            @endif
                         </div>
                     </div>
+                    @else
+                    <div class="flex-1 overflow-y-auto p-space-lg">
+                        <form wire:submit="submit" class="max-w-2xl mx-auto space-y-space-lg">
+                            <div>
+                                <label class="block font-label-md text-label-md text-on-surface mb-space-md">{{ $latestAttempt ? 'Resubmit' : 'Submit' }} Answer</label>
+                                <div>
+                                    <x-rich-text-editor id="answer" wire-model="answerText" :value="$answerText" />
+                                    @error('answerText') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                                </div>
+                            </div>
+                            <div class="flex gap-space-md">
+                                <button
+                                    type="button"
+                                    @click="open = false; $wire.call('closeAttemptDetail')"
+                                    class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    wire:loading.attr="disabled"
+                                    wire:target="submit"
+                                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                >
+                                    {{ $latestAttempt ? 'Resubmit' : 'Submit' }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    @endif
                 </div>
             </div>
         @endif

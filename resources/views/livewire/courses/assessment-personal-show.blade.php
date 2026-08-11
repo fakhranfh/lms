@@ -316,10 +316,8 @@
 
     <!-- Attempt Detail Slide-Over Modal -->
     @if ($isStudent && $viewingAttemptId && ($viewingAttempt || $canResubmit))
-            <div class="fixed inset-0 z-50 overflow-hidden" x-data="{ open: true }" x-show="open" x-cloak>
-                <div @click="open = false; $wire.call('closeAttemptDetail')" class="fixed inset-0 bg-black/50 transition-opacity"></div>
-
-                <div class="fixed inset-y-0 right-0 max-w-4xl w-full bg-surface shadow-lg flex flex-col" x-show="open" x-transition>
+            <div class="fixed inset-0 z-50 bg-black/50 overflow-hidden" x-data="{ open: true }" x-show="open" x-cloak @click="open = false; $wire.call('closeAttemptDetail')">
+                <div class="fixed inset-0 bg-surface flex flex-col" x-show="open" x-transition @click.stop>
                     <!-- Header -->
                     <div class="flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant">
                         <div>

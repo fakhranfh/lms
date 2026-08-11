@@ -3,6 +3,7 @@
 namespace App\Livewire\Courses;
 
 use App\Enums\RoleName;
+use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Course;
 use App\Models\Forum;
 use App\Models\ForumThread;
@@ -12,8 +13,6 @@ use App\Services\CoursePersonService;
 use App\Services\ForumService;
 use App\Services\ForumThreadReadService;
 use App\Services\ForumThreadService;
-use App\Services\R2StorageService;
-use App\Services\RichTextAttachmentCleanupService;
 use App\Services\SessionService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
@@ -22,11 +21,10 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Url;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 
 class ForumIndex extends Component
 {
-    use WithFileUploads;
+    use WithRichTextEditor;
 
     public Course $course;
 
@@ -50,26 +48,6 @@ class ForumIndex extends Component
     public string $newThreadTitle = '';
 
     public string $newThreadDescription = '';
-
-    public $pendingRichTextFile = null;
-
-    public function insertRichTextFile(R2StorageService $r2StorageService): string
-    {
-        $this->validate([
-            'pendingRichTextFile' => 'required|file|mimes:jpg,jpeg,png,gif,webp,pdf,zip|max:10240',
-        ]);
-
-        $url = $r2StorageService->uploadPublicFile($this->pendingRichTextFile, 'forum-attachments');
-
-        $this->pendingRichTextFile = null;
-
-        return $url;
-    }
-
-    public function deleteRichTextAttachment(string $url, RichTextAttachmentCleanupService $richTextAttachmentCleanupService): void
-    {
-        $richTextAttachmentCleanupService->deleteUrl($url);
-    }
 
     public function mount(CurrentSchool $currentSchool, Course $course): void
     {

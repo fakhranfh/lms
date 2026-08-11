@@ -5,6 +5,7 @@ namespace App\Livewire\Courses;
 use App\Enums\AssessmentAssignedTo;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
+use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\MediaLibraryItem;
@@ -20,6 +21,8 @@ use Livewire\Component;
 
 class AssessmentForm extends Component
 {
+    use WithRichTextEditor;
+
     public Course $course;
 
     public ?Assessment $assessment = null;

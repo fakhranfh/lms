@@ -4,6 +4,7 @@ namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentType;
 use App\Enums\RoleName;
+use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Services\AssessmentAnswerService;
@@ -19,6 +20,8 @@ use Livewire\Component;
 
 class AssessmentTeamShow extends Component
 {
+    use WithRichTextEditor;
+
     public Course $course;
 
     public Assessment $assessment;

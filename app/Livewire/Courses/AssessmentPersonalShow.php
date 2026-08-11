@@ -99,7 +99,7 @@ class AssessmentPersonalShow extends Component
         $this->successMessage = __('Your submission has been recorded.');
     }
 
-    public function openGrading(string $userId, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService): void
+    public function openGrading(string $userId, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService): void
     {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
 
@@ -110,10 +110,16 @@ class AssessmentPersonalShow extends Component
         }
 
         $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
+        $questionScores = $assessmentQuestionScoreService->findByAttempt($attempt->id);
 
         $this->gradingUserId = $userId;
-        $this->gradeScore = $existingScore ? (string) $existingScore->score : '';
         $this->gradeFeedback = $existingScore ? ($existingScore->feedback ?? '') : '';
+
+        $this->gradeQuestionScores = [];
+        foreach ($this->assessment->questions as $question) {
+            $qScore = $questionScores->firstWhere('assessment_question_id', $question->id);
+            $this->gradeQuestionScores[$question->id] = $qScore ? (string) $qScore->score : '';
+        }
     }
 
     public function cancelGrading(): void
@@ -134,25 +140,52 @@ class AssessmentPersonalShow extends Component
         $this->viewingAttemptId = null;
     }
 
-    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService): void
+    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService): void
     {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
         abort_unless($this->gradingUserId !== null, 404);
 
         $this->validate([
-            'gradeScore' => 'required|numeric|min:0',
             'gradeFeedback' => 'nullable|string',
         ]);
 
         $attempt = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $this->gradingUserId)->last();
-
         abort_unless($attempt !== null, 404);
 
-        $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
+        $totalScore = 0;
+        foreach ($this->assessment->questions as $question) {
+            $score = $this->gradeQuestionScores[$question->id] ?? '';
+            if ($score === '') {
+                $this->addError("gradeQuestionScores.{$question->id}", __('Score is required'));
 
+                continue;
+            }
+
+            if (! is_numeric($score) || (float) $score < 0 || (float) $score > $question->points) {
+                $this->addError("gradeQuestionScores.{$question->id}", __('Score must be between 0 and '.$question->points));
+
+                continue;
+            }
+
+            $totalScore += (float) $score;
+        }
+
+        if ($this->getErrorBag()->isNotEmpty()) {
+            return;
+        }
+
+        foreach ($this->assessment->questions as $question) {
+            $score = (float) $this->gradeQuestionScores[$question->id];
+            $assessmentQuestionScoreService->updateOrCreate(
+                ['assessment_attempt_id' => $attempt->id, 'assessment_question_id' => $question->id],
+                ['score' => $score]
+            );
+        }
+
+        $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
         $data = [
             'assessment_attempt_id' => $attempt->id,
-            'score' => (float) $this->gradeScore,
+            'score' => $totalScore,
             'graded_by' => auth()->id(),
             'graded_at' => now(),
             'feedback' => $this->gradeFeedback ?: null,
@@ -170,6 +203,8 @@ class AssessmentPersonalShow extends Component
 
     public function render(CoursePersonService $coursePersonService, AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService)
     {
+        $isExpired = $this->assessment->end_date && $this->assessment->end_date->isPast();
+
         $viewData = [
             'course' => $this->course,
             'assessment' => $this->assessment,
@@ -180,32 +215,57 @@ class AssessmentPersonalShow extends Component
             'teacher' => $this->isStudent
                 ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
                 : null,
+            'isExpired' => $isExpired,
+            'viewingAttemptId' => $this->viewingAttemptId,
         ];
 
         if ($this->isStudent) {
-            $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, auth()->id());
-            $latest = $attempts->last();
+            $allAttempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, auth()->id());
+            $latest = $allAttempts->last();
+
+            $attemptLimit = $this->assessment->attempt_limit;
+            $attemptsUsed = $allAttempts->count();
+            $canResubmit = ! $latest?->score && (! $this->assessment->end_date || now()->lessThanOrEqualTo($this->assessment->end_date));
+            if ($attemptLimit && $attemptsUsed >= $attemptLimit) {
+                $canResubmit = false;
+            }
+
             $latestAnswer = $latest ? $assessmentAnswerService->findByAttempt($latest->id) : null;
             $latestScore = $latest ? $assessmentScoreService->findByAttempt($latest->id) : null;
+
+            $attemptRows = $allAttempts->map(function ($attempt) use ($assessmentAnswerService, $assessmentScoreService, $assessmentQuestionScoreService) {
+                return [
+                    'attempt' => $attempt,
+                    'answer' => $assessmentAnswerService->findByAttempt($attempt->id),
+                    'score' => $assessmentScoreService->findByAttempt($attempt->id),
+                    'questionScores' => $assessmentQuestionScoreService->findByAttempt($attempt->id)->keyBy('assessment_question_id'),
+                ];
+            })->values();
 
             $viewData['latestAttempt'] = $latest;
             $viewData['latestAnswer'] = $latestAnswer;
             $viewData['latestScore'] = $latestScore;
-            $viewData['canResubmit'] = ! $latestScore && (! $this->assessment->end_date || now()->lessThanOrEqualTo($this->assessment->end_date));
+            $viewData['canResubmit'] = $canResubmit;
+            $viewData['attemptLimit'] = $attemptLimit ? (string) $attemptLimit : 'Unlimited';
+            $viewData['attemptsUsed'] = $attemptsUsed;
+            $viewData['attemptRows'] = $attemptRows;
+            $viewData['viewingAttempt'] = $this->viewingAttemptId ? $attemptRows->firstWhere('attempt.id', $this->viewingAttemptId) : null;
         } else {
             $students = $coursePersonService->studentsForCourse($this->course->id);
 
-            $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentAnswerService, $assessmentScoreService) {
+            $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentAnswerService, $assessmentScoreService, $assessmentQuestionScoreService) {
                 $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $coursePerson->user_id);
                 $latest = $attempts->last();
                 $score = $latest ? $assessmentScoreService->findByAttempt($latest->id) : null;
                 $answer = $latest ? $assessmentAnswerService->findByAttempt($latest->id) : null;
+                $questionScores = $latest ? $assessmentQuestionScoreService->findByAttempt($latest->id) : collect();
 
                 return [
                     'user' => $coursePerson->user,
                     'attempt' => $latest,
                     'answer' => $answer,
                     'score' => $score,
+                    'questionScores' => $questionScores->keyBy('assessment_question_id'),
                 ];
             })->values();
 

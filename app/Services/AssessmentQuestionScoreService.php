@@ -41,4 +41,9 @@ class AssessmentQuestionScoreService
     {
         return $this->assessmentQuestionScoreRepository->findByAttempt($attemptId, $with);
     }
+
+    public function updateOrCreate(array $attributes, array $values): AssessmentQuestionScore
+    {
+        return $this->assessmentQuestionScoreRepository->updateOrCreate($attributes, $values);
+    }
 }

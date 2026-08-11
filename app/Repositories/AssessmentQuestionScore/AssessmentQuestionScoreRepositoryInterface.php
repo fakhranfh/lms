@@ -18,4 +18,6 @@ interface AssessmentQuestionScoreRepositoryInterface
     public function delete(string $id): int;
 
     public function findByAttempt(string $attemptId, array $with = []): Collection;
+
+    public function updateOrCreate(array $attributes, array $values): AssessmentQuestionScore;
 }

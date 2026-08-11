@@ -51,4 +51,9 @@ class AssessmentQuestionScoreRepository implements AssessmentQuestionScoreReposi
             ->with($with)
             ->get();
     }
+
+    public function updateOrCreate(array $attributes, array $values): AssessmentQuestionScore
+    {
+        return AssessmentQuestionScore::updateOrCreate($attributes, $values);
+    }
 }

@@ -334,11 +334,10 @@
                     </div>
 
                     <!-- Content Area -->
-                    @if ($viewingAttempt)
                     <div class="flex-1 overflow-hidden flex">
                         <!-- Left Sidebar: Score & Question List -->
                         <div class="w-64 border-r border-outline-variant overflow-y-auto p-space-lg space-y-space-lg">
-                            @if ($viewingAttempt['score'])
+                            @if ($viewingAttempt && $viewingAttempt['score'])
                                 <div class="bg-gradient-to-br from-primary/90 to-primary rounded-lg p-space-md text-on-primary">
                                     <p class="text-body-xs opacity-90 mb-space-xs">SCORE</p>
                                     <p class="text-headline-sm font-bold">{{ rtrim(rtrim(number_format($viewingAttempt['score']->score, 1), '0'), '.') }} <span class="text-body-xs font-normal">pts</span></p>
@@ -348,15 +347,19 @@
 
                             <div>
                                 <p class="font-label-sm text-label-sm text-on-surface-variant mb-space-md">QUESTION LIST</p>
-                                <p class="text-body-xs text-on-surface-variant mb-space-md">Answered: {{ $assessment->questions->count() }} of {{ $assessment->questions->count() }}</p>
+                                @if ($viewingAttempt)
+                                    <p class="text-body-xs text-on-surface-variant mb-space-md">Answered: {{ $assessment->questions->count() }} of {{ $assessment->questions->count() }}</p>
+                                @endif
                                 <div class="space-y-space-xs">
                                     @foreach ($assessment->questions as $question)
                                         <button type="button" class="w-full text-left p-space-sm rounded hover:bg-surface-container transition group">
                                             <div class="flex items-center justify-between">
                                                 <span class="text-body-sm text-on-surface-variant group-hover:text-on-surface">Question {{ $loop->iteration }}</span>
-                                                <span class="inline-flex items-center px-space-xs py-1 rounded-full text-body-xs font-medium bg-primary/10 text-primary">
-                                                    {{ $viewingAttempt['questionScores']->get($question->id)?->score ?? '—' }} of {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }}
-                                                </span>
+                                                @if ($viewingAttempt)
+                                                    <span class="inline-flex items-center px-space-xs py-1 rounded-full text-body-xs font-medium bg-primary/10 text-primary">
+                                                        {{ $viewingAttempt['questionScores']->get($question->id)?->score ?? '—' }} of {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }}
+                                                    </span>
+                                                @endif
                                             </div>
                                         </button>
                                     @endforeach
@@ -390,65 +393,64 @@
 
                         <!-- Right Sidebar: Answer -->
                         <div class="w-80 border-l border-outline-variant overflow-y-auto p-space-lg space-y-space-lg">
-                            <div>
-                                <p class="font-label-sm text-label-sm text-on-surface-variant mb-space-md">ANSWER</p>
+                            @if ($viewingAttempt)
+                                <div>
+                                    <p class="font-label-sm text-label-sm text-on-surface-variant mb-space-md">ANSWER</p>
 
-                                @if ($viewingAttempt['answer']?->answerFile)
-                                    <div class="p-space-md bg-surface-container rounded-lg mb-space-md">
-                                        <div class="flex items-start gap-space-md">
-                                            <span class="material-symbols-outlined text-primary text-[24px]">description</span>
-                                            <div class="flex-1 min-w-0">
-                                                <p class="font-label-sm text-label-sm text-on-surface truncate">{{ $viewingAttempt['answer']->answerFile?->file_name ?? 'Attachment' }}</p>
-                                                <p class="text-body-xs text-on-surface-variant mt-1">{{ \Illuminate\Support\Number::fileSize($viewingAttempt['answer']->answerFile?->file_size ?? 0) }}</p>
+                                    @if ($viewingAttempt['answer']?->answerFile)
+                                        <div class="p-space-md bg-surface-container rounded-lg mb-space-md">
+                                            <div class="flex items-start gap-space-md">
+                                                <span class="material-symbols-outlined text-primary text-[24px]">description</span>
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="font-label-sm text-label-sm text-on-surface truncate">{{ $viewingAttempt['answer']->answerFile?->file_name ?? 'Attachment' }}</p>
+                                                    <p class="text-body-xs text-on-surface-variant mt-1">{{ \Illuminate\Support\Number::fileSize($viewingAttempt['answer']->answerFile?->file_size ?? 0) }}</p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                @endif
+                                    @endif
 
-                                @if ($viewingAttempt['answer']?->answer_text)
-                                    <div class="prose prose-sm max-w-none text-on-surface">
-                                        {!! $viewingAttempt['answer']->answer_text !!}
-                                    </div>
-                                @endif
-                            </div>
-
-                            @if ($viewingAttempt['attempt']?->submitted_at)
-                                <div class="pt-space-md border-t border-outline-variant">
-                                    <p class="text-body-xs text-on-surface-variant">Last saved {{ $viewingAttempt['attempt']->submitted_at->format('j M Y, H:i') }}</p>
+                                    @if ($viewingAttempt['answer']?->answer_text)
+                                        <div class="prose prose-sm max-w-none text-on-surface">
+                                            {!! $viewingAttempt['answer']->answer_text !!}
+                                        </div>
+                                    @endif
                                 </div>
+
+                                @if ($viewingAttempt['attempt']?->submitted_at)
+                                    <div class="pt-space-md border-t border-outline-variant">
+                                        <p class="text-body-xs text-on-surface-variant">Last saved {{ $viewingAttempt['attempt']->submitted_at->format('j M Y, H:i') }}</p>
+                                    </div>
+                                @endif
+                            @else
+                                <form wire:submit="submit" class="space-y-space-md">
+                                    <div>
+                                        <label class="block font-label-sm text-label-sm text-on-surface-variant mb-space-md">{{ $latestAttempt ? 'RESUBMIT ANSWER' : 'SUBMIT ANSWER' }}</label>
+                                        <div>
+                                            <x-rich-text-editor id="answer" wire-model="answerText" :value="$answerText" />
+                                            @error('answerText') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-space-md">
+                                        <button
+                                            type="button"
+                                            @click="open = false; $wire.call('closeAttemptDetail')"
+                                            class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            wire:loading.attr="disabled"
+                                            wire:target="submit"
+                                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                        >
+                                            {{ $latestAttempt ? 'Resubmit' : 'Submit' }}
+                                        </button>
+                                    </div>
+                                </form>
                             @endif
                         </div>
                     </div>
-                    @else
-                    <div class="flex-1 overflow-y-auto p-space-lg">
-                        <form wire:submit="submit" class="max-w-2xl mx-auto space-y-space-lg">
-                            <div>
-                                <label class="block font-label-md text-label-md text-on-surface mb-space-md">{{ $latestAttempt ? 'Resubmit' : 'Submit' }} Answer</label>
-                                <div>
-                                    <x-rich-text-editor id="answer" wire-model="answerText" :value="$answerText" />
-                                    @error('answerText') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
-                                </div>
-                            </div>
-                            <div class="flex gap-space-md">
-                                <button
-                                    type="button"
-                                    @click="open = false; $wire.call('closeAttemptDetail')"
-                                    class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    wire:loading.attr="disabled"
-                                    wire:target="submit"
-                                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
-                                >
-                                    {{ $latestAttempt ? 'Resubmit' : 'Submit' }}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                    @endif
                 </div>
             </div>
         @endif

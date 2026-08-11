@@ -120,7 +120,7 @@
                     </div>
                     <button
                         type="button"
-                        wire:click="openAttemptDetail('{{ $latestAttempt->id }}')"
+                        wire:click="openAttemptForViewing('{{ $latestAttempt->id }}')"
                         class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition flex-shrink-0"
                     >
                         View Attempt
@@ -134,7 +134,7 @@
                     @if ($latestAttempt)
                         <button
                             type="button"
-                            wire:click="openAttemptDetail('{{ $latestAttempt->id }}')"
+                            wire:click="openAttemptForViewing('{{ $latestAttempt->id }}')"
                             class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition flex-shrink-0"
                         >
                             View Attempt
@@ -149,7 +149,7 @@
                     @if ($latestAttempt)
                         <button
                             type="button"
-                            wire:click="openAttemptDetail('{{ $latestAttempt->id }}')"
+                            wire:click="openAttemptForViewing('{{ $latestAttempt->id }}')"
                             class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition flex-shrink-0"
                         >
                             View Attempt
@@ -161,7 +161,7 @@
                     @if ($latestAttempt)
                         <button
                             type="button"
-                            wire:click="openAttemptDetail('{{ $latestAttempt->id }}')"
+                            wire:click="openAttemptForSubmission"
                             class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                         >
                             Continue Attempt {{ $latestAttempt->attempt_number + 1 }}
@@ -169,7 +169,7 @@
                     @else
                         <button
                             type="button"
-                            wire:click="openAttemptDetail('')"
+                            wire:click="openAttemptForSubmission"
                             class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                         >
                             Start Attempt
@@ -196,7 +196,7 @@
                                     @else
                                         <button
                                             type="button"
-                                            wire:click="openAttemptDetail('{{ $row['attempt']->id }}')"
+                                            wire:click="openAttemptForViewing('{{ $row['attempt']->id }}')"
                                             class="p-2 hover:bg-surface-container rounded transition text-on-surface-variant"
                                             title="View attempt details"
                                         >

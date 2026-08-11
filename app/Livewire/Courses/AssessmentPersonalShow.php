@@ -129,15 +129,23 @@ class AssessmentPersonalShow extends Component
         $this->gradeFeedback = '';
     }
 
-    public function openAttemptDetail(string $attemptId): void
+    public function openAttemptForViewing(string $attemptId): void
     {
         abort_unless(auth()->user()->can('assessment.view'), 403);
         $this->viewingAttemptId = $attemptId;
     }
 
+    public function openAttemptForSubmission(): void
+    {
+        abort_unless(auth()->user()->can('assessment.submit'), 403);
+        $this->viewingAttemptId = null;
+        $this->answerText = '';
+    }
+
     public function closeAttemptDetail(): void
     {
         $this->viewingAttemptId = null;
+        $this->answerText = '';
     }
 
     public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService): void

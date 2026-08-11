@@ -55,6 +55,80 @@
     text-decoration: underline;
 }
 
+.rte-content :where(a.rte-file-chip) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    max-width: 100%;
+    margin: 0.25rem 0;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-outline-variant, #ccc);
+    border-radius: 0.625rem;
+    text-decoration: none;
+    color: inherit;
+    vertical-align: middle;
+}
+
+.rte-content :where(a.rte-file-chip):hover {
+    background-color: var(--color-surface-container-lowest, #f5f5f5);
+}
+
+.rte-content :where(.rte-file-chip-icon) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff;
+    background-color: #757575;
+}
+
+.rte-content :where(.rte-file-chip-icon--pdf) {
+    background-color: #e53935;
+}
+
+.rte-content :where(.rte-file-chip-icon--doc) {
+    background-color: #2f6fed;
+}
+
+.rte-content :where(.rte-file-chip-icon--xls) {
+    background-color: #2e7d32;
+}
+
+.rte-content :where(.rte-file-chip-icon--ppt) {
+    background-color: #e65100;
+}
+
+.rte-content :where(.rte-file-chip-icon--zip) {
+    background-color: #8d6e63;
+}
+
+.rte-content :where(.rte-file-chip-info) {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 0.125rem;
+}
+
+.rte-content :where(.rte-file-chip-name) {
+    font-size: 0.875rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 16rem;
+}
+
+.rte-content :where(.rte-file-chip-size) {
+    font-size: 0.75rem;
+    color: var(--color-on-surface-variant, #666);
+}
+
 .rte-content :where(table) {
     border-collapse: collapse;
     width: 100%;

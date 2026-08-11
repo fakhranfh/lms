@@ -201,7 +201,7 @@
                                     @foreach ($assessment->questions as $question)
                                         <div class="space-y-space-md {{ $loop->first ? '' : 'pt-space-lg' }} {{ $loop->last ? '' : 'pb-space-lg' }}">
                                             <p class="text-body-xs text-on-surface-variant mb-space-sm">Question {{ $loop->iteration }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
-                                            <div class="prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
+                                            <div class="rte-content prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
                                             @if ($question->files->isNotEmpty())
                                                 <div class="mt-space-md space-y-space-xs">
                                                     @foreach ($question->files as $file)
@@ -298,7 +298,7 @@
                 @foreach ($assessment->questions as $question)
                     <div class="space-y-space-md {{ $loop->first ? '' : 'pt-space-lg' }} {{ $loop->last ? '' : 'pb-space-lg' }}">
                         <p class="text-body-xs text-on-surface-variant mb-space-sm">Question {{ $loop->iteration }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
-                        <div class="prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
+                        <div class="rte-content prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
                         @if ($question->files->isNotEmpty())
                             <div class="mt-space-md space-y-space-xs">
                                 @foreach ($question->files as $file)
@@ -393,7 +393,7 @@
                                     </div>
 
                                     @if ($row['answer']?->answer_text)
-                                        <div class="prose prose-sm max-w-none text-on-surface">
+                                        <div class="rte-content prose prose-sm max-w-none text-on-surface">
                                             {!! $row['answer']->answer_text !!}
                                         </div>
                                     @else
@@ -451,7 +451,7 @@
 
                         @if ($gradingUserId === $row['user']->id)
                             <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md">
-                                <div class="text-body-sm text-on-surface-variant">{!! $row['answer']?->answer_text !!}</div>
+                                <div class="rte-content text-body-sm text-on-surface-variant">{!! $row['answer']?->answer_text !!}</div>
 
                                 <form wire:submit="submitGrade" class="space-y-space-md">
                                     <div class="space-y-space-md">

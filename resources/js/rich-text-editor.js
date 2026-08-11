@@ -139,6 +139,60 @@ export default (initialValue, wireModel, id, disabled = false) => ({
         this.exec('insertHTML', table);
     },
 
+    escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value;
+        return div.innerHTML;
+    },
+
+    formatFileSize(bytes) {
+        if (!bytes && bytes !== 0) {
+            return '';
+        }
+
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let size = bytes;
+        let unitIndex = 0;
+
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex += 1;
+        }
+
+        return `${unitIndex === 0 ? size : size.toFixed(1)} ${units[unitIndex]}`;
+    },
+
+    badgeForFile(name) {
+        const extension = (name.split('.').pop() || '').toLowerCase();
+
+        const badges = {
+            pdf: { label: 'PDF', type: 'pdf' },
+            zip: { label: 'ZIP', type: 'zip' },
+            doc: { label: 'DOC', type: 'doc' },
+            docx: { label: 'DOC', type: 'doc' },
+            xls: { label: 'XLS', type: 'xls' },
+            xlsx: { label: 'XLS', type: 'xls' },
+            ppt: { label: 'PPT', type: 'ppt' },
+            pptx: { label: 'PPT', type: 'ppt' },
+        };
+
+        return badges[extension] || { label: extension.slice(0, 4).toUpperCase() || 'FILE', type: 'generic' };
+    },
+
+    buildFileChip(url, file) {
+        const badge = this.badgeForFile(file.name);
+        const size = this.formatFileSize(file.size);
+        const name = this.escapeHtml(file.name);
+
+        return `<a href="${url}" target="_blank" rel="noopener" contenteditable="false" class="rte-file-chip">`
+            + `<span class="rte-file-chip-icon rte-file-chip-icon--${badge.type}">${badge.label}</span>`
+            + '<span class="rte-file-chip-info">'
+            + `<span class="rte-file-chip-name">${name}</span>`
+            + `<span class="rte-file-chip-size">${size}</span>`
+            + '</span>'
+            + '</a>';
+    },
+
     triggerFilePicker() {
         if (this.disabled) {
             return;
@@ -164,7 +218,7 @@ export default (initialValue, wireModel, id, disabled = false) => ({
                     if (file.type.startsWith('image/')) {
                         this.exec('insertImage', url);
                     } else {
-                        this.exec('insertHTML', `<a href="${url}" target="_blank" rel="noopener">${file.name}</a>`);
+                        this.exec('insertHTML', this.buildFileChip(url, file));
                     }
                     this.uploading = false;
                     event.target.value = '';

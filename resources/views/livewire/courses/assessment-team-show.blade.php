@@ -37,7 +37,7 @@
         @foreach ($assessment->questions as $question)
             <div class="space-y-space-xs">
                 <p class="text-body-xs text-on-surface-variant">Question {{ $loop->iteration }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
-                <div class="prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
+                <div class="rte-content prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
                 @if ($question->files->isNotEmpty())
                     <ul class="space-y-1">
                         @foreach ($question->files as $file)
@@ -78,7 +78,7 @@
                             </span>
                         @endif
                     </div>
-                    <div class="prose prose-sm max-w-none text-on-surface">{!! $latestAnswer?->answer_text !!}</div>
+                    <div class="rte-content prose prose-sm max-w-none text-on-surface">{!! $latestAnswer?->answer_text !!}</div>
                     @if ($latestScore?->feedback)
                         <div class="pt-space-md border-t border-outline-variant">
                             <p class="font-label-sm text-label-sm text-secondary mb-space-xs">Feedback</p>
@@ -141,7 +141,7 @@
 
                     @if ($gradingGroupId === $row['group']->id)
                         <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md">
-                            <div class="text-body-sm text-on-surface-variant">{!! $row['answer']?->answer_text !!}</div>
+                            <div class="rte-content text-body-sm text-on-surface-variant">{!! $row['answer']?->answer_text !!}</div>
 
                             <form wire:submit="submitGrade" class="space-y-space-md">
                                 <div class="grid grid-cols-2 gap-space-md">

@@ -46,12 +46,14 @@ enum RoleName: string
                 'sessions.view', 'sessions.create', 'sessions.edit', 'sessions.delete',
                 'syllabus.view', 'syllabus.edit',
                 'forum.view', 'forum.create', 'forum.moderate',
+                'assessment.view', 'assessment.create', 'assessment.edit', 'assessment.delete', 'assessment.grade',
             ],
             self::Student => [
                 'courses.view',
                 'sessions.view',
                 'syllabus.view',
                 'forum.view', 'forum.create',
+                'assessment.view', 'assessment.submit',
             ],
         };
     }

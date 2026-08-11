@@ -196,6 +196,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Fortify\Contracts\LoginResponse;
 use Laravel\Fortify\Contracts\VerifyEmailViewResponse;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -346,6 +347,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('role', fn (User $user, string $role) => $user->hasRole($role));
 
         Gate::define('viewPulse', fn (User $user) => $user->hasRole(RoleName::Admin));
+
+        Livewire::useScriptTagAttributes(['defer' => true]);
 
         $this->registerFeatureGates();
 

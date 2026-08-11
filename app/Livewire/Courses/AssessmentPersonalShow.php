@@ -36,10 +36,6 @@ class AssessmentPersonalShow extends Component
 
     public ?string $successMessage = null;
 
-    public bool $isModalOpen = false;
-
-    public ?string $viewingAttemptId = null;
-
     public array $gradeQuestionScores = [];
 
     public function mount(CurrentSchool $currentSchool, ?Course $course = null, ?Assessment $assessment = null): void
@@ -131,28 +127,6 @@ class AssessmentPersonalShow extends Component
         $this->gradeFeedback = '';
     }
 
-    public function openAttemptForViewing(string $attemptId): void
-    {
-        abort_unless(auth()->user()->can('assessment.view'), 403);
-        $this->isModalOpen = true;
-        $this->viewingAttemptId = $attemptId;
-    }
-
-    public function openAttemptForSubmission(): void
-    {
-        abort_unless(auth()->user()->can('assessment.submit'), 403);
-        $this->isModalOpen = true;
-        $this->viewingAttemptId = null;
-        $this->answerText = '';
-    }
-
-    public function closeAttemptDetail(): void
-    {
-        $this->isModalOpen = false;
-        $this->viewingAttemptId = null;
-        $this->answerText = '';
-    }
-
     public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService): void
     {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
@@ -229,7 +203,6 @@ class AssessmentPersonalShow extends Component
                 ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
                 : null,
             'isExpired' => $isExpired,
-            'viewingAttemptId' => $this->viewingAttemptId,
         ];
 
         if ($this->isStudent) {
@@ -262,7 +235,6 @@ class AssessmentPersonalShow extends Component
             $viewData['attemptLimit'] = $attemptLimit ? (string) $attemptLimit : 'Unlimited';
             $viewData['attemptsUsed'] = $attemptsUsed;
             $viewData['attemptRows'] = $attemptRows;
-            $viewData['viewingAttempt'] = $this->viewingAttemptId ? $attemptRows->firstWhere('attempt.id', $this->viewingAttemptId) : null;
         } else {
             $students = $coursePersonService->studentsForCourse($this->course->id);
 

@@ -107,7 +107,7 @@
             </div>
         @endif
 
-        <!-- Status Message & Action Button -->
+        <!-- Status Message -->
         @if ($isStudent)
             @if ($latestScore)
                 <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
@@ -125,26 +125,6 @@
                 <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
                     <p class="text-body-sm text-on-surface-variant">You have reached the maximum number of attempts for this assessment.</p>
                 </div>
-            @endif
-
-            @if ($canSubmit && $canResubmit)
-                <form wire:submit="submit" class="space-y-space-md">
-                    <div>
-                        <label class="block font-label-md text-label-md text-on-surface mb-space-md">{{ $latestAttempt ? 'Resubmit' : 'Submit' }} Answer</label>
-                        <div>
-                            <x-rich-text-editor id="answer" wire-model="answerText" :value="$answerText" />
-                            @error('answerText') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
-                        </div>
-                    </div>
-                    <button
-                        type="submit"
-                        wire:loading.attr="disabled"
-                        wire:target="submit"
-                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
-                    >
-                        {{ $latestAttempt ? 'Resubmit' : 'Submit' }}
-                    </button>
-                </form>
             @endif
         @endif
     </div>
@@ -382,6 +362,24 @@
                                 <div class="pt-space-md border-t border-outline-variant">
                                     <p class="text-body-xs text-on-surface-variant">Last saved {{ $viewingAttempt['attempt']->submitted_at->format('j M Y, H:i') }}</p>
                                 </div>
+                            @endif
+
+                            @if ($canSubmit && $canResubmit)
+                                <form wire:submit="submit" class="pt-space-md border-t border-outline-variant space-y-space-md">
+                                    <label class="block font-label-md text-label-md text-on-surface">{{ $latestAttempt ? 'Resubmit' : 'Submit' }} Answer</label>
+                                    <div>
+                                        <x-rich-text-editor id="answer" wire-model="answerText" :value="$answerText" />
+                                        @error('answerText') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        wire:loading.attr="disabled"
+                                        wire:target="submit"
+                                        class="w-full px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                    >
+                                        {{ $latestAttempt ? 'Resubmit' : 'Submit' }}
+                                    </button>
+                                </form>
                             @endif
                         </div>
                     </div>

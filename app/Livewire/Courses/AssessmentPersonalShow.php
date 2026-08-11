@@ -8,6 +8,7 @@ use App\Models\Assessment;
 use App\Models\Course;
 use App\Services\AssessmentAnswerService;
 use App\Services\AssessmentAttemptService;
+use App\Services\AssessmentQuestionScoreService;
 use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
 use App\Support\CourseTabs;
@@ -34,6 +35,10 @@ class AssessmentPersonalShow extends Component
     public ?string $errorMessage = null;
 
     public ?string $successMessage = null;
+
+    public ?string $viewingAttemptId = null;
+
+    public array $gradeQuestionScores = [];
 
     public function mount(CurrentSchool $currentSchool, ?Course $course = null, ?Assessment $assessment = null): void
     {
@@ -118,6 +123,17 @@ class AssessmentPersonalShow extends Component
         $this->gradeFeedback = '';
     }
 
+    public function openAttemptDetail(string $attemptId): void
+    {
+        abort_unless(auth()->user()->can('assessment.view'), 403);
+        $this->viewingAttemptId = $attemptId;
+    }
+
+    public function closeAttemptDetail(): void
+    {
+        $this->viewingAttemptId = null;
+    }
+
     public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService): void
     {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
@@ -152,7 +168,7 @@ class AssessmentPersonalShow extends Component
         $this->successMessage = __('Grade saved.');
     }
 
-    public function render(CoursePersonService $coursePersonService, AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService, AssessmentScoreService $assessmentScoreService)
+    public function render(CoursePersonService $coursePersonService, AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService)
     {
         $viewData = [
             'course' => $this->course,

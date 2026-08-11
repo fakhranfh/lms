@@ -88,4 +88,12 @@ class AssessmentAttempt extends Model
     {
         return $this->hasOne(ProctorSession::class);
     }
+
+    /**
+     * @return HasMany<AssessmentQuestionScore, $this>
+     */
+    public function questionScores(): HasMany
+    {
+        return $this->hasMany(AssessmentQuestionScore::class, 'assessment_attempt_id');
+    }
 }

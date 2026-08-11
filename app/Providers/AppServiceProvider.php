@@ -19,6 +19,8 @@ use App\Repositories\AssessmentAttempt\AssessmentAttemptRepository;
 use App\Repositories\AssessmentAttempt\AssessmentAttemptRepositoryInterface;
 use App\Repositories\AssessmentQuestion\AssessmentQuestionRepository;
 use App\Repositories\AssessmentQuestion\AssessmentQuestionRepositoryInterface;
+use App\Repositories\AssessmentQuestionScore\AssessmentQuestionScoreRepository;
+use App\Repositories\AssessmentQuestionScore\AssessmentQuestionScoreRepositoryInterface;
 use App\Repositories\AssessmentQuizAnswer\AssessmentQuizAnswerRepository;
 use App\Repositories\AssessmentQuizAnswer\AssessmentQuizAnswerRepositoryInterface;
 use App\Repositories\AssessmentScore\AssessmentScoreRepository;
@@ -255,6 +257,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AssessmentRepositoryInterface::class, AssessmentRepository::class);
         $this->app->bind(AssessmentAttemptRepositoryInterface::class, AssessmentAttemptRepository::class);
         $this->app->bind(AssessmentScoreRepositoryInterface::class, AssessmentScoreRepository::class);
+        $this->app->bind(AssessmentQuestionScoreRepositoryInterface::class, AssessmentQuestionScoreRepository::class);
         $this->app->bind(AssessmentQuestionRepositoryInterface::class, AssessmentQuestionRepository::class);
         $this->app->bind(AssessmentAnswerRepositoryInterface::class, AssessmentAnswerRepository::class);
         $this->app->bind(QuizRepositoryInterface::class, QuizRepository::class);

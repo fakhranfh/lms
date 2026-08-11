@@ -61,7 +61,11 @@ class AssessmentPersonalShow extends Component
         abort_unless(auth()->user()->can('assessment.submit'), 403);
 
         $this->validate([
-            'answerText' => 'required|string',
+            'answerText' => ['required', 'string', function (string $attribute, mixed $value, \Closure $fail) {
+                if (trim(strip_tags($value)) === '') {
+                    $fail(__('Answer cannot be empty.'));
+                }
+            }],
         ]);
 
         $previousAttempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, auth()->id());
@@ -95,6 +99,11 @@ class AssessmentPersonalShow extends Component
 
         $this->answerText = '';
         $this->successMessage = __('Your submission has been recorded.');
+    }
+
+    public function clearSuccessMessage(): void
+    {
+        $this->successMessage = null;
     }
 
     public function openGrading(string $userId, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService): void

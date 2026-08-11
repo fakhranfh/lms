@@ -11,10 +11,32 @@
     </div>
 
     @if ($successMessage)
-        <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
-            <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
-            <p class="font-body-md text-body-md text-success">{{ $successMessage }}</p>
-        </div>
+        <template x-teleport="body">
+            <div
+                x-data="{ open: true }"
+                x-show="open"
+                x-cloak
+                class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
+                @click.self="open = false; $wire.call('clearSuccessMessage')"
+            >
+                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg text-center">
+                    <div class="mx-auto w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-success text-[28px]" data-weight="fill">check_circle</span>
+                    </div>
+                    <div>
+                        <h2 class="font-headline-sm text-headline-sm text-on-surface mb-space-xs">Submission successful</h2>
+                        <p class="font-body-md text-body-md text-secondary">{{ $successMessage }}</p>
+                    </div>
+                    <button
+                        type="button"
+                        @click="open = false; $wire.call('clearSuccessMessage')"
+                        class="w-full px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                    >
+                        OK
+                    </button>
+                </div>
+            </div>
+        </template>
     @endif
 
     @if ($errorMessage)
@@ -160,9 +182,9 @@
 
     <!-- Submit / Resubmit Answer -->
     @if ($isStudent && $canSubmit && $canResubmit)
-        <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+        <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md" x-data="{ confirmOpen: false }">
             <h2 class="font-label-lg text-label-lg text-on-surface">{{ $latestAttempt ? 'Resubmit Answer' : 'Submit Answer' }}</h2>
-            <form wire:submit="submit" class="space-y-space-md">
+            <form @submit.prevent="confirmOpen = true" class="space-y-space-md">
                 <div>
                     <x-rich-text-editor id="answer" wire-model="answerText" :value="$answerText" />
                     @error('answerText') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
@@ -176,6 +198,36 @@
                     {{ $latestAttempt ? 'Resubmit' : 'Submit' }}
                 </button>
             </form>
+
+            <template x-teleport="body">
+                <div
+                    x-show="confirmOpen"
+                    x-cloak
+                    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
+                    @click.self="confirmOpen = false"
+                >
+                    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg">
+                        <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ $latestAttempt ? 'Resubmit' : 'Submit' }} confirmation</h2>
+                        <p class="font-body-md text-body-md text-secondary">
+                            {{ $latestAttempt
+                                ? 'Are you sure you want to resubmit your answer? This will replace your previous submission.'
+                                : 'Are you sure you want to submit your answer? You will not be able to edit it once graded.' }}
+                        </p>
+                        <div class="flex items-center justify-end gap-space-md">
+                            <button type="button" @click="confirmOpen = false" class="px-space-lg py-space-sm font-label-md text-label-md text-secondary hover:underline">Cancel</button>
+                            <button
+                                type="button"
+                                wire:loading.attr="disabled"
+                                wire:target="submit"
+                                @click="confirmOpen = false; $wire.call('submit')"
+                                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                            >
+                                {{ $latestAttempt ? 'Resubmit' : 'Submit' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
         </div>
     @endif
 
@@ -189,14 +241,22 @@
                         <div class="flex items-start justify-between gap-space-md">
                             <div class="flex-1">
                                 <h3 class="font-label-lg text-label-lg text-on-surface mb-space-xs">Attempt {{ $row['attempt']->attempt_number }}</h3>
-                                <p class="text-body-sm text-on-surface-variant">
-                                    <span class="material-symbols-outlined text-[16px] inline-block -mt-1 mr-space-xs">{{ $row['attempt']->submitted_by ? 'account_circle' : 'schedule' }}</span>
-                                    @if ($row['attempt']->submitted_at)
-                                        Submitted {{ $row['attempt']->submitted_at->format('M j, Y H:i') }}
-                                    @else
+                                @if ($row['attempt']->submitter)
+                                    <div class="flex items-center gap-space-sm">
+                                        <x-avatar :user="$row['attempt']->submitter" size="10" />
+                                        <div>
+                                            <p class="text-body-sm text-on-surface-variant">Submitted by <span class="font-medium text-on-surface">{{ $row['attempt']->submitter->name }}</span></p>
+                                            <p class="text-body-xs text-on-surface-variant">
+                                                {{ $row['attempt']->submitted_at ? $row['attempt']->submitted_at->format('M j, Y H:i') : 'Not submitted' }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                @else
+                                    <p class="text-body-sm text-on-surface-variant">
+                                        <span class="material-symbols-outlined text-[16px] inline-block -mt-1 mr-space-xs">schedule</span>
                                         Not submitted
-                                    @endif
-                                </p>
+                                    </p>
+                                @endif
                             </div>
                             @if ($row['score'])
                                 <div class="bg-gradient-to-br from-primary/90 to-primary rounded-lg p-space-md text-on-primary text-center min-w-[140px] flex-shrink-0">
@@ -204,7 +264,7 @@
                                     <p class="text-headline-sm font-bold">{{ rtrim(rtrim(number_format($row['score']->score, 1), '0'), '.') }} <span class="text-body-xs font-normal">pts</span></p>
                                     <p class="text-body-xs opacity-75 mt-space-xs">{{ $row['score']->graded_at?->format('j M y H:i') ?? '—' }}</p>
                                 </div>
-                            @else
+                            @elseif ($latestAttempt && $row['attempt']->id === $latestAttempt->id)
                                 <div class="bg-surface-container rounded-lg p-space-md text-on-surface-variant text-center min-w-[140px] flex-shrink-0">
                                     <p class="text-body-xs font-medium">Awaiting Grade</p>
                                 </div>

@@ -66,6 +66,19 @@ class AssessmentPersonalShowTest extends TestCase
         $this->assertDatabaseHas('assessment_answers', ['answer_text' => 'My answer']);
     }
 
+    public function test_student_cannot_submit_empty_answer(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentPersonalShow::class, ['assessment' => $this->assessment])
+            ->set('answerText', '<p><br></p>')
+            ->call('submit')
+            ->assertHasErrors(['answerText']);
+
+        $this->assertDatabaseMissing('assessment_attempts', ['assessment_id' => $this->assessment->id]);
+    }
+
     public function test_student_can_resubmit_before_grading_incrementing_attempt(): void
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);

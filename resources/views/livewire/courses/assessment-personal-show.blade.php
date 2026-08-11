@@ -177,7 +177,7 @@
 
                     <template x-teleport="body">
                         <div
-                            x-data="{ confirmOpen: false }"
+                            x-data="{ confirmOpen: false, answerEmpty: false }"
                             x-show="attemptOpen"
                             x-cloak
                             x-transition:enter="transition ease-out duration-200"
@@ -218,10 +218,17 @@
 
                                 <!-- Right: Answer Input -->
                                 <div class="overflow-y-auto p-space-lg">
-                                    <form @submit.prevent="confirmOpen = true" class="space-y-space-md">
+                                    <form
+                                        @submit.prevent="
+                                            answerEmpty = ($wire.answerText || '').replace(/<[^>]*>/g, '').trim() === '';
+                                            if (!answerEmpty) { confirmOpen = true; }
+                                        "
+                                        class="space-y-space-md"
+                                    >
                                         <label class="block font-label-md text-label-md text-on-surface">{{ $latestAttempt ? 'Resubmit' : 'Submit' }} Answer</label>
-                                        <div>
+                                        <div @input.capture="answerEmpty = false">
                                             <x-rich-text-editor id="answer" wire-model="answerText" :value="$answerText" />
+                                            <p x-show="answerEmpty" x-cloak class="text-body-xs text-error mt-space-xs">{{ __('Answer cannot be empty.') }}</p>
                                             @error('answerText') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                                         </div>
                                         <button
@@ -268,7 +275,7 @@
                                             type="button"
                                             wire:loading.attr="disabled"
                                             wire:target="submit"
-                                            @click="confirmOpen = false; attemptOpen = false; $wire.call('submit')"
+                                            @click="confirmOpen = false; $wire.call('submit').then((ok) => { if (ok) { attemptOpen = false; } })"
                                             class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
                                         >
                                             {{ $latestAttempt ? 'Resubmit' : 'Submit' }}

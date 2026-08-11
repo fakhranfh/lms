@@ -59,7 +59,7 @@ class AssessmentPersonalShow extends Component
         $this->isStudent = auth()->user()->hasRole(RoleName::Student);
     }
 
-    public function submit(AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService): void
+    public function submit(AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService): bool
     {
         abort_unless(auth()->user()->can('assessment.submit'), 403);
 
@@ -77,13 +77,13 @@ class AssessmentPersonalShow extends Component
         if ($latest && $latest->score) {
             $this->errorMessage = __('This assignment has already been graded and can no longer be resubmitted.');
 
-            return;
+            return false;
         }
 
         if ($this->assessment->end_date && now()->greaterThan($this->assessment->end_date)) {
             $this->errorMessage = __('The submission window for this assignment has closed.');
 
-            return;
+            return false;
         }
 
         $attempt = $assessmentAttemptService->create([
@@ -102,6 +102,8 @@ class AssessmentPersonalShow extends Component
 
         $this->answerText = '';
         $this->successMessage = __('Your submission has been recorded.');
+
+        return true;
     }
 
     public function clearSuccessMessage(): void

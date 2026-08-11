@@ -16,10 +16,22 @@
                 x-data="{ open: true }"
                 x-show="open"
                 x-cloak
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
                 class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
                 @click.self="open = false; $wire.call('clearSuccessMessage')"
             >
-                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg text-center">
+                <div
+                    x-show="open"
+                    x-transition:enter="transition ease-out duration-200 delay-75"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg text-center"
+                >
                     <div class="mx-auto w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
                         <span class="material-symbols-outlined text-success text-[28px]" data-weight="fill">check_circle</span>
                     </div>
@@ -153,81 +165,146 @@
                         <p class="text-body-sm text-on-surface-variant">You have reached the maximum number of attempts for this assessment.</p>
                     </div>
                 </div>
+            @elseif ($canSubmit && $canResubmit)
+                <div x-data="{ attemptOpen: false }">
+                    <button
+                        type="button"
+                        @click="attemptOpen = true"
+                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                    >
+                        {{ $latestAttempt ? 'Continue Attempt' : 'Start Attempt' }}
+                    </button>
+
+                    <template x-teleport="body">
+                        <div
+                            x-data="{ confirmOpen: false }"
+                            x-show="attemptOpen"
+                            x-cloak
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0"
+                            x-transition:enter-end="opacity-100"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="fixed inset-0 z-[100] bg-surface flex flex-col"
+                        >
+                            <div class="flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant">
+                                <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ $latestAttempt ? 'Resubmit' : 'Submit' }} Answer &mdash; {{ $assessment->title }}</h2>
+                                <button type="button" @click="attemptOpen = false" class="p-2 hover:bg-surface-container rounded transition">
+                                    <span class="material-symbols-outlined text-on-surface-variant">close</span>
+                                </button>
+                            </div>
+
+                            <div class="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-2">
+                                <!-- Left: Questions -->
+                                <div class="overflow-y-auto p-space-lg border-b md:border-b-0 md:border-r border-outline-variant divide-y divide-outline-variant">
+                                    @foreach ($assessment->questions as $question)
+                                        <div class="space-y-space-md {{ $loop->first ? '' : 'pt-space-lg' }} {{ $loop->last ? '' : 'pb-space-lg' }}">
+                                            <p class="text-body-xs text-on-surface-variant mb-space-sm">Question {{ $loop->iteration }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
+                                            <div class="prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
+                                            @if ($question->files->isNotEmpty())
+                                                <div class="mt-space-md space-y-space-xs">
+                                                    @foreach ($question->files as $file)
+                                                        <div class="flex items-center gap-space-xs text-body-sm text-on-surface-variant">
+                                                            <span class="material-symbols-outlined text-[16px]">description</span>
+                                                            {{ $file->title }}
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                <!-- Right: Answer Input -->
+                                <div class="overflow-y-auto p-space-lg">
+                                    <form @submit.prevent="confirmOpen = true" class="space-y-space-md">
+                                        <label class="block font-label-md text-label-md text-on-surface">{{ $latestAttempt ? 'Resubmit' : 'Submit' }} Answer</label>
+                                        <div>
+                                            <x-rich-text-editor id="answer" wire-model="answerText" :value="$answerText" />
+                                            @error('answerText') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            wire:loading.attr="disabled"
+                                            wire:target="submit"
+                                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                        >
+                                            {{ $latestAttempt ? 'Resubmit' : 'Submit' }}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <!-- Submit Confirmation -->
+                            <div
+                                x-show="confirmOpen"
+                                x-cloak
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0"
+                                x-transition:enter-end="opacity-100"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0"
+                                class="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-gutter"
+                                @click.self="confirmOpen = false"
+                            >
+                                <div
+                                    x-show="confirmOpen"
+                                    x-transition:enter="transition ease-out duration-200 delay-75"
+                                    x-transition:enter-start="opacity-0 scale-95"
+                                    x-transition:enter-end="opacity-100 scale-100"
+                                    class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg"
+                                >
+                                    <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ $latestAttempt ? 'Resubmit' : 'Submit' }} confirmation</h2>
+                                    <p class="font-body-md text-body-md text-secondary">
+                                        {{ $latestAttempt
+                                            ? 'Are you sure you want to resubmit your answer? This will replace your previous submission.'
+                                            : 'Are you sure you want to submit your answer? You will not be able to edit it once graded.' }}
+                                    </p>
+                                    <div class="flex items-center justify-end gap-space-md">
+                                        <button type="button" @click="confirmOpen = false" class="px-space-lg py-space-sm font-label-md text-label-md text-secondary hover:underline">Cancel</button>
+                                        <button
+                                            type="button"
+                                            wire:loading.attr="disabled"
+                                            wire:target="submit"
+                                            @click="confirmOpen = false; attemptOpen = false; $wire.call('submit')"
+                                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                        >
+                                            {{ $latestAttempt ? 'Resubmit' : 'Submit' }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             @endif
         @endif
     </div>
 
-    <!-- Question List -->
-    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
-        <h2 class="font-label-lg text-label-lg text-on-surface">Questions</h2>
-        <div class="divide-y divide-outline-variant">
-            @foreach ($assessment->questions as $question)
-                <div class="space-y-space-md {{ $loop->first ? '' : 'pt-space-lg' }} {{ $loop->last ? '' : 'pb-space-lg' }}">
-                    <p class="text-body-xs text-on-surface-variant mb-space-sm">Question {{ $loop->iteration }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
-                    <div class="prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
-                    @if ($question->files->isNotEmpty())
-                        <div class="mt-space-md space-y-space-xs">
-                            @foreach ($question->files as $file)
-                                <div class="flex items-center gap-space-xs text-body-sm text-on-surface-variant">
-                                    <span class="material-symbols-outlined text-[16px]">description</span>
-                                    {{ $file->title }}
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
-            @endforeach
-        </div>
-    </div>
-
-    <!-- Submit / Resubmit Answer -->
-    @if ($isStudent && $canSubmit && $canResubmit)
-        <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md" x-data="{ confirmOpen: false }">
-            <h2 class="font-label-lg text-label-lg text-on-surface">{{ $latestAttempt ? 'Resubmit Answer' : 'Submit Answer' }}</h2>
-            <form @submit.prevent="confirmOpen = true" class="space-y-space-md">
-                <div>
-                    <x-rich-text-editor id="answer" wire-model="answerText" :value="$answerText" />
-                    @error('answerText') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
-                </div>
-                <button
-                    type="submit"
-                    wire:loading.attr="disabled"
-                    wire:target="submit"
-                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
-                >
-                    {{ $latestAttempt ? 'Resubmit' : 'Submit' }}
-                </button>
-            </form>
-
-            <template x-teleport="body">
-                <div
-                    x-show="confirmOpen"
-                    x-cloak
-                    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
-                    @click.self="confirmOpen = false"
-                >
-                    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg">
-                        <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ $latestAttempt ? 'Resubmit' : 'Submit' }} confirmation</h2>
-                        <p class="font-body-md text-body-md text-secondary">
-                            {{ $latestAttempt
-                                ? 'Are you sure you want to resubmit your answer? This will replace your previous submission.'
-                                : 'Are you sure you want to submit your answer? You will not be able to edit it once graded.' }}
-                        </p>
-                        <div class="flex items-center justify-end gap-space-md">
-                            <button type="button" @click="confirmOpen = false" class="px-space-lg py-space-sm font-label-md text-label-md text-secondary hover:underline">Cancel</button>
-                            <button
-                                type="button"
-                                wire:loading.attr="disabled"
-                                wire:target="submit"
-                                @click="confirmOpen = false; $wire.call('submit')"
-                                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
-                            >
-                                {{ $latestAttempt ? 'Resubmit' : 'Submit' }}
-                            </button>
-                        </div>
+    @if (!$isStudent)
+        <!-- Question List (teacher view, read-only) -->
+        <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
+            <h2 class="font-label-lg text-label-lg text-on-surface">Questions</h2>
+            <div class="divide-y divide-outline-variant">
+                @foreach ($assessment->questions as $question)
+                    <div class="space-y-space-md {{ $loop->first ? '' : 'pt-space-lg' }} {{ $loop->last ? '' : 'pb-space-lg' }}">
+                        <p class="text-body-xs text-on-surface-variant mb-space-sm">Question {{ $loop->iteration }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
+                        <div class="prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
+                        @if ($question->files->isNotEmpty())
+                            <div class="mt-space-md space-y-space-xs">
+                                @foreach ($question->files as $file)
+                                    <div class="flex items-center gap-space-xs text-body-sm text-on-surface-variant">
+                                        <span class="material-symbols-outlined text-[16px]">description</span>
+                                        {{ $file->title }}
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
-                </div>
-            </template>
+                @endforeach
+            </div>
         </div>
     @endif
 
@@ -235,12 +312,22 @@
     @if ($isStudent && $attemptRows->isNotEmpty())
         <div class="space-y-space-md">
             <h2 class="font-label-lg text-label-lg text-on-surface">Answer Attempts</h2>
-            <div class="grid gap-space-md">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
                 @foreach ($attemptRows->reverse() as $row)
-                    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+                    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md" x-data="{ open: false }">
                         <div class="flex items-start justify-between gap-space-md">
                             <div class="flex-1">
-                                <h3 class="font-label-lg text-label-lg text-on-surface mb-space-xs">Attempt {{ $row['attempt']->attempt_number }}</h3>
+                                <div class="flex items-center gap-space-sm mb-space-xs">
+                                    <h3 class="font-label-lg text-label-lg text-on-surface">Attempt {{ $row['attempt']->attempt_number }}</h3>
+                                    <button
+                                        type="button"
+                                        @click="open = true"
+                                        class="p-1 hover:bg-surface-container rounded transition text-on-surface-variant"
+                                        title="View answer"
+                                    >
+                                        <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                    </button>
+                                </div>
                                 @if ($row['attempt']->submitter)
                                     <div class="flex items-center gap-space-sm">
                                         <x-avatar :user="$row['attempt']->submitter" size="10" />
@@ -271,18 +358,50 @@
                             @endif
                         </div>
 
-                        @if ($row['answer']?->answer_text)
-                            <div class="pt-space-md border-t border-outline-variant prose prose-sm max-w-none text-on-surface">
-                                {!! $row['answer']->answer_text !!}
-                            </div>
-                        @endif
+                        <template x-teleport="body">
+                            <div
+                                x-show="open"
+                                x-cloak
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0"
+                                x-transition:enter-end="opacity-100"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0"
+                                class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
+                                @click.self="open = false"
+                            >
+                                <div
+                                    x-show="open"
+                                    x-transition:enter="transition ease-out duration-200 delay-75"
+                                    x-transition:enter-start="opacity-0 scale-95"
+                                    x-transition:enter-end="opacity-100 scale-100"
+                                    class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto space-y-space-lg"
+                                >
+                                    <div class="flex items-center justify-between">
+                                        <h2 class="font-headline-sm text-headline-sm text-on-surface">Attempt {{ $row['attempt']->attempt_number }} Answer</h2>
+                                        <button type="button" @click="open = false" class="p-2 hover:bg-surface-container rounded transition">
+                                            <span class="material-symbols-outlined text-on-surface-variant">close</span>
+                                        </button>
+                                    </div>
 
-                        @if ($row['score']?->feedback)
-                            <div class="pt-space-md border-t border-outline-variant">
-                                <p class="text-body-xs text-on-surface-variant mb-space-xs">Feedback</p>
-                                <p class="text-body-sm text-on-surface">{{ $row['score']->feedback }}</p>
+                                    @if ($row['answer']?->answer_text)
+                                        <div class="prose prose-sm max-w-none text-on-surface">
+                                            {!! $row['answer']->answer_text !!}
+                                        </div>
+                                    @else
+                                        <p class="text-body-sm text-on-surface-variant">No answer submitted.</p>
+                                    @endif
+
+                                    @if ($row['score']?->feedback)
+                                        <div class="pt-space-md border-t border-outline-variant">
+                                            <p class="text-body-xs text-on-surface-variant mb-space-xs">Feedback</p>
+                                            <p class="text-body-sm text-on-surface">{{ $row['score']->feedback }}</p>
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
-                        @endif
+                        </template>
                     </div>
                 @endforeach
             </div>

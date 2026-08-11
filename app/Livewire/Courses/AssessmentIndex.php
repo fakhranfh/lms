@@ -25,6 +25,8 @@ class AssessmentIndex extends Component
 
     public ?string $errorMessage = null;
 
+    public array $expandedSections = [];
+
     public function mount(CurrentSchool $currentSchool, Course $course): void
     {
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
@@ -37,6 +39,15 @@ class AssessmentIndex extends Component
     public function loadAssessments(): void
     {
         $this->assessmentsLoaded = true;
+    }
+
+    public function toggleSection(string $sectionKey): void
+    {
+        if (isset($this->expandedSections[$sectionKey])) {
+            unset($this->expandedSections[$sectionKey]);
+        } else {
+            $this->expandedSections[$sectionKey] = true;
+        }
     }
 
     public function deleteAssessment(string $assessmentId, AssessmentService $assessmentService): void
@@ -76,16 +87,22 @@ class AssessmentIndex extends Component
 
         $assessments = $assessmentService->get(['course_id' => $this->course->id], ['attempts.score']);
 
-        $grouped = collect(AssessmentType::cases())
-            ->map(fn (AssessmentType $type) => [
-                'type' => $type,
-                'assessments' => $assessments->where('type', $type)->values(),
-            ])
-            ->all();
-
         $rows = $assessments->mapWithKeys(function (Assessment $assessment) use ($assessmentAttemptService, $groupMemberService) {
             return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService)];
         })->all();
+
+        $grouped = collect(AssessmentType::cases())
+            ->map(fn (AssessmentType $type) => [
+                'type' => $type,
+                'assessments' => $assessments->where('type', $type)->values()->map(fn (Assessment $a) => [
+                    'data' => $a,
+                    'row' => $rows[$a->id],
+                ]),
+                'sectionKey' => $type->value,
+                'isExpanded' => isset($this->expandedSections[$type->value]) && $this->expandedSections[$type->value],
+                'totalWeight' => $assessments->where('type', $type)->sum('weight'),
+            ])
+            ->all();
 
         return view('livewire.courses.assessment-index', [
             'course' => $this->course,
@@ -102,11 +119,12 @@ class AssessmentIndex extends Component
     }
 
     /**
-     * @return array{status: string, route: string|null}
+     * @return array{status: string, route: string|null, attemptCount: int, attemptLimit: string, score: float|null, isExpired: bool}
      */
     private function rowStatus(Assessment $assessment, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService): array
     {
         $type = $assessment->type;
+        $isExpired = $assessment->end_date && $assessment->end_date->isPast();
 
         $route = match ($type) {
             AssessmentType::TheoryPersonalAssignment => route('assessments.personal.show', $assessment),
@@ -115,7 +133,15 @@ class AssessmentIndex extends Component
         };
 
         if (! $this->isStudent) {
-            return ['status' => $assessment->status->value, 'route' => $route];
+            return [
+                'status' => $assessment->status->value,
+                'route' => $route,
+                'attemptCount' => 0,
+                'attemptLimit' => 'unlimited',
+                'score' => null,
+                'isExpired' => $isExpired,
+                'statusConfig' => $this->statusConfig($assessment->status->value),
+            ];
         }
 
         if ($type === AssessmentType::TheoryPersonalAssignment) {
@@ -125,19 +151,65 @@ class AssessmentIndex extends Component
                 ->first(fn (GroupMember $m) => $m->group->course_id === $this->course->id);
             $attempts = $member ? $assessmentAttemptService->forAssessmentAndGroup($assessment->id, $member->group_id) : collect();
         } else {
-            return ['status' => 'unavailable', 'route' => null];
+            return [
+                'status' => 'unavailable',
+                'route' => null,
+                'attemptCount' => 0,
+                'attemptLimit' => 'unlimited',
+                'score' => null,
+                'isExpired' => $isExpired,
+                'statusConfig' => $this->statusConfig('unavailable'),
+            ];
         }
 
         $latest = $attempts->last();
+        $score = $latest?->score?->score;
 
         if (! $latest) {
-            return ['status' => 'not_started', 'route' => $route];
+            return [
+                'status' => 'not_started',
+                'route' => $route,
+                'attemptCount' => 0,
+                'attemptLimit' => 'unlimited',
+                'score' => null,
+                'isExpired' => $isExpired,
+                'statusConfig' => $this->statusConfig('not_started'),
+            ];
         }
 
-        if ($latest->score) {
-            return ['status' => 'graded', 'route' => $route];
+        if ($score) {
+            return [
+                'status' => 'graded',
+                'route' => $route,
+                'attemptCount' => $attempts->count(),
+                'attemptLimit' => 'unlimited',
+                'score' => $score,
+                'isExpired' => $isExpired,
+                'statusConfig' => $this->statusConfig('graded'),
+            ];
         }
 
-        return ['status' => 'submitted', 'route' => $route];
+        return [
+            'status' => 'submitted',
+            'route' => $route,
+            'attemptCount' => $attempts->count(),
+            'attemptLimit' => 'unlimited',
+            'score' => null,
+            'isExpired' => $isExpired,
+            'statusConfig' => $this->statusConfig('submitted'),
+        ];
+    }
+
+    /**
+     * @return array{bg: string, text: string, icon: string}
+     */
+    private function statusConfig(string $status): array
+    {
+        return match ($status) {
+            'completed', 'graded' => ['bg' => 'bg-success/10', 'text' => 'text-success', 'icon' => 'check_circle'],
+            'submitted' => ['bg' => 'bg-warning/10', 'text' => 'text-warning', 'icon' => 'schedule'],
+            'not_started' => ['bg' => 'bg-on-surface-variant/10', 'text' => 'text-on-surface-variant', 'icon' => 'pending'],
+            default => ['bg' => 'bg-on-surface-variant/10', 'text' => 'text-on-surface-variant', 'icon' => 'help'],
+        };
     }
 }

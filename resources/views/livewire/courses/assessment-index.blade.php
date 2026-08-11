@@ -55,67 +55,144 @@
         @endunless
     </div>
 
-    <!-- Grouped list -->
+    <!-- Grouped Collapsible Tables -->
     <div class="space-y-space-lg" x-data="{ deleteId: null, deleteName: null, showDeleteModal: false, deleteConfirmText: '' }">
-        @foreach ($groupedAssessments as $group)
-            <div>
-                <h2 class="font-label-lg text-label-lg text-on-surface-variant mb-space-sm">
-                    {{ \App\Support\AssessmentTypeLabel::forType($group['type']) }}
-                </h2>
+        @foreach ($groupedAssessments as $index => $group)
+            <div x-data="{ open: @js($group['isExpanded']) }">
+                @if ($group['assessments']->isNotEmpty())
+                    <!-- Collapsible Header -->
+                    <button
+                        type="button"
+                        wire:click="toggleSection('{{ $group['sectionKey'] }}')"
+                        @click="open = !open"
+                        class="w-full flex items-center justify-between px-space-lg py-space-md bg-surface border border-outline-variant rounded-lg hover:bg-surface-container/50 transition"
+                    >
+                        <div class="flex items-center gap-space-md flex-1">
+                            <span class="material-symbols-outlined text-on-surface-variant transition-transform" :class="open ? 'rotate-90' : ''">
+                                chevron_right
+                            </span>
+                            <h2 class="font-label-lg text-label-lg text-on-surface">
+                                {{ strtoupper(\App\Support\AssessmentTypeLabel::forType($group['type'])) }}: {{ rtrim(rtrim(number_format($group['totalWeight'], 2), '0'), '.') }}%
+                            </h2>
+                        </div>
+                        <span class="text-body-sm text-on-surface-variant flex-shrink-0">
+                            {{ $group['assessments']->count() }} assessment{{ $group['assessments']->count() !== 1 ? 's' : '' }}
+                        </span>
+                    </button>
 
-                @if ($group['assessments']->isEmpty())
-                    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg text-center text-body-sm text-on-surface-variant">
-                        No {{ strtolower(\App\Support\AssessmentTypeLabel::forType($group['type'])) }} yet.
+                    <!-- Collapsible Content: Table -->
+                    <div x-show="open" x-cloak class="bg-surface border border-t-0 border-outline-variant rounded-b-lg overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-outline-variant bg-surface-container/50">
+                                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Title</th>
+                                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Assigned to</th>
+                                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Start Date</th>
+                                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Due Date</th>
+                                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Status</th>
+                                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attempt</th>
+                                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Score</th>
+                                        @unless ($isStudent)
+                                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Actions</th>
+                                        @endunless
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-outline-variant">
+                                    @foreach ($group['assessments'] as $item)
+                                        <tr wire:key="assessment-{{ $item['data']->id }}" class="hover:bg-surface-container/30 transition">
+                                            <td class="px-space-lg py-space-md">
+                                                @if ($item['row']['route'])
+                                                    <a href="{{ $item['row']['route'] }}" class="text-primary hover:underline font-label-md text-label-md">
+                                                        {{ $item['data']->title }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-on-surface-variant opacity-60 font-label-md text-label-md">
+                                                        {{ $item['data']->title }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="px-space-lg py-space-md text-body-sm text-on-surface">
+                                                <span class="inline-flex items-center gap-space-xs">
+                                                    <span class="material-symbols-outlined text-[16px]">
+                                                        {{ $item['data']->assigned_to->value === 'individual' ? 'person' : 'groups' }}
+                                                    </span>
+                                                    {{ str($item['data']->assigned_to->value)->title() }}
+                                                </span>
+                                            </td>
+                                            <td class="px-space-lg py-space-md text-body-sm text-on-surface">
+                                                @if ($item['data']->start_date)
+                                                    {{ $item['data']->start_date->format('M j, Y, H:i') }}
+                                                @else
+                                                    <span class="text-on-surface-variant">—</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-space-lg py-space-md">
+                                                <div class="flex items-center gap-space-xs">
+                                                    @if ($item['data']->end_date)
+                                                        <span class="text-body-sm text-on-surface">{{ $item['data']->end_date->format('M j, Y, H:i') }}</span>
+                                                        @if ($item['row']['isExpired'])
+                                                            <span class="inline-flex items-center px-space-xs py-1 rounded-full text-body-xs font-medium bg-error/10 text-error">
+                                                                Expired
+                                                            </span>
+                                                        @endif
+                                                    @else
+                                                        <span class="text-on-surface-variant">—</span>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td class="px-space-lg py-space-md">
+                                                <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm {{ $item['row']['statusConfig']['bg'] }} {{ $item['row']['statusConfig']['text'] }}">
+                                                    <span class="material-symbols-outlined text-[16px]">{{ $item['row']['statusConfig']['icon'] }}</span>
+                                                    {{ str($item['row']['status'])->replace('_', ' ')->title() }}
+                                                </span>
+                                            </td>
+                                            <td class="px-space-lg py-space-md text-body-sm text-on-surface">
+                                                @if ($isStudent && $item['row']['route'])
+                                                    {{ $item['row']['attemptCount'] }} of {{ $item['row']['attemptLimit'] }}
+                                                @else
+                                                    <span class="text-on-surface-variant">—</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-space-lg py-space-md text-body-sm text-on-surface font-label-md">
+                                                @if ($item['row']['score'] !== null)
+                                                    {{ number_format($item['row']['score'], 1) }}
+                                                @else
+                                                    <span class="text-on-surface-variant">—</span>
+                                                @endif
+                                            </td>
+                                            @unless ($isStudent)
+                                                <td class="px-space-lg py-space-md">
+                                                    <div class="flex gap-space-sm">
+                                                        @if ($item['row']['route'])
+                                                            <a
+                                                                href="{{ route('assessments.edit', $item['data']) }}"
+                                                                class="p-2 hover:bg-surface-container rounded transition text-primary inline-flex"
+                                                                title="Edit assessment"
+                                                            >
+                                                                <span class="material-symbols-outlined">edit</span>
+                                                            </a>
+
+                                                            <button
+                                                                type="button"
+                                                                @click="deleteId = @js($item['data']->id); deleteName = @js($item['data']->title); deleteConfirmText = ''; showDeleteModal = true"
+                                                                class="p-2 hover:bg-surface-container rounded transition text-error"
+                                                            >
+                                                                <span class="material-symbols-outlined">delete</span>
+                                                            </button>
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                            @endunless
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 @else
-                    <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
-                        @foreach ($group['assessments'] as $assessment)
-                            @php $row = $rowStatus[$assessment->id]; @endphp
-                            <div wire:key="assessment-{{ $assessment->id }}" class="p-space-lg flex items-center gap-space-md">
-                                @if ($row['route'])
-                                    <a href="{{ $row['route'] }}" class="flex-1 min-w-0">
-                                        <p class="font-label-lg text-label-lg text-on-surface truncate">{{ $assessment->title }}</p>
-                                        <p class="text-body-sm text-on-surface-variant mt-1">
-                                            Weight {{ rtrim(rtrim(number_format($assessment->weight, 2), '0'), '.') }}%
-                                            @if ($assessment->start_date)
-                                                &middot; {{ $assessment->start_date->format('M j, Y') }} &ndash; {{ $assessment->end_date?->format('M j, Y') }}
-                                            @endif
-                                        </p>
-                                    </a>
-                                @else
-                                    <div class="flex-1 min-w-0 opacity-60">
-                                        <p class="font-label-lg text-label-lg text-on-surface truncate">{{ $assessment->title }}</p>
-                                        <p class="text-body-sm text-on-surface-variant mt-1">Coming soon</p>
-                                    </div>
-                                @endif
-
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant flex-shrink-0">
-                                    {{ str($row['status'])->replace('_', ' ')->title() }}
-                                </span>
-
-                                @unless ($isStudent)
-                                    <div class="flex gap-space-sm flex-shrink-0">
-                                        @if ($row['route'])
-                                            <a
-                                                href="{{ route('assessments.edit', $assessment) }}"
-                                                class="p-2 hover:bg-surface-container rounded transition text-primary inline-flex"
-                                                title="Edit assessment"
-                                            >
-                                                <span class="material-symbols-outlined">edit</span>
-                                            </a>
-
-                                            <button
-                                                type="button"
-                                                @click="deleteId = @js($assessment->id); deleteName = @js($assessment->title); deleteConfirmText = ''; showDeleteModal = true"
-                                                class="p-2 hover:bg-surface-container rounded transition text-error"
-                                            >
-                                                <span class="material-symbols-outlined">delete</span>
-                                            </button>
-                                        @endif
-                                    </div>
-                                @endunless
-                            </div>
-                        @endforeach
+                    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg text-center text-body-sm text-on-surface-variant">
+                        No {{ strtolower(\App\Support\AssessmentTypeLabel::forType($group['type'])) }} yet.
                     </div>
                 @endif
             </div>

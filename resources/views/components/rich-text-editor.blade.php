@@ -90,7 +90,7 @@
         <span class="w-px h-5 bg-outline-variant mx-1"></span>
 
         <button type="button" @click="triggerFilePicker()" :disabled="disabled || uploading" class="p-1.5 rounded hover:bg-surface-container disabled:opacity-50 disabled:cursor-not-allowed">
-            <span class="material-symbols-outlined text-[18px]" x-text="uploading ? 'progress_activity' : 'attach_file'" :class="uploading && 'animate-spin'"></span>
+            <span class="material-symbols-outlined text-[18px]">attach_file</span>
         </button>
         <input type="file" x-ref="fileInput" accept="image/*,.pdf,.zip" class="hidden" :disabled="disabled" @change="uploadFile($event)">
     </div>

@@ -55,7 +55,7 @@
     text-decoration: underline;
 }
 
-.rte-content :where(a.rte-file-chip) {
+.rte-content :where(a.rte-file-chip, span.rte-file-chip) {
     display: inline-flex;
     align-items: center;
     gap: 0.625rem;
@@ -127,6 +127,38 @@
 .rte-content :where(.rte-file-chip-size) {
     font-size: 0.75rem;
     color: var(--color-on-surface-variant, #666);
+}
+
+.rte-content :where(.rte-file-chip--skeleton) {
+    pointer-events: none;
+}
+
+.rte-content :where(.rte-file-chip-icon--skeleton),
+.rte-content :where(.rte-file-chip-name--skeleton),
+.rte-content :where(.rte-file-chip-size--skeleton) {
+    background-color: var(--color-surface-container-highest, #e0e0e0);
+    animation: rte-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.rte-content :where(.rte-file-chip-name--skeleton) {
+    height: 0.75rem;
+    width: 8rem;
+    border-radius: 0.25rem;
+}
+
+.rte-content :where(.rte-file-chip-size--skeleton) {
+    height: 0.625rem;
+    width: 4rem;
+    border-radius: 0.25rem;
+}
+
+@keyframes rte-skeleton-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.4;
+    }
 }
 
 .rte-content :where(table) {

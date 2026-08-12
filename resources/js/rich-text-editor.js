@@ -191,6 +191,16 @@ export default (initialValue, wireModel, id, disabled = false) => ({
         return badges[extension] || { label: extension.slice(0, 4).toUpperCase() || 'FILE', type: 'generic' };
     },
 
+    buildSkeletonChip(placeholderId) {
+        return `<span id="${placeholderId}" contenteditable="false" class="rte-file-chip rte-file-chip--skeleton">`
+            + '<span class="rte-file-chip-icon rte-file-chip-icon--skeleton"></span>'
+            + '<span class="rte-file-chip-info">'
+            + '<span class="rte-file-chip-name rte-file-chip-name--skeleton"></span>'
+            + '<span class="rte-file-chip-size rte-file-chip-size--skeleton"></span>'
+            + '</span>'
+            + '</span>&nbsp;';
+    },
+
     buildFileChip(url, file) {
         const uploadedName = decodeURIComponent(url.split('/').pop().split('?')[0]);
         const badge = this.badgeForFile(uploadedName);
@@ -228,21 +238,41 @@ export default (initialValue, wireModel, id, disabled = false) => ({
         const uuidName = extension ? `${uuid}.${extension}` : uuid;
         const uploadFile = new File([file], uuidName, { type: file.type });
 
+        const placeholderId = `rte-upload-${uuid}`;
+        this.exec('insertHTML', this.buildSkeletonChip(placeholderId));
+
         this.$wire.upload(
             'pendingRichTextFile',
             uploadFile,
             () => {
                 this.$wire.call('insertRichTextFile').then((url) => {
-                    if (file.type.startsWith('image/')) {
-                        this.exec('insertImage', url);
-                    } else {
-                        this.exec('insertHTML', this.buildFileChip(url, uploadFile));
+                    const placeholder = this.$refs.editor.querySelector(`#${placeholderId}`);
+
+                    if (placeholder) {
+                        if (file.type.startsWith('image/')) {
+                            const img = document.createElement('img');
+                            img.src = url;
+                            placeholder.replaceWith(img);
+                        } else {
+                            const wrapper = document.createElement('div');
+                            wrapper.innerHTML = this.buildFileChip(url, uploadFile);
+                            placeholder.replaceWith(wrapper.firstElementChild);
+                        }
+                        this.onInput();
                     }
+
                     this.uploading = false;
                     event.target.value = '';
                 });
             },
             () => {
+                const placeholder = this.$refs.editor.querySelector(`#${placeholderId}`);
+
+                if (placeholder) {
+                    placeholder.remove();
+                    this.onInput();
+                }
+
                 this.uploading = false;
                 event.target.value = '';
                 window.alert('Gagal mengunggah file.');

@@ -416,6 +416,15 @@ class R2StorageService
      */
     public function promoteTempPhoto(string $tempKeyOrUrl, string $finalPath = 'profile-photos'): string
     {
+        return $this->promoteTempFile($tempKeyOrUrl, $finalPath);
+    }
+
+    /**
+     * Promote any temp-uploaded file (by its temp key or public URL) to a
+     * final folder, keeping the same unique hashed/UUID filename.
+     */
+    public function promoteTempFile(string $tempKeyOrUrl, string $finalPath): string
+    {
         $tempKey = $this->extractKeyFromPath($tempKeyOrUrl);
         $finalKey = $this->schoolPrefix()."{$finalPath}/".basename($tempKey);
 

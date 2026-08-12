@@ -165,7 +165,7 @@ class AssessmentForm extends Component
         foreach ($this->questions as $index => $question) {
             $questionData = [
                 'assessment_id' => $assessment->id,
-                'description' => HtmlSanitizer::forum($question['description']),
+                'description' => HtmlSanitizer::forum($this->promoteRichTextAttachments($question['description'])),
                 'points' => (float) $question['points'],
                 'order' => $index + 1,
             ];

@@ -102,7 +102,7 @@ class ForumIndex extends Component
             'forum_id' => $this->currentForumId,
             'user_id' => auth()->id(),
             'title' => $this->newThreadTitle,
-            'description' => HtmlSanitizer::forum($this->newThreadDescription),
+            'description' => HtmlSanitizer::forum($this->promoteRichTextAttachments($this->newThreadDescription)),
         ]);
 
         $this->page = 1;

@@ -108,7 +108,7 @@ class AssessmentTeamShow extends Component
 
         $assessmentAnswerService->create([
             'assessment_attempt_id' => $attempt->id,
-            'answer_text' => HtmlSanitizer::forum($this->answerText),
+            'answer_text' => HtmlSanitizer::forum($this->promoteRichTextAttachments($this->answerText)),
         ]);
 
         $this->answerText = '';

@@ -163,7 +163,7 @@ class SessionsIndex extends Component
             'forum_id' => $this->activeForumId,
             'user_id' => auth()->id(),
             'title' => $this->newThreadTitle,
-            'description' => HtmlSanitizer::forum($this->newThreadDescription),
+            'description' => HtmlSanitizer::forum($this->promoteRichTextAttachments($this->newThreadDescription)),
         ]);
 
         $this->forumPage = 1;

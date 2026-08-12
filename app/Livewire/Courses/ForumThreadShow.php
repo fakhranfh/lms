@@ -99,7 +99,7 @@ class ForumThreadShow extends Component
         $forumCommentService->create([
             'thread_id' => $this->thread->id,
             'user_id' => auth()->id(),
-            'body' => HtmlSanitizer::forum($this->newCommentBody),
+            'body' => HtmlSanitizer::forum($this->promoteRichTextAttachments($this->newCommentBody)),
         ]);
 
         $this->newCommentBody = '';
@@ -136,7 +136,7 @@ class ForumThreadShow extends Component
         ]);
 
         $forumCommentService->update($comment->id, [
-            'body' => HtmlSanitizer::forum($this->editCommentBody),
+            'body' => HtmlSanitizer::forum($this->promoteRichTextAttachments($this->editCommentBody)),
         ]);
 
         $this->editCommentBody = '';
@@ -161,7 +161,7 @@ class ForumThreadShow extends Component
             'thread_id' => $this->thread->id,
             'parent_id' => $parent->id,
             'user_id' => auth()->id(),
-            'body' => HtmlSanitizer::forum($this->newReplyBody),
+            'body' => HtmlSanitizer::forum($this->promoteRichTextAttachments($this->newReplyBody)),
         ]);
 
         $this->newReplyBody = '';
@@ -199,7 +199,7 @@ class ForumThreadShow extends Component
 
         $forumThreadService->update($this->thread->id, [
             'title' => $this->editThreadTitle,
-            'description' => HtmlSanitizer::forum($this->editThreadDescription),
+            'description' => HtmlSanitizer::forum($this->promoteRichTextAttachments($this->editThreadDescription)),
         ]);
 
         $this->thread->refresh();

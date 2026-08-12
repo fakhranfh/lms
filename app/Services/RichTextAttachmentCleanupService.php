@@ -46,4 +46,28 @@ class RichTextAttachmentCleanupService
             $this->deleteUrl($url);
         }
     }
+
+    /**
+     * Promotes every temp-staged attachment referenced inside rich text HTML
+     * to its final folder, rewriting the URLs in place. Attachments are
+     * uploaded to a temp/ prefix as soon as they're attached in the editor,
+     * and only moved to their permanent location once the form is submitted.
+     */
+    public function promoteTempAttachments(?string $html, string $finalPath = 'forum-attachments'): string
+    {
+        if (! $html) {
+            return (string) $html;
+        }
+
+        foreach (RichTextAttachments::extractUrls($html) as $url) {
+            if (! $this->r2StorageService->isManagedUrl($url) || ! str_contains($url, '/temp/')) {
+                continue;
+            }
+
+            $finalUrl = $this->r2StorageService->promoteTempFile($url, $finalPath);
+            $html = str_replace($url, $finalUrl, $html);
+        }
+
+        return $html;
+    }
 }

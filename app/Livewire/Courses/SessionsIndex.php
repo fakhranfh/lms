@@ -2,18 +2,23 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\AssessmentType;
 use App\Enums\DeliveryMode;
 use App\Enums\MaterialType;
 use App\Enums\RoleName;
 use App\Livewire\Concerns\WithRichTextEditor;
+use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\ForumThread;
+use App\Models\GroupMember;
 use App\Models\MediaLibraryItem;
 use App\Models\Role;
 use App\Models\Session;
+use App\Services\AssessmentAttemptService;
 use App\Services\CoursePersonService;
 use App\Services\ForumService;
 use App\Services\ForumThreadService;
+use App\Services\GroupMemberService;
 use App\Services\SessionMaterialCompletionService;
 use App\Services\SessionProgressService;
 use App\Services\SessionService;
@@ -223,7 +228,7 @@ class SessionsIndex extends Component
         ];
     }
 
-    public function render(SessionService $sessionService, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService, CoursePersonService $coursePersonService, ForumThreadService $forumThreadService, SessionProgressService $sessionProgressService)
+    public function render(SessionService $sessionService, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService, CoursePersonService $coursePersonService, ForumThreadService $forumThreadService, SessionProgressService $sessionProgressService, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService)
     {
         if (! $this->sessionsLoaded) {
             return view('livewire.courses.sessions-index-placeholder', [
@@ -254,7 +259,7 @@ class SessionsIndex extends Component
         ];
 
         if ($this->isStudent) {
-            $viewData = array_merge($viewData, $this->buildStudentViewData($sessions, $completionService, $participationService, $forumThreadService, $sessionProgressService));
+            $viewData = array_merge($viewData, $this->buildStudentViewData($sessions, $completionService, $participationService, $forumThreadService, $sessionProgressService, $assessmentAttemptService, $groupMemberService));
             $viewData['teacher'] = $coursePersonService->teachersForCourse($this->course->id)->first()?->user;
         }
 
@@ -267,7 +272,7 @@ class SessionsIndex extends Component
      * @param  Collection<int, Session>  $sessions
      * @return array<string, mixed>
      */
-    private function buildStudentViewData(Collection $sessions, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService, ForumThreadService $forumThreadService, SessionProgressService $sessionProgressService): array
+    private function buildStudentViewData(Collection $sessions, SessionMaterialCompletionService $completionService, VideoConferenceParticipationService $participationService, ForumThreadService $forumThreadService, SessionProgressService $sessionProgressService, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService): array
     {
         $activeSession = $sessions->firstWhere('id', $this->activeSessionId) ?? $sessions->first();
 
@@ -291,6 +296,8 @@ class SessionsIndex extends Component
                 'forumThreadPreviews' => [],
                 'canCreateForumThread' => auth()->user()->can('forum.create'),
                 'forumPagination' => null,
+                'assessmentRows' => collect(),
+                'assessmentGroups' => [],
             ];
         }
 
@@ -332,7 +339,14 @@ class SessionsIndex extends Component
             'id' => (string) $material->id,
         ])->values()->all();
 
-        $chips[] = ['key' => 'assessment', 'label' => 'Assessment', 'completed' => false, 'type' => 'assessment', 'id' => null];
+        $assessmentRows = $activeSession->assessments
+            ->map(fn ($assessment) => $this->buildAssessmentRow($assessment, $assessmentAttemptService, $groupMemberService))
+            ->values();
+
+        $assessmentsCompleted = $assessmentRows->isNotEmpty() && $assessmentRows->every(fn ($row) => $row['status'] === 'graded');
+        $assessmentGroups = $this->groupAssessmentRowsByType($assessmentRows);
+
+        $chips[] = ['key' => 'assessment', 'label' => 'Assessment', 'completed' => $assessmentsCompleted, 'type' => 'assessment', 'id' => null];
         $chips[] = ['key' => 'forum', 'label' => 'Forum', 'completed' => $forumCompleted, 'type' => 'forum', 'id' => null];
 
         $showVideoConferences = $activeSession->delivery_mode === DeliveryMode::VirtualClass
@@ -404,7 +418,88 @@ class SessionsIndex extends Component
             'forumThreadPreviews' => $forumThreadPreviews,
             'canCreateForumThread' => auth()->user()->can('forum.create'),
             'forumPagination' => $forumPagination,
+            'assessmentRows' => $assessmentRows,
+            'assessmentGroups' => $assessmentGroups,
         ];
+    }
+
+    /**
+     * Build the status/score/route info for one of the session's linked
+     * assessments, for this student, the same way AssessmentIndex computes
+     * it for the list. A session can have several assessments.
+     *
+     * @return array{assessment: Assessment, route: string|null, status: string, score: float|null, attemptCount: int, attemptLimit: string, isExpired: bool, statusConfig: array{bg: string, text: string, icon: string}}
+     */
+    private function buildAssessmentRow(Assessment $assessment, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService): array
+    {
+        $route = match ($assessment->type) {
+            AssessmentType::TheoryPersonalAssignment => route('assessments.personal.show', $assessment),
+            AssessmentType::TheoryTeamAssignment => route('assessments.team.show', $assessment),
+            default => null,
+        };
+
+        if ($assessment->type === AssessmentType::TheoryPersonalAssignment) {
+            $attempts = $assessmentAttemptService->forAssessmentAndUser($assessment->id, auth()->id());
+        } elseif ($assessment->type === AssessmentType::TheoryTeamAssignment) {
+            $member = $groupMemberService->get(['user_id' => auth()->id()])
+                ->first(fn (GroupMember $m) => $m->group->course_id === $this->course->id);
+            $attempts = $member ? $assessmentAttemptService->forAssessmentAndGroup($assessment->id, $member->group_id) : collect();
+        } else {
+            $attempts = collect();
+        }
+
+        $latest = $attempts->last();
+        $score = $latest?->score?->score;
+
+        $status = match (true) {
+            $route === null => 'unavailable',
+            ! $latest => 'not_started',
+            $score !== null => 'graded',
+            default => 'submitted',
+        };
+
+        return [
+            'assessment' => $assessment,
+            'route' => $route,
+            'status' => $status,
+            'score' => $score,
+            'attemptCount' => $attempts->count(),
+            'attemptLimit' => $assessment->attempt_limit ? (string) $assessment->attempt_limit : 'unlimited',
+            'isExpired' => (bool) ($assessment->end_date && $assessment->end_date->isPast()),
+            'statusConfig' => $this->assessmentStatusConfig($status),
+        ];
+    }
+
+    /**
+     * Group the session's assessment rows by type, mirroring AssessmentIndex's
+     * grouped table layout. Only types the session actually has are included.
+     *
+     * @return array<int, array{type: AssessmentType, rows: \Illuminate\Support\Collection<int, array<string, mixed>>, totalWeight: float}>
+     */
+    private function groupAssessmentRowsByType(\Illuminate\Support\Collection $assessmentRows): array
+    {
+        return $assessmentRows
+            ->groupBy(fn (array $row) => $row['assessment']->type->value)
+            ->map(fn (\Illuminate\Support\Collection $rows) => [
+                'type' => $rows->first()['assessment']->type,
+                'rows' => $rows->values(),
+                'totalWeight' => $rows->sum(fn (array $row) => $row['assessment']->weight),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array{bg: string, text: string, icon: string}
+     */
+    private function assessmentStatusConfig(string $status): array
+    {
+        return match ($status) {
+            'graded' => ['bg' => 'bg-success/10', 'text' => 'text-success', 'icon' => 'check_circle'],
+            'submitted' => ['bg' => 'bg-warning/10', 'text' => 'text-warning', 'icon' => 'schedule'],
+            'not_started' => ['bg' => 'bg-on-surface-variant/10', 'text' => 'text-on-surface-variant', 'icon' => 'pending'],
+            default => ['bg' => 'bg-on-surface-variant/10', 'text' => 'text-on-surface-variant', 'icon' => 'help'],
+        };
     }
 
     /**

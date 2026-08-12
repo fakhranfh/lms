@@ -34,6 +34,9 @@ class DatabaseSeeder extends Seeder
         // Seed Personal/Team Assignments (with groups, questions, and attempts) for those courses
         $this->call(AssessmentSeeder::class);
 
+        // Link each course's assessments to one of its sessions
+        $this->call(SessionAssessmentSeeder::class);
+
         // $this->call(ProductSeeder::class);
     }
 }

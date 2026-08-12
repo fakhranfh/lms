@@ -298,17 +298,117 @@
                             </div>
                         @endforeach
 
-                        <div x-show="activeChipKey === 'assessment'" x-cloak class="flex items-center gap-space-md">
-                            <div class="min-w-0 flex-1">
+                        <div x-show="activeChipKey === 'assessment'" x-cloak class="space-y-space-md">
+                            @if (empty($assessmentGroups))
                                 <p class="text-body-xs text-on-surface-variant flex items-center gap-space-xs">
                                     <span class="material-symbols-outlined text-[14px]">assignment</span>
-                                    @if ($activeSession->assessments->isNotEmpty())
-                                        {{ $activeSession->assessments->first()->type->value }} &middot; {{ $activeSession->assessments->first()->status->value }}
-                                    @else
-                                        No assessment yet.
-                                    @endif
+                                    No assessment yet.
                                 </p>
-                            </div>
+                            @else
+                                @foreach ($assessmentGroups as $group)
+                                    <div x-data="{ open: true }" class="border border-outline-variant rounded-lg overflow-hidden">
+                                        <button
+                                            type="button"
+                                            @click="open = !open"
+                                            class="w-full flex items-center justify-between px-space-md py-space-sm bg-surface-container/50 hover:bg-surface-container transition"
+                                        >
+                                            <div class="flex items-center gap-space-sm">
+                                                <span class="material-symbols-outlined text-on-surface-variant text-[18px] transition-transform" :class="open ? 'rotate-90' : ''">
+                                                    chevron_right
+                                                </span>
+                                                <span class="font-label-sm text-label-sm text-on-surface uppercase">
+                                                    {{ \App\Support\AssessmentTypeLabel::forType($group['type']) }}: {{ rtrim(rtrim(number_format($group['totalWeight'], 2), '0'), '.') }}%
+                                                </span>
+                                            </div>
+                                            <span class="text-body-xs text-on-surface-variant">
+                                                {{ $group['rows']->count() }} assessment{{ $group['rows']->count() !== 1 ? 's' : '' }}
+                                            </span>
+                                        </button>
+
+                                        <div x-show="open" x-cloak class="overflow-x-auto border-t border-outline-variant">
+                                            <table class="w-full">
+                                                <thead>
+                                                    <tr class="border-b border-outline-variant bg-surface-container/30">
+                                                        <th class="px-space-md py-space-sm text-left font-label-sm text-label-sm text-on-surface-variant">Title</th>
+                                                        <th class="px-space-md py-space-sm text-left font-label-sm text-label-sm text-on-surface-variant">Assigned to</th>
+                                                        <th class="px-space-md py-space-sm text-left font-label-sm text-label-sm text-on-surface-variant">Start Date</th>
+                                                        <th class="px-space-md py-space-sm text-left font-label-sm text-label-sm text-on-surface-variant">Due Date</th>
+                                                        <th class="px-space-md py-space-sm text-left font-label-sm text-label-sm text-on-surface-variant">Status</th>
+                                                        <th class="px-space-md py-space-sm text-left font-label-sm text-label-sm text-on-surface-variant">Attempt</th>
+                                                        <th class="px-space-md py-space-sm text-left font-label-sm text-label-sm text-on-surface-variant">Score</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-outline-variant">
+                                                    @foreach ($group['rows'] as $row)
+                                                        <tr wire:key="session-assessment-{{ $row['assessment']->id }}" class="hover:bg-surface-container/30 transition">
+                                                            <td class="px-space-md py-space-sm">
+                                                                @if ($row['route'])
+                                                                    <a href="{{ $row['route'] }}" class="text-primary hover:underline font-label-sm text-label-sm">
+                                                                        {{ $row['assessment']->title }}
+                                                                    </a>
+                                                                @else
+                                                                    <span class="text-on-surface-variant opacity-60 font-label-sm text-label-sm">
+                                                                        {{ $row['assessment']->title }}
+                                                                    </span>
+                                                                @endif
+                                                            </td>
+                                                            <td class="px-space-md py-space-sm text-body-sm text-on-surface">
+                                                                <span class="inline-flex items-center gap-space-xs">
+                                                                    <span class="material-symbols-outlined text-[16px]">
+                                                                        {{ $row['assessment']->assigned_to->value === 'individual' ? 'person' : 'groups' }}
+                                                                    </span>
+                                                                    {{ str($row['assessment']->assigned_to->value)->title() }}
+                                                                </span>
+                                                            </td>
+                                                            <td class="px-space-md py-space-sm text-body-sm text-on-surface">
+                                                                @if ($row['assessment']->start_date)
+                                                                    {{ $row['assessment']->start_date->format('M j, Y, H:i') }}
+                                                                @else
+                                                                    <span class="text-on-surface-variant">—</span>
+                                                                @endif
+                                                            </td>
+                                                            <td class="px-space-md py-space-sm">
+                                                                <div class="flex items-center gap-space-xs">
+                                                                    @if ($row['assessment']->end_date)
+                                                                        <span class="text-body-sm text-on-surface">{{ $row['assessment']->end_date->format('M j, Y, H:i') }}</span>
+                                                                        @if ($row['isExpired'])
+                                                                            <span class="inline-flex items-center px-space-xs py-1 rounded-full text-body-xs font-medium bg-error/10 text-error">
+                                                                                Expired
+                                                                            </span>
+                                                                        @endif
+                                                                    @else
+                                                                        <span class="text-on-surface-variant">—</span>
+                                                                    @endif
+                                                                </div>
+                                                            </td>
+                                                            <td class="px-space-md py-space-sm">
+                                                                <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm {{ $row['statusConfig']['bg'] }} {{ $row['statusConfig']['text'] }}">
+                                                                    <span class="material-symbols-outlined text-[16px]">{{ $row['statusConfig']['icon'] }}</span>
+                                                                    {{ str($row['status'])->replace('_', ' ')->title() }}
+                                                                </span>
+                                                            </td>
+                                                            <td class="px-space-md py-space-sm text-body-sm text-on-surface">
+                                                                @if ($row['route'])
+                                                                    {{ $row['attemptCount'] }} of {{ $row['attemptLimit'] }}
+                                                                @else
+                                                                    <span class="text-on-surface-variant">—</span>
+                                                                @endif
+                                                            </td>
+                                                            <td class="px-space-md py-space-sm text-body-sm text-on-surface font-label-sm">
+                                                                @if ($row['score'] !== null)
+                                                                    {{ number_format($row['score'], 1) }}
+                                                                @else
+                                                                    <span class="text-on-surface-variant">—</span>
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @endif
                         </div>
 
                         <div x-show="activeChipKey === 'forum'" x-cloak class="space-y-space-md">
@@ -526,7 +626,7 @@
                 @endif
 
                 <!-- Idle state: illustration + Start Learning -->
-                <div class="flex flex-col items-center text-center gap-space-lg py-space-lg" x-show="!viewingPayload && !viewerLoading && activeChipKey !== 'forum'">
+                <div class="flex flex-col items-center text-center gap-space-lg py-space-lg" x-show="!viewingPayload && !viewerLoading && activeChipKey !== 'forum' && activeChipKey !== 'assessment'">
                     <div class="w-40 h-40 rounded-full bg-primary/10 flex items-center justify-center">
                         <span class="material-symbols-outlined text-primary text-[72px]">school</span>
                     </div>

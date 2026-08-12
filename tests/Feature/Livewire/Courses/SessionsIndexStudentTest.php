@@ -2,12 +2,19 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\AssessmentAssignedTo;
+use App\Enums\AssessmentType;
 use App\Enums\DeliveryMode;
 use App\Enums\MaterialType;
 use App\Enums\RoleName;
 use App\Livewire\Courses\SessionsIndex;
+use App\Models\Assessment;
+use App\Models\AssessmentAttempt;
+use App\Models\AssessmentScore;
 use App\Models\Course;
 use App\Models\CoursePerson;
+use App\Models\Group;
+use App\Models\GroupMember;
 use App\Models\MediaLibraryItem;
 use App\Models\Role;
 use App\Models\School;
@@ -150,5 +157,103 @@ class SessionsIndexStudentTest extends TestCase
             'video_conference_id' => $videoConference->id,
             'user_id' => $this->student->id,
         ]);
+    }
+
+    public function test_assessment_pill_shows_empty_state_when_session_has_no_assessment(): void
+    {
+        $session = Session::factory()->for($this->course)->create();
+        $material = MediaLibraryItem::factory()->for($this->school)->create(['type' => MaterialType::PDF]);
+        $session->materials()->attach($material->id, ['order' => 1]);
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $session->id)
+            ->assertSee('No assessment yet.');
+    }
+
+    public function test_assessment_pill_shows_start_link_when_not_started(): void
+    {
+        $session = Session::factory()->for($this->course)->create();
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'session_id' => $session->id,
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'assigned_to' => AssessmentAssignedTo::Individual,
+            'title' => 'Reflection Essay',
+        ]);
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $session->id)
+            ->assertSee('Reflection Essay')
+            ->assertSee('Personal Assignment')
+            ->assertSee('Not Started')
+            ->assertSee(route('assessments.personal.show', $assessment), false);
+    }
+
+    public function test_assessment_pill_shows_graded_score(): void
+    {
+        $session = Session::factory()->for($this->course)->create();
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'session_id' => $session->id,
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'assigned_to' => AssessmentAssignedTo::Individual,
+        ]);
+        $attempt = AssessmentAttempt::factory()->for($assessment)->create([
+            'user_id' => $this->student->id,
+            'submitted_by' => $this->student->id,
+        ]);
+        AssessmentScore::factory()->for($attempt, 'attempt')->create(['score' => 88]);
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $session->id)
+            ->assertSee('Graded')
+            ->assertSee('88');
+    }
+
+    public function test_assessment_pill_reflects_team_assignment_via_group_membership(): void
+    {
+        $session = Session::factory()->for($this->course)->create();
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'session_id' => $session->id,
+            'type' => AssessmentType::TheoryTeamAssignment,
+            'assigned_to' => AssessmentAssignedTo::Group,
+        ]);
+        $group = Group::factory()->for($this->course)->create();
+        GroupMember::factory()->for($group)->create(['user_id' => $this->student->id]);
+        AssessmentAttempt::factory()->for($assessment)->create([
+            'user_id' => null,
+            'group_id' => $group->id,
+            'submitted_by' => $this->student->id,
+        ]);
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $session->id)
+            ->assertSee('Team Assignment')
+            ->assertSee('Submitted');
+    }
+
+    public function test_session_with_multiple_assessments_lists_each_one(): void
+    {
+        $session = Session::factory()->for($this->course)->create();
+        Assessment::factory()->for($this->course)->create([
+            'session_id' => $session->id,
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'assigned_to' => AssessmentAssignedTo::Individual,
+            'title' => 'Essay One',
+        ]);
+        Assessment::factory()->for($this->course)->create([
+            'session_id' => $session->id,
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'assigned_to' => AssessmentAssignedTo::Individual,
+            'title' => 'Essay Two',
+        ]);
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $session->id)
+            ->assertSee('Essay One')
+            ->assertSee('Essay Two');
     }
 }

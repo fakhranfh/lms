@@ -81,7 +81,7 @@
                         :disabled="!manualRows || manualRows < 1 || !manualCols || manualCols < 1"
                         class="ml-auto text-body-xs font-medium text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
                     >
-                        Buat
+                        Make
                     </button>
                 </div>
             </div>

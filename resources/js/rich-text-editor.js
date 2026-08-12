@@ -18,6 +18,13 @@ export default (initialValue, wireModel, id, disabled = false) => ({
     init() {
         this.$refs.editor.innerHTML = initialValue || '';
         this.trackedAttachments = this.extractAttachments(this.$refs.editor.innerHTML);
+
+        this.$wire.$watch(wireModel, (value) => {
+            if (!value && document.activeElement !== this.$refs.editor) {
+                this.$refs.editor.innerHTML = '';
+                this.trackedAttachments = [];
+            }
+        });
     },
 
     extractAttachments(html) {

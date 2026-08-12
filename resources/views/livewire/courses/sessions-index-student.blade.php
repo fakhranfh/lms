@@ -256,7 +256,7 @@
                             <button
                                 type="button"
                                 @click="activeChipKey = '{{ $chip['key'] }}'; viewingPayload = null; viewerLoading = false"
-                                @if ($chip['key'] === 'forum') wire:click="viewForumTab" @endif
+                                wire:click="selectChip('{{ $chip['key'] }}')"
                                 wire:key="chip-{{ $chip['key'] }}"
                                 class="inline-flex items-center h-7 gap-space-xs {{ $chip['completed'] ? 'pl-space-xs' : 'pl-space-md' }} pr-space-md rounded-full border font-label-sm text-label-sm transition-colors"
                                 :class="activeChipKey === '{{ $chip['key'] }}' ? 'border-primary bg-primary/5 text-on-surface' : 'border-outline-variant text-on-surface hover:bg-surface-container/50'"
@@ -299,6 +299,30 @@
                         @endforeach
 
                         <div x-show="activeChipKey === 'assessment'" x-cloak class="space-y-space-md">
+                            <!-- Assessment skeleton loading (opening the tab) -->
+                            <div wire:loading wire:target="selectChip('assessment')" class="w-full space-y-space-md animate-pulse">
+                                @for ($i = 0; $i < 2; $i++)
+                                    <div class="border border-outline-variant rounded-lg overflow-hidden">
+                                        <div class="flex items-center justify-between px-space-md py-space-sm bg-surface-container/50">
+                                            <div class="h-4 bg-surface-container rounded w-40"></div>
+                                            <div class="h-3 bg-surface-container rounded w-20"></div>
+                                        </div>
+                                        <div class="border-t border-outline-variant divide-y divide-outline-variant">
+                                            @for ($j = 0; $j < 2; $j++)
+                                                <div class="flex items-center gap-space-lg px-space-md py-space-sm">
+                                                    <div class="h-3 bg-surface-container rounded w-32"></div>
+                                                    <div class="h-3 bg-surface-container rounded w-20"></div>
+                                                    <div class="h-3 bg-surface-container rounded w-24"></div>
+                                                    <div class="h-3 bg-surface-container rounded w-24"></div>
+                                                    <div class="h-5 bg-surface-container rounded-full w-16"></div>
+                                                </div>
+                                            @endfor
+                                        </div>
+                                    </div>
+                                @endfor
+                            </div>
+
+                            <div wire:loading.remove wire:target="selectChip('assessment')" class="space-y-space-md">
                             @if (empty($assessmentGroups))
                                 <p class="text-body-xs text-on-surface-variant flex items-center gap-space-xs">
                                     <span class="material-symbols-outlined text-[14px]">assignment</span>
@@ -409,11 +433,12 @@
                                     </div>
                                 @endforeach
                             @endif
+                            </div>
                         </div>
 
                         <div x-show="activeChipKey === 'forum'" x-cloak class="space-y-space-md">
                             <!-- Forum skeleton loading (opening the tab) -->
-                            <div wire:loading wire:target="viewForumTab" class="w-full space-y-space-md animate-pulse">
+                            <div wire:loading wire:target="selectChip('forum')" class="w-full space-y-space-md animate-pulse">
                                 <div class="w-full flex flex-wrap gap-space-xl">
                                     @for ($i = 0; $i < 4; $i++)
                                         <div class="space-y-space-xs">
@@ -445,7 +470,7 @@
                                 </div>
                             </div>
 
-                            <div wire:loading.remove wire:target="viewForumTab" class="w-full space-y-space-md">
+                            <div wire:loading.remove wire:target="selectChip('forum')" class="w-full space-y-space-md">
                             @if ($activeSession->forums->isNotEmpty())
                                 <div class="flex flex-wrap gap-space-xl">
                                     <div>

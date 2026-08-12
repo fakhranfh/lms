@@ -28,6 +28,7 @@ use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
 use Illuminate\Database\Eloquent\Collection;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 class SessionsIndex extends Component
@@ -45,10 +46,13 @@ class SessionsIndex extends Component
     /** @var array<string, bool> */
     public array $expandedSessions = [];
 
+    #[Url(as: 'session')]
     public ?string $activeSessionId = null;
 
+    #[Url(as: 'tab')]
     public string $activeCategory = 'material';
 
+    #[Url(as: 'material')]
     public ?string $activeMaterialId = null;
 
     public ?string $activeForumId = null;
@@ -105,12 +109,20 @@ class SessionsIndex extends Component
     }
 
     /**
-     * No-op action so opening the Forum chip triggers a Livewire round trip,
-     * letting wire:loading show the forum skeleton on click.
+     * Select a Learning Progress chip ('material:{id}', 'assessment', or
+     * 'forum'). Persisted via #[Url] so refreshing the page reopens the same
+     * session and chip, and triggers a round trip so wire:loading can show
+     * the chip's skeleton while its content is prepared.
      */
-    public function viewForumTab(): void
+    public function selectChip(string $chipKey): void
     {
-        //
+        if (str_starts_with($chipKey, 'material:')) {
+            $this->activeCategory = 'material';
+            $this->activeMaterialId = substr($chipKey, strlen('material:'));
+        } else {
+            $this->activeCategory = $chipKey;
+            $this->activeMaterialId = null;
+        }
     }
 
     /**
@@ -311,6 +323,10 @@ class SessionsIndex extends Component
         $forumMyPostsCount = $forum ? $forumThreadService->myPostsCountForForum($forum->id, auth()->id()) : 0;
         $forumCompleted = $forum && $forumMyPostsCount >= $requiredForumPosts;
 
+        $assessmentRows = $activeSession->assessments
+            ->map(fn ($assessment) => $this->buildAssessmentRow($assessment, $assessmentAttemptService, $groupMemberService))
+            ->values();
+
         $totalMaterials = $activeSession->materials->count();
         $completedMaterialsCount = $completedMaterialIds->intersect($activeSession->materials->pluck('id'))->count();
         $forumProgressFraction = match (true) {
@@ -318,9 +334,10 @@ class SessionsIndex extends Component
             $requiredForumPosts <= 0 => 1,
             default => min($forumMyPostsCount, $requiredForumPosts) / $requiredForumPosts,
         };
+        $completedAssessmentsCount = $assessmentRows->filter(fn (array $row) => in_array($row['status'], ['submitted', 'graded'], true))->count();
 
-        $totalProgressUnits = $totalMaterials + ($forum ? 1 : 0);
-        $completedProgressUnits = $completedMaterialsCount + $forumProgressFraction;
+        $totalProgressUnits = $totalMaterials + $assessmentRows->count() + ($forum ? 1 : 0);
+        $completedProgressUnits = $completedMaterialsCount + $completedAssessmentsCount + $forumProgressFraction;
 
         $progressPercent = $totalProgressUnits > 0
             ? (int) round($completedProgressUnits / $totalProgressUnits * 100)
@@ -338,10 +355,6 @@ class SessionsIndex extends Component
             'type' => 'material',
             'id' => (string) $material->id,
         ])->values()->all();
-
-        $assessmentRows = $activeSession->assessments
-            ->map(fn ($assessment) => $this->buildAssessmentRow($assessment, $assessmentAttemptService, $groupMemberService))
-            ->values();
 
         $assessmentsCompleted = $assessmentRows->isNotEmpty() && $assessmentRows->every(fn ($row) => $row['status'] === 'graded');
         $assessmentGroups = $this->groupAssessmentRowsByType($assessmentRows);

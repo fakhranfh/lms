@@ -256,4 +256,66 @@ class SessionsIndexStudentTest extends TestCase
             ->assertSee('Essay One')
             ->assertSee('Essay Two');
     }
+
+    public function test_selecting_a_session_and_chip_persists_state_for_the_url(): void
+    {
+        $session = Session::factory()->for($this->course)->create();
+        $material = MediaLibraryItem::factory()->for($this->school)->create(['type' => MaterialType::PDF]);
+        $session->materials()->attach($material->id, ['order' => 1]);
+
+        $component = Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $session->id)
+            ->assertSet('activeSessionId', $session->id)
+            ->assertSet('activeCategory', 'material')
+            ->assertSet('activeMaterialId', null);
+
+        $component->call('selectChip', 'assessment')
+            ->assertSet('activeCategory', 'assessment')
+            ->assertSet('activeMaterialId', null);
+
+        $component->call('selectChip', 'material:'.$material->id)
+            ->assertSet('activeCategory', 'material')
+            ->assertSet('activeMaterialId', (string) $material->id);
+
+        $component->call('selectChip', 'forum')
+            ->assertSet('activeCategory', 'forum')
+            ->assertSet('activeMaterialId', null);
+    }
+
+    public function test_submitted_assessment_counts_toward_learning_progress(): void
+    {
+        $session = Session::factory()->for($this->course)->create();
+        $material = MediaLibraryItem::factory()->for($this->school)->create(['type' => MaterialType::PDF]);
+        $session->materials()->attach($material->id, ['order' => 1]);
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'session_id' => $session->id,
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'assigned_to' => AssessmentAssignedTo::Individual,
+        ]);
+
+        // Neither the material nor the assessment is done yet: 0%.
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $session->id)
+            ->assertSee('0%');
+
+        // Assessment submitted (not yet graded) counts as done: 50%.
+        AssessmentAttempt::factory()->for($assessment)->create([
+            'user_id' => $this->student->id,
+            'submitted_by' => $this->student->id,
+        ]);
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $session->id)
+            ->assertSee('50%');
+
+        // Material also completed: 100%.
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $session->id)
+            ->call('markMaterialCompleted', $material->id)
+            ->assertSee('100%');
+    }
 }

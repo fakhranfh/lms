@@ -448,6 +448,7 @@ class SessionsIndex extends Component
         $route = match ($assessment->type) {
             AssessmentType::TheoryPersonalAssignment => route('assessments.personal.show', $assessment),
             AssessmentType::TheoryTeamAssignment => route('assessments.team.show', $assessment),
+            AssessmentType::TheoryQuiz => route('assessments.quiz.show', $assessment),
             default => null,
         };
 
@@ -457,12 +458,18 @@ class SessionsIndex extends Component
             $member = $groupMemberService->get(['user_id' => auth()->id()])
                 ->first(fn (GroupMember $m) => $m->group->course_id === $this->course->id);
             $attempts = $member ? $assessmentAttemptService->forAssessmentAndGroup($assessment->id, $member->group_id) : collect();
+        } elseif ($assessment->type === AssessmentType::TheoryQuiz) {
+            $attempts = $assessmentAttemptService->forAssessmentAndUser($assessment->id, auth()->id())
+                ->filter(fn ($attempt) => $attempt->submitted_at !== null)
+                ->values();
         } else {
             $attempts = collect();
         }
 
         $latest = $attempts->last();
-        $score = $latest?->score?->score;
+        $score = $assessment->type === AssessmentType::TheoryQuiz
+            ? $attempts->map(fn ($attempt) => $attempt->score)->filter()->first()?->score
+            : $latest?->score?->score;
 
         $status = match (true) {
             $route === null => 'unavailable',
@@ -471,13 +478,17 @@ class SessionsIndex extends Component
             default => 'submitted',
         };
 
+        $attemptLimit = $assessment->type === AssessmentType::TheoryQuiz
+            ? ($assessment->quiz?->total_attempts ? (string) $assessment->quiz->total_attempts : 'unlimited')
+            : ($assessment->attempt_limit ? (string) $assessment->attempt_limit : 'unlimited');
+
         return [
             'assessment' => $assessment,
             'route' => $route,
             'status' => $status,
             'score' => $score,
             'attemptCount' => $attempts->count(),
-            'attemptLimit' => $assessment->attempt_limit ? (string) $assessment->attempt_limit : 'unlimited',
+            'attemptLimit' => $attemptLimit,
             'isExpired' => (bool) ($assessment->end_date && $assessment->end_date->isPast()),
             'statusConfig' => $this->assessmentStatusConfig($status),
         ];

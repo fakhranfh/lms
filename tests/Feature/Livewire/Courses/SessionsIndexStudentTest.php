@@ -16,6 +16,7 @@ use App\Models\CoursePerson;
 use App\Models\Group;
 use App\Models\GroupMember;
 use App\Models\MediaLibraryItem;
+use App\Models\Quiz;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\Session;
@@ -232,6 +233,49 @@ class SessionsIndexStudentTest extends TestCase
             ->call('selectSession', $session->id)
             ->assertSee('Team Assignment')
             ->assertSee('Submitted');
+    }
+
+    public function test_assessment_pill_shows_quiz_as_available_and_not_started(): void
+    {
+        $session = Session::factory()->for($this->course)->create();
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'session_id' => $session->id,
+            'type' => AssessmentType::TheoryQuiz,
+            'assigned_to' => AssessmentAssignedTo::Individual,
+            'title' => 'Concept Check',
+        ]);
+        Quiz::factory()->for($assessment)->create(['total_attempts' => 3]);
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $session->id)
+            ->assertSee('Concept Check')
+            ->assertSee('Not Started')
+            ->assertDontSee('Unavailable')
+            ->assertSee(route('assessments.quiz.show', $assessment), false);
+    }
+
+    public function test_assessment_pill_shows_quiz_score_from_the_counted_attempt(): void
+    {
+        $session = Session::factory()->for($this->course)->create();
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'session_id' => $session->id,
+            'type' => AssessmentType::TheoryQuiz,
+            'assigned_to' => AssessmentAssignedTo::Individual,
+        ]);
+        Quiz::factory()->for($assessment)->create();
+        $attempt = AssessmentAttempt::factory()->for($assessment)->create([
+            'user_id' => $this->student->id,
+            'submitted_by' => $this->student->id,
+            'attempt_number' => 1,
+        ]);
+        AssessmentScore::factory()->for($attempt, 'attempt')->create(['score' => 20]);
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('loadSessions')
+            ->call('selectSession', $session->id)
+            ->assertSee('Graded')
+            ->assertSee('20');
     }
 
     public function test_session_with_multiple_assessments_lists_each_one(): void

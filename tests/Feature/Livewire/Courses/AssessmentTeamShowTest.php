@@ -144,4 +144,39 @@ class AssessmentTeamShowTest extends TestCase
         Livewire::test(AssessmentTeamShow::class, ['assessment' => $noGroupAssessment])
             ->assertSee('No groups yet');
     }
+
+    public function test_your_group_section_lists_each_member_name_and_avatar(): void
+    {
+        $this->studentOne->givePermissionTo(['assessment.view', 'assessment.submit']);
+
+        $this->actingAs($this->studentOne);
+
+        Livewire::test(AssessmentTeamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Your Group')
+            ->assertSee($this->studentOne->name)
+            ->assertSee($this->studentTwo->name)
+            ->assertSeeHtml('rounded-full');
+    }
+
+    public function test_shows_attempt_history_and_expired_badge(): void
+    {
+        $expiredAssessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryTeamAssignment,
+            'end_date' => now()->subDay(),
+        ]);
+        AssessmentAttempt::factory()->for($expiredAssessment)->create([
+            'group_id' => $this->group->id,
+            'user_id' => null,
+            'submitted_by' => $this->studentOne->id,
+            'attempt_number' => 1,
+        ]);
+
+        $this->studentOne->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->studentOne);
+
+        Livewire::test(AssessmentTeamShow::class, ['assessment' => $expiredAssessment])
+            ->assertSee('Expired')
+            ->assertSee('Answer Attempts')
+            ->assertSee('Attempt 1');
+    }
 }

@@ -66,7 +66,7 @@ class AssessmentTeamShow extends Component
         return $member?->group_id;
     }
 
-    public function submit(GroupMemberService $groupMemberService, AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService): void
+    public function submit(GroupMemberService $groupMemberService, AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService): bool
     {
         abort_unless(auth()->user()->can('assessment.submit'), 403);
 
@@ -75,11 +75,15 @@ class AssessmentTeamShow extends Component
         if (! $groupId) {
             $this->errorMessage = __('You are not assigned to a group for this course.');
 
-            return;
+            return false;
         }
 
         $this->validate([
-            'answerText' => 'required|string',
+            'answerText' => ['required', 'string', function (string $attribute, mixed $value, \Closure $fail) {
+                if (trim(strip_tags($value)) === '') {
+                    $fail(__('Answer cannot be empty.'));
+                }
+            }],
         ]);
 
         $previousAttempts = $assessmentAttemptService->forAssessmentAndGroup($this->assessment->id, $groupId);
@@ -88,13 +92,13 @@ class AssessmentTeamShow extends Component
         if ($latest && $latest->score) {
             $this->errorMessage = __('This assignment has already been graded and can no longer be resubmitted.');
 
-            return;
+            return false;
         }
 
         if ($this->assessment->end_date && now()->greaterThan($this->assessment->end_date)) {
             $this->errorMessage = __('The submission window for this assignment has closed.');
 
-            return;
+            return false;
         }
 
         $attempt = $assessmentAttemptService->create([
@@ -113,6 +117,13 @@ class AssessmentTeamShow extends Component
 
         $this->answerText = '';
         $this->successMessage = __('Your group\'s submission has been recorded.');
+
+        return true;
+    }
+
+    public function clearSuccessMessage(): void
+    {
+        $this->successMessage = null;
     }
 
     public function openGrading(string $groupId, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService): void
@@ -175,6 +186,8 @@ class AssessmentTeamShow extends Component
 
     public function render(CoursePersonService $coursePersonService, GroupService $groupService, GroupMemberService $groupMemberService, AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService, AssessmentScoreService $assessmentScoreService)
     {
+        $isExpired = $this->assessment->end_date && $this->assessment->end_date->isPast();
+
         $viewData = [
             'course' => $this->course,
             'assessment' => $this->assessment,
@@ -185,22 +198,42 @@ class AssessmentTeamShow extends Component
             'teacher' => $this->isStudent
                 ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
                 : null,
+            'isExpired' => $isExpired,
         ];
 
         if ($this->isStudent) {
             $groupId = $this->ownGroupId($groupMemberService);
             $group = $groupId ? $groupService->find($groupId, ['members.user']) : null;
 
-            $attempts = $groupId ? $assessmentAttemptService->forAssessmentAndGroup($this->assessment->id, $groupId) : collect();
-            $latest = $attempts->last();
+            $allAttempts = $groupId ? $assessmentAttemptService->forAssessmentAndGroup($this->assessment->id, $groupId) : collect();
+            $latest = $allAttempts->last();
+
+            $attemptLimit = $this->assessment->attempt_limit;
+            $attemptsUsed = $allAttempts->count();
+            $canResubmit = ! $latest?->score && (! $this->assessment->end_date || now()->lessThanOrEqualTo($this->assessment->end_date));
+            if ($attemptLimit && $attemptsUsed >= $attemptLimit) {
+                $canResubmit = false;
+            }
+
             $latestAnswer = $latest ? $assessmentAnswerService->findByAttempt($latest->id) : null;
             $latestScore = $latest ? $assessmentScoreService->findByAttempt($latest->id) : null;
+
+            $attemptRows = $allAttempts->map(function ($attempt) use ($assessmentAnswerService, $assessmentScoreService) {
+                return [
+                    'attempt' => $attempt,
+                    'answer' => $assessmentAnswerService->findByAttempt($attempt->id),
+                    'score' => $assessmentScoreService->findByAttempt($attempt->id),
+                ];
+            })->values();
 
             $viewData['group'] = $group;
             $viewData['latestAttempt'] = $latest;
             $viewData['latestAnswer'] = $latestAnswer;
             $viewData['latestScore'] = $latestScore;
-            $viewData['canResubmit'] = ! $latestScore && (! $this->assessment->end_date || now()->lessThanOrEqualTo($this->assessment->end_date));
+            $viewData['canResubmit'] = $canResubmit;
+            $viewData['attemptLimit'] = $attemptLimit ? (string) $attemptLimit : 'Unlimited';
+            $viewData['attemptsUsed'] = $attemptsUsed;
+            $viewData['attemptRows'] = $attemptRows;
         } else {
             $groups = $groupService->forCourse($this->course->id);
 

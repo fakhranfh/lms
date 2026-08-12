@@ -7,6 +7,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SchoolPaymentController;
 use App\Http\Controllers\TierChangeController;
 use App\Http\Controllers\UserAvailabilityController;
+use App\Http\Controllers\UserLoginLinkController;
 use App\Livewire\ChangePassword;
 use App\Livewire\Courses\AssessmentForm;
 use App\Livewire\Courses\AssessmentIndex;
@@ -105,3 +106,5 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
 });
 
 Route::get('/demo-lms/login/{token}', [DemoLmsController::class, 'login'])->name('demo-lms.login');
+
+Route::get('/login-link/{token}', [UserLoginLinkController::class, 'login'])->name('user-login-link.login');

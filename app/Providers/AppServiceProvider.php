@@ -131,6 +131,8 @@ use App\Repositories\TierChange\TierChangeRepository;
 use App\Repositories\TierChange\TierChangeRepositoryInterface;
 use App\Repositories\User\UserRepository;
 use App\Repositories\User\UserRepositoryInterface;
+use App\Repositories\UserLoginLink\UserLoginLinkRepository;
+use App\Repositories\UserLoginLink\UserLoginLinkRepositoryInterface;
 use App\Repositories\VideoConference\VideoConferenceRepository;
 use App\Repositories\VideoConference\VideoConferenceRepositoryInterface;
 use App\Repositories\VideoConferenceParticipation\VideoConferenceParticipationRepository;
@@ -223,6 +225,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CourseRepositoryInterface::class, CourseRepository::class);
         $this->app->bind(MediaLibraryRepositoryInterface::class, MediaLibraryRepository::class);
         $this->app->bind(DemoLmsAccessRepositoryInterface::class, DemoLmsAccessRepository::class);
+        $this->app->bind(UserLoginLinkRepositoryInterface::class, UserLoginLinkRepository::class);
         $this->app->bind(SchoolTierRepositoryInterface::class, SchoolTierRepository::class);
         $this->app->bind(TierChangeRepositoryInterface::class, TierChangeRepository::class);
         $this->app->bind(PaymentTransactionRepositoryInterface::class, PaymentTransactionRepository::class);

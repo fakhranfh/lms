@@ -29,4 +29,6 @@ interface CoursePersonRepositoryInterface
      * @return Collection<int, CoursePerson>
      */
     public function teachersForCourse(string $courseId): Collection;
+
+    public function isEnrolledAsStudent(string $courseId, string $userId): bool;
 }

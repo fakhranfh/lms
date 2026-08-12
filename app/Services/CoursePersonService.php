@@ -52,4 +52,9 @@ class CoursePersonService
     {
         return $this->coursePersonRepository->teachersForCourse($courseId);
     }
+
+    public function isEnrolledAsStudent(string $courseId, string $userId): bool
+    {
+        return $this->coursePersonRepository->isEnrolledAsStudent($courseId, $userId);
+    }
 }

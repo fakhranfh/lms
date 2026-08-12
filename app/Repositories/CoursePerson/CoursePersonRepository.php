@@ -70,4 +70,12 @@ class CoursePersonRepository implements CoursePersonRepositoryInterface
             ->with('user')
             ->get();
     }
+
+    public function isEnrolledAsStudent(string $courseId, string $userId): bool
+    {
+        return CoursePerson::where('course_id', $courseId)
+            ->where('user_id', $userId)
+            ->where('role_in_course', RoleInCourse::Student)
+            ->exists();
+    }
 }

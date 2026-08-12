@@ -41,7 +41,7 @@ class AssessmentPersonalShow extends Component
 
     public array $gradeQuestionScores = [];
 
-    public function mount(CurrentSchool $currentSchool, ?Course $course = null, ?Assessment $assessment = null): void
+    public function mount(CurrentSchool $currentSchool, CoursePersonService $coursePersonService, ?Course $course = null, ?Assessment $assessment = null): void
     {
         abort_if($assessment === null, 404);
 
@@ -54,9 +54,14 @@ class AssessmentPersonalShow extends Component
         abort_unless($assessment->course_id === $course->id, 404);
         abort_unless($assessment->type === AssessmentType::TheoryPersonalAssignment, 404);
 
+        $this->isStudent = auth()->user()->hasRole(RoleName::Student);
+
+        if ($this->isStudent) {
+            abort_unless($coursePersonService->isEnrolledAsStudent($course->id, auth()->id()), 403);
+        }
+
         $this->course = $course;
         $this->assessment = $assessment;
-        $this->isStudent = auth()->user()->hasRole(RoleName::Student);
     }
 
     public function submit(AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService): bool

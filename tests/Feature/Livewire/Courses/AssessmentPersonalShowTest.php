@@ -184,6 +184,18 @@ class AssessmentPersonalShowTest extends TestCase
             ->assertStatus(404);
     }
 
+    public function test_unenrolled_student_access_forbidden(): void
+    {
+        $unenrolledStudent = User::factory()->forSchool($this->school)->create();
+        $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $unenrolledStudent->assignRole($studentRole);
+        $unenrolledStudent->givePermissionTo(['assessment.view', 'assessment.submit']);
+
+        $this->actingAs($unenrolledStudent);
+        Livewire::test(AssessmentPersonalShow::class, ['assessment' => $this->assessment])
+            ->assertStatus(403);
+    }
+
     public function test_wrong_type_returns_404(): void
     {
         $teamAssessment = Assessment::factory()->for($this->course)->create([

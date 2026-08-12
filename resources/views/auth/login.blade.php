@@ -26,7 +26,9 @@
             <div class="space-y-space-xs">
                 <label class="block font-label-md text-label-md text-on-surface" for="email">Email Address</label>
                 <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="mail">mail</span>
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined leading-none text-[20px] text-outline" data-icon="mail">mail</span>
+                    </div>
                     <input class="w-full h-[44px] pl-10 pr-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('email') border-error @enderror" id="email" name="email" placeholder="name@example.com" required="" type="email" value="{{ old('email') }}">
                 </div>
                 @error('email')
@@ -42,10 +44,12 @@
                     @endif
                 </div>
                 <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="lock">lock</span>
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined leading-none text-[20px] text-outline" data-icon="lock">lock</span>
+                    </div>
                     <input class="w-full h-[44px] pl-10 pr-10 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('password') border-error @enderror" id="password" name="password" placeholder="••••••••" required="" type="password">
-                    <button class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors focus:outline-none" onclick="togglePassword()" type="button">
-                        <span class="material-symbols-outlined" data-icon="visibility" id="toggleIcon">visibility</span>
+                    <button class="absolute inset-y-0 right-0 pr-3 flex items-center text-outline hover:text-on-surface transition-colors focus:outline-none" onclick="togglePassword()" type="button">
+                        <span class="material-symbols-outlined leading-none text-[20px]" data-icon="visibility" id="toggleIcon">visibility</span>
                     </button>
                 </div>
                 @error('password')

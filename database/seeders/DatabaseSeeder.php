@@ -37,6 +37,9 @@ class DatabaseSeeder extends Seeder
         // Link each course's assessments to one of its sessions
         $this->call(SessionAssessmentSeeder::class);
 
+        // Seed the single global quiz instructions record
+        $this->call(QuizInstructionSeeder::class);
+
         // $this->call(ProductSeeder::class);
     }
 }

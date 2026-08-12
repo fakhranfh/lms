@@ -208,9 +208,19 @@
                             </div>
                         </div>
 
-                        <div class="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-[220px_1fr]" x-data="{ currentQuestion: 0 }">
+                        <div class="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-[220px_1fr]" x-data="{ currentQuestion: -1 }">
                             <!-- Left: Question Navigator -->
                             <div class="overflow-y-auto p-space-lg border-b md:border-b-0 md:border-r border-outline-variant">
+                                <button
+                                    type="button"
+                                    @click="currentQuestion = -1"
+                                    :class="currentQuestion === -1 ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface hover:bg-surface-container/70'"
+                                    class="w-full mb-space-lg px-space-md py-space-sm rounded-lg font-label-sm text-label-sm flex items-center gap-space-xs transition"
+                                >
+                                    <span class="material-symbols-outlined text-[16px]">info</span>
+                                    Instructions
+                                </button>
+
                                 <p class="font-label-sm text-label-sm text-secondary mb-space-md">Questions</p>
                                 <div class="grid grid-cols-6 md:grid-cols-4 gap-space-xs">
                                     @foreach ($quiz->questions as $question)
@@ -229,6 +239,22 @@
                             <!-- Right: Current Question -->
                             <div class="overflow-y-auto p-space-xl">
                                 <form id="quiz-attempt-form" @submit.prevent="confirmOpen = true">
+                                    <div x-show="currentQuestion === -1" x-cloak class="space-y-space-lg max-w-2xl mx-auto">
+                                        <h3 class="font-headline-sm text-headline-sm text-on-surface">Instructions</h3>
+                                        @if ($instruction?->content)
+                                            <div class="rte-content prose prose-lg max-w-none text-on-surface">{!! $instruction->content !!}</div>
+                                        @else
+                                            <p class="text-body-md text-on-surface-variant">No special instructions for this quiz. Good luck!</p>
+                                        @endif
+                                        <button
+                                            type="button"
+                                            @click="currentQuestion = 0"
+                                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                                        >
+                                            Start Questions
+                                        </button>
+                                    </div>
+
                                     @foreach ($quiz->questions as $question)
                                         <div x-show="currentQuestion === {{ $loop->index }}" x-cloak class="space-y-space-lg max-w-2xl mx-auto">
                                             <p class="text-body-sm text-on-surface-variant">Question {{ $loop->iteration }} of {{ $quiz->questions->count() }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
@@ -249,12 +275,11 @@
                                         </div>
                                     @endforeach
 
-                                    <div class="flex items-center justify-between pt-space-lg mt-space-lg border-t border-outline-variant max-w-2xl mx-auto">
+                                    <div x-show="currentQuestion > -1" class="flex items-center justify-between pt-space-lg mt-space-lg border-t border-outline-variant max-w-2xl mx-auto">
                                         <button
                                             type="button"
-                                            @click="currentQuestion = Math.max(currentQuestion - 1, 0)"
-                                            :disabled="currentQuestion === 0"
-                                            class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition disabled:opacity-50"
+                                            @click="currentQuestion = Math.max(currentQuestion - 1, -1)"
+                                            class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition"
                                         >
                                             Previous
                                         </button>
@@ -326,16 +351,59 @@
                     </div>
                 </div>
             @else
-                <button
-                    type="button"
-                    wire:click="startAttempt"
-                    wire:loading.attr="disabled"
-                    wire:target="startAttempt"
-                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
-                >
-                    <span wire:loading wire:target="startAttempt" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-                    Start Attempt
-                </button>
+                <div x-data="{ confirmOpen: false }">
+                    <button
+                        type="button"
+                        @click="confirmOpen = true"
+                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                    >
+                        Start Attempt
+                    </button>
+
+                    <template x-teleport="body">
+                        <div
+                            x-show="confirmOpen"
+                            x-cloak
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0"
+                            x-transition:enter-end="opacity-100"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
+                            @click.self="confirmOpen = false"
+                        >
+                            <div
+                                x-show="confirmOpen"
+                                x-transition:enter="transition ease-out duration-200 delay-75"
+                                x-transition:enter-start="opacity-0 scale-95"
+                                x-transition:enter-end="opacity-100 scale-100"
+                                class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg"
+                            >
+                                <h2 class="font-headline-sm text-headline-sm text-on-surface">Start attempt confirmation</h2>
+                                <p class="font-body-md text-body-md text-secondary">
+                                    Are you sure you want to start this quiz?
+                                    @if ($quiz->time_limit_per_attempt)
+                                        You will have {{ $quiz->time_limit_per_attempt }} minutes to finish once you begin.
+                                    @endif
+                                </p>
+                                <div class="flex items-center justify-end gap-space-md">
+                                    <button type="button" @click="confirmOpen = false" class="px-space-lg py-space-sm font-label-md text-label-md text-secondary hover:underline">Cancel</button>
+                                    <button
+                                        type="button"
+                                        wire:loading.attr="disabled"
+                                        wire:target="startAttempt"
+                                        @click="confirmOpen = false; $wire.startAttempt()"
+                                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
+                                    >
+                                        <span wire:loading wire:target="startAttempt" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                        Start Attempt
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             @endif
         @endif
     </div>

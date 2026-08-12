@@ -37,6 +37,9 @@ class AssessmentQuizAnswerService
         return $this->assessmentQuizAnswerRepository->delete($id);
     }
 
+    /**
+     * @return Collection<int, AssessmentQuizAnswer>
+     */
     public function forAttempt(string $attemptId): Collection
     {
         return $this->assessmentQuizAnswerRepository->forAttempt($attemptId);

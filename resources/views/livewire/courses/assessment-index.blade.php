@@ -45,7 +45,9 @@
                         <a href="{{ route('assessments.create', [$course, 'team']) }}" class="block px-space-md py-space-sm text-body-sm text-on-surface hover:bg-surface-container">
                             Team Assignment
                         </a>
-                        <span class="block px-space-md py-space-sm text-body-sm text-on-surface-variant/60 cursor-not-allowed">Quiz &mdash; coming soon</span>
+                        <a href="{{ route('assessments.quiz.create', $course) }}" class="block px-space-md py-space-sm text-body-sm text-on-surface hover:bg-surface-container">
+                            Quiz
+                        </a>
                         <span class="block px-space-md py-space-sm text-body-sm text-on-surface-variant/60 cursor-not-allowed">Final Exam &mdash; coming soon</span>
                         <span class="block px-space-md py-space-sm text-body-sm text-on-surface-variant/60 cursor-not-allowed">Forum Discussion &mdash; coming soon</span>
                         <span class="block px-space-md py-space-sm text-body-sm text-on-surface-variant/60 cursor-not-allowed">Attendance &mdash; coming soon</span>
@@ -166,7 +168,7 @@
                                                     <div class="flex gap-space-sm">
                                                         @if ($item['row']['route'])
                                                             <a
-                                                                href="{{ route('assessments.edit', $item['data']) }}"
+                                                                href="{{ $item['data']->type->value === 'theory_quiz' ? route('assessments.quiz.edit', $item['data']) : route('assessments.edit', $item['data']) }}"
                                                                 class="p-2 hover:bg-surface-container rounded transition text-primary inline-flex"
                                                                 title="Edit assessment"
                                                             >

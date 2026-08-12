@@ -122,4 +122,34 @@ class AssessmentIndexTest extends TestCase
 
         $this->assertDatabaseMissing('assessments', ['id' => $assessment->id]);
     }
+
+    public function test_quiz_row_links_to_quiz_show(): void
+    {
+        $this->teacher->givePermissionTo('assessment.view');
+        $this->actingAs($this->teacher);
+
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryQuiz,
+            'title' => 'Chapter Quiz',
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->assertSee('Chapter Quiz')
+            ->assertSee(route('assessments.quiz.show', $assessment), false);
+    }
+
+    public function test_student_quiz_status_not_started_when_no_attempts(): void
+    {
+        $this->student->givePermissionTo('assessment.view');
+        $this->actingAs($this->student);
+
+        Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryQuiz,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->assertSee('Not Started');
+    }
 }

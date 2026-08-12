@@ -11,6 +11,7 @@ use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentService;
 use App\Services\CoursePersonService;
 use App\Services\GroupMemberService;
+use App\Services\QuizAttemptScoringService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use Livewire\Component;
@@ -71,7 +72,7 @@ class AssessmentIndex extends Component
         $assessmentService->delete($assessmentId);
     }
 
-    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService)
+    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService)
     {
         if (! $this->assessmentsLoaded) {
             return view('livewire.courses.assessment-index-placeholder', [
@@ -87,8 +88,8 @@ class AssessmentIndex extends Component
 
         $assessments = $assessmentService->get(['course_id' => $this->course->id], ['attempts.score']);
 
-        $rows = $assessments->mapWithKeys(function (Assessment $assessment) use ($assessmentAttemptService, $groupMemberService) {
-            return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService)];
+        $rows = $assessments->mapWithKeys(function (Assessment $assessment) use ($assessmentAttemptService, $groupMemberService, $quizAttemptScoringService) {
+            return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService, $quizAttemptScoringService)];
         })->all();
 
         $grouped = collect(AssessmentType::cases())
@@ -119,9 +120,9 @@ class AssessmentIndex extends Component
     }
 
     /**
-     * @return array{status: string, route: string|null, attemptCount: int, attemptLimit: string, score: float|null, isExpired: bool}
+     * @return array{status: string, route: string|null, attemptCount: int, attemptLimit: string, score: float|null, isExpired: bool, statusConfig: array{bg: string, text: string, icon: string}}
      */
-    private function rowStatus(Assessment $assessment, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService): array
+    private function rowStatus(Assessment $assessment, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService): array
     {
         $type = $assessment->type;
         $isExpired = $assessment->end_date && $assessment->end_date->isPast();
@@ -129,6 +130,7 @@ class AssessmentIndex extends Component
         $route = match ($type) {
             AssessmentType::TheoryPersonalAssignment => route('assessments.personal.show', $assessment),
             AssessmentType::TheoryTeamAssignment => route('assessments.team.show', $assessment),
+            AssessmentType::TheoryQuiz => route('assessments.quiz.show', $assessment),
             default => null,
         };
 
@@ -141,6 +143,37 @@ class AssessmentIndex extends Component
                 'score' => null,
                 'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig($assessment->status->value),
+            ];
+        }
+
+        if ($type === AssessmentType::TheoryQuiz) {
+            $attempts = $assessmentAttemptService->forAssessmentAndUser($assessment->id, auth()->id())
+                ->filter(fn ($attempt) => $attempt->submitted_at !== null)
+                ->values();
+
+            if ($attempts->isEmpty()) {
+                return [
+                    'status' => 'not_started',
+                    'route' => $route,
+                    'attemptCount' => 0,
+                    'attemptLimit' => 'unlimited',
+                    'score' => null,
+                    'isExpired' => $isExpired,
+                    'statusConfig' => $this->statusConfig('not_started'),
+                ];
+            }
+
+            $scoredAttempt = $attempts->first(fn ($attempt) => $attempt->score !== null);
+            $pending = $attempts->contains(fn ($attempt) => $quizAttemptScoringService->hasPendingGrading($attempt->id));
+
+            return [
+                'status' => $pending ? 'submitted' : 'graded',
+                'route' => $route,
+                'attemptCount' => $attempts->count(),
+                'attemptLimit' => 'unlimited',
+                'score' => $scoredAttempt?->score?->score,
+                'isExpired' => $isExpired,
+                'statusConfig' => $this->statusConfig($pending ? 'submitted' : 'graded'),
             ];
         }
 

@@ -1,0 +1,234 @@
+<?php
+
+namespace Tests\Feature\Livewire\Courses;
+
+use App\Enums\AssessmentType;
+use App\Enums\QuizScoringMethod;
+use App\Enums\RoleName;
+use App\Livewire\Courses\AssessmentQuizShow;
+use App\Models\Assessment;
+use App\Models\AssessmentAttempt;
+use App\Models\Course;
+use App\Models\CoursePerson;
+use App\Models\Quiz;
+use App\Models\QuizQuestion;
+use App\Models\QuizQuestionOption;
+use App\Models\Role;
+use App\Models\School;
+use App\Models\User;
+use Livewire\Livewire;
+use Tests\TestCase;
+
+class AssessmentQuizShowTest extends TestCase
+{
+    private School $school;
+
+    private User $teacher;
+
+    private User $student;
+
+    private Course $course;
+
+    private Assessment $assessment;
+
+    private Quiz $quiz;
+
+    private QuizQuestion $mcQuestion;
+
+    private QuizQuestionOption $correctOption;
+
+    private QuizQuestionOption $wrongOption;
+
+    private QuizQuestion $essayQuestion;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->school = School::factory()->create();
+        $this->teacher = User::factory()->forSchool($this->school)->create();
+        $this->student = User::factory()->forSchool($this->school)->create();
+        $this->course = Course::factory()->for($this->school)->create();
+
+        $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $this->student->assignRole($studentRole);
+
+        CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
+
+        $this->assessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryQuiz,
+            'end_date' => now()->addWeek(),
+        ]);
+
+        $this->quiz = Quiz::factory()->for($this->assessment)->create([
+            'total_attempts' => 2,
+            'scoring_method' => QuizScoringMethod::Highest,
+            'time_limit_per_attempt' => null,
+        ]);
+
+        $this->mcQuestion = QuizQuestion::factory()->for($this->quiz)->create([
+            'question_type' => 'multiple_choice',
+            'points' => 10,
+            'order' => 1,
+        ]);
+        $this->correctOption = QuizQuestionOption::factory()->for($this->mcQuestion, 'question')->create(['is_correct' => true, 'order' => 1]);
+        $this->wrongOption = QuizQuestionOption::factory()->for($this->mcQuestion, 'question')->create(['is_correct' => false, 'order' => 2]);
+
+        $this->essayQuestion = QuizQuestion::factory()->for($this->quiz)->create([
+            'question_type' => 'essay',
+            'points' => 20,
+            'order' => 2,
+        ]);
+    }
+
+    public function test_student_can_start_and_submit_attempt_with_auto_scoring(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->set("answers.{$this->mcQuestion->id}", $this->correctOption->id)
+            ->set("answers.{$this->essayQuestion->id}", 'My essay answer')
+            ->call('submitAttempt');
+
+        $this->assertDatabaseHas('assessment_attempts', [
+            'assessment_id' => $this->assessment->id,
+            'user_id' => $this->student->id,
+            'attempt_number' => 1,
+        ]);
+
+        $this->assertDatabaseHas('assessment_quiz_answers', [
+            'quiz_question_id' => $this->mcQuestion->id,
+            'selected_option_id' => $this->correctOption->id,
+            'score' => 10,
+        ]);
+
+        $this->assertDatabaseHas('assessment_quiz_answers', [
+            'quiz_question_id' => $this->essayQuestion->id,
+            'answer_text' => 'My essay answer',
+            'score' => null,
+        ]);
+
+        $this->assertDatabaseHas('assessment_scores', [
+            'score' => 10,
+        ]);
+    }
+
+    public function test_incorrect_mc_answer_scores_zero(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->set("answers.{$this->mcQuestion->id}", $this->wrongOption->id)
+            ->call('submitAttempt');
+
+        $this->assertDatabaseHas('assessment_quiz_answers', [
+            'quiz_question_id' => $this->mcQuestion->id,
+            'selected_option_id' => $this->wrongOption->id,
+            'score' => 0,
+        ]);
+    }
+
+    public function test_attempt_cap_blocks_new_attempt(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        AssessmentAttempt::factory()->for($this->assessment)->create([
+            'user_id' => $this->student->id,
+            'attempt_number' => 1,
+        ]);
+        AssessmentAttempt::factory()->for($this->assessment)->create([
+            'user_id' => $this->student->id,
+            'attempt_number' => 2,
+        ]);
+
+        Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->assertSee('maximum number of attempts');
+
+        $this->assertEquals(2, AssessmentAttempt::where('assessment_id', $this->assessment->id)->count());
+    }
+
+    public function test_scoring_method_highest_picks_best_attempt(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $component = Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment]);
+
+        $component->call('startAttempt')
+            ->set("answers.{$this->mcQuestion->id}", $this->wrongOption->id)
+            ->set("answers.{$this->essayQuestion->id}", 'weak answer')
+            ->call('submitAttempt');
+
+        $component->call('startAttempt')
+            ->set("answers.{$this->mcQuestion->id}", $this->correctOption->id)
+            ->set("answers.{$this->essayQuestion->id}", 'strong answer')
+            ->call('submitAttempt');
+
+        $this->assertDatabaseHas('assessment_scores', ['score' => 10]);
+    }
+
+    public function test_teacher_grades_essay_answer_and_score_recomputes(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->set("answers.{$this->mcQuestion->id}", $this->correctOption->id)
+            ->set("answers.{$this->essayQuestion->id}", 'My essay')
+            ->call('submitAttempt');
+
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
+            ->call('openGrading', $this->student->id)
+            ->set("gradeScores.{$this->essayQuestion->id}", '15')
+            ->call('submitGrade');
+
+        $this->assertDatabaseHas('assessment_quiz_answers', [
+            'quiz_question_id' => $this->essayQuestion->id,
+            'score' => 15,
+        ]);
+        $this->assertDatabaseHas('assessment_scores', ['score' => 25]);
+    }
+
+    public function test_student_without_submit_permission_forbidden(): void
+    {
+        $this->student->givePermissionTo(['assessment.view']);
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->assertStatus(403);
+    }
+
+    public function test_teacher_without_grade_permission_forbidden(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
+            ->call('openGrading', $this->student->id)
+            ->assertStatus(403);
+    }
+
+    public function test_wrong_type_returns_404(): void
+    {
+        $personalAssessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+        ]);
+
+        $this->teacher->givePermissionTo('assessment.view');
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentQuizShow::class, ['assessment' => $personalAssessment])
+            ->assertStatus(404);
+    }
+}

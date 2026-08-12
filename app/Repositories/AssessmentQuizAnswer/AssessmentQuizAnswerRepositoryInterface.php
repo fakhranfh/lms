@@ -17,5 +17,8 @@ interface AssessmentQuizAnswerRepositoryInterface
 
     public function delete(string $id): int;
 
+    /**
+     * @return Collection<int, AssessmentQuizAnswer>
+     */
     public function forAttempt(string $attemptId): Collection;
 }

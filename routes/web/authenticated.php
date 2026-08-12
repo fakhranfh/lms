@@ -12,6 +12,8 @@ use App\Livewire\ChangePassword;
 use App\Livewire\Courses\AssessmentForm;
 use App\Livewire\Courses\AssessmentIndex;
 use App\Livewire\Courses\AssessmentPersonalShow;
+use App\Livewire\Courses\AssessmentQuizForm;
+use App\Livewire\Courses\AssessmentQuizShow;
 use App\Livewire\Courses\AssessmentTeamShow;
 use App\Livewire\Courses\CourseComingSoon;
 use App\Livewire\Courses\CourseForm;
@@ -19,6 +21,7 @@ use App\Livewire\Courses\CoursesIndex;
 use App\Livewire\Courses\ForumIndex;
 use App\Livewire\Courses\ForumThreadShow;
 use App\Livewire\Courses\GroupsManage;
+use App\Livewire\Courses\QuizInstructionEdit;
 use App\Livewire\Courses\SessionForm;
 use App\Livewire\Courses\SessionsIndex;
 use App\Livewire\Courses\SyllabusForm;
@@ -96,6 +99,10 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/assessments/{assessment}/edit', AssessmentForm::class)->middleware('permission:assessment.edit')->name('assessments.edit');
         Route::get('/assessments/{assessment}/personal', AssessmentPersonalShow::class)->middleware('permission:assessment.view')->name('assessments.personal.show');
         Route::get('/assessments/{assessment}/team', AssessmentTeamShow::class)->middleware('permission:assessment.view')->name('assessments.team.show');
+        Route::get('/courses/{course}/assessments/create/quiz', AssessmentQuizForm::class)->middleware('permission:assessment.create')->name('assessments.quiz.create');
+        Route::get('/assessments/{assessment}/quiz/edit', AssessmentQuizForm::class)->middleware('permission:assessment.edit')->name('assessments.quiz.edit');
+        Route::get('/assessments/{assessment}/quiz', AssessmentQuizShow::class)->middleware('permission:assessment.view')->name('assessments.quiz.show');
+        Route::get('/quiz-instructions', QuizInstructionEdit::class)->middleware('permission:assessment.edit')->name('quiz-instructions.edit');
 
         Route::get('/courses/{course}/groups', GroupsManage::class)->middleware('permission:groups.manage')->name('groups.manage');
 

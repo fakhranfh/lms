@@ -68,6 +68,17 @@ School Admin UI was explicitly deferred (per user decision) — the tab shell an
 - Added missing `@return Collection<int, X>` generics to `AssessmentAttemptService`, `AssessmentService`, `GroupService`, `GroupMemberService` (pre-existing gap from the schema batch, following the convention already used by `SessionService::forCourse`) to keep Larastan clean against the new call sites.
 - 41 Livewire feature tests across 5 new test files; full suite 743/743 green; Pint clean; Larastan 0 errors.
 
+### UI — Batch 5: Quiz + global Instruction Page (Teacher & Student)
+
+- **Quiz builder** (`AssessmentQuizForm`): top-level fields (title/weight/session/status) plus question/option repeater. Type is `AssessmentType::TheoryQuiz`, immutable after create. Assessment `start_date`/`end_date` and Quiz `start_date`/`due_date` are both derived from the selected Session's `date_start`/`date_end` — no manual date pickers. Quiz-specific settings: `totalAttempts` (blank = unlimited), `scoringMethod` (highest/latest/average), `timeLimitPerAttempt` (blank = unlimited). Question repeater supports `multiple_choice`/`true_false`/`short_answer`/`essay`; switching type auto-manages the options sub-repeater (fixed True/False pair, cleared for text types, ≥2 empty options for MC). Multiple-choice/true_false enforce exactly one correct option (single-answer radio semantics, matching `assessment_quiz_answers.selected_option_id` being a single FK).
+- **Quiz attempt/grading** (`AssessmentQuizShow`, shared Teacher/Student like Personal/Team): Student sees an inline Instruction Page panel (from `QuizInstructionService::current()`, no separate route/screen, no "seen" tracking), starts attempts (capped by `total_attempts`, enforced server-side), answers all question types, submits (time-limit clamp applied server-side on submit). multiple_choice/true_false auto-score immediately via `QuizAttemptScoringService`; short_answer/essay stay ungraded until Teacher scores them. Students see score-only after submission (no correct-answer reveal). `AssessmentScore` shows **partial/live** totals — auto-graded portion visible immediately, updates again once pending essay/short_answer items are graded (no gating). Teacher sees a roster with a "needs grading" badge and can grade pending answers inline.
+- **Global Instruction Page** (`QuizInstructionEdit`): single global `quiz_instructions` row (no `quiz_id`/course scoping), edited via `assessment.edit` permission, linked from the Quiz builder.
+- **New service**: `App\Services\QuizAttemptScoringService` — auto-scoring for objective question types, `highest`/`latest`/`average` aggregation across a user's attempts, writes/updates the single `AssessmentScore` row keyed by `assessment_attempt_id`.
+- `AssessmentIndex` updated to route Quiz rows to `assessments.quiz.show`/`assessments.quiz.create` and compute quiz-specific student status (not started / pending grading / graded); "coming soon" placeholder removed for Quiz.
+- Routes added: `assessments.quiz.create`, `assessments.quiz.edit`, `assessments.quiz.show`, `quiz-instructions.edit`. No new permissions — reuses existing `assessment.*` set.
+- **Known simplifications**: answers are persisted in one batch on `submitAttempt()` (not autosaved per keystroke, mirroring Personal Assignment's submit flow) — attempt creation/timing is still recorded immediately on `startAttempt()`, so attempt-cap and time-limit enforcement are unaffected. A stale in-progress attempt past its time limit is only clamped/force-closed on the next explicit submit, not auto-submitted on a passive page reload.
+- 32 new Livewire/service feature tests (`AssessmentQuizFormTest`, `AssessmentQuizShowTest`, `QuizInstructionEditTest`, `QuizAttemptScoringServiceTest`) plus extended `AssessmentIndexTest`; full `Courses` + `CourseRestructure` test folders 227/227 green; Pint clean; Larastan has 3 pre-existing errors unrelated to this batch (confirmed via `git stash` comparison), none in newly added code.
+
 ---
 
 ## Not Done
@@ -76,7 +87,6 @@ School Admin UI was explicitly deferred (per user decision) — the tab shell an
 
 - **Assessment** — remaining builders/attempt UIs for:
   - Student file-upload on Personal/Team Assignment submission (deferred from Batch 4, see note above)
-  - THEORY: Quiz (+ global Instruction Page)
   - THEORY: FINAL EXAM (Open Book / Closed Book / Take Home) — Open/Closed Book requires **Proctor UI + actual client-side detection mechanism** (webcam, tab-switch, etc. — flagged in the schema batch as needing dedicated technical research)
   - Forum Discussion (auto-graded from Forum participation)
   - Attendance (auto-graded from attendance requirements)

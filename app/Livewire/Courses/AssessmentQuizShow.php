@@ -38,15 +38,6 @@ class AssessmentQuizShow extends Component
 
     public ?string $successMessage = null;
 
-    public ?string $gradingUserId = null;
-
-    /**
-     * @var array<string, string>
-     */
-    public array $gradeScores = [];
-
-    public string $gradeFeedback = '';
-
     public function mount(
         CurrentSchool $currentSchool,
         CoursePersonService $coursePersonService,
@@ -164,92 +155,6 @@ class AssessmentQuizShow extends Component
         $this->successMessage = null;
     }
 
-    public function openGrading(string $userId, AssessmentAttemptService $assessmentAttemptService, AssessmentQuizAnswerService $assessmentQuizAnswerService): void
-    {
-        abort_unless(auth()->user()->can('assessment.grade'), 403);
-
-        $attempt = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $userId)
-            ->filter(fn ($a) => $a->submitted_at !== null)
-            ->last();
-
-        if (! $attempt) {
-            return;
-        }
-
-        $answers = $assessmentQuizAnswerService->forAttempt($attempt->id);
-
-        $this->gradingUserId = $userId;
-        $this->gradeScores = [];
-
-        foreach ($this->quiz->questions as $question) {
-            if (! in_array($question->question_type, [QuizQuestionType::ShortAnswer, QuizQuestionType::Essay], true)) {
-                continue;
-            }
-
-            $answer = $answers->firstWhere('quiz_question_id', $question->id);
-            $this->gradeScores[$question->id] = $answer && $answer->score !== null ? (string) $answer->score : '';
-        }
-    }
-
-    public function cancelGrading(): void
-    {
-        $this->gradingUserId = null;
-        $this->gradeScores = [];
-    }
-
-    public function submitGrade(
-        AssessmentAttemptService $assessmentAttemptService,
-        AssessmentQuizAnswerService $assessmentQuizAnswerService,
-        QuizAttemptScoringService $quizAttemptScoringService,
-    ): void {
-        abort_unless(auth()->user()->can('assessment.grade'), 403);
-        abort_unless($this->gradingUserId !== null, 404);
-
-        $attempt = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $this->gradingUserId)
-            ->filter(fn ($a) => $a->submitted_at !== null)
-            ->last();
-        abort_unless($attempt !== null, 404);
-
-        $answers = $assessmentQuizAnswerService->forAttempt($attempt->id);
-
-        foreach ($this->quiz->questions as $question) {
-            if (! in_array($question->question_type, [QuizQuestionType::ShortAnswer, QuizQuestionType::Essay], true)) {
-                continue;
-            }
-
-            $score = $this->gradeScores[$question->id] ?? '';
-            if ($score === '') {
-                $this->addError("gradeScores.{$question->id}", __('Score is required'));
-
-                continue;
-            }
-
-            if (! is_numeric($score) || (float) $score < 0 || (float) $score > $question->points) {
-                $this->addError("gradeScores.{$question->id}", __('Score must be between 0 and '.$question->points));
-            }
-        }
-
-        if ($this->getErrorBag()->isNotEmpty()) {
-            return;
-        }
-
-        foreach ($this->quiz->questions as $question) {
-            if (! in_array($question->question_type, [QuizQuestionType::ShortAnswer, QuizQuestionType::Essay], true)) {
-                continue;
-            }
-
-            $answer = $answers->firstWhere('quiz_question_id', $question->id);
-            if ($answer) {
-                $assessmentQuizAnswerService->update($answer->id, ['score' => (float) $this->gradeScores[$question->id]]);
-            }
-        }
-
-        $quizAttemptScoringService->recomputeForUser($this->quiz, $this->assessment->id, $this->gradingUserId);
-
-        $this->cancelGrading();
-        $this->successMessage = __('Grade saved.');
-    }
-
     public function render(
         CoursePersonService $coursePersonService,
         AssessmentAttemptService $assessmentAttemptService,
@@ -263,7 +168,6 @@ class AssessmentQuizShow extends Component
             'assessment' => $this->assessment,
             'quiz' => $this->quiz,
             'isStudent' => $this->isStudent,
-            'canGrade' => auth()->user()->can('assessment.grade'),
             'canSubmit' => auth()->user()->can('assessment.submit'),
             'courseTabs' => CourseTabs::build($this->course, 'assessment'),
             'teacher' => $this->isStudent
@@ -278,14 +182,15 @@ class AssessmentQuizShow extends Component
             $inProgress = $attempts->first(fn ($a) => $a->submitted_at === null);
             $submittedAttempts = $attempts->filter(fn ($a) => $a->submitted_at !== null)->values();
 
-            $attemptRows = $submittedAttempts->map(function ($attempt) use ($assessmentScoreService, $quizAttemptScoringService) {
+            $attemptRows = $submittedAttempts->map(function ($attempt) use ($assessmentQuizAnswerService, $assessmentScoreService, $quizAttemptScoringService) {
                 return [
                     'attempt' => $attempt,
                     'total' => $quizAttemptScoringService->attemptTotal($attempt->id),
                     'pending' => $quizAttemptScoringService->hasPendingGrading($attempt->id),
                     'score' => $assessmentScoreService->findByAttempt($attempt->id),
+                    'answers' => $assessmentQuizAnswerService->forAttempt($attempt->id)->keyBy('quiz_question_id'),
                 ];
-            })->values();
+            })->reverse()->values();
 
             $attemptsUsed = $submittedAttempts->count() + ($inProgress ? 1 : 0);
             $canStart = ! $inProgress
@@ -294,9 +199,13 @@ class AssessmentQuizShow extends Component
 
             $viewData['inProgress'] = $inProgress;
             $viewData['attemptRows'] = $attemptRows;
+            $viewData['currentScore'] = $attemptRows->pluck('score')->filter()->first();
             $viewData['attemptsUsed'] = $attemptsUsed;
             $viewData['attemptLimit'] = $this->quiz->total_attempts ? (string) $this->quiz->total_attempts : 'Unlimited';
             $viewData['canStart'] = $canStart;
+            $viewData['deadlineIso'] = ($inProgress && $this->quiz->time_limit_per_attempt)
+                ? $inProgress->started_at->copy()->addMinutes($this->quiz->time_limit_per_attempt)->toIso8601String()
+                : null;
         } else {
             $students = $coursePersonService->studentsForCourse($this->course->id);
 

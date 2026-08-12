@@ -173,7 +173,27 @@ class AssessmentQuizShowTest extends TestCase
         $this->assertDatabaseHas('assessment_scores', ['score' => 10]);
     }
 
-    public function test_teacher_grades_essay_answer_and_score_recomputes(): void
+    public function test_attempt_history_is_ordered_most_recent_first(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $component = Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment]);
+
+        $component->call('startAttempt')
+            ->set("answers.{$this->mcQuestion->id}", $this->correctOption->id)
+            ->call('submitAttempt');
+
+        $component->call('startAttempt')
+            ->set("answers.{$this->mcQuestion->id}", $this->wrongOption->id)
+            ->call('submitAttempt');
+
+        $attemptNumbers = $component->viewData('attemptRows')->map(fn ($row) => $row['attempt']->attempt_number)->all();
+
+        $this->assertSame([2, 1], $attemptNumbers);
+    }
+
+    public function test_essay_answer_stays_ungraded_and_is_excluded_from_the_live_score(): void
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
@@ -184,19 +204,13 @@ class AssessmentQuizShowTest extends TestCase
             ->set("answers.{$this->essayQuestion->id}", 'My essay')
             ->call('submitAttempt');
 
-        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
-        $this->actingAs($this->teacher);
-
-        Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
-            ->call('openGrading', $this->student->id)
-            ->set("gradeScores.{$this->essayQuestion->id}", '15')
-            ->call('submitGrade');
-
         $this->assertDatabaseHas('assessment_quiz_answers', [
             'quiz_question_id' => $this->essayQuestion->id,
-            'score' => 15,
+            'answer_text' => 'My essay',
+            'score' => null,
         ]);
-        $this->assertDatabaseHas('assessment_scores', ['score' => 25]);
+
+        $this->assertDatabaseHas('assessment_scores', ['score' => 10]);
     }
 
     public function test_student_without_submit_permission_forbidden(): void
@@ -209,14 +223,64 @@ class AssessmentQuizShowTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_teacher_without_grade_permission_forbidden(): void
+    public function test_question_description_renders_as_html(): void
     {
-        $this->teacher->givePermissionTo(['assessment.view']);
-        $this->actingAs($this->teacher);
+        $this->mcQuestion->update(['description' => '<p>What is <strong>2 + 2</strong>?</p>']);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
 
         Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
-            ->call('openGrading', $this->student->id)
-            ->assertStatus(403);
+            ->call('startAttempt')
+            ->assertSeeHtml('<strong>2 + 2</strong>');
+    }
+
+    public function test_in_progress_attempt_with_time_limit_exposes_a_countdown_deadline(): void
+    {
+        $this->quiz->update(['time_limit_per_attempt' => 20]);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $component = Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt');
+
+        $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
+        $deadline = $attempt->started_at->copy()->addMinutes(20)->toIso8601String();
+
+        $component->assertSeeHtml($deadline);
+    }
+
+    public function test_in_progress_attempt_without_time_limit_shows_no_countdown(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->assertDontSeeHtml('material-symbols-outlined text-[18px]">timer');
+    }
+
+    public function test_submit_attempt_clamps_to_the_time_limit_when_overdue(): void
+    {
+        $this->quiz->update(['time_limit_per_attempt' => 10]);
+
+        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create([
+            'user_id' => $this->student->id,
+            'attempt_number' => 1,
+            'started_at' => now()->subMinutes(30),
+            'submitted_at' => null,
+        ]);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
+            ->call('submitAttempt');
+
+        $expectedDeadline = $attempt->started_at->copy()->addMinutes(10);
+
+        $this->assertTrue($attempt->fresh()->submitted_at->equalTo($expectedDeadline));
     }
 
     public function test_wrong_type_returns_404(): void

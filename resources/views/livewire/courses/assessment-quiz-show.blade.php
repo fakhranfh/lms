@@ -11,10 +11,44 @@
     </div>
 
     @if ($successMessage)
-        <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
-            <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
-            <p class="font-body-md text-body-md text-success">{{ $successMessage }}</p>
-        </div>
+        <template x-teleport="body">
+            <div
+                x-data="{ open: true }"
+                x-show="open"
+                x-cloak
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
+                @click.self="open = false; $wire.call('clearSuccessMessage')"
+            >
+                <div
+                    x-show="open"
+                    x-transition:enter="transition ease-out duration-200 delay-75"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg text-center"
+                >
+                    <div class="mx-auto w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-success text-[28px]" data-weight="fill">check_circle</span>
+                    </div>
+                    <div>
+                        <h2 class="font-headline-sm text-headline-sm text-on-surface mb-space-xs">Submission successful</h2>
+                        <p class="font-body-md text-body-md text-secondary">{{ $successMessage }}</p>
+                    </div>
+                    <button
+                        type="button"
+                        @click="open = false; $wire.call('clearSuccessMessage')"
+                        class="w-full px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                    >
+                        OK
+                    </button>
+                </div>
+            </div>
+        </template>
     @endif
 
     @if ($errorMessage)
@@ -26,21 +60,59 @@
 
     <!-- Overview Card -->
     <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
+        <!-- Header with title and badges -->
         <div class="flex items-start justify-between">
             <div class="flex-1">
-                <h1 class="font-headline-md text-headline-md text-on-surface">{{ $assessment->title }}</h1>
+                <div class="flex items-center gap-space-md">
+                    <h1 class="font-headline-md text-headline-md text-on-surface">{{ $assessment->title }}</h1>
+                    @if ($isExpired)
+                        <span class="inline-flex items-center px-space-sm py-1 rounded-full text-body-xs font-medium bg-error/10 text-error">
+                            Expired
+                        </span>
+                    @endif
+                </div>
+                @if ($isStudent && $currentScore)
+                    <p class="text-body-sm text-on-surface-variant mt-space-xs">
+                        Final Score: <span class="font-medium text-on-surface">{{ rtrim(rtrim(number_format($currentScore->score, 1), '0'), '.') }} pts</span>
+                    </p>
+                @endif
             </div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-space-lg border-t border-b border-outline-variant py-space-lg">
+        <!-- Meta grid -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-space-lg border-t border-b border-outline-variant py-space-lg">
             <div>
-                <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Total Questions</p>
+                <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Start</p>
+                <p class="text-body-sm text-on-surface font-medium">
+                    @if ($assessment->start_date)
+                        {{ $assessment->start_date->format('M j, Y, H:i') }}
+                    @else
+                        <span class="text-on-surface-variant">—</span>
+                    @endif
+                </p>
+            </div>
+            <div>
+                <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Due</p>
+                <p class="text-body-sm text-on-surface font-medium">
+                    @if ($assessment->end_date)
+                        {{ $assessment->end_date->format('M j, Y, H:i') }}
+                    @else
+                        <span class="text-on-surface-variant">—</span>
+                    @endif
+                </p>
+            </div>
+            <div>
+                <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Total Question</p>
                 <p class="text-body-sm text-on-surface font-medium">{{ $quiz->questions->count() }}</p>
             </div>
             <div>
                 <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Total Attempts</p>
                 <p class="text-body-sm text-on-surface font-medium">
-                    {{ $quiz->total_attempts ?? 'Unlimited' }}
+                    @if ($isStudent)
+                        {{ $attemptsUsed }} of {{ $attemptLimit }} Attempts
+                    @else
+                        —
+                    @endif
                 </p>
             </div>
             <div>
@@ -62,98 +134,366 @@
             </div>
         @endif
 
+        <!-- Current Score Card -->
+        @if ($isStudent && $currentScore)
+            <div class="bg-primary rounded-lg p-space-lg text-on-primary space-y-space-md">
+                <div>
+                    <p class="text-body-sm opacity-90 mb-space-sm">Current Score</p>
+                    <p class="text-headline-lg font-bold">{{ rtrim(rtrim(number_format($currentScore->score, 1), '0'), '.') }} <span class="text-body-md font-normal">pts</span></p>
+                </div>
+                @if ($currentScore->feedback)
+                    <div class="pt-space-md border-t border-on-primary/20">
+                        <p class="text-body-xs opacity-90 mb-space-sm">Feedback</p>
+                        <p class="text-body-sm">{{ $currentScore->feedback }}</p>
+                    </div>
+                @endif
+            </div>
+        @endif
+
+        <!-- Status Message & Action Button -->
         @if ($isStudent)
             @if ($inProgress)
-                <div x-data="{}">
-                    <h2 class="font-label-lg text-label-lg text-on-surface mb-space-md">Attempt {{ $inProgress->attempt_number }} — In Progress</h2>
+                <template x-teleport="body">
+                    <div
+                        x-data="{
+                            deadline: @js($deadlineIso),
+                            remaining: null,
+                            timer: null,
+                            submitting: false,
+                            confirmOpen: false,
+                            tick() {
+                                if (! this.deadline) { return; }
+                                let diff = Math.floor((new Date(this.deadline) - new Date()) / 1000);
+                                this.remaining = Math.max(diff, 0);
+                                if (diff <= 0) {
+                                    clearInterval(this.timer);
+                                    if (! this.submitting) {
+                                        this.submitting = true;
+                                        $wire.submitAttempt();
+                                    }
+                                }
+                            },
+                            formatted() {
+                                if (this.remaining === null) { return ''; }
+                                let m = Math.floor(this.remaining / 60).toString().padStart(2, '0');
+                                let s = (this.remaining % 60).toString().padStart(2, '0');
+                                return m + ':' + s;
+                            },
+                        }"
+                        x-init="tick(); timer = setInterval(() => tick(), 1000)"
+                        x-on:destroy="clearInterval(timer)"
+                        class="fixed inset-0 z-[100] bg-surface flex flex-col"
+                    >
+                        <div class="flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">
+                            <h2 class="font-headline-sm text-headline-sm text-on-surface">Attempt {{ $inProgress->attempt_number }} — {{ $assessment->title }}</h2>
 
-                    <form wire:submit="submitAttempt" class="space-y-space-lg">
-                        @foreach ($quiz->questions as $question)
-                            <div class="border border-outline-variant rounded-lg p-space-lg space-y-space-md">
-                                <p class="font-label-md text-label-md text-on-surface">
-                                    Question {{ $loop->iteration }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts
-                                </p>
-                                <p class="text-body-md text-on-surface">{{ $question->description }}</p>
+                            @if ($deadlineIso)
+                                <div class="flex items-center gap-space-xs font-label-md text-label-md" :class="remaining !== null && remaining <= 60 ? 'text-error' : 'text-on-surface'">
+                                    <span class="material-symbols-outlined text-[18px]">timer</span>
+                                    <span x-text="formatted()"></span>
+                                </div>
+                            @endif
+                        </div>
 
-                                @if (in_array($question->question_type->value, ['multiple_choice', 'true_false']))
-                                    <div class="space-y-space-xs">
-                                        @foreach ($question->options as $option)
-                                            <label class="flex items-center gap-space-sm text-body-sm text-on-surface cursor-pointer">
-                                                <input type="radio" name="answer-{{ $question->id }}" wire:model="answers.{{ $question->id }}" value="{{ $option->id }}" />
-                                                {{ $option->label }}
-                                            </label>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <textarea wire:model="answers.{{ $question->id }}" rows="4" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"></textarea>
-                                @endif
+                        <div class="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-[220px_1fr]" x-data="{ currentQuestion: 0 }">
+                            <!-- Left: Question Navigator -->
+                            <div class="overflow-y-auto p-space-lg border-b md:border-b-0 md:border-r border-outline-variant">
+                                <p class="font-label-sm text-label-sm text-secondary mb-space-md">Questions</p>
+                                <div class="grid grid-cols-6 md:grid-cols-4 gap-space-xs">
+                                    @foreach ($quiz->questions as $question)
+                                        <button
+                                            type="button"
+                                            @click="currentQuestion = {{ $loop->index }}"
+                                            :class="currentQuestion === {{ $loop->index }} ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface hover:bg-surface-container/70'"
+                                            class="w-10 h-10 rounded-lg font-label-sm text-label-sm flex items-center justify-center transition"
+                                        >
+                                            {{ $loop->iteration }}
+                                        </button>
+                                    @endforeach
+                                </div>
                             </div>
-                        @endforeach
 
-                        <button
-                            type="submit"
-                            wire:loading.attr="disabled"
-                            wire:target="submitAttempt"
-                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
+                            <!-- Right: Current Question -->
+                            <div class="overflow-y-auto p-space-xl">
+                                <form id="quiz-attempt-form" @submit.prevent="confirmOpen = true">
+                                    @foreach ($quiz->questions as $question)
+                                        <div x-show="currentQuestion === {{ $loop->index }}" x-cloak class="space-y-space-lg max-w-2xl mx-auto">
+                                            <p class="text-body-sm text-on-surface-variant">Question {{ $loop->iteration }} of {{ $quiz->questions->count() }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
+                                            <div class="rte-content prose prose-lg max-w-none text-on-surface">{!! $question->description !!}</div>
+
+                                            @if (in_array($question->question_type->value, ['multiple_choice', 'true_false']))
+                                                <div class="space-y-space-md">
+                                                    @foreach ($question->options as $option)
+                                                        <label class="flex items-center gap-space-md p-space-lg border border-outline rounded-lg cursor-pointer hover:bg-surface-container/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition">
+                                                            <input type="radio" name="answer-{{ $question->id }}" wire:model="answers.{{ $question->id }}" value="{{ $option->id }}" class="w-5 h-5 accent-primary flex-shrink-0" />
+                                                            <span class="text-body-lg text-on-surface">{{ $option->label }}</span>
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <textarea wire:model="answers.{{ $question->id }}" rows="8" class="w-full px-space-lg py-space-md border border-outline rounded-lg font-body-lg text-body-lg focus:outline-none focus:ring-2 focus:ring-primary/50"></textarea>
+                                            @endif
+                                        </div>
+                                    @endforeach
+
+                                    <div class="flex items-center justify-between pt-space-lg mt-space-lg border-t border-outline-variant max-w-2xl mx-auto">
+                                        <button
+                                            type="button"
+                                            @click="currentQuestion = Math.max(currentQuestion - 1, 0)"
+                                            :disabled="currentQuestion === 0"
+                                            class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition disabled:opacity-50"
+                                        >
+                                            Previous
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            x-show="currentQuestion < {{ $quiz->questions->count() - 1 }}"
+                                            @click="currentQuestion = Math.min(currentQuestion + 1, {{ $quiz->questions->count() - 1 }})"
+                                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                                        >
+                                            Next
+                                        </button>
+
+                                        <button
+                                            type="submit"
+                                            x-show="currentQuestion === {{ $quiz->questions->count() - 1 }}"
+                                            wire:loading.attr="disabled"
+                                            wire:target="submitAttempt"
+                                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                        >
+                                            Submit Quiz
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Submit Confirmation -->
+                        <div
+                            x-show="confirmOpen"
+                            x-cloak
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0"
+                            x-transition:enter-end="opacity-100"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-gutter"
+                            @click.self="confirmOpen = false"
                         >
-                            <span wire:loading wire:target="submitAttempt" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-                            Submit Quiz
-                        </button>
-                    </form>
+                            <div
+                                x-show="confirmOpen"
+                                x-transition:enter="transition ease-out duration-200 delay-75"
+                                x-transition:enter-start="opacity-0 scale-95"
+                                x-transition:enter-end="opacity-100 scale-100"
+                                class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg"
+                            >
+                                <h2 class="font-headline-sm text-headline-sm text-on-surface">Submit confirmation</h2>
+                                <p class="font-body-md text-body-md text-secondary">
+                                    Are you sure you want to submit this quiz? You will not be able to change your answers afterwards.
+                                </p>
+                                <div class="flex items-center justify-end gap-space-md">
+                                    <button type="button" @click="confirmOpen = false" class="px-space-lg py-space-sm font-label-md text-label-md text-secondary hover:underline">Cancel</button>
+                                    <button
+                                        type="button"
+                                        wire:loading.attr="disabled"
+                                        wire:target="submitAttempt"
+                                        @click="confirmOpen = false; submitting = true; clearInterval(timer); $wire.submitAttempt()"
+                                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                    >
+                                        Submit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            @elseif ($isExpired)
+                <div class="flex items-center justify-between gap-space-md">
+                    <div class="flex-1">
+                        <p class="text-body-sm text-on-surface-variant">The submission window for this quiz has closed.</p>
+                    </div>
                 </div>
-            @elseif ($canStart)
+            @elseif (!$canStart)
+                <div class="flex items-center justify-between gap-space-md">
+                    <div class="flex-1">
+                        <p class="text-body-sm text-on-surface-variant">You have reached the maximum number of attempts for this quiz.</p>
+                    </div>
+                </div>
+            @else
                 <button
                     type="button"
                     wire:click="startAttempt"
                     wire:loading.attr="disabled"
                     wire:target="startAttempt"
-                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
+                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
-                    <span wire:loading wire:target="startAttempt" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
                     Start Attempt
                 </button>
-            @elseif ($isExpired)
-                <p class="text-body-sm text-on-surface-variant">The submission window for this quiz has closed.</p>
-            @else
-                <p class="text-body-sm text-on-surface-variant">You have reached the maximum number of attempts for this quiz.</p>
             @endif
         @endif
     </div>
 
+    <!-- Answer Attempts Section -->
     @if ($isStudent && $attemptRows->isNotEmpty())
         <div class="space-y-space-md">
-            <h2 class="font-label-lg text-label-lg text-on-surface">Attempt History</h2>
-            <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
+            <h2 class="font-label-lg text-label-lg text-on-surface">Answer Attempts</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
                 @foreach ($attemptRows as $row)
-                    <div class="p-space-lg flex items-center justify-between gap-space-md">
-                        <div>
-                            <p class="font-label-md text-label-md text-on-surface">Attempt {{ $row['attempt']->attempt_number }}</p>
-                            <p class="text-body-sm text-on-surface-variant">Submitted {{ $row['attempt']->submitted_at?->format('M j, Y H:i') }}</p>
+                    <div
+                        class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md cursor-pointer hover:bg-surface-container/50 transition"
+                        x-data="{ open: false }"
+                        @click="open = true"
+                    >
+                        <div class="flex items-start justify-between gap-space-md">
+                            <div class="flex-1">
+                                <h3 class="font-label-lg text-label-lg text-on-surface mb-space-xs">Attempt {{ $row['attempt']->attempt_number }}</h3>
+                                <p class="text-body-xs text-on-surface-variant">Submitted {{ $row['attempt']->submitted_at_display?->format('M j, Y H:i') }}</p>
+                            </div>
+                            <div class="bg-primary rounded-lg p-space-md text-on-primary text-center min-w-[140px] flex-shrink-0">
+                                <p class="text-body-xs opacity-90 mb-space-xs">SCORE</p>
+                                <p class="text-headline-sm font-bold">{{ rtrim(rtrim(number_format($row['total'], 1), '0'), '.') }} <span class="text-body-xs font-normal">pts</span></p>
+                                @if ($row['pending'])
+                                    <p class="text-body-xs opacity-75 mt-space-xs">Excludes ungraded questions</p>
+                                @endif
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <p class="font-label-md text-label-md text-on-surface">{{ rtrim(rtrim(number_format($row['total'], 1), '0'), '.') }} pts</p>
-                            @if ($row['pending'])
-                                <p class="text-body-xs text-on-surface-variant">Pending manual grading</p>
-                            @endif
-                        </div>
+
+                        <template x-teleport="body">
+                            <div
+                                x-show="open"
+                                x-cloak
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0"
+                                x-transition:enter-end="opacity-100"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0"
+                                class="fixed inset-0 z-[100] bg-surface flex flex-col"
+                            >
+                                <div class="flex items-start justify-between px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">
+                                    <div>
+                                        <h2 class="font-headline-sm text-headline-sm text-on-surface mb-space-sm">Attempt {{ $row['attempt']->attempt_number }} Answers &mdash; {{ $assessment->title }}</h2>
+                                        <div class="inline-flex items-center gap-space-sm bg-primary rounded-lg px-space-md py-space-xs text-on-primary">
+                                            <span class="text-body-xs opacity-90">Final Score</span>
+                                            <span class="font-bold text-body-md">{{ rtrim(rtrim(number_format($row['total'], 1), '0'), '.') }} pts</span>
+                                        </div>
+                                    </div>
+                                    <button type="button" @click="open = false" class="p-2 hover:bg-surface-container rounded transition">
+                                        <span class="material-symbols-outlined text-on-surface-variant">close</span>
+                                    </button>
+                                </div>
+
+                                <div class="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-[220px_1fr]" x-data="{ currentQuestion: 0 }">
+                                    <!-- Left: Question Navigator -->
+                                    <div class="overflow-y-auto p-space-lg border-b md:border-b-0 md:border-r border-outline-variant">
+                                        <p class="font-label-sm text-label-sm text-secondary mb-space-md">Questions</p>
+                                        <div class="grid grid-cols-6 md:grid-cols-4 gap-space-xs">
+                                            @foreach ($quiz->questions as $question)
+                                                <button
+                                                    type="button"
+                                                    @click="currentQuestion = {{ $loop->index }}"
+                                                    :class="currentQuestion === {{ $loop->index }} ? 'ring-2 ring-primary ring-offset-2' : ''"
+                                                    class="w-10 h-10 rounded-lg font-label-sm text-label-sm flex items-center justify-center transition {{ $row['answers']->get($question->id)?->selectedOption?->is_correct === true ? 'bg-success text-white' : ($row['answers']->get($question->id)?->selectedOption?->is_correct === false ? 'bg-error text-white' : 'bg-surface-container text-on-surface hover:bg-surface-container/70') }}"
+                                                >
+                                                    {{ $loop->iteration }}
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+
+                                    <!-- Right: Current Question -->
+                                    <div class="overflow-y-auto p-space-xl">
+                                        @foreach ($quiz->questions as $question)
+                                            <div x-show="currentQuestion === {{ $loop->index }}" x-cloak class="space-y-space-lg max-w-2xl mx-auto">
+                                                <div class="flex items-center justify-between">
+                                                    <p class="text-body-sm text-on-surface-variant">Question {{ $loop->iteration }} of {{ $quiz->questions->count() }}</p>
+                                                    <p class="text-body-sm font-medium text-on-surface">
+                                                        {{ $row['answers']->get($question->id)?->score !== null ? rtrim(rtrim(number_format($row['answers']->get($question->id)->score, 2), '0'), '.') : '—' }} / {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts
+                                                    </p>
+                                                </div>
+                                                <div class="rte-content prose prose-lg max-w-none text-on-surface">{!! $question->description !!}</div>
+
+                                                @if (in_array($question->question_type->value, ['multiple_choice', 'true_false']))
+                                                    <div class="space-y-space-md">
+                                                        @foreach ($question->options as $option)
+                                                            <div
+                                                                class="flex items-center gap-space-md p-space-lg border rounded-lg {{ $row['answers']->get($question->id)?->selected_option_id === $option->id ? ($option->is_correct ? 'border-success bg-success/5' : 'border-error bg-error/5') : 'border-outline' }}"
+                                                            >
+                                                                <span
+                                                                    class="w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center {{ $row['answers']->get($question->id)?->selected_option_id === $option->id ? ($option->is_correct ? 'border-success bg-success' : 'border-error bg-error') : 'border-outline' }}"
+                                                                >
+                                                                    @if ($row['answers']->get($question->id)?->selected_option_id === $option->id)
+                                                                        <span class="material-symbols-outlined text-white text-[14px]" data-weight="fill">{{ $option->is_correct ? 'check' : 'close' }}</span>
+                                                                    @endif
+                                                                </span>
+                                                                <span class="text-body-lg text-on-surface flex-1">{{ $option->label }}</span>
+                                                                @if ($row['answers']->get($question->id)?->selected_option_id === $option->id)
+                                                                    <span class="text-body-sm font-medium flex-shrink-0 {{ $option->is_correct ? 'text-success' : 'text-error' }}">
+                                                                        {{ $option->is_correct ? 'Correct' : 'Incorrect' }}
+                                                                    </span>
+                                                                @endif
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <p class="text-body-lg text-on-surface p-space-lg border border-outline rounded-lg">
+                                                        {{ $row['answers']->get($question->id)?->answer_text ?: 'No answer' }}
+                                                    </p>
+                                                @endif
+                                            </div>
+                                        @endforeach
+
+                                        <div class="flex items-center justify-between pt-space-lg mt-space-lg border-t border-outline-variant max-w-2xl mx-auto">
+                                            <button
+                                                type="button"
+                                                @click="currentQuestion = Math.max(currentQuestion - 1, 0)"
+                                                :disabled="currentQuestion === 0"
+                                                class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition disabled:opacity-50"
+                                            >
+                                                Previous
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                x-show="currentQuestion < {{ $quiz->questions->count() - 1 }}"
+                                                @click="currentQuestion = Math.min(currentQuestion + 1, {{ $quiz->questions->count() - 1 }})"
+                                                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+
+                                        @if ($row['score']?->feedback)
+                                            <div class="pt-space-lg mt-space-lg border-t border-outline-variant max-w-2xl mx-auto">
+                                                <p class="text-body-xs text-on-surface-variant mb-space-xs">Feedback</p>
+                                                <p class="text-body-sm text-on-surface">{{ $row['score']->feedback }}</p>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 @endforeach
             </div>
         </div>
     @endif
 
+    <!-- Teacher: Submissions List -->
     @if (!$isStudent)
         <div class="space-y-space-md">
             <h2 class="font-label-lg text-label-lg text-on-surface">Student Submissions</h2>
             <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
                 @forelse ($studentRows as $row)
                     <div wire:key="student-{{ $row['user']->id }}" class="p-space-lg">
-                        <div class="flex items-center justify-between gap-space-md mb-space-md">
+                        <div class="flex items-center justify-between gap-space-md">
                             <div class="flex-1 min-w-0">
                                 <p class="font-label-md text-label-md text-on-surface">{{ $row['user']->name }}</p>
                                 <p class="text-body-sm text-on-surface-variant mt-1">
                                     @if ($row['attempt'])
-                                        {{ $row['attemptCount'] }} attempt(s) &middot; submitted {{ $row['attempt']->submitted_at?->format('M j, Y H:i') }}
+                                        {{ $row['attemptCount'] }} attempt(s) &middot; submitted {{ $row['attempt']->submitted_at_display?->format('M j, Y H:i') }}
                                     @else
                                         Not attempted
                                     @endif
@@ -162,53 +502,9 @@
 
                             <span class="inline-flex items-center px-space-md py-space-xs rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant flex-shrink-0">
                                 {{ $row['score'] ? 'Score: '.rtrim(rtrim(number_format($row['score']->score, 2), '0'), '.') : ($row['attempt'] ? 'Ungraded' : 'Not submitted') }}
-                                @if ($row['pending']) &middot; Needs grading @endif
+                                @if ($row['pending']) &middot; Excludes ungraded questions @endif
                             </span>
-
-                            @if ($canGrade && $row['attempt'])
-                                <button
-                                    type="button"
-                                    wire:click="openGrading('{{ $row['user']->id }}')"
-                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition flex-shrink-0"
-                                >
-                                    Grade
-                                </button>
-                            @endif
                         </div>
-
-                        @if ($gradingUserId === $row['user']->id)
-                            <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md">
-                                <form wire:submit="submitGrade" class="space-y-space-md">
-                                    @foreach ($quiz->questions as $question)
-                                        @if (in_array($question->question_type->value, ['short_answer', 'essay']))
-                                            <div>
-                                                <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
-                                                    Question {{ $loop->iteration }} ({{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts)
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0"
-                                                    max="{{ $question->points }}"
-                                                    wire:model="gradeScores.{{ $question->id }}"
-                                                    class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                                />
-                                                @error("gradeScores.{$question->id}") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
-                                            </div>
-                                        @endif
-                                    @endforeach
-
-                                    <div class="flex gap-space-md">
-                                        <button type="button" wire:click="cancelGrading" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
-                                            Cancel
-                                        </button>
-                                        <button type="submit" wire:loading.attr="disabled" wire:target="submitGrade" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50">
-                                            Save Grade
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        @endif
                     </div>
                 @empty
                     <div class="p-space-lg text-center text-body-sm text-on-surface-variant">No students enrolled.</div>

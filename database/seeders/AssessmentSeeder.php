@@ -6,13 +6,19 @@ use App\Enums\AssessmentAssignedTo;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\CourseMembershipStatus;
+use App\Enums\QuizQuestionType;
+use App\Enums\QuizScoringMethod;
 use App\Enums\RoleInCourse;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CoursePerson;
 use App\Models\Group;
+use App\Models\Quiz;
+use App\Models\QuizQuestion;
 use App\Models\School;
+use App\Models\Session;
 use App\Models\User;
+use App\Services\QuizAttemptScoringService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -23,7 +29,10 @@ class AssessmentSeeder extends Seeder
     /**
      * Seed a Personal Assignment and a Team Assignment (with groups, questions,
      * and a mix of not-started/submitted/graded attempts) for existing courses
-     * that don't have any assessments yet.
+     * that don't have any assessments yet. Also backfills a Quiz for any
+     * course with sessions that doesn't have one yet, even if it already has
+     * other assessment types, and re-links any previously-seeded Quiz whose
+     * session has since expired to a still-open one.
      */
     public function run(): void
     {
@@ -32,6 +41,68 @@ class AssessmentSeeder extends Seeder
         foreach ($courses as $course) {
             $this->seedCourseAssessments($course);
         }
+
+        $this->seedMissingQuizzes();
+        $this->relinkExpiredQuizzes();
+    }
+
+    private function seedMissingQuizzes(): void
+    {
+        $courses = Course::whereHas('sessions')
+            ->whereDoesntHave('assessments', fn ($query) => $query->where('type', AssessmentType::TheoryQuiz))
+            ->get();
+
+        foreach ($courses as $course) {
+            $session = $this->quizSessionForCourse($course);
+
+            if (! $session) {
+                continue;
+            }
+
+            $this->seedQuiz($course, $session, $this->studentsForCourse($course));
+        }
+    }
+
+    /**
+     * Move any already-seeded Quiz assessment whose window has passed onto a
+     * still-open session, so demo quizzes never show up as expired.
+     */
+    private function relinkExpiredQuizzes(): void
+    {
+        $expiredQuizzes = Assessment::where('type', AssessmentType::TheoryQuiz)
+            ->where('end_date', '<', now())
+            ->with('quiz', 'course')
+            ->get();
+
+        foreach ($expiredQuizzes as $assessment) {
+            $session = $this->quizSessionForCourse($assessment->course);
+
+            if (! $session) {
+                continue;
+            }
+
+            $assessment->update([
+                'session_id' => $session->id,
+                'start_date' => $session->date_start,
+                'end_date' => $session->date_end,
+            ]);
+
+            $assessment->quiz?->update([
+                'start_date' => $session->date_start,
+                'due_date' => $session->date_end,
+            ]);
+        }
+    }
+
+    /**
+     * Prefer the earliest session that hasn't ended yet, so seeded quizzes
+     * are always attemptable; fall back to the course's latest session if
+     * every session has already passed.
+     */
+    private function quizSessionForCourse(Course $course): ?Session
+    {
+        return $course->sessions()->where('date_end', '>=', now())->orderBy('date_start')->first()
+            ?? $course->sessions()->orderBy('date_start', 'desc')->first();
     }
 
     private function seedCourseAssessments(Course $course): void
@@ -55,6 +126,151 @@ class AssessmentSeeder extends Seeder
         $team = $this->createAssignment($course, AssessmentType::TheoryTeamAssignment, AssessmentAssignedTo::Group, 'Team Assignment: Group Project');
         $this->seedTeamQuestions($team);
         $this->seedGroupAttempts($team, $groups);
+
+        $session = $this->quizSessionForCourse($course);
+        if ($session) {
+            $this->seedQuiz($course, $session, $students);
+        }
+    }
+
+    /**
+     * @param  Collection<int, User>  $students
+     */
+    private function seedQuiz(Course $course, Session $session, Collection $students): void
+    {
+        $assessment = Assessment::create([
+            'course_id' => $course->id,
+            'session_id' => $session->id,
+            'type' => AssessmentType::TheoryQuiz,
+            'title' => 'Quiz: Concept Check',
+            'weight' => AssessmentType::TheoryQuiz->defaultWeight(),
+            'assigned_to' => AssessmentAssignedTo::Individual,
+            'start_date' => $session->date_start,
+            'end_date' => $session->date_end,
+            'status' => AssessmentStatus::Published,
+        ]);
+
+        $quiz = Quiz::create([
+            'assessment_id' => $assessment->id,
+            'start_date' => $session->date_start,
+            'due_date' => $session->date_end,
+            'total_question' => 0,
+            'total_attempts' => null,
+            'scoring_method' => QuizScoringMethod::Highest,
+            'time_limit_per_attempt' => 20,
+        ]);
+
+        $questions = $this->seedQuizQuestions($quiz);
+
+        $this->seedQuizAttempts($assessment, $quiz, $questions, $students);
+    }
+
+    /**
+     * @return Collection<int, QuizQuestion>
+     */
+    private function seedQuizQuestions(Quiz $quiz): Collection
+    {
+        $definitions = [
+            [
+                'description' => '<p>Which of the following best describes the core concept covered this week?</p>',
+                'points' => 25,
+                'options' => [
+                    ['label' => 'A structured way to apply the concept to real problems', 'is_correct' => true],
+                    ['label' => 'An unrelated historical footnote', 'is_correct' => false],
+                    ['label' => 'A deprecated technique no longer taught', 'is_correct' => false],
+                ],
+            ],
+            [
+                'description' => '<p>Which statement is correct about the tradeoffs involved?</p>',
+                'points' => 25,
+                'options' => [
+                    ['label' => 'There are no tradeoffs to consider', 'is_correct' => false],
+                    ['label' => 'Simplicity is traded for flexibility, and vice versa', 'is_correct' => true],
+                    ['label' => 'Tradeoffs only matter at scale', 'is_correct' => false],
+                ],
+            ],
+            [
+                'description' => '<p>Which approach best applies this concept to a real-world problem?</p>',
+                'points' => 25,
+                'options' => [
+                    ['label' => 'Applying it rigidly regardless of context', 'is_correct' => false],
+                    ['label' => 'Adapting it to the constraints of the specific problem', 'is_correct' => true],
+                    ['label' => 'Avoiding it in practical settings', 'is_correct' => false],
+                ],
+            ],
+            [
+                'description' => '<p>What is the most common mistake when first learning this concept?</p>',
+                'points' => 25,
+                'options' => [
+                    ['label' => 'Overcomplicating simple cases', 'is_correct' => true],
+                    ['label' => 'Using it too rarely', 'is_correct' => false],
+                    ['label' => 'Documenting it too thoroughly', 'is_correct' => false],
+                ],
+            ],
+        ];
+
+        $questions = collect();
+
+        foreach ($definitions as $order => $definition) {
+            $question = $quiz->questions()->create([
+                'description' => $definition['description'],
+                'points' => $definition['points'],
+                'question_type' => QuizQuestionType::MultipleChoice,
+                'order' => $order + 1,
+            ]);
+
+            foreach ($definition['options'] as $optionOrder => $option) {
+                $question->options()->create([
+                    'label' => $option['label'],
+                    'is_correct' => $option['is_correct'],
+                    'order' => $optionOrder + 1,
+                ]);
+            }
+
+            $questions->push($question->load('options'));
+        }
+
+        $quiz->update(['total_question' => $questions->count()]);
+
+        return $questions;
+    }
+
+    /**
+     * @param  Collection<int, QuizQuestion>  $questions
+     * @param  Collection<int, User>  $students
+     */
+    private function seedQuizAttempts(Assessment $assessment, Quiz $quiz, Collection $questions, Collection $students): void
+    {
+        $scoringService = app(QuizAttemptScoringService::class);
+
+        foreach ($students as $student) {
+            $outcome = $this->randomAttemptOutcome();
+
+            if ($outcome === 'not_started') {
+                continue;
+            }
+
+            $attempt = $assessment->attempts()->create([
+                'user_id' => $student->id,
+                'submitted_by' => $student->id,
+                'attempt_number' => 1,
+                'started_at' => Carbon::now()->subDays(random_int(1, 5)),
+                'submitted_at' => Carbon::now()->subDays(random_int(0, 4)),
+            ]);
+
+            foreach ($questions as $question) {
+                $correctOption = $question->options->firstWhere('is_correct', true);
+                $selectedOption = random_int(1, 10) <= 7 ? $correctOption : $question->options->firstWhere('is_correct', false);
+
+                $attempt->quizAnswers()->create([
+                    'quiz_question_id' => $question->id,
+                    'selected_option_id' => $selectedOption?->id,
+                    'score' => $scoringService->scoreObjectiveAnswer($question, $selectedOption?->id),
+                ]);
+            }
+
+            $scoringService->recomputeForUser($quiz, $assessment->id, $student->id);
+        }
     }
 
     private function createAssignment(Course $course, AssessmentType $type, AssessmentAssignedTo $assignedTo, string $title): Assessment

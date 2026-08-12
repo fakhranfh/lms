@@ -8,6 +8,7 @@ use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
+use App\Models\QuizQuestionOption;
 use App\Models\School;
 use App\Models\Session;
 use App\Models\User;
@@ -62,16 +63,14 @@ class AssessmentQuizFormTest extends TestCase
             ->assertCount('questions', 1);
     }
 
-    public function test_switching_question_type_updates_options(): void
+    public function test_new_question_defaults_to_two_empty_options(): void
     {
         $this->teacher->givePermissionTo('assessment.create');
 
         Livewire::test(AssessmentQuizForm::class, ['course' => $this->course])
-            ->call('setQuestionType', 0, 'true_false')
-            ->assertSet('questions.0.options.0.label', 'True')
-            ->assertSet('questions.0.options.1.label', 'False')
-            ->call('setQuestionType', 0, 'essay')
-            ->assertCount('questions.0.options', 0);
+            ->assertCount('questions.0.options', 2)
+            ->assertSet('questions.0.options.0.label', '')
+            ->assertSet('questions.0.options.1.label', '');
     }
 
     public function test_creates_quiz_with_multiple_choice_question(): void
@@ -155,7 +154,9 @@ class AssessmentQuizFormTest extends TestCase
             'type' => AssessmentType::TheoryQuiz,
         ]);
         $quiz = Quiz::factory()->for($assessment)->create();
-        $question = QuizQuestion::factory()->for($quiz)->create(['question_type' => 'short_answer']);
+        $question = QuizQuestion::factory()->for($quiz)->create(['question_type' => 'multiple_choice']);
+        QuizQuestionOption::factory()->for($question, 'question')->create(['is_correct' => true]);
+        QuizQuestionOption::factory()->for($question, 'question')->create(['is_correct' => false]);
 
         Livewire::test(AssessmentQuizForm::class, ['assessment' => $assessment])
             ->assertSet('questions.0.id', $question->id)

@@ -103,56 +103,40 @@
                         @error("questions.{$index}.description") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="grid grid-cols-2 gap-space-md">
-                        <div>
-                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Points</label>
-                            <input type="number" step="0.01" min="0" wire:model="questions.{{ $index }}.points" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                            @error("questions.{$index}.points") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Question Type</label>
-                            <select wire:change="setQuestionType({{ $index }}, $event.target.value)" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                @foreach ($questionTypes as $type)
-                                    <option value="{{ $type->value }}" @selected($question['questionType'] === $type->value)>{{ str($type->value)->replace('_', ' ')->title() }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Points</label>
+                        <input type="number" step="0.01" min="0" wire:model="questions.{{ $index }}.points" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                        @error("questions.{$index}.points") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                     </div>
 
                     @error("questions.{$index}.options") <p class="text-body-xs text-error">{{ $message }}</p> @enderror
 
-                    @if (in_array($question['questionType'], ['multiple_choice', 'true_false']))
-                        <div class="space-y-space-sm">
-                            <label class="block font-label-sm text-label-sm text-secondary">Options (select the correct one)</label>
-                            @foreach ($question['options'] as $optionIndex => $option)
-                                <div wire:key="question-{{ $index }}-option-{{ $optionIndex }}" class="flex items-center gap-space-sm">
-                                    <input
-                                        type="radio"
-                                        name="correct-option-{{ $index }}"
-                                        wire:click="toggleCorrect({{ $index }}, {{ $optionIndex }})"
-                                        @checked($option['isCorrect'])
-                                    />
-                                    <input
-                                        type="text"
-                                        wire:model="questions.{{ $index }}.options.{{ $optionIndex }}.label"
-                                        placeholder="Option label"
-                                        class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                        @if ($question['questionType'] === 'true_false') readonly @endif
-                                    />
-                                    @if ($question['questionType'] === 'multiple_choice' && count($question['options']) > 2)
-                                        <button type="button" wire:click="removeOption({{ $index }}, {{ $optionIndex }})" class="text-error text-body-sm hover:underline">Remove</button>
-                                    @endif
-                                </div>
-                            @endforeach
+                    <div class="space-y-space-sm">
+                        <label class="block font-label-sm text-label-sm text-secondary">Options (select the correct one)</label>
+                        @foreach ($question['options'] as $optionIndex => $option)
+                            <div wire:key="question-{{ $index }}-option-{{ $optionIndex }}" class="flex items-center gap-space-sm">
+                                <input
+                                    type="radio"
+                                    name="correct-option-{{ $index }}"
+                                    wire:click="toggleCorrect({{ $index }}, {{ $optionIndex }})"
+                                    @checked($option['isCorrect'])
+                                />
+                                <input
+                                    type="text"
+                                    wire:model="questions.{{ $index }}.options.{{ $optionIndex }}.label"
+                                    placeholder="Option label"
+                                    class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                                @if (count($question['options']) > 2)
+                                    <button type="button" wire:click="removeOption({{ $index }}, {{ $optionIndex }})" class="text-error text-body-sm hover:underline">Remove</button>
+                                @endif
+                            </div>
+                        @endforeach
 
-                            @if ($question['questionType'] === 'multiple_choice')
-                                <button type="button" wire:click="addOption({{ $index }})" class="text-primary text-body-sm font-medium hover:underline">
-                                    Add Option
-                                </button>
-                            @endif
-                        </div>
-                    @endif
+                        <button type="button" wire:click="addOption({{ $index }})" class="text-primary text-body-sm font-medium hover:underline">
+                            Add Option
+                        </button>
+                    </div>
                 </div>
             @endforeach
         </div>

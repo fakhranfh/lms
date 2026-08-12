@@ -40,7 +40,7 @@ class AssessmentQuizForm extends Component
     public string $timeLimitPerAttempt = '';
 
     /**
-     * @var array<int, array{id: ?string, description: string, points: string, questionType: string, order: int, options: array<int, array{id: ?string, label: string, isCorrect: bool, order: int}>}>
+     * @var array<int, array{id: ?string, description: string, points: string, order: int, options: array<int, array{id: ?string, label: string, isCorrect: bool, order: int}>}>
      */
     public array $questions = [];
 
@@ -77,7 +77,6 @@ class AssessmentQuizForm extends Component
                     'id' => $question->id,
                     'description' => $question->description,
                     'points' => (string) $question->points,
-                    'questionType' => $question->question_type->value,
                     'order' => $question->order,
                     'options' => $question->options->map(fn ($option) => [
                         'id' => $option->id,
@@ -89,6 +88,7 @@ class AssessmentQuizForm extends Component
             }
         } else {
             $this->weight = (string) AssessmentType::TheoryQuiz->defaultWeight();
+            $this->totalAttempts = '3';
         }
 
         if ($this->questions === []) {
@@ -102,9 +102,8 @@ class AssessmentQuizForm extends Component
             'id' => null,
             'description' => '',
             'points' => '',
-            'questionType' => QuizQuestionType::MultipleChoice->value,
             'order' => count($this->questions) + 1,
-            'options' => $this->defaultOptions(QuizQuestionType::MultipleChoice->value),
+            'options' => $this->defaultOptions(),
         ];
     }
 
@@ -112,12 +111,6 @@ class AssessmentQuizForm extends Component
     {
         unset($this->questions[$index]);
         $this->questions = array_values($this->questions);
-    }
-
-    public function setQuestionType(int $index, string $type): void
-    {
-        $this->questions[$index]['questionType'] = $type;
-        $this->questions[$index]['options'] = $this->defaultOptions($type);
     }
 
     public function addOption(int $questionIndex): void
@@ -148,19 +141,12 @@ class AssessmentQuizForm extends Component
     /**
      * @return array<int, array{id: ?string, label: string, isCorrect: bool, order: int}>
      */
-    private function defaultOptions(string $type): array
+    private function defaultOptions(): array
     {
-        return match ($type) {
-            QuizQuestionType::TrueFalse->value => [
-                ['id' => null, 'label' => 'True', 'isCorrect' => false, 'order' => 1],
-                ['id' => null, 'label' => 'False', 'isCorrect' => false, 'order' => 2],
-            ],
-            QuizQuestionType::MultipleChoice->value => [
-                ['id' => null, 'label' => '', 'isCorrect' => false, 'order' => 1],
-                ['id' => null, 'label' => '', 'isCorrect' => false, 'order' => 2],
-            ],
-            default => [],
-        };
+        return [
+            ['id' => null, 'label' => '', 'isCorrect' => false, 'order' => 1],
+            ['id' => null, 'label' => '', 'isCorrect' => false, 'order' => 2],
+        ];
     }
 
     public function save(
@@ -180,20 +166,17 @@ class AssessmentQuizForm extends Component
             'questions' => 'array|min:1',
             'questions.*.description' => 'required|string',
             'questions.*.points' => 'required|numeric|min:0',
-            'questions.*.questionType' => 'required|in:multiple_choice,true_false,short_answer,essay',
         ]);
 
         foreach ($this->questions as $index => $question) {
-            if (in_array($question['questionType'], [QuizQuestionType::MultipleChoice->value, QuizQuestionType::TrueFalse->value], true)) {
-                $labelled = array_filter($question['options'], fn ($option) => trim($option['label']) !== '');
-                if (count($labelled) < 2) {
-                    $this->addError("questions.{$index}.options", __('At least two options are required.'));
-                }
+            $labelled = array_filter($question['options'], fn ($option) => trim($option['label']) !== '');
+            if (count($labelled) < 2) {
+                $this->addError("questions.{$index}.options", __('At least two options are required.'));
+            }
 
-                $correctCount = count(array_filter($question['options'], fn ($option) => $option['isCorrect']));
-                if ($correctCount !== 1) {
-                    $this->addError("questions.{$index}.options", __('Exactly one option must be marked correct.'));
-                }
+            $correctCount = count(array_filter($question['options'], fn ($option) => $option['isCorrect']));
+            if ($correctCount !== 1) {
+                $this->addError("questions.{$index}.options", __('Exactly one option must be marked correct.'));
             }
         }
 
@@ -252,7 +235,7 @@ class AssessmentQuizForm extends Component
                     'quiz_id' => $quiz->id,
                     'description' => HtmlSanitizer::forum($question['description']),
                     'points' => (float) $question['points'],
-                    'question_type' => QuizQuestionType::from($question['questionType']),
+                    'question_type' => QuizQuestionType::MultipleChoice,
                     'order' => $index + 1,
                 ];
 
@@ -302,7 +285,6 @@ class AssessmentQuizForm extends Component
             'sessions' => $sessionService->forCourse($this->course->id),
             'statuses' => AssessmentStatus::cases(),
             'scoringMethods' => QuizScoringMethod::cases(),
-            'questionTypes' => QuizQuestionType::cases(),
             'hasInstructions' => $quizInstructionService->current() !== null,
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->assessment ? 'Edit Assessment' : 'Create Assessment'])

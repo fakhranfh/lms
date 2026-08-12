@@ -321,19 +321,15 @@
             <h2 class="font-label-lg text-label-lg text-on-surface">Answer Attempts</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
                 @foreach ($attemptRows->reverse() as $row)
-                    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md" x-data="{ open: false }">
+                    <div
+                        class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md cursor-pointer hover:bg-surface-container/50 transition"
+                        x-data="{ open: false }"
+                        @click="open = true"
+                    >
                         <div class="flex items-start justify-between gap-space-md">
                             <div class="flex-1">
                                 <div class="flex items-center gap-space-sm mb-space-xs">
                                     <h3 class="font-label-lg text-label-lg text-on-surface">Attempt {{ $row['attempt']->attempt_number }}</h3>
-                                    <button
-                                        type="button"
-                                        @click="open = true"
-                                        class="p-1 hover:bg-surface-container rounded transition text-on-surface-variant"
-                                        title="View answer"
-                                    >
-                                        <span class="material-symbols-outlined text-[18px]">visibility</span>
-                                    </button>
                                 </div>
                                 @if ($row['attempt']->submitter)
                                     <div class="flex items-center gap-space-sm">
@@ -375,17 +371,16 @@
                                 x-transition:leave="transition ease-in duration-150"
                                 x-transition:leave-start="opacity-100"
                                 x-transition:leave-end="opacity-0"
-                                class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
-                                @click.self="open = false"
+                                class="fixed inset-0 z-[100] bg-surface flex flex-col"
                             >
                                 <div
                                     x-show="open"
                                     x-transition:enter="transition ease-out duration-200 delay-75"
-                                    x-transition:enter-start="opacity-0 scale-95"
-                                    x-transition:enter-end="opacity-100 scale-100"
-                                    class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto space-y-space-lg"
+                                    x-transition:enter-start="opacity-0"
+                                    x-transition:enter-end="opacity-100"
+                                    class="flex-1 overflow-y-auto p-space-lg space-y-space-lg"
                                 >
-                                    <div class="flex items-center justify-between">
+                                    <div class="flex items-center justify-between border-b border-outline-variant pb-space-md">
                                         <h2 class="font-headline-sm text-headline-sm text-on-surface">Attempt {{ $row['attempt']->attempt_number }} Answer</h2>
                                         <button type="button" @click="open = false" class="p-2 hover:bg-surface-container rounded transition">
                                             <span class="material-symbols-outlined text-on-surface-variant">close</span>

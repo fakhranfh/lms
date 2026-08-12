@@ -126,11 +126,11 @@
 
         <!-- Latest Score Card -->
         @if ($isStudent && $latestScore)
-            <div class="bg-gradient-to-br from-primary/90 to-primary rounded-lg p-space-lg text-on-primary space-y-space-md">
+            <div class="bg-primary rounded-lg p-space-lg text-on-primary space-y-space-md">
                 <div>
                     <p class="text-body-sm opacity-90 mb-space-sm">Latest Score</p>
                     <p class="text-headline-lg font-bold">{{ rtrim(rtrim(number_format($latestScore->score, 1), '0'), '.') }} <span class="text-body-md font-normal">pts</span></p>
-                    <p class="text-body-xs opacity-75 mt-space-md">Score Updated On: {{ $latestScore->graded_at?->format('j M Y, H:i') ?? '—' }}</p>
+                    <p class="text-body-xs opacity-75 mt-space-md">Score Updated On: {{ $latestScore->graded_at_display?->format('j M Y, H:i') ?? '—' }}</p>
                 </div>
                 @if ($latestScore->feedback)
                     <div class="pt-space-md border-t border-on-primary/20">
@@ -337,7 +337,7 @@
                                         <div>
                                             <p class="text-body-sm text-on-surface-variant">Submitted by <span class="font-medium text-on-surface">{{ $row['attempt']->submitter->name }}</span></p>
                                             <p class="text-body-xs text-on-surface-variant">
-                                                {{ $row['attempt']->submitted_at ? $row['attempt']->submitted_at->format('M j, Y H:i') : 'Not submitted' }}
+                                                {{ $row['attempt']->submitted_at ? $row['attempt']->submitted_at_display->format('M j, Y H:i') : 'Not submitted' }}
                                             </p>
                                         </div>
                                     </div>
@@ -349,10 +349,10 @@
                                 @endif
                             </div>
                             @if ($row['score'])
-                                <div class="bg-gradient-to-br from-primary/90 to-primary rounded-lg p-space-md text-on-primary text-center min-w-[140px] flex-shrink-0">
+                                <div class="bg-primary rounded-lg p-space-md text-on-primary text-center min-w-[140px] flex-shrink-0">
                                     <p class="text-body-xs opacity-90 mb-space-xs">SCORE</p>
                                     <p class="text-headline-sm font-bold">{{ rtrim(rtrim(number_format($row['score']->score, 1), '0'), '.') }} <span class="text-body-xs font-normal">pts</span></p>
-                                    <p class="text-body-xs opacity-75 mt-space-xs">{{ $row['score']->graded_at?->format('j M y H:i') ?? '—' }}</p>
+                                    <p class="text-body-xs opacity-75 mt-space-xs">{{ $row['score']->graded_at_display?->format('j M Y, H:i') ?? '—' }}</p>
                                 </div>
                             @elseif ($latestAttempt && $row['attempt']->id === $latestAttempt->id)
                                 <div class="bg-surface-container rounded-lg p-space-md text-on-surface-variant text-center min-w-[140px] flex-shrink-0">
@@ -422,7 +422,7 @@
                                 <p class="font-label-md text-label-md text-on-surface">{{ $row['user']->name }}</p>
                                 <p class="text-body-sm text-on-surface-variant mt-1">
                                     @if ($row['attempt'])
-                                        Attempt {{ $row['attempt']->attempt_number }} &middot; submitted {{ $row['attempt']->submitted_at?->format('M j, Y H:i') }}
+                                        Attempt {{ $row['attempt']->attempt_number }} &middot; submitted {{ $row['attempt']->submitted_at_display?->format('M j, Y H:i') }}
                                     @else
                                         Not submitted
                                     @endif

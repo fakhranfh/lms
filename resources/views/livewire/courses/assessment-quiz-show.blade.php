@@ -187,12 +187,25 @@
                         <div class="flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">
                             <h2 class="font-headline-sm text-headline-sm text-on-surface">Attempt {{ $inProgress->attempt_number }} — {{ $assessment->title }}</h2>
 
-                            @if ($deadlineIso)
-                                <div class="flex items-center gap-space-xs font-label-md text-label-md" :class="remaining !== null && remaining <= 60 ? 'text-error' : 'text-on-surface'">
-                                    <span class="material-symbols-outlined text-[18px]">timer</span>
-                                    <span x-text="formatted()"></span>
-                                </div>
-                            @endif
+                            <div class="flex items-center gap-space-lg">
+                                @if ($deadlineIso)
+                                    <div class="flex items-center gap-space-xs font-label-md text-label-md" :class="remaining !== null && remaining <= 60 ? 'text-error' : 'text-on-surface'">
+                                        <span class="material-symbols-outlined text-[18px]">timer</span>
+                                        <span x-text="formatted()"></span>
+                                    </div>
+                                @endif
+
+                                <button
+                                    type="submit"
+                                    form="quiz-attempt-form"
+                                    wire:loading.attr="disabled"
+                                    wire:target="submitAttempt"
+                                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
+                                >
+                                    <span wire:loading wire:target="submitAttempt" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                    Submit Quiz
+                                </button>
+                            </div>
                         </div>
 
                         <div class="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-[220px_1fr]" x-data="{ currentQuestion: 0 }">
@@ -254,16 +267,6 @@
                                         >
                                             Next
                                         </button>
-
-                                        <button
-                                            type="submit"
-                                            x-show="currentQuestion === {{ $quiz->questions->count() - 1 }}"
-                                            wire:loading.attr="disabled"
-                                            wire:target="submitAttempt"
-                                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
-                                        >
-                                            Submit Quiz
-                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -300,8 +303,9 @@
                                         wire:loading.attr="disabled"
                                         wire:target="submitAttempt"
                                         @click="confirmOpen = false; submitting = true; clearInterval(timer); $wire.submitAttempt()"
-                                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
                                     >
+                                        <span wire:loading wire:target="submitAttempt" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
                                         Submit
                                     </button>
                                 </div>
@@ -327,8 +331,9 @@
                     wire:click="startAttempt"
                     wire:loading.attr="disabled"
                     wire:target="startAttempt"
-                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
                 >
+                    <span wire:loading wire:target="startAttempt" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
                     Start Attempt
                 </button>
             @endif

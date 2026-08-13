@@ -49,7 +49,6 @@
                             Quiz
                         </a>
                         <span class="block px-space-md py-space-sm text-body-sm text-on-surface-variant/60 cursor-not-allowed">Final Exam &mdash; coming soon</span>
-                        <span class="block px-space-md py-space-sm text-body-sm text-on-surface-variant/60 cursor-not-allowed">Forum Discussion &mdash; coming soon</span>
                     </div>
                 </div>
             </div>
@@ -139,6 +138,67 @@
                                         @empty
                                             <tr>
                                                 <td colspan="5" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No virtual class sessions yet.</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        @elseif ($group['type'] === \App\Enums\AssessmentType::ForumDiscussion && $isStudent)
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr class="border-b border-outline-variant bg-surface-container/50">
+                                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Title</th>
+                                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Start Date</th>
+                                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Due Date</th>
+                                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Status</th>
+                                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-outline-variant">
+                                        @forelse ($group['sessionRows'] as $sessionRow)
+                                            <tr
+                                                wire:key="forum-discussion-session-{{ $sessionRow['session']->id }}"
+                                                @click="window.location = '{{ route('forum.index', $course) }}?session={{ $sessionRow['session']->id }}'"
+                                                class="hover:bg-surface-container/30 transition cursor-pointer"
+                                            >
+                                                <td class="px-space-lg py-space-md">
+                                                    <p class="font-label-md text-label-md text-on-surface">{{ str($sessionRow['session']->title)->before(' - ') }}</p>
+                                                    <p class="text-body-xs text-on-surface-variant">{{ $sessionRow['session']->title }}</p>
+                                                </td>
+                                                <td class="px-space-lg py-space-md text-body-sm text-on-surface">
+                                                    {{ $sessionRow['session']->date_start_display?->format('d M Y,') }}<br>
+                                                    {{ $sessionRow['session']->date_start_display?->format('H:i') }} {{ $sessionRow['session']->date_start_display?->format('T') }}
+                                                </td>
+                                                <td class="px-space-lg py-space-md">
+                                                    <div class="text-body-sm text-on-surface">
+                                                        {{ $sessionRow['session']->date_end_display?->format('d M Y,') }}<br>
+                                                        {{ $sessionRow['session']->date_end_display?->format('H:i') }} {{ $sessionRow['session']->date_end_display?->format('T') }}
+                                                    </div>
+                                                    @if ($sessionRow['session']->date_end_display?->isPast())
+                                                        <span class="inline-flex items-center px-space-xs py-1 mt-1 rounded-full text-body-xs font-medium bg-on-surface-variant/20 text-on-surface">
+                                                            Expired
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-space-lg py-space-md">
+                                                    @if ($sessionRow['met'])
+                                                        <span class="inline-flex items-center gap-1 text-body-sm text-on-surface">
+                                                            Completed
+                                                            <span class="material-symbols-outlined text-[16px] text-on-primary bg-success rounded-sm">check</span>
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center gap-1 text-body-sm text-on-surface-variant">
+                                                            {{ $sessionRow['required'] }} posts required
+                                                            <span class="material-symbols-outlined text-[16px] text-on-primary bg-outline-variant rounded-sm">close</span>
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-space-lg py-space-md font-label-md text-label-md text-on-surface">{{ $sessionRow['met'] ? '100 pts' : '0 pts' }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="5" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No online sessions yet.</td>
                                             </tr>
                                         @endforelse
                                     </tbody>
@@ -244,7 +304,7 @@
                                                                 <span class="material-symbols-outlined">edit</span>
                                                             </a>
 
-                                                            @if ($item['data']->type !== \App\Enums\AssessmentType::Attendance)
+                                                            @if (! in_array($item['data']->type, [\App\Enums\AssessmentType::Attendance, \App\Enums\AssessmentType::ForumDiscussion], true))
                                                                 <button
                                                                     type="button"
                                                                     @click.stop="deleteId = @js($item['data']->id); deleteName = @js($item['data']->title); deleteConfirmText = ''; showDeleteModal = true"

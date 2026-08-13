@@ -61,7 +61,7 @@ class AssessmentForm extends Component
 
         if ($assessment) {
             abort_unless($assessment->course_id === $course->id, 404);
-            abort_unless(in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::Attendance], true), 404);
+            abort_unless(in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::Attendance, AssessmentType::ForumDiscussion], true), 404);
 
             $this->assessment = $assessment;
             $this->assessmentType = $assessment->type;
@@ -87,14 +87,14 @@ class AssessmentForm extends Component
             $this->weight = (string) $this->assessmentType->defaultWeight();
         }
 
-        if ($this->questions === [] && $this->assessmentType !== AssessmentType::Attendance) {
+        if ($this->questions === [] && ! in_array($this->assessmentType, [AssessmentType::Attendance, AssessmentType::ForumDiscussion], true)) {
             $this->addQuestion();
         }
     }
 
     public function usesQuestions(): bool
     {
-        return $this->assessmentType !== AssessmentType::Attendance;
+        return ! in_array($this->assessmentType, [AssessmentType::Attendance, AssessmentType::ForumDiscussion], true);
     }
 
     public function addQuestion(): void

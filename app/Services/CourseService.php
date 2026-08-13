@@ -61,6 +61,7 @@ class CourseService
             $course = $this->courseRepository->create($data);
 
             $this->ensureAttendanceAssessment($course);
+            $this->ensureForumDiscussionAssessment($course);
 
             return $course;
         });
@@ -88,6 +89,35 @@ class CourseService
             'type' => AssessmentType::Attendance,
             'title' => 'Attendance',
             'weight' => AssessmentType::Attendance->defaultWeight(),
+            'assigned_to' => AssessmentAssignedTo::Individual,
+            'start_date' => null,
+            'end_date' => null,
+            'status' => AssessmentStatus::Published,
+        ]);
+    }
+
+    /**
+     * Auto-provisions the single course-wide Forum Discussion assessment
+     * that mirrors forum participation data, so the Assessment page never
+     * requires a Teacher to manually create one.
+     */
+    public function ensureForumDiscussionAssessment(Course $course): void
+    {
+        $exists = $this->assessmentService->get([
+            'course_id' => $course->id,
+            'type' => AssessmentType::ForumDiscussion,
+        ])->isNotEmpty();
+
+        if ($exists) {
+            return;
+        }
+
+        $this->assessmentService->create([
+            'course_id' => $course->id,
+            'session_id' => null,
+            'type' => AssessmentType::ForumDiscussion,
+            'title' => 'Forum Discussion',
+            'weight' => AssessmentType::ForumDiscussion->defaultWeight(),
             'assigned_to' => AssessmentAssignedTo::Individual,
             'start_date' => null,
             'end_date' => null,

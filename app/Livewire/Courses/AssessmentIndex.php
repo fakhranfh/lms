@@ -14,10 +14,12 @@ use App\Services\AssessmentService;
 use App\Services\AttendanceDerivationService;
 use App\Services\AttendanceScoringService;
 use App\Services\CoursePersonService;
+use App\Services\ForumDiscussionScoringService;
 use App\Services\GroupMemberService;
 use App\Services\QuizAttemptScoringService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class AssessmentIndex extends Component
@@ -73,6 +75,12 @@ class AssessmentIndex extends Component
             return;
         }
 
+        if ($assessment->type === AssessmentType::ForumDiscussion) {
+            $this->errorMessage = __('The Forum Discussion assessment is auto-provisioned and cannot be deleted.');
+
+            return;
+        }
+
         if ($assessment->attempts->isNotEmpty()) {
             $this->errorMessage = __('This assessment already has submissions and cannot be deleted.');
 
@@ -82,7 +90,7 @@ class AssessmentIndex extends Component
         $assessmentService->delete($assessmentId);
     }
 
-    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, AttendanceDerivationService $attendanceDerivationService)
+    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, AttendanceDerivationService $attendanceDerivationService, ForumDiscussionScoringService $forumDiscussionScoringService)
     {
         if (! $this->assessmentsLoaded) {
             return view('livewire.courses.assessment-index-placeholder', [
@@ -98,8 +106,8 @@ class AssessmentIndex extends Component
 
         $assessments = $assessmentService->get(['course_id' => $this->course->id], ['attempts.score']);
 
-        $rows = $assessments->mapWithKeys(function (Assessment $assessment) use ($assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService) {
-            return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService)];
+        $rows = $assessments->mapWithKeys(function (Assessment $assessment) use ($assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService) {
+            return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService)];
         })->all();
 
         $virtualClassSessions = $attendanceDerivationService->sessionsForCourse($this->course)
@@ -107,28 +115,13 @@ class AssessmentIndex extends Component
             ->sortBy(fn (Session $session) => (int) preg_replace('/\D+/', '', $session->title) ?: PHP_INT_MAX)
             ->values();
 
+        $onlineSessions = $attendanceDerivationService->sessionsForCourse($this->course)
+            ->filter(fn (Session $session) => $session->delivery_mode === DeliveryMode::Online)
+            ->sortBy(fn (Session $session) => (int) preg_replace('/\D+/', '', $session->title) ?: PHP_INT_MAX)
+            ->values();
+
         $grouped = collect(AssessmentType::cases())
-            ->map(function (AssessmentType $type) use ($assessments, $rows, $attendanceDerivationService, $virtualClassSessions) {
-                $group = [
-                    'type' => $type,
-                    'assessments' => $assessments->where('type', $type)->values()->map(fn (Assessment $a) => [
-                        'data' => $a,
-                        'row' => $rows[$a->id],
-                    ]),
-                    'sectionKey' => $type->value,
-                    'isExpanded' => isset($this->expandedSections[$type->value]) && $this->expandedSections[$type->value],
-                    'totalWeight' => $assessments->where('type', $type)->sum('weight'),
-                ];
-
-                if ($type === AssessmentType::Attendance && $this->isStudent) {
-                    $group['sessionRows'] = $virtualClassSessions->map(fn (Session $session) => [
-                        'session' => $session,
-                        'attended' => $attendanceDerivationService->isSessionAttended($session, auth()->id()),
-                    ]);
-                }
-
-                return $group;
-            })
+            ->map(fn (AssessmentType $type) => $this->buildTypeGroup($type, $assessments, $rows, $attendanceDerivationService, $virtualClassSessions, $onlineSessions, $forumDiscussionScoringService))
             ->all();
 
         return view('livewire.courses.assessment-index', [
@@ -146,9 +139,47 @@ class AssessmentIndex extends Component
     }
 
     /**
+     * @param  Collection<int, Assessment>  $assessments
+     * @param  array<string, array{status: string, route: string|null, attemptCount: int, attemptLimit: string, score: float|null, isExpired: bool, statusConfig: array{bg: string, text: string, icon: string}}>  $rows
+     * @param  Collection<int, Session>  $virtualClassSessions
+     * @param  Collection<int, Session>  $onlineSessions
+     * @return array<string, mixed>
+     */
+    private function buildTypeGroup(AssessmentType $type, Collection $assessments, array $rows, AttendanceDerivationService $attendanceDerivationService, Collection $virtualClassSessions, Collection $onlineSessions, ForumDiscussionScoringService $forumDiscussionScoringService): array
+    {
+        $group = [
+            'type' => $type,
+            'assessments' => $assessments->where('type', $type)->values()->map(fn (Assessment $a) => [
+                'data' => $a,
+                'row' => $rows[$a->id],
+            ]),
+            'sectionKey' => $type->value,
+            'isExpanded' => isset($this->expandedSections[$type->value]) && $this->expandedSections[$type->value],
+            'totalWeight' => $assessments->where('type', $type)->sum('weight'),
+        ];
+
+        if ($type === AssessmentType::Attendance && $this->isStudent) {
+            $group['sessionRows'] = $virtualClassSessions->map(fn (Session $session) => [
+                'session' => $session,
+                'attended' => $attendanceDerivationService->isSessionAttended($session, auth()->id()),
+            ]);
+        }
+
+        if ($type === AssessmentType::ForumDiscussion && $this->isStudent) {
+            $group['sessionRows'] = $onlineSessions->map(fn (Session $session) => [
+                'session' => $session,
+                'met' => $forumDiscussionScoringService->hasMetForumPostRequirement($session, auth()->id()),
+                'required' => $forumDiscussionScoringService->requiredForumPosts($session),
+            ]);
+        }
+
+        return $group;
+    }
+
+    /**
      * @return array{status: string, route: string|null, attemptCount: int, attemptLimit: string, score: float|null, isExpired: bool, statusConfig: array{bg: string, text: string, icon: string}}
      */
-    private function rowStatus(Assessment $assessment, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService): array
+    private function rowStatus(Assessment $assessment, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, ForumDiscussionScoringService $forumDiscussionScoringService): array
     {
         $type = $assessment->type;
         $isExpired = $assessment->end_date && $assessment->end_date->isPast();
@@ -158,6 +189,7 @@ class AssessmentIndex extends Component
             AssessmentType::TheoryTeamAssignment => route('assessments.team.show', $assessment),
             AssessmentType::TheoryQuiz => route('assessments.quiz.show', $assessment),
             AssessmentType::Attendance => route('assessments.attendance.show', $assessment),
+            AssessmentType::ForumDiscussion => route('assessments.forum-discussion.show', $assessment),
             default => null,
         };
 
@@ -206,6 +238,20 @@ class AssessmentIndex extends Component
 
         if ($type === AssessmentType::Attendance) {
             $computed = $attendanceScoringService->computeForUser($assessment, auth()->id());
+
+            return [
+                'status' => 'graded',
+                'route' => $route,
+                'attemptCount' => 0,
+                'attemptLimit' => 'unlimited',
+                'score' => $computed['score'],
+                'isExpired' => $isExpired,
+                'statusConfig' => $this->statusConfig('graded'),
+            ];
+        }
+
+        if ($type === AssessmentType::ForumDiscussion) {
+            $computed = $forumDiscussionScoringService->computeForUser($assessment, auth()->id());
 
             return [
                 'status' => 'graded',

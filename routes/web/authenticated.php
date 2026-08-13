@@ -11,6 +11,7 @@ use App\Http\Controllers\UserLoginLinkController;
 use App\Livewire\ChangePassword;
 use App\Livewire\Courses\AssessmentAttendanceShow;
 use App\Livewire\Courses\AssessmentForm;
+use App\Livewire\Courses\AssessmentForumDiscussionShow;
 use App\Livewire\Courses\AssessmentIndex;
 use App\Livewire\Courses\AssessmentPersonalShow;
 use App\Livewire\Courses\AssessmentQuizForm;
@@ -105,6 +106,7 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/assessments/{assessment}/quiz/edit', AssessmentQuizForm::class)->middleware('permission:assessment.edit')->name('assessments.quiz.edit');
         Route::get('/assessments/{assessment}/quiz', AssessmentQuizShow::class)->middleware('permission:assessment.view')->name('assessments.quiz.show');
         Route::get('/assessments/{assessment}/attendance', AssessmentAttendanceShow::class)->middleware('permission:assessment.view')->name('assessments.attendance.show');
+        Route::get('/assessments/{assessment}/forum-discussion', AssessmentForumDiscussionShow::class)->middleware('permission:assessment.view')->name('assessments.forum-discussion.show');
         Route::get('/quiz-instructions', QuizInstructionEdit::class)->middleware('permission:assessment.edit')->name('quiz-instructions.edit');
 
         Route::get('/courses/{course}/groups', GroupsManage::class)->middleware('permission:groups.manage')->name('groups.manage');

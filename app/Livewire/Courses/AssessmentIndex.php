@@ -104,6 +104,7 @@ class AssessmentIndex extends Component
 
         $virtualClassSessions = $attendanceDerivationService->sessionsForCourse($this->course)
             ->filter(fn (Session $session) => $session->delivery_mode === DeliveryMode::VirtualClass)
+            ->sortBy(fn (Session $session) => (int) preg_replace('/\D+/', '', $session->title) ?: PHP_INT_MAX)
             ->values();
 
         $grouped = collect(AssessmentType::cases())

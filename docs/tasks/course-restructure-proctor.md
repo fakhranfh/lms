@@ -84,6 +84,30 @@ proctor_snapshots
   - triggered_by_event_id (nullable, FK -> proctor_events)
 ```
 
+## Exam Entry Flow (Open Book / Closed Book only)
+
+Unlike a regular Quiz (taken inline in a modal on the lesson/course page), starting a Final Exam of type **Open Book** or **Closed Book** routes the student to a **dedicated full-page route** (not a modal). Standard/no-proctor Final Exams keep the existing quiz-style modal flow.
+
+Sequence when the student clicks "Start Exam" on an Open/Closed Book Final Exam:
+
+1. **Pre-flight checks page** — before the attempt/proctor session is created:
+   1. **Internet speed check** — quick download/upload probe, must meet a minimum threshold to proceed.
+   2. **Camera check** — request webcam permission, show live preview, confirm a face is visible.
+   3. **Screen capture check** — request screen-share permission (`getDisplayMedia`), confirm capture is active.
+   - Each check shows pass/fail status; student cannot proceed to the exam until all three pass.
+2. **Exam page (proctored)** — on confirming all checks pass:
+   - Create the `assessment_attempt` and `proctor_session` (`status = active`, `started_at = now()`).
+   - Start webcam recording, screen recording, and periodic snapshot capture (per [Proctor Snapshot](#3-proctor-snapshot-optional-evidence-capture)) client-side.
+   - Question/answer UI reuses the same components as the Quiz modal (question list, navigation, timer, autosave), just rendered as its own full page (own route) instead of inside a modal.
+   - Client-side detectors run in the background and log `proctor_events` per the [Detection Rules by Exam Type](#detection-rules-by-exam-type).
+3. **Submission / end of session**:
+   - On submit (manual or auto via timer expiry), stop webcam/screen recording.
+   - Upload the recorded webcam + screen video to R2 (reuse existing R2 storage integration, see [Phase 1.2 Section 11.4](phase-1-2-section-11-4-service-layer.md) service layer), attach as `proctor_snapshots` (or a session-level recording reference) linked to the `proctor_session`.
+   - Mark `proctor_session.status = completed`, `ended_at = now()`.
+   - Redirect student back to the course/exam results context (same as regular quiz submission flow).
+
+Open questions to resolve before implementation: exact route naming/URL for the proctor exam page, whether the full video recording is a new field/table vs. reusing `proctor_snapshots` with a `recording` type, minimum internet speed threshold, and fallback UX when a check fails (retry vs. block with instructor contact instructions).
+
 ## Notes
 
 This document is a structural plan/documentation only. No migration/model/Livewire component has been implemented yet. Actual client-side detection mechanisms (browser lock-down, webcam access, network monitoring) will require dedicated technical research before implementation.

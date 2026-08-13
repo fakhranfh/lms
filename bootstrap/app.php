@@ -6,6 +6,7 @@ use App\Http\Middleware\RedirectIfNoSchool;
 use App\Http\Middleware\RequireSchool;
 use App\Http\Middleware\ResolveSchoolFromDomain;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\TrustReverseProxyScheme;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,9 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         if ($trustedProxies = env('TRUSTED_PROXIES')) {
-            $middleware->trustProxies(at: explode(',', $trustedProxies));
+            $middleware->trustProxies(at: $trustedProxies === '*' ? '*' : explode(',', $trustedProxies));
         }
 
+        $middleware->prepend(TrustReverseProxyScheme::class);
         $middleware->append(PreservePasswordUpdateErrors::class);
         $middleware->append(SecurityHeaders::class);
         $middleware->web(prepend: [ResolveSchoolFromDomain::class]);

@@ -184,13 +184,19 @@
                     </div>
                 </div>
             @elseif ($canSubmit && $canResubmit && $finalExam && in_array($finalExam->exam_type->value, ['open_book', 'closed_book']))
-                <a
-                    href="{{ route('assessments.final-exam.proctor.preflight', $assessment) }}"
-                    wire:navigate
-                    class="inline-block px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
-                >
-                    {{ $latestAttempt ? 'Continue Exam' : 'Start Exam' }}
-                </a>
+                @if ($assessment->quiz && $assessment->quiz->questions->isNotEmpty())
+                    <a
+                        href="{{ route('assessments.final-exam.proctor.preflight', $assessment) }}"
+                        wire:navigate
+                        class="inline-block px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                    >
+                        {{ $latestAttempt ? 'Continue Exam' : 'Start Exam' }}
+                    </a>
+                @else
+                    <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
+                        <p class="text-body-sm text-on-surface-variant">This exam isn't ready yet. Please check back later.</p>
+                    </div>
+                @endif
             @elseif ($canSubmit && $canResubmit)
                 <div x-data="{ attemptOpen: false }">
                     <button
@@ -433,6 +439,24 @@
                     </div>
                 @endforeach
             </div>
+        </div>
+    @endif
+
+    <!-- Teacher: Manage Exam Questions (proctored exams only) -->
+    @if (!$isStudent && $isProctored && $canGrade)
+        <div class="bg-surface border border-outline-variant rounded-lg p-space-lg flex items-center justify-between gap-space-md">
+            <div>
+                <p class="font-label-md text-label-md text-on-surface">Exam Questions</p>
+                <p class="text-body-sm text-on-surface-variant mt-space-xs">
+                    {{ $assessment->quiz && $assessment->quiz->questions->isNotEmpty() ? $assessment->quiz->questions->count().' question(s) configured.' : 'No questions configured yet — students cannot start this exam until questions are added.' }}
+                </p>
+            </div>
+            <a
+                href="{{ route('assessments.final-exam.questions.edit', $assessment) }}"
+                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity flex-shrink-0"
+            >
+                Manage Questions
+            </a>
         </div>
     @endif
 

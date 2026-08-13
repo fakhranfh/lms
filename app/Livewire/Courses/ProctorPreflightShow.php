@@ -29,6 +29,7 @@ class ProctorPreflightShow extends Component
     public array $checksPassed = [
         'speed' => false,
         'camera' => false,
+        'mic' => false,
         'screen' => false,
     ];
 
@@ -81,7 +82,7 @@ class ProctorPreflightShow extends Component
 
     public function goToStep(string $step): void
     {
-        abort_unless(in_array($step, ['speed', 'camera', 'screen', 'ready'], true), 404);
+        abort_unless(in_array($step, ['speed', 'camera', 'mic', 'screen', 'ready'], true), 404);
 
         $this->step = $step;
     }

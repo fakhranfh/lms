@@ -30,3 +30,5 @@ Thumbs.db
 /docs/pentest-reports/*
 .env.testing
 /graphify-out/**
+# Local HTTPS dev certs (mkcert)
+.cert/

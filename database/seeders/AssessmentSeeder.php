@@ -228,7 +228,11 @@ class AssessmentSeeder extends Seeder
             'allow_internet' => $type !== FinalExamType::ClosedBook,
         ]);
 
-        $this->seedFinalExamQuestions($assessment, $type);
+        if ($type === FinalExamType::TakeHome) {
+            $this->seedFinalExamEssayQuestions($assessment);
+        } else {
+            $this->seedFinalExamQuizQuestions($assessment, $type);
+        }
     }
 
     private function finalExamTitleSuffix(FinalExamType $type): string
@@ -240,22 +244,16 @@ class AssessmentSeeder extends Seeder
         };
     }
 
-    private function seedFinalExamQuestions(Assessment $assessment, FinalExamType $type): void
+    /**
+     * Standard (non-proctored) Take Home final exams use the essay-answer
+     * flow (AssessmentFinalExamShow), so they get plain AssessmentQuestions.
+     */
+    private function seedFinalExamEssayQuestions(Assessment $assessment): void
     {
-        $questions = match ($type) {
-            FinalExamType::TakeHome => [
-                ['description' => '<p>Synthesize the key concepts covered throughout this course into a single coherent argument, using at least two concrete examples to support your points (800-1000 words).</p>', 'points' => 60],
-                ['description' => '<p>Critically evaluate a real-world scenario of your choosing through the lens of what you learned in this course. Justify your conclusions.</p>', 'points' => 40],
-            ],
-            FinalExamType::OpenBook => [
-                ['description' => '<p>Using any course materials as reference, solve the case study provided and explain your reasoning at each step.</p>', 'points' => 50],
-                ['description' => '<p>Compare two approaches covered in this course, citing specific sources, and justify which one better fits the given scenario.</p>', 'points' => 50],
-            ],
-            FinalExamType::ClosedBook => [
-                ['description' => '<p>Without referring to any materials, explain the core principles covered in this course from memory.</p>', 'points' => 50],
-                ['description' => '<p>Solve the following problem using only what you have memorized from the course content.</p>', 'points' => 50],
-            ],
-        };
+        $questions = [
+            ['description' => '<p>Synthesize the key concepts covered throughout this course into a single coherent argument, using at least two concrete examples to support your points (800-1000 words).</p>', 'points' => 60],
+            ['description' => '<p>Critically evaluate a real-world scenario of your choosing through the lens of what you learned in this course. Justify your conclusions.</p>', 'points' => 40],
+        ];
 
         foreach ($questions as $order => $question) {
             $assessment->questions()->create([
@@ -264,6 +262,83 @@ class AssessmentSeeder extends Seeder
                 'order' => $order + 1,
             ]);
         }
+    }
+
+    /**
+     * Open Book / Closed Book final exams are proctored and use the
+     * quiz-style attempt flow (ProctorExamShow), so they need a Quiz with
+     * multiple-choice questions rather than essay AssessmentQuestions.
+     */
+    private function seedFinalExamQuizQuestions(Assessment $assessment, FinalExamType $type): void
+    {
+        $quiz = Quiz::create([
+            'assessment_id' => $assessment->id,
+            'start_date' => $assessment->start_date,
+            'due_date' => $assessment->end_date,
+            'total_question' => 0,
+            'total_attempts' => 1,
+            'scoring_method' => QuizScoringMethod::Highest,
+            'time_limit_per_attempt' => 60,
+        ]);
+
+        $definitions = $type === FinalExamType::OpenBook ? [
+            [
+                'description' => '<p>Using any course materials as reference, which option best solves the case study provided?</p>',
+                'points' => 50,
+                'options' => [
+                    ['label' => 'Apply the approach covered in Week 3, adapted to the given constraints', 'is_correct' => true],
+                    ['label' => 'Ignore the case study constraints entirely', 'is_correct' => false],
+                    ['label' => 'Use a method not covered in this course', 'is_correct' => false],
+                ],
+            ],
+            [
+                'description' => '<p>Which comparison best justifies choosing one approach over the other for the given scenario?</p>',
+                'points' => 50,
+                'options' => [
+                    ['label' => 'Approach A trades simplicity for flexibility, which fits this scenario', 'is_correct' => true],
+                    ['label' => 'Both approaches are functionally identical', 'is_correct' => false],
+                    ['label' => 'Neither approach applies to this scenario', 'is_correct' => false],
+                ],
+            ],
+        ] : [
+            [
+                'description' => '<p>Without referring to any materials, which statement best explains the core principle covered in this course?</p>',
+                'points' => 50,
+                'options' => [
+                    ['label' => 'The principle balances tradeoffs based on context', 'is_correct' => true],
+                    ['label' => 'The principle has no practical application', 'is_correct' => false],
+                    ['label' => 'The principle was deprecated in the course', 'is_correct' => false],
+                ],
+            ],
+            [
+                'description' => '<p>Solve the following problem using only what you have memorized: which answer is correct?</p>',
+                'points' => 50,
+                'options' => [
+                    ['label' => 'The value obtained by applying the memorized formula directly', 'is_correct' => true],
+                    ['label' => 'The value obtained by guessing', 'is_correct' => false],
+                    ['label' => 'There is no correct answer', 'is_correct' => false],
+                ],
+            ],
+        ];
+
+        foreach ($definitions as $order => $definition) {
+            $question = $quiz->questions()->create([
+                'description' => $definition['description'],
+                'points' => $definition['points'],
+                'question_type' => QuizQuestionType::MultipleChoice,
+                'order' => $order + 1,
+            ]);
+
+            foreach ($definition['options'] as $optionOrder => $option) {
+                $question->options()->create([
+                    'label' => $option['label'],
+                    'is_correct' => $option['is_correct'],
+                    'order' => $optionOrder + 1,
+                ]);
+            }
+        }
+
+        $quiz->update(['total_question' => count($definitions)]);
     }
 
     /**

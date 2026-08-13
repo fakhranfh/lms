@@ -57,7 +57,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd\" \"php artisan serve --port 80\" \"php artisan queue:work --tries=3\" --names='server,queue'"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve --port 80\" \"php artisan queue:work --tries=3\" \"bash bin/https-proxy.sh\" --names='server,queue,https'"
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",

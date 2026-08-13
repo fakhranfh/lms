@@ -108,13 +108,23 @@ School Admin UI was explicitly deferred (per user decision) — the tab shell an
 
 ---
 
+### UI — Batch 8: Final Exam (Teacher & Student)
+
+- **Scoping decision**: submission/grading is implemented uniformly for all three `exam_type` values (`open_book` / `closed_book` / `take_home`) using the same single-attempt-with-resubmit-until-graded flow as Personal Assignment. **Proctor is still deferred** — `ProctorSession`/`ProctorEvent`/`ProctorSnapshot` exist in the schema but nothing in this batch touches them; no proctor session creation, webcam monitoring, or client-side detection. `allow_local_files` / `allow_internet` are stored and displayed as informational flags only, not enforced.
+- **`AssessmentFinalExamForm`** (routes `assessments.final-exam.create` / `assessments.final-exam.edit`) — dedicated builder mirroring `AssessmentForm` (title/weight/dates/status + question repeater with rich text and media-library attachments), with the Session select swapped for a **Period** select (`PeriodService::get(['course_id' => ...])`, ordered by `order`), plus an **Exam Type** select and **Allow Local Files** / **Allow Internet** toggles. Type is immutable after create; `save()` runs in a `DB::transaction` and create-or-updates the `FinalExam` row via `FinalExamService` alongside the `Assessment`.
+- **`AssessmentFinalExamShow`** (route `assessments.final-exam.show`) — shared Teacher\Student screen copied from `AssessmentPersonalShow`: student submit/resubmit-until-graded with attempt history, teacher per-student per-question grading + feedback. Meta grid adds Exam Type / Local Files (Allowed·Not allowed) / Internet (Allowed·Not allowed) from the related `FinalExam`.
+- **`AssessmentIndex`** — Final Exam is now a real "Create Assessment" menu entry (replaces the "coming soon" placeholder), rows route to the new show screen, edit links resolve via a new `editRoute()` helper, and student status computation reuses the individual attempt-based path (`forAssessmentAndUser`).
+- Incidental cleanups while making Larastan exhaustive-match-aware: dropped the now-unreachable `default` arm/`unavailable` branch in `rowStatus()` and added the missing `Collection<int, AssessmentQuestionScore>` generic on `AssessmentQuestionScoreService::findByAttempt()` (this also clears the previously known `AssessmentPersonalShow.php` error).
+- 14 new Livewire feature tests (`AssessmentFinalExamFormTest`, `AssessmentFinalExamShowTest`); `Courses` + `CourseRestructure` folders 279/281 green — the 2 failures are pre-existing `AttendanceIndexTest` session-label assertions, unrelated and reproducible on a clean tree. Pint clean; **Larastan 0 errors**.
+
+---
+
 ## Not Done
 
 ### UI — remaining components (Teacher & Student), one batch at a time
 
 - **Assessment** — remaining builders/attempt UIs for:
   - Student file-upload on Personal/Team Assignment submission (deferred from Batch 4, see note above)
-  - THEORY: FINAL EXAM (Open Book / Closed Book / Take Home) — Open/Closed Book requires **Proctor UI + actual client-side detection mechanism** (webcam, tab-switch, etc. — flagged in the schema batch as needing dedicated technical research)
   - Grading Queue (Teacher-side manual grading for assignments/essay/take-home)
 - **Gradebook** — Final Score summary + per-type/per-session breakdown, Grading Scale config.
 - **People** — Teachers/Students/Groups roster tabs, group management (create/assign/move students).

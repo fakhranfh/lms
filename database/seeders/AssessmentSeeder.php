@@ -6,13 +6,16 @@ use App\Enums\AssessmentAssignedTo;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\CourseMembershipStatus;
+use App\Enums\FinalExamType;
 use App\Enums\QuizQuestionType;
 use App\Enums\QuizScoringMethod;
 use App\Enums\RoleInCourse;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\CoursePerson;
+use App\Models\FinalExam;
 use App\Models\Group;
+use App\Models\Period;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
 use App\Models\School;
@@ -29,8 +32,8 @@ class AssessmentSeeder extends Seeder
     /**
      * Seed a Personal Assignment and a Team Assignment (with groups, questions,
      * and a mix of not-started/submitted/graded attempts) for existing courses
-     * that don't have any assessments yet. Also backfills a Quiz for any
-     * course with sessions that doesn't have one yet, even if it already has
+     * that don't have any assessments yet. Also backfills a Quiz and a Final
+     * Exam for any course that doesn't have one yet, even if it already has
      * other assessment types, and re-links any previously-seeded Quiz whose
      * session has since expired to a still-open one.
      */
@@ -43,6 +46,7 @@ class AssessmentSeeder extends Seeder
         }
 
         $this->seedMissingQuizzes();
+        $this->seedMissingFinalExams();
         $this->relinkExpiredQuizzes();
     }
 
@@ -60,6 +64,22 @@ class AssessmentSeeder extends Seeder
             }
 
             $this->seedQuiz($course, $session, $this->studentsForCourse($course));
+        }
+    }
+
+    private function seedMissingFinalExams(): void
+    {
+        $courses = Course::whereDoesntHave('assessments', fn ($query) => $query->where('type', AssessmentType::TheoryFinalExam))
+            ->get();
+
+        foreach ($courses as $course) {
+            $period = $this->periodForCourse($course);
+
+            if (! $period) {
+                continue;
+            }
+
+            $this->seedFinalExam($course, $period, $this->studentsForCourse($course));
         }
     }
 
@@ -130,6 +150,89 @@ class AssessmentSeeder extends Seeder
         $session = $this->quizSessionForCourse($course);
         if ($session) {
             $this->seedQuiz($course, $session, $students);
+        }
+
+        $period = $this->periodForCourse($course);
+        if ($period) {
+            $this->seedFinalExam($course, $period, $students);
+        }
+    }
+
+    /**
+     * Reuse the course's existing Period if one exists, otherwise group all
+     * of the course's sessions into a single "Midterm to Final" Period.
+     */
+    private function periodForCourse(Course $course): ?Period
+    {
+        $existing = Period::where('course_id', $course->id)->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        $sessions = $course->sessions()->orderBy('date_start')->get();
+
+        if ($sessions->isEmpty()) {
+            return null;
+        }
+
+        $period = Period::create([
+            'course_id' => $course->id,
+            'title' => 'Full Semester',
+            'order' => 1,
+        ]);
+
+        foreach ($sessions as $order => $session) {
+            $period->sessions()->attach($session->id, ['order' => $order + 1]);
+        }
+
+        return $period;
+    }
+
+    /**
+     * @param  Collection<int, User>  $students
+     */
+    private function seedFinalExam(Course $course, Period $period, Collection $students): void
+    {
+        $assessment = Assessment::create([
+            'course_id' => $course->id,
+            'session_id' => null,
+            'type' => AssessmentType::TheoryFinalExam,
+            'title' => 'Final Exam: Comprehensive Assessment',
+            'weight' => AssessmentType::TheoryFinalExam->defaultWeight(),
+            'assigned_to' => AssessmentAssignedTo::Individual,
+            'start_date' => Carbon::now()->subDays(3),
+            'end_date' => Carbon::now()->addWeek(),
+            'status' => AssessmentStatus::Published,
+        ]);
+
+        FinalExam::create([
+            'assessment_id' => $assessment->id,
+            'period_id' => $period->id,
+            'exam_type' => FinalExamType::TakeHome,
+            'start_date' => $assessment->start_date,
+            'end_date' => $assessment->end_date,
+            'allow_local_files' => true,
+            'allow_internet' => true,
+        ]);
+
+        $this->seedFinalExamQuestions($assessment);
+        $this->seedIndividualAttempts($assessment, $students);
+    }
+
+    private function seedFinalExamQuestions(Assessment $assessment): void
+    {
+        $questions = [
+            ['description' => '<p>Synthesize the key concepts covered throughout this course into a single coherent argument, using at least two concrete examples to support your points (800-1000 words).</p>', 'points' => 60],
+            ['description' => '<p>Critically evaluate a real-world scenario of your choosing through the lens of what you learned in this course. Justify your conclusions.</p>', 'points' => 40],
+        ];
+
+        foreach ($questions as $order => $question) {
+            $assessment->questions()->create([
+                'description' => $question['description'],
+                'points' => $question['points'],
+                'order' => $order + 1,
+            ]);
         }
     }
 

@@ -10,6 +10,8 @@ use App\Http\Controllers\UserAvailabilityController;
 use App\Http\Controllers\UserLoginLinkController;
 use App\Livewire\ChangePassword;
 use App\Livewire\Courses\AssessmentAttendanceShow;
+use App\Livewire\Courses\AssessmentFinalExamForm;
+use App\Livewire\Courses\AssessmentFinalExamShow;
 use App\Livewire\Courses\AssessmentForm;
 use App\Livewire\Courses\AssessmentForumDiscussionShow;
 use App\Livewire\Courses\AssessmentIndex;
@@ -105,6 +107,9 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/courses/{course}/assessments/create/quiz', AssessmentQuizForm::class)->middleware('permission:assessment.create')->name('assessments.quiz.create');
         Route::get('/assessments/{assessment}/quiz/edit', AssessmentQuizForm::class)->middleware('permission:assessment.edit')->name('assessments.quiz.edit');
         Route::get('/assessments/{assessment}/quiz', AssessmentQuizShow::class)->middleware('permission:assessment.view')->name('assessments.quiz.show');
+        Route::get('/courses/{course}/assessments/create/final-exam', AssessmentFinalExamForm::class)->middleware('permission:assessment.create')->name('assessments.final-exam.create');
+        Route::get('/assessments/{assessment}/final-exam/edit', AssessmentFinalExamForm::class)->middleware('permission:assessment.edit')->name('assessments.final-exam.edit');
+        Route::get('/assessments/{assessment}/final-exam', AssessmentFinalExamShow::class)->middleware('permission:assessment.view')->name('assessments.final-exam.show');
         Route::get('/assessments/{assessment}/attendance', AssessmentAttendanceShow::class)->middleware('permission:assessment.view')->name('assessments.attendance.show');
         Route::get('/assessments/{assessment}/forum-discussion', AssessmentForumDiscussionShow::class)->middleware('permission:assessment.view')->name('assessments.forum-discussion.show');
         Route::get('/quiz-instructions', QuizInstructionEdit::class)->middleware('permission:assessment.edit')->name('quiz-instructions.edit');

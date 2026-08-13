@@ -182,6 +182,15 @@ class AssessmentIndex extends Component
         return $group;
     }
 
+    public function editRoute(Assessment $assessment): string
+    {
+        return match ($assessment->type) {
+            AssessmentType::TheoryQuiz => route('assessments.quiz.edit', $assessment),
+            AssessmentType::TheoryFinalExam => route('assessments.final-exam.edit', $assessment),
+            default => route('assessments.edit', $assessment),
+        };
+    }
+
     /**
      * @return array{status: string, route: string|null, attemptCount: int, attemptLimit: string, score: float|null, isExpired: bool, statusConfig: array{bg: string, text: string, icon: string}}
      */
@@ -194,9 +203,9 @@ class AssessmentIndex extends Component
             AssessmentType::TheoryPersonalAssignment => route('assessments.personal.show', $assessment),
             AssessmentType::TheoryTeamAssignment => route('assessments.team.show', $assessment),
             AssessmentType::TheoryQuiz => route('assessments.quiz.show', $assessment),
+            AssessmentType::TheoryFinalExam => route('assessments.final-exam.show', $assessment),
             AssessmentType::Attendance => route('assessments.attendance.show', $assessment),
             AssessmentType::ForumDiscussion => route('assessments.forum-discussion.show', $assessment),
-            default => null,
         };
 
         if (! $this->isStudent) {
@@ -270,22 +279,12 @@ class AssessmentIndex extends Component
             ];
         }
 
-        if ($type === AssessmentType::TheoryPersonalAssignment) {
-            $attempts = $assessmentAttemptService->forAssessmentAndUser($assessment->id, auth()->id());
-        } elseif ($type === AssessmentType::TheoryTeamAssignment) {
+        if ($type === AssessmentType::TheoryTeamAssignment) {
             $member = $groupMemberService->get(['user_id' => auth()->id()])
                 ->first(fn (GroupMember $m) => $m->group->course_id === $this->course->id);
             $attempts = $member ? $assessmentAttemptService->forAssessmentAndGroup($assessment->id, $member->group_id) : collect();
         } else {
-            return [
-                'status' => 'unavailable',
-                'route' => null,
-                'attemptCount' => 0,
-                'attemptLimit' => 'unlimited',
-                'score' => null,
-                'isExpired' => $isExpired,
-                'statusConfig' => $this->statusConfig('unavailable'),
-            ];
+            $attempts = $assessmentAttemptService->forAssessmentAndUser($assessment->id, auth()->id());
         }
 
         $latest = $attempts->last();

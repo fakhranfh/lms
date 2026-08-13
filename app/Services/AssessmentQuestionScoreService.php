@@ -37,6 +37,9 @@ class AssessmentQuestionScoreService
         return $this->assessmentQuestionScoreRepository->delete($id);
     }
 
+    /**
+     * @return Collection<int, AssessmentQuestionScore>
+     */
     public function findByAttempt(string $attemptId, array $with = []): Collection
     {
         return $this->assessmentQuestionScoreRepository->findByAttempt($attemptId, $with);

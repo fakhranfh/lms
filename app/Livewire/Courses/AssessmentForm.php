@@ -61,7 +61,7 @@ class AssessmentForm extends Component
 
         if ($assessment) {
             abort_unless($assessment->course_id === $course->id, 404);
-            abort_unless(in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment], true), 404);
+            abort_unless(in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::Attendance], true), 404);
 
             $this->assessment = $assessment;
             $this->assessmentType = $assessment->type;
@@ -82,14 +82,20 @@ class AssessmentForm extends Component
             $this->assessmentType = match ($type) {
                 'personal' => AssessmentType::TheoryPersonalAssignment,
                 'team' => AssessmentType::TheoryTeamAssignment,
+                'attendance' => AssessmentType::Attendance,
                 default => abort(404),
             };
             $this->weight = (string) $this->assessmentType->defaultWeight();
         }
 
-        if ($this->questions === []) {
+        if ($this->questions === [] && $this->assessmentType !== AssessmentType::Attendance) {
             $this->addQuestion();
         }
+    }
+
+    public function usesQuestions(): bool
+    {
+        return $this->assessmentType !== AssessmentType::Attendance;
     }
 
     public function addQuestion(): void
@@ -129,9 +135,11 @@ class AssessmentForm extends Component
             'startDate' => 'required|date',
             'endDate' => 'required|date|after:startDate',
             'sessionId' => 'nullable|string',
-            'questions' => 'array|min:1',
-            'questions.*.description' => 'required|string',
-            'questions.*.points' => 'required|numeric|min:0',
+            ...($this->usesQuestions() ? [
+                'questions' => 'array|min:1',
+                'questions.*.description' => 'required|string',
+                'questions.*.points' => 'required|numeric|min:0',
+            ] : []),
         ]);
 
         $data = [
@@ -152,14 +160,20 @@ class AssessmentForm extends Component
             $assessmentService->update($this->assessment->id, $data);
             $assessment = $this->assessment;
 
-            $existingIds = collect($this->questions)->pluck('id')->filter()->all();
-            foreach ($assessment->questions as $existingQuestion) {
-                if (! in_array($existingQuestion->id, $existingIds, true)) {
-                    $assessmentQuestionService->delete($existingQuestion->id);
+            if ($this->usesQuestions()) {
+                $existingIds = collect($this->questions)->pluck('id')->filter()->all();
+                foreach ($assessment->questions as $existingQuestion) {
+                    if (! in_array($existingQuestion->id, $existingIds, true)) {
+                        $assessmentQuestionService->delete($existingQuestion->id);
+                    }
                 }
             }
         } else {
             $assessment = $assessmentService->create($data);
+        }
+
+        if (! $this->usesQuestions()) {
+            return redirect()->route('assessments.index', $this->course);
         }
 
         foreach ($this->questions as $index => $question) {

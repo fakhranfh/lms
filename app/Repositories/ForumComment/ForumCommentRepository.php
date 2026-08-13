@@ -91,4 +91,11 @@ class ForumCommentRepository implements ForumCommentRepositoryInterface
 
         return $query->paginate($perPage, ['*'], 'page', $page);
     }
+
+    public function countForUserInSession(string $userId, string $sessionId): int
+    {
+        return ForumComment::where('user_id', $userId)
+            ->whereHas('thread.forum', fn ($query) => $query->where('session_id', $sessionId))
+            ->count();
+    }
 }

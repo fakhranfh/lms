@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Models\GroupMember;
 use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentService;
+use App\Services\AttendanceScoringService;
 use App\Services\CoursePersonService;
 use App\Services\GroupMemberService;
 use App\Services\QuizAttemptScoringService;
@@ -72,7 +73,7 @@ class AssessmentIndex extends Component
         $assessmentService->delete($assessmentId);
     }
 
-    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService)
+    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService)
     {
         if (! $this->assessmentsLoaded) {
             return view('livewire.courses.assessment-index-placeholder', [
@@ -88,8 +89,8 @@ class AssessmentIndex extends Component
 
         $assessments = $assessmentService->get(['course_id' => $this->course->id], ['attempts.score']);
 
-        $rows = $assessments->mapWithKeys(function (Assessment $assessment) use ($assessmentAttemptService, $groupMemberService, $quizAttemptScoringService) {
-            return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService, $quizAttemptScoringService)];
+        $rows = $assessments->mapWithKeys(function (Assessment $assessment) use ($assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService) {
+            return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService)];
         })->all();
 
         $grouped = collect(AssessmentType::cases())
@@ -122,7 +123,7 @@ class AssessmentIndex extends Component
     /**
      * @return array{status: string, route: string|null, attemptCount: int, attemptLimit: string, score: float|null, isExpired: bool, statusConfig: array{bg: string, text: string, icon: string}}
      */
-    private function rowStatus(Assessment $assessment, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService): array
+    private function rowStatus(Assessment $assessment, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService): array
     {
         $type = $assessment->type;
         $isExpired = $assessment->end_date && $assessment->end_date->isPast();
@@ -131,6 +132,7 @@ class AssessmentIndex extends Component
             AssessmentType::TheoryPersonalAssignment => route('assessments.personal.show', $assessment),
             AssessmentType::TheoryTeamAssignment => route('assessments.team.show', $assessment),
             AssessmentType::TheoryQuiz => route('assessments.quiz.show', $assessment),
+            AssessmentType::Attendance => route('assessments.attendance.show', $assessment),
             default => null,
         };
 
@@ -174,6 +176,20 @@ class AssessmentIndex extends Component
                 'score' => $scoredAttempt?->score?->score,
                 'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig($pending ? 'submitted' : 'graded'),
+            ];
+        }
+
+        if ($type === AssessmentType::Attendance) {
+            $computed = $attendanceScoringService->computeForUser($assessment, auth()->id());
+
+            return [
+                'status' => 'graded',
+                'route' => $route,
+                'attemptCount' => 0,
+                'attemptLimit' => 'unlimited',
+                'score' => $computed['score'],
+                'isExpired' => $isExpired,
+                'statusConfig' => $this->statusConfig('graded'),
             ];
         }
 

@@ -12,6 +12,9 @@ class AttendanceRequirementService
         private AttendanceRequirementRepositoryInterface $attendanceRequirementRepository
     ) {}
 
+    /**
+     * @return Collection<int, AttendanceRequirement>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         return $this->attendanceRequirementRepository->get($filters, $with);
@@ -37,6 +40,9 @@ class AttendanceRequirementService
         return $this->attendanceRequirementRepository->delete($id);
     }
 
+    /**
+     * @return Collection<int, AttendanceRequirement>
+     */
     public function forCourse(string $courseId): Collection
     {
         return $this->attendanceRequirementRepository->forCourse($courseId);

@@ -28,4 +28,6 @@ interface ForumCommentRepositoryInterface
     public function topLevelForThread(string $threadId, array $with = []): Collection;
 
     public function paginateTopLevelForThread(string $threadId, int $perPage, int $page, array $with = [], string $sortBy = 'latest_comment'): LengthAwarePaginator;
+
+    public function countForUserInSession(string $userId, string $sessionId): int;
 }

@@ -48,9 +48,11 @@
                         <a href="{{ route('assessments.quiz.create', $course) }}" class="block px-space-md py-space-sm text-body-sm text-on-surface hover:bg-surface-container">
                             Quiz
                         </a>
+                        <a href="{{ route('assessments.create', [$course, 'attendance']) }}" class="block px-space-md py-space-sm text-body-sm text-on-surface hover:bg-surface-container">
+                            Attendance
+                        </a>
                         <span class="block px-space-md py-space-sm text-body-sm text-on-surface-variant/60 cursor-not-allowed">Final Exam &mdash; coming soon</span>
                         <span class="block px-space-md py-space-sm text-body-sm text-on-surface-variant/60 cursor-not-allowed">Forum Discussion &mdash; coming soon</span>
-                        <span class="block px-space-md py-space-sm text-body-sm text-on-surface-variant/60 cursor-not-allowed">Attendance &mdash; coming soon</span>
                     </div>
                 </div>
             </div>

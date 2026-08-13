@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 class AttendanceRequirementRepository implements AttendanceRequirementRepositoryInterface
 {
+    /**
+     * @return Collection<int, AttendanceRequirement>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         $query = AttendanceRequirement::query();
@@ -45,6 +48,9 @@ class AttendanceRequirementRepository implements AttendanceRequirementRepository
         return AttendanceRequirement::destroy($id);
     }
 
+    /**
+     * @return Collection<int, AttendanceRequirement>
+     */
     public function forCourse(string $courseId): Collection
     {
         return AttendanceRequirement::where('course_id', $courseId)->orderBy('order')->get();

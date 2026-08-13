@@ -80,4 +80,9 @@ class ForumCommentService
     {
         return $this->forumCommentRepository->paginateTopLevelForThread($threadId, $perPage, $page, $with, $sortBy);
     }
+
+    public function countForUserInSession(string $userId, string $sessionId): int
+    {
+        return $this->forumCommentRepository->countForUserInSession($userId, $sessionId);
+    }
 }

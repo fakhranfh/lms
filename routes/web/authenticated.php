@@ -9,12 +9,15 @@ use App\Http\Controllers\TierChangeController;
 use App\Http\Controllers\UserAvailabilityController;
 use App\Http\Controllers\UserLoginLinkController;
 use App\Livewire\ChangePassword;
+use App\Livewire\Courses\AssessmentAttendanceShow;
 use App\Livewire\Courses\AssessmentForm;
 use App\Livewire\Courses\AssessmentIndex;
 use App\Livewire\Courses\AssessmentPersonalShow;
 use App\Livewire\Courses\AssessmentQuizForm;
 use App\Livewire\Courses\AssessmentQuizShow;
 use App\Livewire\Courses\AssessmentTeamShow;
+use App\Livewire\Courses\AttendanceIndex;
+use App\Livewire\Courses\AttendanceRequirementSettings;
 use App\Livewire\Courses\CourseComingSoon;
 use App\Livewire\Courses\CourseForm;
 use App\Livewire\Courses\CoursesIndex;
@@ -95,16 +98,20 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::post('/forum/comments/{comment}/toggle-like', [ForumCommentLikeController::class, 'toggle'])->middleware('permission:forum.create')->name('forum.comment.toggle-like');
 
         Route::get('/courses/{course}/assessments', AssessmentIndex::class)->middleware('permission:assessment.view')->name('assessments.index');
-        Route::get('/courses/{course}/assessments/create/{type}', AssessmentForm::class)->whereIn('type', ['personal', 'team'])->middleware('permission:assessment.create')->name('assessments.create');
+        Route::get('/courses/{course}/assessments/create/{type}', AssessmentForm::class)->whereIn('type', ['personal', 'team', 'attendance'])->middleware('permission:assessment.create')->name('assessments.create');
         Route::get('/assessments/{assessment}/edit', AssessmentForm::class)->middleware('permission:assessment.edit')->name('assessments.edit');
         Route::get('/assessments/{assessment}/personal', AssessmentPersonalShow::class)->middleware('permission:assessment.view')->name('assessments.personal.show');
         Route::get('/assessments/{assessment}/team', AssessmentTeamShow::class)->middleware('permission:assessment.view')->name('assessments.team.show');
         Route::get('/courses/{course}/assessments/create/quiz', AssessmentQuizForm::class)->middleware('permission:assessment.create')->name('assessments.quiz.create');
         Route::get('/assessments/{assessment}/quiz/edit', AssessmentQuizForm::class)->middleware('permission:assessment.edit')->name('assessments.quiz.edit');
         Route::get('/assessments/{assessment}/quiz', AssessmentQuizShow::class)->middleware('permission:assessment.view')->name('assessments.quiz.show');
+        Route::get('/assessments/{assessment}/attendance', AssessmentAttendanceShow::class)->middleware('permission:assessment.view')->name('assessments.attendance.show');
         Route::get('/quiz-instructions', QuizInstructionEdit::class)->middleware('permission:assessment.edit')->name('quiz-instructions.edit');
 
         Route::get('/courses/{course}/groups', GroupsManage::class)->middleware('permission:groups.manage')->name('groups.manage');
+
+        Route::get('/courses/{course}/attendance', AttendanceIndex::class)->middleware('permission:attendance.view')->name('attendance.index');
+        Route::get('/courses/{course}/attendance/settings', AttendanceRequirementSettings::class)->middleware('permission:attendance.manage')->name('attendance.settings');
 
         Route::get('/courses/{course}/tabs/{tab}', CourseComingSoon::class)->middleware('permission:courses.view')->name('course-tabs.coming-soon');
 

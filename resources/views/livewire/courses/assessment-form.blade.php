@@ -60,6 +60,7 @@
         </div>
 
         <!-- Questions -->
+        @if ($assessmentType->value !== 'attendance')
         <div class="space-y-space-md">
             <div class="flex items-center justify-between">
                 <h2 class="font-label-lg text-label-lg text-on-surface">Questions</h2>
@@ -130,6 +131,7 @@
                 </div>
             @endforeach
         </div>
+        @endif
 
         <div class="flex gap-space-md">
             <a href="{{ route('assessments.index', $course) }}" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">

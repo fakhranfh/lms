@@ -110,18 +110,22 @@ class AssessmentIndex extends Component
             return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService)];
         })->all();
 
-        $virtualClassSessions = $attendanceDerivationService->sessionsForCourse($this->course)
+        $allSessions = $attendanceDerivationService->sessionsForCourse($this->course);
+
+        $virtualClassSessions = $allSessions
             ->filter(fn (Session $session) => $session->delivery_mode === DeliveryMode::VirtualClass)
-            ->sortBy(fn (Session $session) => (int) preg_replace('/\D+/', '', $session->title) ?: PHP_INT_MAX)
             ->values();
 
-        $onlineSessions = $attendanceDerivationService->sessionsForCourse($this->course)
+        $onlineSessions = $allSessions
             ->filter(fn (Session $session) => $session->delivery_mode === DeliveryMode::Online)
-            ->sortBy(fn (Session $session) => (int) preg_replace('/\D+/', '', $session->title) ?: PHP_INT_MAX)
             ->values();
+
+        $sessionPositions = $allSessions->values()
+            ->mapWithKeys(fn (Session $session, int $index) => [$session->id => $index + 1])
+            ->all();
 
         $grouped = collect(AssessmentType::cases())
-            ->map(fn (AssessmentType $type) => $this->buildTypeGroup($type, $assessments, $rows, $attendanceDerivationService, $virtualClassSessions, $onlineSessions, $forumDiscussionScoringService))
+            ->map(fn (AssessmentType $type) => $this->buildTypeGroup($type, $assessments, $rows, $attendanceDerivationService, $virtualClassSessions, $onlineSessions, $forumDiscussionScoringService, $sessionPositions))
             ->all();
 
         return view('livewire.courses.assessment-index', [
@@ -143,15 +147,17 @@ class AssessmentIndex extends Component
      * @param  array<string, array{status: string, route: string|null, attemptCount: int, attemptLimit: string, score: float|null, isExpired: bool, statusConfig: array{bg: string, text: string, icon: string}}>  $rows
      * @param  Collection<int, Session>  $virtualClassSessions
      * @param  Collection<int, Session>  $onlineSessions
+     * @param  array<string, int>  $sessionPositions
      * @return array<string, mixed>
      */
-    private function buildTypeGroup(AssessmentType $type, Collection $assessments, array $rows, AttendanceDerivationService $attendanceDerivationService, Collection $virtualClassSessions, Collection $onlineSessions, ForumDiscussionScoringService $forumDiscussionScoringService): array
+    private function buildTypeGroup(AssessmentType $type, Collection $assessments, array $rows, AttendanceDerivationService $attendanceDerivationService, Collection $virtualClassSessions, Collection $onlineSessions, ForumDiscussionScoringService $forumDiscussionScoringService, array $sessionPositions): array
     {
         $group = [
             'type' => $type,
             'assessments' => $assessments->where('type', $type)->values()->map(fn (Assessment $a) => [
                 'data' => $a,
                 'row' => $rows[$a->id],
+                'sessionPosition' => $a->session_id ? ($sessionPositions[$a->session_id] ?? null) : null,
             ]),
             'sectionKey' => $type->value,
             'isExpanded' => isset($this->expandedSections[$type->value]) && $this->expandedSections[$type->value],

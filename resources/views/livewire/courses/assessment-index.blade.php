@@ -95,15 +95,15 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-outline-variant">
-                                        @forelse ($group['sessionRows'] as $sessionRow)
+                                        @forelse ($group['sessionRows'] as $sessionIndex => $sessionRow)
                                             <tr
                                                 wire:key="attendance-session-{{ $sessionRow['session']->id }}"
                                                 @click="window.location = '{{ route('sessions.index', $course) }}?session={{ $sessionRow['session']->id }}'"
                                                 class="hover:bg-surface-container/30 transition cursor-pointer"
                                             >
                                                 <td class="px-space-lg py-space-md">
-                                                    <p class="font-label-md text-label-md text-on-surface">{{ str($sessionRow['session']->title)->before(' - ') }}</p>
-                                                    <p class="text-body-xs text-on-surface-variant">{{ $sessionRow['session']->title }}</p>
+                                                    <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $sessionIndex + 1 }}</p>
+                                                    <p class="font-label-md text-label-md text-on-surface">{{ $sessionRow['session']->title }}</p>
                                                 </td>
                                                 <td class="px-space-lg py-space-md text-body-sm text-on-surface">
                                                     {{ $sessionRow['session']->date_start_display?->format('d M Y,') }}<br>
@@ -156,15 +156,15 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-outline-variant">
-                                        @forelse ($group['sessionRows'] as $sessionRow)
+                                        @forelse ($group['sessionRows'] as $sessionIndex => $sessionRow)
                                             <tr
                                                 wire:key="forum-discussion-session-{{ $sessionRow['session']->id }}"
                                                 @click="window.location = '{{ route('forum.index', $course) }}?session={{ $sessionRow['session']->id }}'"
                                                 class="hover:bg-surface-container/30 transition cursor-pointer"
                                             >
                                                 <td class="px-space-lg py-space-md">
-                                                    <p class="font-label-md text-label-md text-on-surface">{{ str($sessionRow['session']->title)->before(' - ') }}</p>
-                                                    <p class="text-body-xs text-on-surface-variant">{{ $sessionRow['session']->title }}</p>
+                                                    <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $sessionIndex + 1 }}</p>
+                                                    <p class="font-label-md text-label-md text-on-surface">{{ $sessionRow['session']->title }}</p>
                                                 </td>
                                                 <td class="px-space-lg py-space-md text-body-sm text-on-surface">
                                                     {{ $sessionRow['session']->date_start_display?->format('d M Y,') }}<br>
@@ -233,6 +233,9 @@
                                             @endif
                                         >
                                             <td class="px-space-lg py-space-md">
+                                                @if ($item['sessionPosition'])
+                                                    <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $item['sessionPosition'] }}</p>
+                                                @endif
                                                 @if ($item['row']['route'])
                                                     <span class="text-on-surface font-label-md text-label-md">
                                                         {{ $item['data']->title }}

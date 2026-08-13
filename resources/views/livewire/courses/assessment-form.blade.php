@@ -52,8 +52,8 @@
                 <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Session (optional)</label>
                 <select wire:model="sessionId" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50">
                     <option value="">None</option>
-                    @foreach ($sessions as $session)
-                        <option value="{{ $session->id }}">{{ $session->title }}</option>
+                    @foreach ($sessions as $index => $session)
+                        <option value="{{ $session->id }}">Session {{ $index + 1 }} &mdash; {{ $session->title }}</option>
                     @endforeach
                 </select>
             </div>

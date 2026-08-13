@@ -49,7 +49,7 @@
     @else
         <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
             <div class="space-y-0">
-                @foreach ($sessions as $session)
+                @foreach ($sessions as $sessionIndex => $session)
                     <div wire:key="session-{{ $session->id }}" class="border-b border-outline-variant last:border-0" x-data="{ open: @js($expandedSessions[$session->id] ?? false) }">
                         <!-- Session Header -->
                         <div class="p-space-lg">
@@ -66,6 +66,7 @@
                                     </button>
 
                                     <div class="flex-1">
+                                        <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $sessionIndex + 1 }}</p>
                                         <div class="flex items-center gap-space-md">
                                             <h3 class="font-label-lg text-label-lg text-on-surface">{{ $session->title }}</h3>
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant">

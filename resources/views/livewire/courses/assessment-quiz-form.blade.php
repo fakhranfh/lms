@@ -45,8 +45,8 @@
                 <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Session</label>
                 <select wire:model="sessionId" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50">
                     <option value="">Select a session</option>
-                    @foreach ($sessions as $session)
-                        <option value="{{ $session->id }}">{{ $session->title }}</option>
+                    @foreach ($sessions as $index => $session)
+                        <option value="{{ $session->id }}">Session {{ $index + 1 }} &mdash; {{ $session->title }}</option>
                     @endforeach
                 </select>
                 <p class="text-body-xs text-on-surface-variant mt-space-xs">The quiz's availability window follows the selected session's dates.</p>

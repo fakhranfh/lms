@@ -182,6 +182,7 @@
                     @endif
                 </div>
 
+                <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $sessions->search(fn ($s) => $s->id === $activeSession->id) + 1 }}</p>
                 <h1 class="font-headline-sm text-headline-sm text-on-surface pr-48">{{ $activeSession->title }}</h1>
 
                 @if ($activeSession->learning_outcome)

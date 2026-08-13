@@ -81,6 +81,13 @@
                     Allow internet access
                 </label>
             </div>
+
+            <div>
+                <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Instructions</label>
+                <p class="text-body-xs text-on-surface-variant mb-space-xs">Shown to students before they start this exam. Tailor it to this exam type (e.g. what materials are allowed).</p>
+                <x-rich-text-editor id="final-exam-instructions" wire-model="instructions" :value="$instructions" />
+                @error('instructions') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+            </div>
         </div>
 
         <!-- Questions -->

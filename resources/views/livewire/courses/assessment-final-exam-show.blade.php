@@ -142,6 +142,13 @@
             </div>
         </div>
 
+        @if ($finalExam?->instructions)
+            <div class="bg-surface-container/50 border border-outline-variant rounded-lg p-space-lg">
+                <p class="font-label-md text-label-md text-on-surface mb-space-sm">Instructions</p>
+                <div class="rte-content prose prose-sm max-w-none text-on-surface-variant">{!! $finalExam->instructions !!}</div>
+            </div>
+        @endif
+
         <!-- Latest Score Card -->
         @if ($isStudent && $latestScore)
             <div class="bg-primary rounded-lg p-space-lg text-on-primary space-y-space-md">
@@ -185,13 +192,50 @@
                 </div>
             @elseif ($canSubmit && $canResubmit && $finalExam && in_array($finalExam->exam_type->value, ['open_book', 'closed_book']))
                 @if ($assessment->quiz && $assessment->quiz->questions->isNotEmpty())
-                    <a
-                        href="{{ route('assessments.final-exam.proctor.preflight', $assessment) }}"
-                        wire:navigate
-                        class="inline-block px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
-                    >
-                        {{ $latestAttempt ? 'Continue Exam' : 'Start Exam' }}
-                    </a>
+                    <div x-data="{ confirmOpen: false, navigating: false }">
+                        <button
+                            type="button"
+                            @click="confirmOpen = true"
+                            :disabled="navigating"
+                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
+                        >
+                            {{ $latestAttempt ? 'Continue Exam' : 'Start Exam' }}
+                        </button>
+
+                        <template x-teleport="body">
+                            <div
+                                x-show="confirmOpen"
+                                x-cloak
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0"
+                                x-transition:enter-end="opacity-100"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0"
+                                class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
+                                @click.self="confirmOpen = false"
+                            >
+                                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg">
+                                    <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ $latestAttempt ? 'Continue Exam?' : 'Start Exam?' }}</h2>
+                                    <p class="font-body-md text-body-md text-secondary">
+                                        This is a proctored exam. You'll first go through pre-flight checks (internet speed, camera, microphone, screen sharing) before the exam begins.
+                                    </p>
+                                    <div class="flex items-center justify-end gap-space-md">
+                                        <button type="button" @click="confirmOpen = false" class="px-space-lg py-space-sm font-label-md text-label-md text-secondary hover:underline">Cancel</button>
+                                        <button
+                                            type="button"
+                                            :disabled="navigating"
+                                            @click="navigating = true; Livewire.navigate('{{ route('assessments.final-exam.proctor.preflight', $assessment) }}')"
+                                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
+                                        >
+                                            <span x-show="navigating" x-cloak class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                            {{ $latestAttempt ? 'Continue Exam' : 'Start Exam' }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
                 @else
                     <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
                         <p class="text-body-sm text-on-surface-variant">This exam isn't ready yet. Please check back later.</p>

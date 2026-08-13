@@ -47,6 +47,7 @@ class AssessmentSeeder extends Seeder
 
         $this->seedMissingQuizzes();
         $this->seedMissingFinalExams();
+        $this->seedMissingFinalExamInstructions();
         $this->relinkExpiredQuizzes();
     }
 
@@ -226,6 +227,7 @@ class AssessmentSeeder extends Seeder
             'end_date' => $assessment->end_date,
             'allow_local_files' => $type === FinalExamType::TakeHome,
             'allow_internet' => $type !== FinalExamType::ClosedBook,
+            'instructions' => $this->finalExamInstructions($type),
         ]);
 
         if ($type === FinalExamType::TakeHome) {
@@ -233,6 +235,49 @@ class AssessmentSeeder extends Seeder
         } else {
             $this->seedFinalExamQuizQuestions($assessment, $type);
         }
+    }
+
+    /**
+     * Backfill instructions for final exams that were seeded before the
+     * instructions field existed, so demo data stays consistent.
+     */
+    private function seedMissingFinalExamInstructions(): void
+    {
+        foreach (FinalExam::whereNull('instructions')->get() as $finalExam) {
+            $finalExam->update(['instructions' => $this->finalExamInstructions($finalExam->exam_type)]);
+        }
+    }
+
+    private function finalExamInstructions(FinalExamType $type): string
+    {
+        return match ($type) {
+            FinalExamType::TakeHome => <<<'HTML'
+                <p>This is a <strong>Take Home</strong> final exam. You may take as much time as you need within the submission window.</p>
+                <ul>
+                    <li>You may use any course materials, notes, or online resources.</li>
+                    <li>Answers should be written in your own words and clearly justified.</li>
+                    <li>Submit your answer before the deadline; late submissions will not be accepted.</li>
+                </ul>
+                HTML,
+            FinalExamType::OpenBook => <<<'HTML'
+                <p>This is a <strong>proctored Open Book</strong> exam. Your webcam and screen will be recorded for the full duration.</p>
+                <ul>
+                    <li>You may reference local files and printed course materials.</li>
+                    <li>Internet access to unrelated sites and applications is <strong>not</strong> permitted and will be flagged.</li>
+                    <li>Complete the pre-flight checks (internet speed, camera, microphone, screen share) before the exam begins.</li>
+                    <li>Once started, the exam cannot be paused &mdash; make sure you're ready before clicking Start.</li>
+                </ul>
+                HTML,
+            FinalExamType::ClosedBook => <<<'HTML'
+                <p>This is a <strong>proctored Closed Book</strong> exam. Your webcam and screen will be recorded for the full duration.</p>
+                <ul>
+                    <li>No local files, notes, or printed materials are allowed during this exam.</li>
+                    <li>Internet access and unauthorized applications are <strong>not</strong> permitted and will be flagged.</li>
+                    <li>Complete the pre-flight checks (internet speed, camera, microphone, screen share) before the exam begins.</li>
+                    <li>Once started, the exam cannot be paused &mdash; make sure you're ready before clicking Start.</li>
+                </ul>
+                HTML,
+        };
     }
 
     private function finalExamTitleSuffix(FinalExamType $type): string

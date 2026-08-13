@@ -58,7 +58,7 @@ class ProctorPreflightShowTest extends TestCase
 
         Livewire::test(ProctorPreflightShow::class, ['assessment' => $this->assessment])
             ->assertStatus(200)
-            ->assertSee('Pre-flight Checks');
+            ->assertSee($this->assessment->title);
     }
 
     public function test_all_checks_must_pass_before_starting(): void

@@ -1,4 +1,4 @@
-@section('title', 'Pre-flight Checks — '.$assessment->title)
+@section('title', $assessment->title)
 
 <div
     class="min-h-screen bg-surface-container/30 flex items-center justify-center px-gutter py-space-xl"
@@ -255,11 +255,18 @@
         </div>
 
         <div class="text-center">
-            <h1 class="font-headline-md text-headline-md text-on-surface">Pre-flight Checks</h1>
+            <h1 class="font-headline-md text-headline-md text-on-surface">{{ $assessment->title }}</h1>
             <p class="text-body-sm text-on-surface-variant mt-space-xs">
-                This exam is proctored. Complete each check to start "{{ $assessment->title }}".
+                This exam is proctored. Complete each check below to begin.
             </p>
         </div>
+
+        @if ($finalExam->instructions)
+            <div class="bg-surface-container/50 border border-outline-variant rounded-lg p-space-lg">
+                <p class="font-label-md text-label-md text-on-surface mb-space-sm">Instructions</p>
+                <div class="rte-content prose prose-sm max-w-none text-on-surface-variant">{!! $finalExam->instructions !!}</div>
+            </div>
+        @endif
 
         <!-- Step 1: Internet speed -->
         @if ($step === 'speed')

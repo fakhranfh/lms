@@ -7,6 +7,7 @@ use App\Enums\FinalExamType;
 use App\Enums\RoleName;
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\FinalExam;
 use App\Services\CoursePersonService;
 use App\Services\FinalExamService;
 use App\Support\CurrentSchool;
@@ -17,6 +18,8 @@ class ProctorPreflightShow extends Component
     public Course $course;
 
     public Assessment $assessment;
+
+    public FinalExam $finalExam;
 
     /**
      * Each check is its own full-screen step, walked through in order.
@@ -64,6 +67,7 @@ class ProctorPreflightShow extends Component
 
         $this->course = $course;
         $this->assessment = $assessment;
+        $this->finalExam = $finalExam;
     }
 
     public function markCheckPassed(string $check): void
@@ -97,9 +101,10 @@ class ProctorPreflightShow extends Component
         return view('livewire.courses.proctor-preflight-show', [
             'course' => $this->course,
             'assessment' => $this->assessment,
+            'finalExam' => $this->finalExam,
             'allChecksPassed' => $this->getAllChecksPassedProperty(),
         ])
-            ->extends('layouts.app', ['skipTopbar' => true, 'skipSidebar' => true])
+            ->extends('layouts.app', ['skipTopbar' => true, 'skipSidebar' => true, 'topbarTitle' => $this->assessment->title])
             ->section('app-content');
     }
 }

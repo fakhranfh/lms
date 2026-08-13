@@ -239,11 +239,6 @@
     "ast_hash": "55367dedf7054e6be100ed177e9be9f2",
     "semantic_hash": "55367dedf7054e6be100ed177e9be9f2"
   },
-  "app/Enums/AttendanceRequirementType.php": {
-    "mtime": 1785816572.3037229,
-    "ast_hash": "a95bec178a8f880ebee38845e52ce62a",
-    "semantic_hash": "a95bec178a8f880ebee38845e52ce62a"
-  },
   "app/Enums/AttendanceStatus.php": {
     "mtime": 1785816567.8320897,
     "ast_hash": "b3aa2e7b734ecfc0f25b80178c6f6362",
@@ -794,11 +789,6 @@
     "ast_hash": "ab61a5c79899b9905b999131678ded96",
     "semantic_hash": "ab61a5c79899b9905b999131678ded96"
   },
-  "app/Models/AttendanceRequirement.php": {
-    "mtime": 1785816988.6932025,
-    "ast_hash": "1e680c4078391a1186a76b47c1f6f489",
-    "semantic_hash": "1e680c4078391a1186a76b47c1f6f489"
-  },
   "app/Models/AuditLog.php": {
     "mtime": 1785466868.9035778,
     "ast_hash": "4df707270e877cf533cca5f35ba2f813",
@@ -1125,8 +1115,8 @@
     "semantic_hash": "89124f9efbc2b3b05e865fe8e15011d4"
   },
   "app/Providers/AppServiceProvider.php": {
-    "mtime": 1786510366.6746101,
-    "ast_hash": "58283d55bf2e85657b9dceb70a8ee1ad",
+    "mtime": 1786590039.4983432,
+    "ast_hash": "65ae2b2b1e50869df42581f0b85fbde6",
     "semantic_hash": ""
   },
   "app/Providers/AuditLogServiceProvider.php": {
@@ -1203,16 +1193,6 @@
     "mtime": 1785817475.3466234,
     "ast_hash": "9319a1763ef894a2162d13e5e18f7342",
     "semantic_hash": "9319a1763ef894a2162d13e5e18f7342"
-  },
-  "app/Repositories/AttendanceRequirement/AttendanceRequirementRepository.php": {
-    "mtime": 1786588385.895847,
-    "ast_hash": "5108daaaa7ac4d79f663fdd7a2eaf200",
-    "semantic_hash": ""
-  },
-  "app/Repositories/AttendanceRequirement/AttendanceRequirementRepositoryInterface.php": {
-    "mtime": 1786588376.4617808,
-    "ast_hash": "d60cc78cf0aa838baf21144d74133260",
-    "semantic_hash": ""
   },
   "app/Repositories/Attendance/AttendanceRepository.php": {
     "mtime": 1785817655.684488,
@@ -1764,11 +1744,6 @@
     "ast_hash": "d26ea1ab9b0cb96d404e111767658247",
     "semantic_hash": ""
   },
-  "app/Services/AttendanceRequirementService.php": {
-    "mtime": 1786588365.9214451,
-    "ast_hash": "c166be30ae2c4ea4039125e1e82ed6ba",
-    "semantic_hash": ""
-  },
   "app/Services/AttendanceService.php": {
     "mtime": 1785817658.2931223,
     "ast_hash": "2b8b628fb4fe4257732a1b0a6b18c93a",
@@ -1790,9 +1765,9 @@
     "semantic_hash": ""
   },
   "app/Services/CourseService.php": {
-    "mtime": 1785903007.328974,
-    "ast_hash": "697dfac08f6111affeea04dca5a7a9a9",
-    "semantic_hash": "697dfac08f6111affeea04dca5a7a9a9"
+    "mtime": 1786590102.5875757,
+    "ast_hash": "37a71d65044489187a2290ea63c50ebd",
+    "semantic_hash": ""
   },
   "app/Services/CredentialEncryption.php": {
     "mtime": 1784380589.3396711,
@@ -2263,11 +2238,6 @@
     "mtime": 1785818066.1134152,
     "ast_hash": "29159f5d4f193cc88537ec5ca92d0378",
     "semantic_hash": "29159f5d4f193cc88537ec5ca92d0378"
-  },
-  "database/factories/AttendanceRequirementFactory.php": {
-    "mtime": 1785818068.2909405,
-    "ast_hash": "9a0f860aa1c9c08a49b902c86d2804a0",
-    "semantic_hash": "9a0f860aa1c9c08a49b902c86d2804a0"
   },
   "database/factories/AuditLogFactory.php": {
     "mtime": 1784860556.71524,
@@ -3780,8 +3750,8 @@
     "semantic_hash": "ea3f06c3cfa323393b3e69aebc9f56a5"
   },
   "routes/web/authenticated.php": {
-    "mtime": 1786588340.5372605,
-    "ast_hash": "c399ed2d9f28c6a23f39ba63b414749d",
+    "mtime": 1786590056.7634823,
+    "ast_hash": "e7d5cb6ce6ac62c27ec7a4af36d3e777",
     "semantic_hash": ""
   },
   "routes/web/public.php": {
@@ -3950,9 +3920,9 @@
     "semantic_hash": "ea5d7f985b176dc56e9156991939215b"
   },
   "tests/Feature/CourseRestructure/AttendanceServiceTest.php": {
-    "mtime": 1785818667.9746313,
-    "ast_hash": "feb866c6e81bda59bfb57dc666677363",
-    "semantic_hash": "feb866c6e81bda59bfb57dc666677363"
+    "mtime": 1786590216.288248,
+    "ast_hash": "ad891d946fdf28588318266a914438a9",
+    "semantic_hash": ""
   },
   "tests/Feature/CourseRestructure/ForumServiceTest.php": {
     "mtime": 1785990104.2375822,
@@ -5060,8 +5030,8 @@
     "semantic_hash": "4ffa00ca20423ff56b125e29c470f748"
   },
   "docs/tasks/course-restructure-progress.md": {
-    "mtime": 1786589042.4116392,
-    "ast_hash": "699d8494a54d1e2554f07072a86bc846",
+    "mtime": 1786590790.5809152,
+    "ast_hash": "cffcf2c1b47128b0987b5f4ede1f85b9",
     "semantic_hash": ""
   },
   "docs/tasks/course-restructure-role-flows.md": {
@@ -5395,13 +5365,13 @@
     "semantic_hash": ""
   },
   "app/Livewire/Courses/AssessmentForm.php": {
-    "mtime": 1786588340.532265,
-    "ast_hash": "e369ab9f6612677e1d739f07dfdbfb57",
+    "mtime": 1786590064.0550075,
+    "ast_hash": "63557ed4138ebbe9c77412ba403b12e2",
     "semantic_hash": ""
   },
   "app/Livewire/Courses/AssessmentIndex.php": {
-    "mtime": 1786588340.5332565,
-    "ast_hash": "bc36c0abe1adeccf71aa9da523fc4379",
+    "mtime": 1786590083.5244837,
+    "ast_hash": "e09d3135b4c0ced594bf33aa62ac118f",
     "semantic_hash": ""
   },
   "app/Livewire/Courses/AssessmentPersonalShow.php": {
@@ -5525,8 +5495,8 @@
     "semantic_hash": ""
   },
   "resources/views/livewire/courses/assessment-index.blade.php": {
-    "mtime": 1786588340.536264,
-    "ast_hash": "6c3c4179e06653159afe3abe7c584e96",
+    "mtime": 1786590077.8108816,
+    "ast_hash": "9726713aef540f80173e49df3be38587",
     "semantic_hash": ""
   },
   "resources/views/livewire/courses/assessment-personal-show.blade.php": {
@@ -5560,8 +5530,8 @@
     "semantic_hash": ""
   },
   "tests/Feature/Livewire/Courses/AssessmentIndexTest.php": {
-    "mtime": 1786518369.9865105,
-    "ast_hash": "8459f441b6b14991cc32c5a10bc6d0a4",
+    "mtime": 1786590227.4075308,
+    "ast_hash": "1021dfeaa7bd5b29ef88d6692a379a63",
     "semantic_hash": ""
   },
   "tests/Feature/Livewire/Courses/AssessmentPersonalShowTest.php": {
@@ -5610,13 +5580,8 @@
     "semantic_hash": ""
   },
   "app/Livewire/Courses/AttendanceIndex.php": {
-    "mtime": 1786587892.5969043,
-    "ast_hash": "fe03c6b02dd51438c46c45b1d1370504",
-    "semantic_hash": ""
-  },
-  "app/Livewire/Courses/AttendanceRequirementSettings.php": {
-    "mtime": 1786588508.059945,
-    "ast_hash": "40d45c1710128678437862d6a28f0117",
+    "mtime": 1786589980.8884716,
+    "ast_hash": "8f796de77c473da8327ad447b54e2b4d",
     "semantic_hash": ""
   },
   "app/Livewire/Courses/QuizInstructionEdit.php": {
@@ -5660,13 +5625,13 @@
     "semantic_hash": ""
   },
   "app/Services/AttendanceDerivationService.php": {
-    "mtime": 1786588511.9856503,
-    "ast_hash": "fb329ee49b90204fc5fb44ffb94e7794",
+    "mtime": 1786589947.8175378,
+    "ast_hash": "426eb1ab12f0de921b7239d711e5a1b8",
     "semantic_hash": ""
   },
   "app/Services/AttendanceScoringService.php": {
-    "mtime": 1786588487.0520668,
-    "ast_hash": "a90d8aadec2bdb5b83adfe363cc8956b",
+    "mtime": 1786589959.5292826,
+    "ast_hash": "5bcb9b138ee32964509224780f43d487",
     "semantic_hash": ""
   },
   "app/Services/QuizAttemptScoringService.php": {
@@ -5750,13 +5715,8 @@
     "semantic_hash": ""
   },
   "resources/views/livewire/courses/attendance-index.blade.php": {
-    "mtime": 1786587932.3591561,
-    "ast_hash": "c52d6c1f8f58d4862dae840c48437cac",
-    "semantic_hash": ""
-  },
-  "resources/views/livewire/courses/attendance-requirement-settings.blade.php": {
-    "mtime": 1786587872.9750211,
-    "ast_hash": "3aebb979ad7d57843617c2b3ec28814f",
+    "mtime": 1786590021.401305,
+    "ast_hash": "5da7798b8ab822638f18d2f2733be745",
     "semantic_hash": ""
   },
   "resources/views/livewire/courses/quiz-instruction-edit.blade.php": {
@@ -5765,13 +5725,13 @@
     "semantic_hash": ""
   },
   "tests/Feature/CourseRestructure/AttendanceDerivationServiceTest.php": {
-    "mtime": 1786588613.1866508,
-    "ast_hash": "9534e3005a24bf5c0f1d7dce4cc8b230",
+    "mtime": 1786590153.3619661,
+    "ast_hash": "08e171533de997aa90e9583079ee8ee8",
     "semantic_hash": ""
   },
   "tests/Feature/CourseRestructure/AttendanceScoringServiceTest.php": {
-    "mtime": 1786588115.538966,
-    "ast_hash": "108eedd2c33003131af02757faaec428",
+    "mtime": 1786590172.667928,
+    "ast_hash": "7bc278a4079577bea5343c879ec7067a",
     "semantic_hash": ""
   },
   "tests/Feature/CourseRestructure/QuizAttemptScoringServiceTest.php": {
@@ -5780,8 +5740,8 @@
     "semantic_hash": ""
   },
   "tests/Feature/Livewire/Courses/AssessmentAttendanceShowTest.php": {
-    "mtime": 1786588151.5168982,
-    "ast_hash": "855178b89af06b92733b4b88efc3acce",
+    "mtime": 1786590196.9538264,
+    "ast_hash": "10044753fb62d972125df4b408b7d6f7",
     "semantic_hash": ""
   },
   "tests/Feature/Livewire/Courses/AssessmentQuizFormTest.php": {
@@ -5795,13 +5755,8 @@
     "semantic_hash": ""
   },
   "tests/Feature/Livewire/Courses/AttendanceIndexTest.php": {
-    "mtime": 1786588139.8959758,
-    "ast_hash": "416485eb63c9ca5b24272ee251f3f81e",
-    "semantic_hash": ""
-  },
-  "tests/Feature/Livewire/Courses/AttendanceRequirementSettingsTest.php": {
-    "mtime": 1786588125.363503,
-    "ast_hash": "d680a5be4d973fa4ca2aa8ecb18eb9c5",
+    "mtime": 1786590253.5329468,
+    "ast_hash": "9f718f80c3a5da0c04e6ac449a6c8c30",
     "semantic_hash": ""
   },
   "tests/Feature/Livewire/Courses/QuizInstructionEditTest.php": {
@@ -5837,6 +5792,21 @@
   "tests/Feature/UserLoginLinkTest.php": {
     "mtime": 1786510327.8796127,
     "ast_hash": "7485fcb0186779bc6b95616759b558f8",
+    "semantic_hash": ""
+  },
+  "database/migrations/2026_08_13_000002_drop_attendance_requirements_table.php": {
+    "mtime": 1786590118.9847023,
+    "ast_hash": "2e71f53b8ad8d27cd7da02c47a5d76a0",
+    "semantic_hash": ""
+  },
+  "database/migrations/2026_08_13_000003_backfill_course_attendance_assessments.php": {
+    "mtime": 1786590126.0142045,
+    "ast_hash": "d9cdce252528eafefcdc6e7d073b25f8",
+    "semantic_hash": ""
+  },
+  "tests/Feature/CourseRestructure/CourseServiceAttendanceProvisioningTest.php": {
+    "mtime": 1786590284.3236692,
+    "ast_hash": "297536524c8e0d27e33f0533408b118e",
     "semantic_hash": ""
   }
 }

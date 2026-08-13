@@ -19,12 +19,6 @@
 
     <div class="flex items-start justify-between">
         <h1 class="font-headline-md text-headline-md text-on-surface">Attendance</h1>
-        @if ($canManage)
-            <a href="{{ route('attendance.settings', $course) }}" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition inline-flex items-center gap-space-sm">
-                <span class="material-symbols-outlined">settings</span>
-                Manage attendance
-            </a>
-        @endif
     </div>
 
     @if ($isStudent)
@@ -53,7 +47,7 @@
                             <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Delivery</th>
                             <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Dates</th>
                             <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attend</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Requirements</th>
+                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Source</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-outline-variant">
@@ -77,16 +71,14 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="px-space-lg py-space-md">
-                                    @forelse ($row['checklist'] as $item)
-                                        <span class="inline-flex items-center gap-space-xs text-body-xs {{ $item['is_fulfilled'] ? 'text-success' : 'text-on-surface-variant' }}">
-                                            <span class="material-symbols-outlined text-[14px]">{{ $item['is_fulfilled'] ? 'check_box' : 'check_box_outline_blank' }}</span>
-                                            {{ $item['requirement']->label }}
-                                        </span>
-                                        <br>
-                                    @empty
-                                        <span class="text-body-xs text-on-surface-variant">&mdash;</span>
-                                    @endforelse
+                                <td class="px-space-lg py-space-md text-body-xs text-on-surface-variant">
+                                    @if ($row['source'] === 'video_conference')
+                                        Video conference join
+                                    @elseif ($row['source'] === 'manual')
+                                        Manual mark
+                                    @else
+                                        &mdash;
+                                    @endif
                                 </td>
                             </tr>
                         @empty
@@ -121,7 +113,8 @@
                         <thead>
                             <tr class="border-b border-outline-variant bg-surface-container/50">
                                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Student</th>
-                                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Requirements</th>
+                                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Delivery</th>
+                                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Source</th>
                                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Computed</th>
                                 @if ($canManage)
                                     <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Override</th>
@@ -138,16 +131,15 @@
                                     }"
                                 >
                                     <td class="px-space-lg py-space-md font-label-md text-label-md text-on-surface">{{ $row['user']->name }}</td>
-                                    <td class="px-space-lg py-space-md">
-                                        @forelse ($row['checklist'] as $item)
-                                            <span class="inline-flex items-center gap-space-xs text-body-xs {{ $item['is_fulfilled'] ? 'text-success' : 'text-on-surface-variant' }}">
-                                                <span class="material-symbols-outlined text-[14px]">{{ $item['is_fulfilled'] ? 'check_box' : 'check_box_outline_blank' }}</span>
-                                                {{ $item['requirement']->label }}
-                                            </span>
-                                            <br>
-                                        @empty
-                                            <span class="text-body-xs text-on-surface-variant">&mdash;</span>
-                                        @endforelse
+                                    <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ str($selectedSession->delivery_mode->value)->replace('_', ' ')->title() }}</td>
+                                    <td class="px-space-lg py-space-md text-body-xs text-on-surface-variant">
+                                        @if ($row['source'] === 'video_conference')
+                                            Video conference join
+                                        @elseif ($row['source'] === 'manual')
+                                            Manual mark
+                                        @else
+                                            &mdash;
+                                        @endif
                                     </td>
                                     <td class="px-space-lg py-space-md">
                                         @if ($row['attend'])
@@ -181,7 +173,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No students enrolled yet.</td>
+                                    <td colspan="5" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No students enrolled yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>

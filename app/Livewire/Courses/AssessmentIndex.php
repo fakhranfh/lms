@@ -64,6 +64,12 @@ class AssessmentIndex extends Component
             return;
         }
 
+        if ($assessment->type === AssessmentType::Attendance) {
+            $this->errorMessage = __('The Attendance assessment is auto-provisioned and cannot be deleted.');
+
+            return;
+        }
+
         if ($assessment->attempts->isNotEmpty()) {
             $this->errorMessage = __('This assessment already has submissions and cannot be deleted.');
 

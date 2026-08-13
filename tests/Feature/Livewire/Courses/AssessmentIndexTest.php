@@ -107,6 +107,23 @@ class AssessmentIndexTest extends TestCase
         $this->assertDatabaseHas('assessments', ['id' => $assessment->id]);
     }
 
+    public function test_delete_blocked_for_auto_provisioned_attendance_assessment(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.delete']);
+        $this->actingAs($this->teacher);
+
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::Attendance,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->call('deleteAssessment', $assessment->id)
+            ->assertSee('auto-provisioned');
+
+        $this->assertDatabaseHas('assessments', ['id' => $assessment->id]);
+    }
+
     public function test_delete_succeeds_when_no_attempts(): void
     {
         $this->teacher->givePermissionTo(['assessment.view', 'assessment.delete']);

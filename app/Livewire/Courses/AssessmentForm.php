@@ -82,7 +82,6 @@ class AssessmentForm extends Component
             $this->assessmentType = match ($type) {
                 'personal' => AssessmentType::TheoryPersonalAssignment,
                 'team' => AssessmentType::TheoryTeamAssignment,
-                'attendance' => AssessmentType::Attendance,
                 default => abort(404),
             };
             $this->weight = (string) $this->assessmentType->defaultWeight();

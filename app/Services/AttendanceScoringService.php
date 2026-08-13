@@ -22,7 +22,6 @@ class AttendanceScoringService
 {
     public function __construct(
         private SessionService $sessionService,
-        private AttendanceRequirementService $attendanceRequirementService,
         private AttendanceDerivationService $attendanceDerivationService,
         private AssessmentAttemptService $assessmentAttemptService,
         private AssessmentScoreService $assessmentScoreService,
@@ -34,10 +33,9 @@ class AttendanceScoringService
     public function computeForUser(Assessment $assessment, string $userId): array
     {
         $sessions = $this->sessionsInScope($assessment);
-        $requirements = $this->attendanceRequirementService->forCourse($assessment->course_id);
 
         $attended = $sessions->filter(
-            fn (Session $session) => $this->attendanceDerivationService->isSessionAttended($session, $userId, $requirements)
+            fn (Session $session) => $this->attendanceDerivationService->isSessionAttended($session, $userId)
         )->count();
 
         $total = $sessions->count();
@@ -92,7 +90,9 @@ class AttendanceScoringService
      */
     private function sessionsInScope(Assessment $assessment): Collection
     {
-        $sessions = $this->sessionService->forCourse($assessment->course_id, ['videoConferences.participations']);
+        $sessions = $this->sessionService->forCourse($assessment->course_id, ['videoConferences.participations'])
+            ->filter(fn (Session $session) => $this->attendanceDerivationService->isAttendanceApplicable($session))
+            ->values();
 
         if (! $assessment->start_date || ! $assessment->end_date) {
             return $sessions;

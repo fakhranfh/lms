@@ -27,8 +27,6 @@ use App\Repositories\AssessmentScore\AssessmentScoreRepository;
 use App\Repositories\AssessmentScore\AssessmentScoreRepositoryInterface;
 use App\Repositories\Attendance\AttendanceRepository;
 use App\Repositories\Attendance\AttendanceRepositoryInterface;
-use App\Repositories\AttendanceRequirement\AttendanceRequirementRepository;
-use App\Repositories\AttendanceRequirement\AttendanceRequirementRepositoryInterface;
 use App\Repositories\Auth\AuthRepository;
 use App\Repositories\Auth\AuthRepositoryInterface;
 use App\Repositories\Course\CourseRepository;
@@ -143,7 +141,6 @@ use App\Services\AssessmentQuestionService;
 use App\Services\AssessmentQuizAnswerService;
 use App\Services\AssessmentScoreService;
 use App\Services\AssessmentService;
-use App\Services\AttendanceRequirementService;
 use App\Services\AttendanceService;
 use App\Services\CourseAttendanceSettingService;
 use App\Services\CoursePersonService;
@@ -277,7 +274,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(GradebookEntryRepositoryInterface::class, GradebookEntryRepository::class);
         $this->app->bind(GradebookSessionEntryRepositoryInterface::class, GradebookSessionEntryRepository::class);
         $this->app->bind(AttendanceRepositoryInterface::class, AttendanceRepository::class);
-        $this->app->bind(AttendanceRequirementRepositoryInterface::class, AttendanceRequirementRepository::class);
         $this->app->bind(CourseAttendanceSettingRepositoryInterface::class, CourseAttendanceSettingRepository::class);
 
         $this->app->singleton(CurrentSchool::class);
@@ -334,7 +330,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(GradebookEntryService::class);
         $this->app->singleton(GradebookSessionEntryService::class);
         $this->app->singleton(AttendanceService::class);
-        $this->app->singleton(AttendanceRequirementService::class);
         $this->app->singleton(CourseAttendanceSettingService::class);
     }
 

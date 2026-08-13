@@ -1,113 +1,92 @@
 <?php
 
-use App\Enums\AttendanceRequirementType;
 use App\Enums\AttendanceStatus;
+use App\Enums\DeliveryMode;
 use App\Models\Attendance;
-use App\Models\AttendanceRequirement;
 use App\Models\Course;
 use App\Models\CourseAttendanceSetting;
-use App\Models\Forum;
-use App\Models\ForumComment;
-use App\Models\ForumThread;
 use App\Models\Session;
 use App\Models\User;
 use App\Models\VideoConference;
 use App\Models\VideoConferenceParticipation;
 use App\Services\AttendanceDerivationService;
-use Illuminate\Database\Eloquent\Collection;
 
-test('manual_checkin is fulfilled only when the attendance status is present', function () {
-    $session = Session::factory()->create();
-    $user = User::factory()->create();
-
-    $requirement = AttendanceRequirement::factory()->create([
-        'course_id' => $session->course_id,
-        'requirement_type' => AttendanceRequirementType::ManualCheckin,
-    ]);
+test('online sessions are not applicable for attendance', function () {
+    $session = Session::factory()->create(['delivery_mode' => DeliveryMode::Online]);
 
     $service = app(AttendanceDerivationService::class);
 
-    expect($service->isRequirementFulfilled($requirement, $session, $user->id))->toBeFalse();
-
-    Attendance::factory()->create(['session_id' => $session->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Late]);
-    expect($service->isRequirementFulfilled($requirement, $session, $user->id))->toBeFalse();
-
-    Attendance::where('session_id', $session->id)->where('user_id', $user->id)->update(['status' => AttendanceStatus::Present]);
-    expect($service->isRequirementFulfilled($requirement, $session, $user->id))->toBeTrue();
+    expect($service->isAttendanceApplicable($session))->toBeFalse();
 });
 
-test('forum_completed is fulfilled once the session post threshold is met', function () {
-    $session = Session::factory()->create(['required_forum_posts' => 2]);
-    $forum = Forum::factory()->create(['course_id' => $session->course_id, 'session_id' => $session->id]);
-    $thread = ForumThread::factory()->create(['forum_id' => $forum->id]);
-    $user = User::factory()->create();
-
-    $requirement = AttendanceRequirement::factory()->create([
-        'course_id' => $session->course_id,
-        'requirement_type' => AttendanceRequirementType::ForumCompleted,
-    ]);
-
+test('offline and virtual_class sessions are applicable for attendance', function () {
     $service = app(AttendanceDerivationService::class);
 
-    ForumComment::factory()->create(['thread_id' => $thread->id, 'user_id' => $user->id]);
-    expect($service->isRequirementFulfilled($requirement, $session, $user->id))->toBeFalse();
-
-    ForumComment::factory()->create(['thread_id' => $thread->id, 'user_id' => $user->id]);
-    expect($service->isRequirementFulfilled($requirement, $session, $user->id))->toBeTrue();
+    expect($service->isAttendanceApplicable(Session::factory()->create(['delivery_mode' => DeliveryMode::Offline])))->toBeTrue()
+        ->and($service->isAttendanceApplicable(Session::factory()->create(['delivery_mode' => DeliveryMode::VirtualClass])))->toBeTrue();
 });
 
-test('class_duration_completed is fulfilled once participation meets the required minutes', function () {
-    $session = Session::factory()->create();
-    $conference = VideoConference::factory()->create(['session_id' => $session->id, 'required_duration_minutes' => 60]);
+test('virtual_class session is attended when the student has any video conference join record', function () {
+    $session = Session::factory()->create(['delivery_mode' => DeliveryMode::VirtualClass]);
+    $conference = VideoConference::factory()->create(['session_id' => $session->id]);
     $user = User::factory()->create();
 
-    $requirement = AttendanceRequirement::factory()->create([
-        'course_id' => $session->course_id,
-        'requirement_type' => AttendanceRequirementType::ClassDurationCompleted,
-    ]);
-
     $service = app(AttendanceDerivationService::class);
+
+    expect($service->isSessionAttended($session, $user->id))->toBeFalse();
 
     VideoConferenceParticipation::factory()->create([
         'video_conference_id' => $conference->id,
         'user_id' => $user->id,
         'joined_at' => now(),
-        'left_at' => now()->addMinutes(30),
+        'left_at' => null,
     ]);
     $session->load('videoConferences.participations');
-    expect($service->isRequirementFulfilled($requirement, $session, $user->id))->toBeFalse();
 
-    VideoConferenceParticipation::factory()->create([
-        'video_conference_id' => $conference->id,
-        'user_id' => $user->id,
-        'joined_at' => now(),
-        'left_at' => now()->addMinutes(60),
-    ]);
-    $session->load('videoConferences.participations');
-    expect($service->isRequirementFulfilled($requirement, $session, $user->id))->toBeTrue();
+    expect($service->isSessionAttended($session, $user->id))->toBeTrue()
+        ->and($service->attendanceSourceForSession($session, $user->id))->toBe('video_conference');
 });
 
-test('a session with no configured requirements falls back to a manual attendance record', function () {
-    $session = Session::factory()->create();
+test('virtual_class session is also attended when a Teacher manually marks the student present', function () {
+    $session = Session::factory()->create(['delivery_mode' => DeliveryMode::VirtualClass]);
+    VideoConference::factory()->create(['session_id' => $session->id]);
     $user = User::factory()->create();
 
     $service = app(AttendanceDerivationService::class);
-
-    expect($service->isSessionAttended($session, $user->id, new Collection))->toBeFalse();
 
     Attendance::factory()->create(['session_id' => $session->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Present]);
-    expect($service->isSessionAttended($session, $user->id, new Collection))->toBeTrue();
+    $session->load('videoConferences.participations');
+
+    expect($service->isSessionAttended($session, $user->id))->toBeTrue()
+        ->and($service->attendanceSourceForSession($session, $user->id))->toBe('manual');
 });
 
-test('summary for student counts total sessions, attended sessions and minimal attendance', function () {
+test('offline session is only attended via a manual present mark, never auto-derived', function () {
+    $session = Session::factory()->create(['delivery_mode' => DeliveryMode::Offline]);
+    $user = User::factory()->create();
+
+    $service = app(AttendanceDerivationService::class);
+
+    expect($service->isSessionAttended($session, $user->id))->toBeFalse();
+
+    Attendance::factory()->create(['session_id' => $session->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Late]);
+    expect($service->isSessionAttended($session, $user->id))->toBeFalse();
+
+    Attendance::where('session_id', $session->id)->where('user_id', $user->id)->update(['status' => AttendanceStatus::Present]);
+    expect($service->isSessionAttended($session, $user->id))->toBeTrue()
+        ->and($service->attendanceSourceForSession($session, $user->id))->toBe('manual');
+});
+
+test('summary for student excludes online sessions from totals', function () {
     $course = Course::factory()->create();
     $user = User::factory()->create();
     CourseAttendanceSetting::factory()->create(['course_id' => $course->id, 'minimal_attendance' => 5]);
 
-    $attendedSession = Session::factory()->create(['course_id' => $course->id]);
-    Attendance::factory()->create(['session_id' => $attendedSession->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Present]);
+    $attendedOffline = Session::factory()->create(['course_id' => $course->id, 'delivery_mode' => DeliveryMode::Offline]);
+    Attendance::factory()->create(['session_id' => $attendedOffline->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Present]);
 
-    Session::factory()->create(['course_id' => $course->id]);
+    Session::factory()->create(['course_id' => $course->id, 'delivery_mode' => DeliveryMode::VirtualClass]);
+    Session::factory()->create(['course_id' => $course->id, 'delivery_mode' => DeliveryMode::Online]);
 
     $summary = app(AttendanceDerivationService::class)->summaryForStudent($course, $user->id);
 

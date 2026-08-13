@@ -3,6 +3,7 @@
 namespace Tests\Feature\Livewire\Courses;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\DeliveryMode;
 use App\Livewire\Courses\AttendanceIndex;
 use App\Models\Attendance;
 use App\Models\Course;
@@ -33,7 +34,7 @@ class AttendanceIndexTest extends TestCase
         $this->teacher = User::factory()->forSchool($this->school)->create();
         $this->student = User::factory()->forSchool($this->school)->create();
         $this->course = Course::factory()->for($this->school)->create();
-        $this->session = Session::factory()->create(['course_id' => $this->course->id]);
+        $this->session = Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::Offline]);
 
         CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
     }
@@ -91,5 +92,18 @@ class AttendanceIndexTest extends TestCase
             ->call('loadData')
             ->call('recordAttendance', $this->session->id, $this->student->id, 'present', '')
             ->assertStatus(403);
+    }
+
+    public function test_online_sessions_are_excluded_from_the_attendance_table(): void
+    {
+        $onlineSession = Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::Online]);
+
+        $this->student->givePermissionTo('attendance.view');
+        $this->actingAs($this->student);
+
+        Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->assertSee($this->session->title)
+            ->assertDontSee($onlineSession->title);
     }
 }

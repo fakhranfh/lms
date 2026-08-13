@@ -4,6 +4,7 @@ namespace Tests\Feature\Livewire\Courses;
 
 use App\Enums\AssessmentType;
 use App\Enums\AttendanceStatus;
+use App\Enums\DeliveryMode;
 use App\Livewire\Courses\AssessmentAttendanceShow;
 use App\Models\Assessment;
 use App\Models\Attendance;
@@ -37,7 +38,7 @@ class AssessmentAttendanceShowTest extends TestCase
         $this->teacher = User::factory()->forSchool($this->school)->create();
         $this->student = User::factory()->forSchool($this->school)->create();
         $this->course = Course::factory()->for($this->school)->create();
-        $this->session = Session::factory()->create(['course_id' => $this->course->id]);
+        $this->session = Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::Offline]);
 
         CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
 

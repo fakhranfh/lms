@@ -6,11 +6,9 @@ use App\Enums\AttendanceStatus;
 use App\Enums\RoleName;
 use App\Models\Course;
 use App\Services\AttendanceDerivationService;
-use App\Services\AttendanceRequirementService;
 use App\Services\AttendanceService;
 use App\Services\CourseAttendanceSettingService;
 use App\Services\CoursePersonService;
-use App\Services\SessionService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use Livewire\Component;
@@ -86,8 +84,6 @@ class AttendanceIndex extends Component
     }
 
     public function render(
-        SessionService $sessionService,
-        AttendanceRequirementService $attendanceRequirementService,
         CourseAttendanceSettingService $courseAttendanceSettingService,
         AttendanceDerivationService $attendanceDerivationService,
         AttendanceService $attendanceService,
@@ -109,19 +105,17 @@ class AttendanceIndex extends Component
                 ->section('app-content');
         }
 
-        $sessions = $sessionService->forCourse($this->course->id, ['videoConferences.participations']);
-        $requirements = $attendanceRequirementService->forCourse($this->course->id);
-        $viewData['requirements'] = $requirements;
+        $sessions = $attendanceDerivationService->applicableSessionsForCourse($this->course);
 
         if ($this->isStudent) {
             $userId = auth()->id();
             $viewData['summary'] = $attendanceDerivationService->summaryForStudent($this->course, $userId);
 
-            $viewData['sessionRows'] = $sessions->map(function ($session) use ($attendanceDerivationService, $userId, $requirements) {
+            $viewData['sessionRows'] = $sessions->map(function ($session) use ($attendanceDerivationService, $userId) {
                 return [
                     'session' => $session,
-                    'attend' => $attendanceDerivationService->isSessionAttended($session, $userId, $requirements),
-                    'checklist' => $attendanceDerivationService->checklistForSession($session, $userId, $requirements),
+                    'attend' => $attendanceDerivationService->isSessionAttended($session, $userId),
+                    'source' => $attendanceDerivationService->attendanceSourceForSession($session, $userId),
                 ];
             });
         } else {
@@ -134,11 +128,11 @@ class AttendanceIndex extends Component
             $students = $coursePersonService->studentsForCourse($this->course->id);
 
             $viewData['studentRows'] = $selectedSession
-                ? $students->map(function ($coursePerson) use ($selectedSession, $attendanceDerivationService, $requirements, $attendanceService) {
+                ? $students->map(function ($coursePerson) use ($selectedSession, $attendanceDerivationService, $attendanceService) {
                     return [
                         'user' => $coursePerson->user,
-                        'attend' => $attendanceDerivationService->isSessionAttended($selectedSession, $coursePerson->user_id, $requirements),
-                        'checklist' => $attendanceDerivationService->checklistForSession($selectedSession, $coursePerson->user_id, $requirements),
+                        'attend' => $attendanceDerivationService->isSessionAttended($selectedSession, $coursePerson->user_id),
+                        'source' => $attendanceDerivationService->attendanceSourceForSession($selectedSession, $coursePerson->user_id),
                         'attendance' => $attendanceService->findBySessionAndUser($selectedSession->id, $coursePerson->user_id),
                     ];
                 })

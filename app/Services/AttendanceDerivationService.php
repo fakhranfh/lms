@@ -2,63 +2,83 @@
 
 namespace App\Services;
 
-use App\Enums\AttendanceRequirementType;
 use App\Enums\AttendanceStatus;
-use App\Models\AttendanceRequirement;
+use App\Enums\DeliveryMode;
 use App\Models\Course;
 use App\Models\Session;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Collection as SupportCollection;
+use App\Models\VideoConference;
+use Illuminate\Support\Collection;
 
 /**
- * Derives per-session attendance requirement fulfillment and the overall
- * attendance summary for a student, per docs/tasks/course-restructure-attendance.md.
+ * Derives per-session attendance and the overall attendance summary for a
+ * student, per docs/tasks/course-restructure-progress.md.
+ *
+ * Fixed rule (no configurable requirements):
+ * - Sessions with delivery_mode "online" are excluded from attendance entirely.
+ * - "virtual_class" sessions: attended if the student has a
+ *   VideoConferenceParticipation row on any of the session's video
+ *   conferences (mere presence of a join record, no duration requirement),
+ *   OR a Teacher manually marked them present.
+ * - "offline" sessions: attended only if a Teacher manually marked them
+ *   present. There is no auto-derivation for offline sessions.
  */
 class AttendanceDerivationService
 {
     public function __construct(
         private AttendanceService $attendanceService,
-        private AttendanceRequirementService $attendanceRequirementService,
         private CourseAttendanceSettingService $courseAttendanceSettingService,
         private SessionService $sessionService,
-        private ForumCommentService $forumCommentService,
     ) {}
 
     /**
-     * @param  Collection<int, AttendanceRequirement>  $requirements
-     * @return SupportCollection<int, array{requirement: AttendanceRequirement, is_fulfilled: bool}>
+     * Whether attendance applies to this session at all.
      */
-    public function checklistForSession(Session $session, string $userId, Collection $requirements): SupportCollection
+    public function isAttendanceApplicable(Session $session): bool
     {
-        return $requirements->map(fn (AttendanceRequirement $requirement) => [
-            'requirement' => $requirement,
-            'is_fulfilled' => $this->isRequirementFulfilled($requirement, $session, $userId),
-        ]);
+        return $session->delivery_mode !== DeliveryMode::Online;
     }
 
-    public function isRequirementFulfilled(AttendanceRequirement $requirement, Session $session, string $userId): bool
+    public function isSessionAttended(Session $session, string $userId): bool
     {
-        return match ($requirement->requirement_type) {
-            AttendanceRequirementType::ManualCheckin => $this->isManuallyCheckedIn($session, $userId),
-            AttendanceRequirementType::ForumCompleted => $this->hasCompletedForum($session, $userId),
-            AttendanceRequirementType::ClassDurationCompleted => $this->hasCompletedClassDuration($session, $userId),
+        return match ($session->delivery_mode) {
+            DeliveryMode::VirtualClass => $this->hasJoinedVideoConference($session, $userId) || $this->isManuallyCheckedIn($session, $userId),
+            DeliveryMode::Offline => $this->isManuallyCheckedIn($session, $userId),
+            DeliveryMode::Online => false,
         };
     }
 
     /**
-     * A session is "attended" once all of its configured requirements are
-     * fulfilled. With no requirements configured, we fall back to a plain
-     * manual attendance record of status "present".
-     *
-     * @param  Collection<int, AttendanceRequirement>  $requirements
+     * How the student's attendance for this session was determined, for
+     * display purposes. Null when the session is not attended.
      */
-    public function isSessionAttended(Session $session, string $userId, Collection $requirements): bool
+    public function attendanceSourceForSession(Session $session, string $userId): ?string
     {
-        if ($requirements->isEmpty()) {
-            return $this->isManuallyCheckedIn($session, $userId);
+        if ($session->delivery_mode === DeliveryMode::VirtualClass && $this->hasJoinedVideoConference($session, $userId)) {
+            return 'video_conference';
         }
 
-        return $requirements->every(fn (AttendanceRequirement $requirement) => $this->isRequirementFulfilled($requirement, $session, $userId));
+        if ($this->isManuallyCheckedIn($session, $userId)) {
+            return 'manual';
+        }
+
+        return null;
+    }
+
+    /**
+     * @return Collection<int, Session>
+     */
+    public function applicableSessionsForCourse(Course $course): Collection
+    {
+        return $this->sessionService->forCourse($course->id, ['videoConferences.participations'])
+            ->filter(fn (Session $session) => $this->isAttendanceApplicable($session))
+            ->values();
+    }
+
+    private function hasJoinedVideoConference(Session $session, string $userId): bool
+    {
+        return $session->videoConferences->contains(
+            fn (VideoConference $conference) => $conference->participations->contains('user_id', $userId)
+        );
     }
 
     private function isManuallyCheckedIn(Session $session, string $userId): bool
@@ -68,54 +88,15 @@ class AttendanceDerivationService
         return $attendance !== null && $attendance->status === AttendanceStatus::Present;
     }
 
-    private function hasCompletedForum(Session $session, string $userId): bool
-    {
-        $threshold = $session->required_forum_posts ?: 2;
-
-        $count = $this->forumCommentService->countForUserInSession($userId, $session->id);
-
-        return $count >= $threshold;
-    }
-
-    private function hasCompletedClassDuration(Session $session, string $userId): bool
-    {
-        $conferences = $session->videoConferences;
-
-        if ($conferences->isEmpty()) {
-            return true;
-        }
-
-        foreach ($conferences as $conference) {
-            $requiredMinutes = $conference->required_duration_minutes;
-
-            if (! $requiredMinutes) {
-                continue;
-            }
-
-            $attendedMinutes = $conference->participations
-                ->where('user_id', $userId)
-                ->sum(fn ($participation) => $participation->left_at
-                    ? $participation->joined_at->diffInMinutes($participation->left_at)
-                    : 0);
-
-            if ($attendedMinutes < $requiredMinutes) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     /**
      * @return array{total_session: int, total_attendance: int, minimal_attendance: int}
      */
     public function summaryForStudent(Course $course, string $userId): array
     {
-        $sessions = $this->sessionService->forCourse($course->id, ['videoConferences.participations']);
-        $requirements = $this->attendanceRequirementService->forCourse($course->id);
+        $sessions = $this->applicableSessionsForCourse($course);
         $setting = $this->courseAttendanceSettingService->findByCourse($course->id);
 
-        $totalAttendance = $sessions->filter(fn (Session $session) => $this->isSessionAttended($session, $userId, $requirements))->count();
+        $totalAttendance = $sessions->filter(fn (Session $session) => $this->isSessionAttended($session, $userId))->count();
 
         return [
             'total_session' => $sessions->count(),

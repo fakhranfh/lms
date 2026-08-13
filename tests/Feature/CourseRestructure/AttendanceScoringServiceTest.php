@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\AttendanceStatus;
+use App\Enums\DeliveryMode;
 use App\Models\Assessment;
 use App\Models\Attendance;
 use App\Models\Course;
@@ -19,14 +20,14 @@ test('computeForUser derives percentage and score from sessions in the assessmen
         'end_date' => now()->addDays(5),
     ]);
 
-    $inRangeAttended = Session::factory()->create(['course_id' => $course->id, 'date_start' => now()]);
+    $inRangeAttended = Session::factory()->create(['course_id' => $course->id, 'date_start' => now(), 'delivery_mode' => DeliveryMode::Offline]);
     Attendance::factory()->create(['session_id' => $inRangeAttended->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Present]);
 
-    $inRangeMissed = Session::factory()->create(['course_id' => $course->id, 'date_start' => now()->addDay()]);
+    $inRangeMissed = Session::factory()->create(['course_id' => $course->id, 'date_start' => now()->addDay(), 'delivery_mode' => DeliveryMode::Offline]);
     Attendance::factory()->create(['session_id' => $inRangeMissed->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Absent]);
 
     // Out of range — should not count.
-    Session::factory()->create(['course_id' => $course->id, 'date_start' => now()->addMonths(2)]);
+    Session::factory()->create(['course_id' => $course->id, 'date_start' => now()->addMonths(2), 'delivery_mode' => DeliveryMode::Offline]);
 
     $service = app(AttendanceScoringService::class);
     $computed = $service->computeForUser($assessment, $user->id);
@@ -35,6 +36,29 @@ test('computeForUser derives percentage and score from sessions in the assessmen
         ->and($computed['attended'])->toBe(1)
         ->and($computed['percentage'])->toBe(50.0)
         ->and($computed['score'])->toBe(5.0);
+});
+
+test('online sessions are excluded from the attendance scoring scope', function () {
+    $course = Course::factory()->create();
+    $user = User::factory()->create();
+
+    $assessment = Assessment::factory()->for($course)->create([
+        'type' => 'attendance',
+        'weight' => 10,
+        'start_date' => null,
+        'end_date' => null,
+    ]);
+
+    $offline = Session::factory()->create(['course_id' => $course->id, 'delivery_mode' => DeliveryMode::Offline]);
+    Attendance::factory()->create(['session_id' => $offline->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Present]);
+
+    Session::factory()->create(['course_id' => $course->id, 'delivery_mode' => DeliveryMode::Online]);
+
+    $service = app(AttendanceScoringService::class);
+    $computed = $service->computeForUser($assessment, $user->id);
+
+    expect($computed['total'])->toBe(1)
+        ->and($computed['attended'])->toBe(1);
 });
 
 test('recomputeForUser writes a single attempt and score row that updates on recompute', function () {
@@ -48,7 +72,7 @@ test('recomputeForUser writes a single attempt and score row that updates on rec
         'end_date' => null,
     ]);
 
-    $session = Session::factory()->create(['course_id' => $course->id]);
+    $session = Session::factory()->create(['course_id' => $course->id, 'delivery_mode' => DeliveryMode::Offline]);
     Attendance::factory()->create(['session_id' => $session->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Present]);
 
     $service = app(AttendanceScoringService::class);

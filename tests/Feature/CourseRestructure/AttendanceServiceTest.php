@@ -2,7 +2,6 @@
 
 use App\Enums\AttendanceStatus;
 use App\Models\Attendance;
-use App\Models\AttendanceRequirement;
 use App\Models\Course;
 use App\Models\CourseAttendanceSetting;
 use App\Models\Session;
@@ -18,14 +17,6 @@ test('attendance can be found by session and user', function () {
 
     expect($found->id)->toBe($attendance->id);
     expect($found->status)->toBe(AttendanceStatus::Present);
-});
-
-test('attendance requirements are ordered per course', function () {
-    $course = Course::factory()->create();
-    AttendanceRequirement::factory()->for($course)->create(['requirement_type' => 'forum_completed', 'order' => 1]);
-    AttendanceRequirement::factory()->for($course)->create(['requirement_type' => 'class_duration_completed', 'order' => 2]);
-
-    expect(AttendanceRequirement::where('course_id', $course->id)->orderBy('order')->get())->toHaveCount(2);
 });
 
 test('course attendance setting stores minimal attendance', function () {

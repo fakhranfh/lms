@@ -223,9 +223,9 @@ class ForumIndex extends Component
     {
         $maxVisibleTabs = 7;
 
-        $tabs = $sessions->map(fn ($session) => [
+        $tabs = $sessions->values()->map(fn ($session, $index) => [
             'key' => $session->id,
-            'label' => $session->title,
+            'label' => 'Session '.($index + 1),
             'unreadCount' => $unreadCounts[$sessionForums->get($session->id)?->id] ?? 0,
             'active' => $this->sessionId === $session->id,
         ]);

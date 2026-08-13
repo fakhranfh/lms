@@ -87,13 +87,13 @@
     @else
         <!-- Teacher: session tabs -->
         <div class="flex flex-wrap gap-space-xs border-b border-outline-variant">
-            @forelse ($sessions as $session)
+            @forelse ($sessions as $index => $session)
                 <button
                     type="button"
                     wire:click="selectSession('{{ $session->id }}')"
                     class="px-space-md py-space-sm rounded-t-lg border-b-2 font-label-sm text-label-sm transition {{ $selectedSession && $selectedSession->id === $session->id ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:bg-surface-container/50' }}"
                 >
-                    {{ $session->title }}
+                    Session {{ $index + 1 }}
                 </button>
             @empty
                 <p class="text-body-sm text-on-surface-variant py-space-md">No sessions yet.</p>

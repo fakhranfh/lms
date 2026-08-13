@@ -47,7 +47,7 @@ class SessionSeeder extends Seeder
 
             $session = Session::create([
                 'course_id' => $course->id,
-                'title' => 'Session '.($index + 1).': '.$blueprint['title'],
+                'title' => $blueprint['title'],
                 'learning_outcome' => $blueprint['learning_outcome'],
                 'date_start' => $dateStart,
                 'date_end' => $dateEnd,

@@ -43,7 +43,7 @@
     @else
         <!-- Session Tabs -->
         <div class="flex gap-space-xs overflow-x-auto pb-space-xs border-b border-outline-variant">
-            @foreach ($sessions as $session)
+            @foreach ($sessions as $index => $session)
                 <button
                     type="button"
                     @click="selectSession('{{ $session->id }}')"
@@ -51,7 +51,7 @@
                     class="flex-shrink-0 px-space-md py-space-sm rounded-t-lg font-label-sm text-label-sm whitespace-nowrap border-b-2 transition-colors"
                     :class="(pendingSessionId ? pendingSessionId === '{{ $session->id }}' : {{ $activeSession && $activeSession->id === $session->id ? 'true' : 'false' }}) ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container text-on-surface-variant border-transparent hover:bg-surface-container/70'"
                 >
-                    {{ $session->title }}
+                    Session {{ $index + 1 }}
                 </button>
             @endforeach
         </div>

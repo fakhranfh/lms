@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\CourseMembershipStatus;
+use App\Enums\DeliveryMode;
 use App\Enums\RoleInCourse;
 use App\Models\Course;
 use App\Models\CoursePerson;
@@ -13,6 +14,7 @@ use App\Models\School;
 use App\Models\Session;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -20,10 +22,13 @@ class ForumSeeder extends Seeder
 {
     /**
      * Seed per-session forum threads (with comments, replies, and likes)
-     * for existing courses that don't have any forum threads yet.
+     * for existing courses that don't have any forum threads yet, and keep
+     * at least 2 online sessions per course currently accessible.
      */
     public function run(): void
     {
+        $this->keepOnlineSessionsCurrentlyAccessible();
+
         $courses = Course::with('sessions')
             ->whereDoesntHave('forums.threads')
             ->get();
@@ -31,6 +36,30 @@ class ForumSeeder extends Seeder
         foreach ($courses as $course) {
             $this->seedCourseForums($course);
         }
+    }
+
+    /**
+     * Keep at least 2 online-delivery sessions per course with a date
+     * window that brackets "now" (mirrors SessionSeeder's virtual-class
+     * "currently joinable" handling), so the Forum Discussion assessment is
+     * reachable and postable right after seeding instead of only showing
+     * past/future weeks.
+     */
+    private function keepOnlineSessionsCurrentlyAccessible(): void
+    {
+        Course::with('sessions')->get()->each(function (Course $course): void {
+            $onlineSessions = $course->sessions
+                ->where('delivery_mode', DeliveryMode::Online)
+                ->take(2)
+                ->values();
+
+            foreach ($onlineSessions as $index => $session) {
+                $session->update([
+                    'date_start' => Carbon::now()->subHours(1 + $index * 3),
+                    'date_end' => Carbon::now()->addHours(2 + $index * 3),
+                ]);
+            }
+        });
     }
 
     private function seedCourseForums(Course $course): void

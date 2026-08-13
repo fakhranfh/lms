@@ -7,7 +7,6 @@
         <div class="flex items-start justify-between">
             <div class="space-y-space-xs">
                 <div class="h-6 bg-surface-container rounded w-40"></div>
-                <div class="h-3 bg-surface-container rounded w-24"></div>
             </div>
             <div class="h-9 w-36 bg-surface-container rounded-lg"></div>
         </div>

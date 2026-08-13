@@ -14,7 +14,6 @@
     <div class="flex items-start justify-between">
         <div>
             <h1 class="font-headline-md text-headline-md text-on-surface">Assessment</h1>
-            <p class="text-body-sm text-on-surface-variant mt-1">{{ collect($groupedAssessments)->sum(fn ($g) => $g['assessments']->count()) }} assessment(s)</p>
         </div>
 
         @unless ($isStudent)
@@ -75,9 +74,6 @@
                                 {{ strtoupper(\App\Support\AssessmentTypeLabel::forType($group['type'])) }}: {{ rtrim(rtrim(number_format($group['totalWeight'], 2), '0'), '.') }}%
                             </h2>
                         </div>
-                        <span class="text-body-sm text-on-surface-variant flex-shrink-0">
-                            {{ $group['assessments']->count() }} assessment{{ $group['assessments']->count() !== 1 ? 's' : '' }}
-                        </span>
                     </button>
 
                     <!-- Collapsible Content: Table -->

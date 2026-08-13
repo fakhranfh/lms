@@ -102,12 +102,20 @@
                                 </thead>
                                 <tbody class="divide-y divide-outline-variant">
                                     @foreach ($group['assessments'] as $item)
-                                        <tr wire:key="assessment-{{ $item['data']->id }}" class="hover:bg-surface-container/30 transition">
+                                        <tr
+                                            wire:key="assessment-{{ $item['data']->id }}"
+                                            @if ($item['row']['route'])
+                                                @click="window.location = '{{ $item['row']['route'] }}'"
+                                                class="hover:bg-surface-container/30 transition cursor-pointer"
+                                            @else
+                                                class="hover:bg-surface-container/30 transition"
+                                            @endif
+                                        >
                                             <td class="px-space-lg py-space-md">
                                                 @if ($item['row']['route'])
-                                                    <a href="{{ $item['row']['route'] }}" class="text-primary hover:underline font-label-md text-label-md">
+                                                    <span class="text-on-surface font-label-md text-label-md">
                                                         {{ $item['data']->title }}
-                                                    </a>
+                                                    </span>
                                                 @else
                                                     <span class="text-on-surface-variant opacity-60 font-label-md text-label-md">
                                                         {{ $item['data']->title }}
@@ -164,7 +172,7 @@
                                                 @endif
                                             </td>
                                             @unless ($isStudent)
-                                                <td class="px-space-lg py-space-md">
+                                                <td class="px-space-lg py-space-md" @click.stop>
                                                     <div class="flex gap-space-sm">
                                                         @if ($item['row']['route'])
                                                             <a
@@ -177,7 +185,7 @@
 
                                                             <button
                                                                 type="button"
-                                                                @click="deleteId = @js($item['data']->id); deleteName = @js($item['data']->title); deleteConfirmText = ''; showDeleteModal = true"
+                                                                @click.stop="deleteId = @js($item['data']->id); deleteName = @js($item['data']->title); deleteConfirmText = ''; showDeleteModal = true"
                                                                 class="p-2 hover:bg-surface-container rounded transition text-error"
                                                             >
                                                                 <span class="material-symbols-outlined">delete</span>

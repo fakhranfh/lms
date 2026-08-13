@@ -364,12 +364,20 @@
                                                 </thead>
                                                 <tbody class="divide-y divide-outline-variant">
                                                     @foreach ($group['rows'] as $row)
-                                                        <tr wire:key="session-assessment-{{ $row['assessment']->id }}" class="hover:bg-surface-container/30 transition">
+                                                        <tr
+                                                            wire:key="session-assessment-{{ $row['assessment']->id }}"
+                                                            @if ($row['route'])
+                                                                @click="window.location = '{{ $row['route'] }}'"
+                                                                class="hover:bg-surface-container/30 transition cursor-pointer"
+                                                            @else
+                                                                class="hover:bg-surface-container/30 transition"
+                                                            @endif
+                                                        >
                                                             <td class="px-space-md py-space-sm">
                                                                 @if ($row['route'])
-                                                                    <a href="{{ $row['route'] }}" class="text-primary hover:underline font-label-sm text-label-sm">
+                                                                    <span class="text-on-surface font-label-sm text-label-sm">
                                                                         {{ $row['assessment']->title }}
-                                                                    </a>
+                                                                    </span>
                                                                 @else
                                                                     <span class="text-on-surface-variant opacity-60 font-label-sm text-label-sm">
                                                                         {{ $row['assessment']->title }}

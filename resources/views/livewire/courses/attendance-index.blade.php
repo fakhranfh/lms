@@ -51,9 +51,9 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-outline-variant">
-                        @forelse ($sessionRows as $row)
+                        @forelse ($sessionRows as $index => $row)
                             <tr wire:key="session-{{ $row['session']->id }}">
-                                <td class="px-space-lg py-space-md font-label-md text-label-md text-on-surface">{{ $row['session']->title }}</td>
+                                <td class="px-space-lg py-space-md font-label-md text-label-md text-on-surface">Session {{ $index + 1 }}</td>
                                 <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ str($row['session']->delivery_mode->value)->replace('_', ' ')->title() }}</td>
                                 <td class="px-space-lg py-space-md text-body-sm text-on-surface">
                                     {{ $row['session']->date_start_display?->format('M j, Y, H:i') }} &ndash; {{ $row['session']->date_end_display?->format('H:i') }}

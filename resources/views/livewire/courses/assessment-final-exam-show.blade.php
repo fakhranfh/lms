@@ -183,6 +183,14 @@
                         <p class="text-body-sm text-on-surface-variant">You have reached the maximum number of attempts for this assessment.</p>
                     </div>
                 </div>
+            @elseif ($canSubmit && $canResubmit && $finalExam && in_array($finalExam->exam_type->value, ['open_book', 'closed_book']))
+                <a
+                    href="{{ route('assessments.final-exam.proctor.preflight', $assessment) }}"
+                    wire:navigate
+                    class="inline-block px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                >
+                    {{ $latestAttempt ? 'Continue Exam' : 'Start Exam' }}
+                </a>
             @elseif ($canSubmit && $canResubmit)
                 <div x-data="{ attemptOpen: false }">
                     <button
@@ -461,6 +469,55 @@
                                 </button>
                             @endif
                         </div>
+
+                        @if ($isProctored && $row['proctorSession'])
+                            <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md" x-data="{ reviewOpen: false }">
+                                <div class="flex items-center justify-between gap-space-md">
+                                    <div class="flex items-center gap-space-sm text-body-sm">
+                                        <span class="material-symbols-outlined text-[16px]" :class="{}">shield</span>
+                                        <span class="text-on-surface-variant">Proctoring:</span>
+                                        <span class="font-medium text-on-surface">{{ str($row['proctorSession']->status->value)->title() }}</span>
+                                        <span class="text-on-surface-variant">&middot; {{ $row['proctorSession']->events->count() }} event(s)</span>
+                                        @if ($row['proctorSession']->review_decision)
+                                            <span class="inline-flex items-center px-space-sm py-0.5 rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant">
+                                                Review: {{ str($row['proctorSession']->review_decision->value)->replace('_', ' ')->title() }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <button type="button" @click="reviewOpen = !reviewOpen" class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition flex-shrink-0">
+                                        Review
+                                    </button>
+                                </div>
+
+                                <div x-show="reviewOpen" x-cloak class="space-y-space-sm">
+                                    @if ($row['proctorSession']->events->isNotEmpty())
+                                        <ul class="text-body-xs text-on-surface-variant space-y-1 max-h-40 overflow-y-auto">
+                                            @foreach ($row['proctorSession']->events as $event)
+                                                <li>{{ $event->detected_at_display?->format('H:i:s') ?? $event->detected_at }} &middot; {{ str($event->event_type->value)->replace('_', ' ')->title() }} ({{ $event->severity->value }})</li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+
+                                    <div class="flex items-end gap-space-sm">
+                                        <div class="flex-1">
+                                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Decision</label>
+                                            <select wire:model="reviewDecision.{{ $row['proctorSession']->id }}" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-sm text-body-sm">
+                                                <option value="no_action" @selected(($row['proctorSession']->review_decision?->value ?? 'no_action') === 'no_action')>No Action</option>
+                                                <option value="warning" @selected($row['proctorSession']->review_decision?->value === 'warning')>Warning</option>
+                                                <option value="disqualified" @selected($row['proctorSession']->review_decision?->value === 'disqualified')>Disqualified</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex-1">
+                                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Notes</label>
+                                            <input type="text" wire:model="reviewNotes.{{ $row['proctorSession']->id }}" value="{{ $row['proctorSession']->review_notes }}" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-sm text-body-sm" />
+                                        </div>
+                                        <button type="button" wire:click="reviewProctorSession('{{ $row['proctorSession']->id }}')" class="px-space-md py-space-sm bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity flex-shrink-0">
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
 
                         @if ($gradingUserId === $row['user']->id)
                             <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md">

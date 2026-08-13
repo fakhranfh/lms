@@ -3,6 +3,7 @@
 use App\Http\Controllers\DemoLmsController;
 use App\Http\Controllers\ForumCommentLikeController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\ProctorSpeedTestController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SchoolPaymentController;
 use App\Http\Controllers\TierChangeController;
@@ -26,6 +27,8 @@ use App\Livewire\Courses\CoursesIndex;
 use App\Livewire\Courses\ForumIndex;
 use App\Livewire\Courses\ForumThreadShow;
 use App\Livewire\Courses\GroupsManage;
+use App\Livewire\Courses\ProctorExamShow;
+use App\Livewire\Courses\ProctorPreflightShow;
 use App\Livewire\Courses\QuizInstructionEdit;
 use App\Livewire\Courses\SessionForm;
 use App\Livewire\Courses\SessionsIndex;
@@ -110,6 +113,10 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/courses/{course}/assessments/create/final-exam', AssessmentFinalExamForm::class)->middleware('permission:assessment.create')->name('assessments.final-exam.create');
         Route::get('/assessments/{assessment}/final-exam/edit', AssessmentFinalExamForm::class)->middleware('permission:assessment.edit')->name('assessments.final-exam.edit');
         Route::get('/assessments/{assessment}/final-exam', AssessmentFinalExamShow::class)->middleware('permission:assessment.view')->name('assessments.final-exam.show');
+        Route::get('/proctor/speed-test-download', [ProctorSpeedTestController::class, 'download'])->name('proctor.speed-test-download');
+        Route::post('/proctor/speed-test-upload', [ProctorSpeedTestController::class, 'upload'])->name('proctor.speed-test-upload');
+        Route::get('/assessments/{assessment}/final-exam/proctor/preflight', ProctorPreflightShow::class)->middleware('permission:assessment.view')->name('assessments.final-exam.proctor.preflight');
+        Route::get('/assessments/{assessment}/final-exam/proctor', ProctorExamShow::class)->middleware('permission:assessment.view')->name('assessments.final-exam.proctor.show');
         Route::get('/assessments/{assessment}/attendance', AssessmentAttendanceShow::class)->middleware('permission:assessment.view')->name('assessments.attendance.show');
         Route::get('/assessments/{assessment}/forum-discussion', AssessmentForumDiscussionShow::class)->middleware('permission:assessment.view')->name('assessments.forum-discussion.show');
         Route::get('/quiz-instructions', QuizInstructionEdit::class)->middleware('permission:assessment.edit')->name('quiz-instructions.edit');

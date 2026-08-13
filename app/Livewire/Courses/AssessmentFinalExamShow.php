@@ -3,6 +3,7 @@
 namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentType;
+use App\Enums\ProctorReviewDecision;
 use App\Enums\RoleName;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
@@ -13,6 +14,7 @@ use App\Services\AssessmentQuestionScoreService;
 use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
 use App\Services\FinalExamService;
+use App\Services\ProctorSessionService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
@@ -41,6 +43,16 @@ class AssessmentFinalExamShow extends Component
     public ?string $successMessage = null;
 
     public array $gradeQuestionScores = [];
+
+    /**
+     * @var array<string, string>
+     */
+    public array $reviewDecision = [];
+
+    /**
+     * @var array<string, string>
+     */
+    public array $reviewNotes = [];
 
     public function mount(CurrentSchool $currentSchool, CoursePersonService $coursePersonService, ?Course $course = null, ?Assessment $assessment = null): void
     {
@@ -115,6 +127,42 @@ class AssessmentFinalExamShow extends Component
     public function clearSuccessMessage(): void
     {
         $this->successMessage = null;
+    }
+
+    public function reviewProctorSession(
+        string $proctorSessionId,
+        ProctorSessionService $proctorSessionService,
+        AssessmentScoreService $assessmentScoreService,
+    ): void {
+        abort_unless(auth()->user()->can('assessment.grade'), 403);
+
+        $decisionEnum = ProctorReviewDecision::from($this->reviewDecision[$proctorSessionId] ?? 'no_action');
+        $notes = $this->reviewNotes[$proctorSessionId] ?? null;
+
+        $session = $proctorSessionService->update($proctorSessionId, [
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now(),
+            'review_decision' => $decisionEnum,
+            'review_notes' => $notes,
+        ]);
+
+        if ($decisionEnum === ProctorReviewDecision::Disqualified) {
+            $score = $assessmentScoreService->findByAttempt($session->assessment_attempt_id);
+
+            if ($score) {
+                $assessmentScoreService->update($score->id, ['score' => 0]);
+            } else {
+                $assessmentScoreService->create([
+                    'assessment_attempt_id' => $session->assessment_attempt_id,
+                    'score' => 0,
+                    'graded_by' => auth()->id(),
+                    'graded_at' => now(),
+                    'feedback' => __('Disqualified due to proctoring violation.'),
+                ]);
+            }
+        }
+
+        $this->successMessage = __('Proctoring review saved.');
     }
 
     public function openGrading(string $userId, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService): void
@@ -208,14 +256,17 @@ class AssessmentFinalExamShow extends Component
         $this->successMessage = __('Grade saved.');
     }
 
-    public function render(CoursePersonService $coursePersonService, AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, FinalExamService $finalExamService)
+    public function render(CoursePersonService $coursePersonService, AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, FinalExamService $finalExamService, ProctorSessionService $proctorSessionService)
     {
         $isExpired = $this->assessment->end_date && $this->assessment->end_date->isPast();
+        $finalExam = $finalExamService->findByAssessment($this->assessment->id);
+        $isProctored = $finalExam && in_array($finalExam->exam_type->value, ['open_book', 'closed_book']);
 
         $viewData = [
             'course' => $this->course,
             'assessment' => $this->assessment,
-            'finalExam' => $finalExamService->findByAssessment($this->assessment->id),
+            'finalExam' => $finalExam,
+            'isProctored' => $isProctored,
             'isStudent' => $this->isStudent,
             'canGrade' => auth()->user()->can('assessment.grade'),
             'canSubmit' => auth()->user()->can('assessment.submit'),
@@ -259,12 +310,15 @@ class AssessmentFinalExamShow extends Component
         } else {
             $students = $coursePersonService->studentsForCourse($this->course->id);
 
-            $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentAnswerService, $assessmentScoreService, $assessmentQuestionScoreService) {
+            $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentAnswerService, $assessmentScoreService, $assessmentQuestionScoreService, $proctorSessionService, $isProctored) {
                 $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $coursePerson->user_id);
                 $latest = $attempts->last();
                 $score = $latest ? $assessmentScoreService->findByAttempt($latest->id) : null;
                 $answer = $latest ? $assessmentAnswerService->findByAttempt($latest->id) : null;
                 $questionScores = $latest ? $assessmentQuestionScoreService->findByAttempt($latest->id) : collect();
+                $proctorSession = ($isProctored && $latest)
+                    ? $proctorSessionService->findByAttempt($latest->id, ['events', 'snapshots'])
+                    : null;
 
                 return [
                     'user' => $coursePerson->user,
@@ -272,6 +326,7 @@ class AssessmentFinalExamShow extends Component
                     'answer' => $answer,
                     'score' => $score,
                     'questionScores' => $questionScores->keyBy('assessment_question_id'),
+                    'proctorSession' => $proctorSession,
                 ];
             })->values();
 

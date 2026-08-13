@@ -69,17 +69,26 @@ class AssessmentSeeder extends Seeder
 
     private function seedMissingFinalExams(): void
     {
-        $courses = Course::whereDoesntHave('assessments', fn ($query) => $query->where('type', AssessmentType::TheoryFinalExam))
-            ->get();
+        foreach (Course::all() as $course) {
+            $missingTypes = collect(FinalExamType::cases())
+                ->reject(fn (FinalExamType $type) => Assessment::where('course_id', $course->id)
+                    ->where('type', AssessmentType::TheoryFinalExam)
+                    ->whereHas('finalExam', fn ($query) => $query->where('exam_type', $type))
+                    ->exists());
 
-        foreach ($courses as $course) {
+            if ($missingTypes->isEmpty()) {
+                continue;
+            }
+
             $period = $this->periodForCourse($course);
 
             if (! $period) {
                 continue;
             }
 
-            $this->seedFinalExam($course, $period, $this->studentsForCourse($course));
+            foreach ($missingTypes as $type) {
+                $this->seedFinalExam($course, $period, $type);
+            }
         }
     }
 
@@ -154,7 +163,9 @@ class AssessmentSeeder extends Seeder
 
         $period = $this->periodForCourse($course);
         if ($period) {
-            $this->seedFinalExam($course, $period, $students);
+            foreach (FinalExamType::cases() as $type) {
+                $this->seedFinalExam($course, $period, $type);
+            }
         }
     }
 
@@ -190,16 +201,17 @@ class AssessmentSeeder extends Seeder
     }
 
     /**
-     * @param  Collection<int, User>  $students
+     * Seeds without attempts, so every seeded Final Exam starts as
+     * "not started" for every student regardless of exam_type.
      */
-    private function seedFinalExam(Course $course, Period $period, Collection $students): void
+    private function seedFinalExam(Course $course, Period $period, FinalExamType $type): void
     {
         $assessment = Assessment::create([
             'course_id' => $course->id,
             'session_id' => null,
             'type' => AssessmentType::TheoryFinalExam,
-            'title' => 'Final Exam: Comprehensive Assessment',
-            'weight' => AssessmentType::TheoryFinalExam->defaultWeight(),
+            'title' => 'Final Exam: '.$this->finalExamTitleSuffix($type),
+            'weight' => round(AssessmentType::TheoryFinalExam->defaultWeight() / count(FinalExamType::cases()), 2),
             'assigned_to' => AssessmentAssignedTo::Individual,
             'start_date' => Carbon::now()->subDays(3),
             'end_date' => Carbon::now()->addWeek(),
@@ -209,23 +221,41 @@ class AssessmentSeeder extends Seeder
         FinalExam::create([
             'assessment_id' => $assessment->id,
             'period_id' => $period->id,
-            'exam_type' => FinalExamType::TakeHome,
+            'exam_type' => $type,
             'start_date' => $assessment->start_date,
             'end_date' => $assessment->end_date,
-            'allow_local_files' => true,
-            'allow_internet' => true,
+            'allow_local_files' => $type === FinalExamType::TakeHome,
+            'allow_internet' => $type !== FinalExamType::ClosedBook,
         ]);
 
-        $this->seedFinalExamQuestions($assessment);
-        $this->seedIndividualAttempts($assessment, $students);
+        $this->seedFinalExamQuestions($assessment, $type);
     }
 
-    private function seedFinalExamQuestions(Assessment $assessment): void
+    private function finalExamTitleSuffix(FinalExamType $type): string
     {
-        $questions = [
-            ['description' => '<p>Synthesize the key concepts covered throughout this course into a single coherent argument, using at least two concrete examples to support your points (800-1000 words).</p>', 'points' => 60],
-            ['description' => '<p>Critically evaluate a real-world scenario of your choosing through the lens of what you learned in this course. Justify your conclusions.</p>', 'points' => 40],
-        ];
+        return match ($type) {
+            FinalExamType::TakeHome => 'Take Home',
+            FinalExamType::OpenBook => 'Open Book',
+            FinalExamType::ClosedBook => 'Closed Book',
+        };
+    }
+
+    private function seedFinalExamQuestions(Assessment $assessment, FinalExamType $type): void
+    {
+        $questions = match ($type) {
+            FinalExamType::TakeHome => [
+                ['description' => '<p>Synthesize the key concepts covered throughout this course into a single coherent argument, using at least two concrete examples to support your points (800-1000 words).</p>', 'points' => 60],
+                ['description' => '<p>Critically evaluate a real-world scenario of your choosing through the lens of what you learned in this course. Justify your conclusions.</p>', 'points' => 40],
+            ],
+            FinalExamType::OpenBook => [
+                ['description' => '<p>Using any course materials as reference, solve the case study provided and explain your reasoning at each step.</p>', 'points' => 50],
+                ['description' => '<p>Compare two approaches covered in this course, citing specific sources, and justify which one better fits the given scenario.</p>', 'points' => 50],
+            ],
+            FinalExamType::ClosedBook => [
+                ['description' => '<p>Without referring to any materials, explain the core principles covered in this course from memory.</p>', 'points' => 50],
+                ['description' => '<p>Solve the following problem using only what you have memorized from the course content.</p>', 'points' => 50],
+            ],
+        };
 
         foreach ($questions as $order => $question) {
             $assessment->questions()->create([

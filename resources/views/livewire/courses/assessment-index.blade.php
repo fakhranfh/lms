@@ -254,7 +254,7 @@
                                             </td>
                                             <td class="px-space-lg py-space-md text-body-sm text-on-surface">
                                                 @if ($item['data']->start_date)
-                                                    {{ $item['data']->start_date->format('M j, Y, H:i') }}
+                                                    {{ $item['data']->start_date_display->format('M j, Y, H:i') }}
                                                 @else
                                                     <span class="text-on-surface-variant">—</span>
                                                 @endif
@@ -262,7 +262,7 @@
                                             <td class="px-space-lg py-space-md">
                                                 <div class="flex items-center gap-space-xs">
                                                     @if ($item['data']->end_date)
-                                                        <span class="text-body-sm text-on-surface">{{ $item['data']->end_date->format('M j, Y, H:i') }}</span>
+                                                        <span class="text-body-sm text-on-surface">{{ $item['data']->end_date_display->format('M j, Y, H:i') }}</span>
                                                         @if ($item['row']['isExpired'])
                                                             <span class="inline-flex items-center px-space-xs py-1 rounded-full text-body-xs font-medium bg-error/10 text-error">
                                                                 Expired

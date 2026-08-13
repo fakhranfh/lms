@@ -86,7 +86,7 @@
                 <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Start</p>
                 <p class="text-body-sm text-on-surface font-medium">
                     @if ($assessment->start_date)
-                        {{ $assessment->start_date->format('M j, Y, H:i') }}
+                        {{ $assessment->start_date_display->format('M j, Y, H:i') }}
                     @else
                         <span class="text-on-surface-variant">—</span>
                     @endif
@@ -96,7 +96,7 @@
                 <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Due</p>
                 <p class="text-body-sm text-on-surface font-medium">
                     @if ($assessment->end_date)
-                        {{ $assessment->end_date->format('M j, Y, H:i') }}
+                        {{ $assessment->end_date_display->format('M j, Y, H:i') }}
                     @else
                         <span class="text-on-surface-variant">—</span>
                     @endif

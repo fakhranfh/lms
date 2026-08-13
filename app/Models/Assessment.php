@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AssessmentAssignedTo;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
+use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\AssessmentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -30,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Assessment extends Model
 {
     /** @use HasFactory<AssessmentFactory> */
-    use HasFactory, HasUuid;
+    use HasFactory, HasUuid, HasViewerTimezoneDates;
 
     /**
      * @var array<string, string>

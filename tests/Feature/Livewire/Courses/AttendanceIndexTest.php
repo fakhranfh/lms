@@ -61,7 +61,7 @@ class AttendanceIndexTest extends TestCase
         Livewire::test(AttendanceIndex::class, ['course' => $this->course])
             ->call('loadData')
             ->assertSee('Attendance')
-            ->assertSee($this->session->title);
+            ->assertSee('Session 1');
     }
 
     public function test_teacher_can_record_manual_attendance_override(): void
@@ -114,7 +114,7 @@ class AttendanceIndexTest extends TestCase
 
         Livewire::test(AttendanceIndex::class, ['course' => $this->course])
             ->call('loadData')
-            ->assertSee($this->session->title)
-            ->assertSee($onlineSession->title);
+            ->assertSee('Session 1')
+            ->assertSee('Session 2');
     }
 }

@@ -30,10 +30,20 @@ class SessionSeeder extends Seeder
         $mediaItems = $this->mediaItemsForSchool($course->school_id);
 
         $start = Carbon::now()->subWeeks(2)->startOfDay();
+        $virtualClassOccurrence = 0;
 
         foreach ($this->sessionBlueprints() as $index => $blueprint) {
-            $dateStart = (clone $start)->addWeeks($index);
-            $dateEnd = (clone $dateStart)->addDays(6)->endOfDay();
+            if ($blueprint['delivery_mode'] === DeliveryMode::VirtualClass && $virtualClassOccurrence < 2) {
+                // Keep at least 2 virtual class sessions currently joinable (their
+                // window brackets "now") so the video-conference join flow is
+                // reachable right after seeding, instead of only past/future weeks.
+                $dateStart = Carbon::now()->subHours(1 + $virtualClassOccurrence * 3);
+                $dateEnd = Carbon::now()->addHours(2 + $virtualClassOccurrence * 3);
+                $virtualClassOccurrence++;
+            } else {
+                $dateStart = (clone $start)->addWeeks($index);
+                $dateEnd = (clone $dateStart)->addDays(6)->endOfDay();
+            }
 
             $session = Session::create([
                 'course_id' => $course->id,

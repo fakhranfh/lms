@@ -3,12 +3,15 @@
 namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentType;
+use App\Enums\DeliveryMode;
 use App\Enums\RoleName;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\GroupMember;
+use App\Models\Session;
 use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentService;
+use App\Services\AttendanceDerivationService;
 use App\Services\AttendanceScoringService;
 use App\Services\CoursePersonService;
 use App\Services\GroupMemberService;
@@ -79,7 +82,7 @@ class AssessmentIndex extends Component
         $assessmentService->delete($assessmentId);
     }
 
-    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService)
+    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, AttendanceDerivationService $attendanceDerivationService)
     {
         if (! $this->assessmentsLoaded) {
             return view('livewire.courses.assessment-index-placeholder', [
@@ -99,17 +102,32 @@ class AssessmentIndex extends Component
             return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService)];
         })->all();
 
+        $virtualClassSessions = $attendanceDerivationService->sessionsForCourse($this->course)
+            ->filter(fn (Session $session) => $session->delivery_mode === DeliveryMode::VirtualClass)
+            ->values();
+
         $grouped = collect(AssessmentType::cases())
-            ->map(fn (AssessmentType $type) => [
-                'type' => $type,
-                'assessments' => $assessments->where('type', $type)->values()->map(fn (Assessment $a) => [
-                    'data' => $a,
-                    'row' => $rows[$a->id],
-                ]),
-                'sectionKey' => $type->value,
-                'isExpanded' => isset($this->expandedSections[$type->value]) && $this->expandedSections[$type->value],
-                'totalWeight' => $assessments->where('type', $type)->sum('weight'),
-            ])
+            ->map(function (AssessmentType $type) use ($assessments, $rows, $attendanceDerivationService, $virtualClassSessions) {
+                $group = [
+                    'type' => $type,
+                    'assessments' => $assessments->where('type', $type)->values()->map(fn (Assessment $a) => [
+                        'data' => $a,
+                        'row' => $rows[$a->id],
+                    ]),
+                    'sectionKey' => $type->value,
+                    'isExpanded' => isset($this->expandedSections[$type->value]) && $this->expandedSections[$type->value],
+                    'totalWeight' => $assessments->where('type', $type)->sum('weight'),
+                ];
+
+                if ($type === AssessmentType::Attendance && $this->isStudent) {
+                    $group['sessionRows'] = $virtualClassSessions->map(fn (Session $session) => [
+                        'session' => $session,
+                        'attended' => $attendanceDerivationService->isSessionAttended($session, auth()->id()),
+                    ]);
+                }
+
+                return $group;
+            })
             ->all();
 
         return view('livewire.courses.assessment-index', [

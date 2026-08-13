@@ -71,4 +71,9 @@ class ForumThreadService
     {
         return $this->forumThreadRepository->myPostsCountForForum($forumId, $userId);
     }
+
+    public function countForUserInSession(string $userId, string $sessionId): int
+    {
+        return $this->forumThreadRepository->countForUserInSession($userId, $sessionId);
+    }
 }

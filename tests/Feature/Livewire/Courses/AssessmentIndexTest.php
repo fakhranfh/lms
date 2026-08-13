@@ -3,13 +3,18 @@
 namespace Tests\Feature\Livewire\Courses;
 
 use App\Enums\AssessmentType;
+use App\Enums\AttendanceStatus;
+use App\Enums\DeliveryMode;
 use App\Enums\RoleName;
 use App\Livewire\Courses\AssessmentIndex;
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
+use App\Models\Attendance;
 use App\Models\Course;
+use App\Models\CoursePerson;
 use App\Models\Role;
 use App\Models\School;
+use App\Models\Session;
 use App\Models\User;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -138,6 +143,36 @@ class AssessmentIndexTest extends TestCase
             ->call('deleteAssessment', $assessment->id);
 
         $this->assertDatabaseMissing('assessments', ['id' => $assessment->id]);
+    }
+
+    public function test_student_sees_per_session_attendance_table(): void
+    {
+        $this->student->givePermissionTo('assessment.view');
+        $this->actingAs($this->student);
+
+        CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
+
+        $session = Session::factory()->create([
+            'course_id' => $this->course->id,
+            'title' => 'Session 1 - Virtual Class - CL',
+            'delivery_mode' => DeliveryMode::VirtualClass,
+        ]);
+
+        Assessment::factory()->for($this->course)->create(['type' => AssessmentType::Attendance]);
+
+        Attendance::factory()->create([
+            'session_id' => $session->id,
+            'user_id' => $this->student->id,
+            'status' => AttendanceStatus::Present,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->call('toggleSection', AssessmentType::Attendance->value)
+            ->assertSee('Session 1')
+            ->assertSee('Session 1 - Virtual Class - CL')
+            ->assertSee('Completed')
+            ->assertSee('100 pts');
     }
 
     public function test_quiz_row_links_to_quiz_show(): void

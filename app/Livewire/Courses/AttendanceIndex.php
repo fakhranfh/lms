@@ -105,7 +105,7 @@ class AttendanceIndex extends Component
                 ->section('app-content');
         }
 
-        $sessions = $attendanceDerivationService->applicableSessionsForCourse($this->course);
+        $sessions = $attendanceDerivationService->sessionsForCourse($this->course);
 
         if ($this->isStudent) {
             $userId = auth()->id();
@@ -115,7 +115,7 @@ class AttendanceIndex extends Component
                 return [
                     'session' => $session,
                     'attend' => $attendanceDerivationService->isSessionAttended($session, $userId),
-                    'source' => $attendanceDerivationService->attendanceSourceForSession($session, $userId),
+                    'requirement' => $attendanceDerivationService->attendanceRequirementDescriptionForSession($session),
                 ];
             });
         } else {
@@ -132,7 +132,7 @@ class AttendanceIndex extends Component
                     return [
                         'user' => $coursePerson->user,
                         'attend' => $attendanceDerivationService->isSessionAttended($selectedSession, $coursePerson->user_id),
-                        'source' => $attendanceDerivationService->attendanceSourceForSession($selectedSession, $coursePerson->user_id),
+                        'requirement' => $attendanceDerivationService->attendanceRequirementDescriptionForSession($selectedSession),
                         'attendance' => $attendanceService->findBySessionAndUser($selectedSession->id, $coursePerson->user_id),
                     ];
                 })

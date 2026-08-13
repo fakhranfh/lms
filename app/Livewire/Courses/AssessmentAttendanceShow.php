@@ -3,9 +3,12 @@
 namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentType;
+use App\Enums\DeliveryMode;
 use App\Enums\RoleName;
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\Session;
+use App\Services\AttendanceDerivationService;
 use App\Services\AttendanceScoringService;
 use App\Services\CoursePersonService;
 use App\Support\CourseTabs;
@@ -47,8 +50,11 @@ class AssessmentAttendanceShow extends Component
         $this->assessment = $assessment;
     }
 
-    public function render(CoursePersonService $coursePersonService, AttendanceScoringService $attendanceScoringService)
-    {
+    public function render(
+        CoursePersonService $coursePersonService,
+        AttendanceScoringService $attendanceScoringService,
+        AttendanceDerivationService $attendanceDerivationService,
+    ) {
         $viewData = [
             'course' => $this->course,
             'assessment' => $this->assessment,
@@ -59,22 +65,35 @@ class AssessmentAttendanceShow extends Component
                 : null,
         ];
 
+        $virtualClassSessions = $attendanceDerivationService->sessionsForCourse($this->course)
+            ->filter(fn (Session $session) => $session->delivery_mode === DeliveryMode::VirtualClass)
+            ->values();
+
         if ($this->isStudent) {
-            $computed = $attendanceScoringService->computeForUser($this->assessment, auth()->id());
             $attendanceScoringService->recomputeForUser($this->assessment, auth()->id());
-            $viewData['computed'] = $computed;
+
+            $viewData['sessionRows'] = $virtualClassSessions->map(fn (Session $session) => [
+                'session' => $session,
+                'attended' => $attendanceDerivationService->isSessionAttended($session, auth()->id()),
+            ]);
         } else {
             $students = $coursePersonService->studentsForCourse($this->course->id);
 
-            $viewData['studentRows'] = $students->map(function ($coursePerson) use ($attendanceScoringService) {
-                $computed = $attendanceScoringService->computeForUser($this->assessment, $coursePerson->user_id);
+            foreach ($students as $coursePerson) {
                 $attendanceScoringService->recomputeForUser($this->assessment, $coursePerson->user_id);
+            }
+
+            $viewData['sessionRows'] = $virtualClassSessions->map(function (Session $session) use ($students, $attendanceDerivationService) {
+                $attendedCount = $students->filter(
+                    fn ($coursePerson) => $attendanceDerivationService->isSessionAttended($session, $coursePerson->user_id)
+                )->count();
 
                 return [
-                    'user' => $coursePerson->user,
-                    'computed' => $computed,
+                    'session' => $session,
+                    'attendedCount' => $attendedCount,
+                    'totalStudents' => $students->count(),
                 ];
-            })->values();
+            });
         }
 
         return view('livewire.courses.assessment-attendance-show', $viewData)

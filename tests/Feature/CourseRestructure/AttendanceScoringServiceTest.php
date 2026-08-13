@@ -20,14 +20,14 @@ test('computeForUser derives percentage and score from sessions in the assessmen
         'end_date' => now()->addDays(5),
     ]);
 
-    $inRangeAttended = Session::factory()->create(['course_id' => $course->id, 'date_start' => now(), 'delivery_mode' => DeliveryMode::Offline]);
+    $inRangeAttended = Session::factory()->create(['course_id' => $course->id, 'date_start' => now(), 'delivery_mode' => DeliveryMode::VirtualClass]);
     Attendance::factory()->create(['session_id' => $inRangeAttended->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Present]);
 
-    $inRangeMissed = Session::factory()->create(['course_id' => $course->id, 'date_start' => now()->addDay(), 'delivery_mode' => DeliveryMode::Offline]);
+    $inRangeMissed = Session::factory()->create(['course_id' => $course->id, 'date_start' => now()->addDay(), 'delivery_mode' => DeliveryMode::VirtualClass]);
     Attendance::factory()->create(['session_id' => $inRangeMissed->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Absent]);
 
     // Out of range — should not count.
-    Session::factory()->create(['course_id' => $course->id, 'date_start' => now()->addMonths(2), 'delivery_mode' => DeliveryMode::Offline]);
+    Session::factory()->create(['course_id' => $course->id, 'date_start' => now()->addMonths(2), 'delivery_mode' => DeliveryMode::VirtualClass]);
 
     $service = app(AttendanceScoringService::class);
     $computed = $service->computeForUser($assessment, $user->id);
@@ -38,7 +38,7 @@ test('computeForUser derives percentage and score from sessions in the assessmen
         ->and($computed['score'])->toBe(5.0);
 });
 
-test('online sessions are excluded from the attendance scoring scope', function () {
+test('offline and online sessions are excluded from the attendance scoring scope, only virtual_class counts', function () {
     $course = Course::factory()->create();
     $user = User::factory()->create();
 
@@ -48,6 +48,9 @@ test('online sessions are excluded from the attendance scoring scope', function 
         'start_date' => null,
         'end_date' => null,
     ]);
+
+    $virtualClass = Session::factory()->create(['course_id' => $course->id, 'delivery_mode' => DeliveryMode::VirtualClass]);
+    Attendance::factory()->create(['session_id' => $virtualClass->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Present]);
 
     $offline = Session::factory()->create(['course_id' => $course->id, 'delivery_mode' => DeliveryMode::Offline]);
     Attendance::factory()->create(['session_id' => $offline->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Present]);
@@ -72,7 +75,7 @@ test('recomputeForUser writes a single attempt and score row that updates on rec
         'end_date' => null,
     ]);
 
-    $session = Session::factory()->create(['course_id' => $course->id, 'delivery_mode' => DeliveryMode::Offline]);
+    $session = Session::factory()->create(['course_id' => $course->id, 'delivery_mode' => DeliveryMode::VirtualClass]);
     Attendance::factory()->create(['session_id' => $session->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Present]);
 
     $service = app(AttendanceScoringService::class);

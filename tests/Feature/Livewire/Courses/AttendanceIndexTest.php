@@ -94,7 +94,18 @@ class AttendanceIndexTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_online_sessions_are_excluded_from_the_attendance_table(): void
+    public function test_student_sees_attendance_requirement_description_for_each_session(): void
+    {
+        $this->student->givePermissionTo('attendance.view');
+        $this->actingAs($this->student);
+
+        Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->assertSee('Attendance Requirement')
+            ->assertSee('Teacher mark');
+    }
+
+    public function test_online_sessions_are_included_in_the_attendance_table(): void
     {
         $onlineSession = Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::Online]);
 
@@ -104,6 +115,6 @@ class AttendanceIndexTest extends TestCase
         Livewire::test(AttendanceIndex::class, ['course' => $this->course])
             ->call('loadData')
             ->assertSee($this->session->title)
-            ->assertDontSee($onlineSession->title);
+            ->assertSee($onlineSession->title);
     }
 }

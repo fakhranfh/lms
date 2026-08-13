@@ -47,7 +47,7 @@
                             <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Delivery</th>
                             <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Dates</th>
                             <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attend</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Source</th>
+                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attendance Requirement</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-outline-variant">
@@ -72,13 +72,7 @@
                                     @endif
                                 </td>
                                 <td class="px-space-lg py-space-md text-body-xs text-on-surface-variant">
-                                    @if ($row['source'] === 'video_conference')
-                                        Video conference join
-                                    @elseif ($row['source'] === 'manual')
-                                        Manual mark
-                                    @else
-                                        &mdash;
-                                    @endif
+                                    {{ $row['requirement'] }}
                                 </td>
                             </tr>
                         @empty
@@ -114,7 +108,7 @@
                             <tr class="border-b border-outline-variant bg-surface-container/50">
                                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Student</th>
                                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Delivery</th>
-                                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Source</th>
+                                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attendance Requirement</th>
                                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Computed</th>
                                 @if ($canManage)
                                     <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Override</th>
@@ -133,13 +127,7 @@
                                     <td class="px-space-lg py-space-md font-label-md text-label-md text-on-surface">{{ $row['user']->name }}</td>
                                     <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ str($selectedSession->delivery_mode->value)->replace('_', ' ')->title() }}</td>
                                     <td class="px-space-lg py-space-md text-body-xs text-on-surface-variant">
-                                        @if ($row['source'] === 'video_conference')
-                                            Video conference join
-                                        @elseif ($row['source'] === 'manual')
-                                            Manual mark
-                                        @else
-                                            &mdash;
-                                        @endif
+                                        {{ $row['requirement'] }}
                                     </td>
                                     <td class="px-space-lg py-space-md">
                                         @if ($row['attend'])

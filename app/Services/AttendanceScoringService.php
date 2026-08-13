@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\DeliveryMode;
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
 use App\Models\Session;
@@ -12,11 +13,14 @@ use Illuminate\Support\Collection;
  * attendance data — no builder, no manual submit (same "derived" pattern as
  * Forum Discussion). Score = (sessions attended / sessions in scope) * weight.
  *
- * Scoping: sessions in scope are those whose date_start falls within the
- * assessment's [start_date, end_date] window; if none fall in that window
- * (e.g. the assessment spans the whole course), all course sessions are used.
- * This lets a Teacher scope an Attendance assessment to part of a term while
- * still working for a course-wide one.
+ * Scoping: only virtual_class sessions are counted (video conference join or
+ * manual mark) — offline and online sessions are excluded from this
+ * assessment score, though they still appear on the general Attendance page.
+ * Within virtual_class sessions, those whose date_start falls within the
+ * assessment's [start_date, end_date] window are used; if none fall in that
+ * window (e.g. the assessment spans the whole course), all virtual_class
+ * course sessions are used. This lets a Teacher scope an Attendance
+ * assessment to part of a term while still working for a course-wide one.
  */
 class AttendanceScoringService
 {
@@ -91,7 +95,7 @@ class AttendanceScoringService
     private function sessionsInScope(Assessment $assessment): Collection
     {
         $sessions = $this->sessionService->forCourse($assessment->course_id, ['videoConferences.participations'])
-            ->filter(fn (Session $session) => $this->attendanceDerivationService->isAttendanceApplicable($session))
+            ->filter(fn (Session $session) => $session->delivery_mode === DeliveryMode::VirtualClass)
             ->values();
 
         if (! $assessment->start_date || ! $assessment->end_date) {

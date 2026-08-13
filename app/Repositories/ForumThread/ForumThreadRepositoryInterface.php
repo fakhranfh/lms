@@ -35,4 +35,6 @@ interface ForumThreadRepositoryInterface
     public function totalPostsForForum(string $forumId): array;
 
     public function myPostsCountForForum(string $forumId, string $userId): int;
+
+    public function countForUserInSession(string $userId, string $sessionId): int;
 }

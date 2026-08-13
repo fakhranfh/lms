@@ -5,11 +5,13 @@ namespace Tests\Feature\Livewire\Courses;
 use App\Enums\AssessmentType;
 use App\Enums\AttendanceStatus;
 use App\Enums\DeliveryMode;
+use App\Enums\RoleName;
 use App\Livewire\Courses\AssessmentAttendanceShow;
 use App\Models\Assessment;
 use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\CoursePerson;
+use App\Models\Role;
 use App\Models\School;
 use App\Models\Session;
 use App\Models\User;
@@ -38,9 +40,12 @@ class AssessmentAttendanceShowTest extends TestCase
         $this->teacher = User::factory()->forSchool($this->school)->create();
         $this->student = User::factory()->forSchool($this->school)->create();
         $this->course = Course::factory()->for($this->school)->create();
-        $this->session = Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::Offline]);
+        $this->session = Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::VirtualClass]);
 
         CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
+
+        $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $this->student->assignRole($studentRole);
 
         $this->assessment = Assessment::factory()->for($this->course)->create([
             'type' => AssessmentType::Attendance,
@@ -62,8 +67,9 @@ class AssessmentAttendanceShowTest extends TestCase
         ]);
 
         Livewire::test(AssessmentAttendanceShow::class, ['assessment' => $this->assessment])
-            ->assertSee('100%')
-            ->assertSee('10.0');
+            ->assertSee($this->session->title)
+            ->assertSee('Completed')
+            ->assertSee('100 pts');
 
         $this->assertDatabaseHas('assessment_attempts', [
             'assessment_id' => $this->assessment->id,
@@ -72,7 +78,7 @@ class AssessmentAttendanceShowTest extends TestCase
         $this->assertDatabaseHas('assessment_scores', ['score' => 10]);
     }
 
-    public function test_teacher_sees_per_student_summary(): void
+    public function test_teacher_sees_per_session_summary(): void
     {
         $this->teacher->givePermissionTo(['assessment.view']);
         $this->actingAs($this->teacher);
@@ -84,8 +90,8 @@ class AssessmentAttendanceShowTest extends TestCase
         ]);
 
         Livewire::test(AssessmentAttendanceShow::class, ['assessment' => $this->assessment])
-            ->assertSee($this->student->name)
-            ->assertSee('0%');
+            ->assertSee($this->session->title)
+            ->assertSee('0 of 1 students attended');
     }
 
     public function test_non_attendance_assessment_404s(): void

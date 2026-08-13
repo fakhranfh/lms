@@ -96,4 +96,11 @@ class ForumThreadRepository implements ForumThreadRepositoryInterface
 
         return $threadsByUser + $commentsByUser;
     }
+
+    public function countForUserInSession(string $userId, string $sessionId): int
+    {
+        return ForumThread::where('user_id', $userId)
+            ->whereHas('forum', fn ($query) => $query->where('session_id', $sessionId))
+            ->count();
+    }
 }

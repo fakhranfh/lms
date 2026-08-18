@@ -41,8 +41,34 @@
                 logEvent(eventType, severity, metadata = null) {
                     $wire.logProctorEvent(eventType, severity, metadata);
                 },
+                startMediaRecorder(stream, prefix) {
+                    if (! stream) { return null; }
+                    const mimeType = ['video/webm;codecs=vp8,opus', 'video/webm']
+                        .find((type) => window.MediaRecorder && MediaRecorder.isTypeSupported(type));
+                    if (! mimeType) { return null; }
+                    try {
+                        const recorder = new MediaRecorder(stream, { mimeType });
+                        recorder.ondataavailable = (e) => {
+                            if (e.data && e.data.size > 0) {
+                                this.uploadRecordingChunk(e.data, prefix);
+                            }
+                        };
+                        recorder.start(60000);
+                        return recorder;
+                    } catch (e) {
+                        return null;
+                    }
+                },
+                async uploadRecordingChunk(blob, prefix) {
+                    try {
+                        const filename = prefix + '-' + Date.now() + '.webm';
+                        const { url, key } = await $wire.requestSnapshotUploadUrl(filename, 'Video');
+                        await fetch(url, { method: 'PUT', body: blob, headers: { 'Content-Type': 'video/webm' } });
+                        $wire.recordSnapshotUploaded('recording', key);
+                    } catch (e) {}
+                },
                 async captureSnapshot() {
-                    if (! this.$refs.webcamPreview || ! this.webcamStream) { return; }
+                    if (this.submitting || ! this.$refs.webcamPreview || ! this.webcamStream) { return; }
                     const video = this.$refs.webcamPreview;
                     const canvas = document.createElement('canvas');
                     canvas.width = video.videoWidth || 320;
@@ -72,6 +98,7 @@
                             this.logEvent('no_face_detected', 'high', { reason: 'camera_unavailable' });
                         }
                     }
+                    this.webcamRecorder = this.startMediaRecorder(this.webcamStream, 'webcam-recording');
 
                     if (pending && pending.screen.getVideoTracks()[0]?.readyState === 'live') {
                         this.screenStream = pending.screen;
@@ -80,6 +107,7 @@
                             this.screenShareError = 'Screen sharing was stopped. Click Share Screen to resume.';
                             this.logEvent('fullscreen_exit', 'high', { reason: 'screen_share_stopped' });
                         });
+                        this.screenRecorder = this.startMediaRecorder(this.screenStream, 'screen-recording');
                     } else {
                         await this.shareScreen();
                     }
@@ -103,23 +131,41 @@
                             this.screenShareError = 'Screen sharing was stopped. Click Share Screen to resume.';
                             this.logEvent('fullscreen_exit', 'high', { reason: 'screen_share_stopped' });
                         });
+                        if (this.screenRecorder && this.screenRecorder.state !== 'inactive') {
+                            this.screenRecorder.stop();
+                        }
+                        this.screenRecorder = this.startMediaRecorder(this.screenStream, 'screen-recording');
                     } catch (e) {
                         this.screenShareError = 'Screen sharing was denied or unavailable. Click Share Screen and allow sharing your entire screen.';
                         this.logEvent('fullscreen_exit', 'high', { reason: 'screen_share_denied' });
                     }
                 },
-                stopRecording() {
+                async stopRecording() {
                     try {
                         if (this.snapshotTimer) { clearInterval(this.snapshotTimer); }
+                        const stops = [];
+                        if (this.webcamRecorder && this.webcamRecorder.state !== 'inactive') {
+                            stops.push(new Promise((resolve) => {
+                                this.webcamRecorder.addEventListener('stop', resolve, { once: true });
+                                this.webcamRecorder.stop();
+                            }));
+                        }
+                        if (this.screenRecorder && this.screenRecorder.state !== 'inactive') {
+                            stops.push(new Promise((resolve) => {
+                                this.screenRecorder.addEventListener('stop', resolve, { once: true });
+                                this.screenRecorder.stop();
+                            }));
+                        }
+                        await Promise.all(stops);
                         if (this.webcamStream) { this.webcamStream.getTracks().forEach(t => t.stop()); }
                         if (this.screenStream) { this.screenStream.getTracks().forEach(t => t.stop()); }
                     } catch (e) {}
                 },
-                finishSubmit() {
+                async finishSubmit() {
                     if (this.submitting) { return; }
                     this.submitting = true;
                     clearInterval(this.timer);
-                    this.stopRecording();
+                    await this.stopRecording();
                     $wire.submitAttempt();
                 },
             }"

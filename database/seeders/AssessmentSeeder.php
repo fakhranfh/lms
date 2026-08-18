@@ -218,6 +218,7 @@ class AssessmentSeeder extends Seeder
             'start_date' => Carbon::now()->subDays(3),
             'end_date' => Carbon::now()->addWeek(),
             'status' => AssessmentStatus::Published,
+            'attempt_limit' => 1,
         ]);
 
         FinalExam::create([

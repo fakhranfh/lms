@@ -199,6 +199,11 @@ class AssessmentIndex extends Component
         $type = $assessment->type;
         $isExpired = $assessment->end_date && $assessment->end_date->isPast();
 
+        $attemptLimit = $type === AssessmentType::TheoryQuiz
+            ? $assessment->quiz?->total_attempts
+            : $assessment->attempt_limit;
+        $attemptLimit = $attemptLimit ? (string) $attemptLimit : 'unlimited';
+
         $route = match ($type) {
             AssessmentType::TheoryPersonalAssignment => route('assessments.personal.show', $assessment),
             AssessmentType::TheoryTeamAssignment => route('assessments.team.show', $assessment),
@@ -213,7 +218,7 @@ class AssessmentIndex extends Component
                 'status' => $assessment->status->value,
                 'route' => $route,
                 'attemptCount' => 0,
-                'attemptLimit' => 'unlimited',
+                'attemptLimit' => $attemptLimit,
                 'score' => null,
                 'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig($assessment->status->value),
@@ -230,7 +235,7 @@ class AssessmentIndex extends Component
                     'status' => 'not_started',
                     'route' => $route,
                     'attemptCount' => 0,
-                    'attemptLimit' => 'unlimited',
+                    'attemptLimit' => $attemptLimit,
                     'score' => null,
                     'isExpired' => $isExpired,
                     'statusConfig' => $this->statusConfig('not_started'),
@@ -244,7 +249,7 @@ class AssessmentIndex extends Component
                 'status' => $pending ? 'submitted' : 'graded',
                 'route' => $route,
                 'attemptCount' => $attempts->count(),
-                'attemptLimit' => 'unlimited',
+                'attemptLimit' => $attemptLimit,
                 'score' => $scoredAttempt?->score?->score,
                 'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig($pending ? 'submitted' : 'graded'),
@@ -258,7 +263,7 @@ class AssessmentIndex extends Component
                 'status' => 'graded',
                 'route' => $route,
                 'attemptCount' => 0,
-                'attemptLimit' => 'unlimited',
+                'attemptLimit' => $attemptLimit,
                 'score' => $computed['score'],
                 'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig('graded'),
@@ -272,7 +277,7 @@ class AssessmentIndex extends Component
                 'status' => 'graded',
                 'route' => $route,
                 'attemptCount' => 0,
-                'attemptLimit' => 'unlimited',
+                'attemptLimit' => $attemptLimit,
                 'score' => $computed['score'],
                 'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig('graded'),
@@ -295,7 +300,7 @@ class AssessmentIndex extends Component
                 'status' => 'not_started',
                 'route' => $route,
                 'attemptCount' => 0,
-                'attemptLimit' => 'unlimited',
+                'attemptLimit' => $attemptLimit,
                 'score' => null,
                 'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig('not_started'),
@@ -307,7 +312,7 @@ class AssessmentIndex extends Component
                 'status' => 'graded',
                 'route' => $route,
                 'attemptCount' => $attempts->count(),
-                'attemptLimit' => 'unlimited',
+                'attemptLimit' => $attemptLimit,
                 'score' => $score,
                 'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig('graded'),
@@ -318,7 +323,7 @@ class AssessmentIndex extends Component
             'status' => 'submitted',
             'route' => $route,
             'attemptCount' => $attempts->count(),
-            'attemptLimit' => 'unlimited',
+            'attemptLimit' => $attemptLimit,
             'score' => null,
             'isExpired' => $isExpired,
             'statusConfig' => $this->statusConfig('submitted'),

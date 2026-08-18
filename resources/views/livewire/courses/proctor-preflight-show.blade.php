@@ -1,7 +1,7 @@
 @section('title', $assessment->title)
 
 <div
-    class="min-h-screen bg-surface-container/30 flex items-center justify-center px-gutter py-space-xl"
+    class="min-h-screen bg-surface-container/30"
     x-data="{
         speedTesting: false,
         speedResult: null,
@@ -10,6 +10,7 @@
         displayMbps: 0,
         downloadMbps: 0,
         uploadMbps: 0,
+        speedProgress: 0,
         gaugeDeg: -90,
         gaugeRaf: null,
         cameraStream: null,
@@ -48,6 +49,7 @@
             this.displayMbps = 0;
             this.downloadMbps = 0;
             this.uploadMbps = 0;
+            this.speedProgress = 0;
             this.animateGaugeTo(0);
             try {
                 this.speedPhase = 'download';
@@ -61,6 +63,7 @@
                 this.uploadMbps = await this.measureUpload();
 
                 this.speedPhase = null;
+                this.speedProgress = 100;
                 this.animateGaugeTo(0);
 
                 const passed = this.downloadMbps >= this.minMbps && this.uploadMbps >= this.minMbps;
@@ -88,19 +91,22 @@
                     const { done, value } = await reader.read();
                     if (done) { break; }
                     receivedBytes += value.length;
-                    const elapsedSec = (performance.now() - started) / 1000;
+                    const elapsedMs = performance.now() - started;
+                    const elapsedSec = elapsedMs / 1000;
+                    this.speedProgress = Math.min(elapsedMs / this.phaseDurationMs, 1) * 50;
                     if (elapsedSec > 0.15) {
                         const instant = (receivedBytes * 8 / 1_000_000) / elapsedSec;
                         ema = ema === null ? instant : (ema * 0.7 + instant * 0.3);
                         this.animateGaugeTo(ema);
                     }
-                    if ((performance.now() - started) >= this.phaseDurationMs) {
+                    if (elapsedMs >= this.phaseDurationMs) {
                         reader.cancel();
                         break;
                     }
                 }
             }
 
+            this.speedProgress = 50;
             const totalElapsedSec = (performance.now() - started) / 1000;
             const final = (receivedBytes * 8 / 1_000_000) / totalElapsedSec;
             this.animateGaugeTo(final);
@@ -123,12 +129,15 @@
                     body: chunk,
                 });
                 sentBytes += chunk.size;
+                const chunkElapsedMs = performance.now() - started;
                 const chunkElapsedSec = (performance.now() - chunkStarted) / 1000;
+                this.speedProgress = 50 + Math.min(chunkElapsedMs / this.phaseDurationMs, 1) * 50;
                 const instant = (chunk.size * 8 / 1_000_000) / chunkElapsedSec;
                 ema = ema === null ? instant : (ema * 0.6 + instant * 0.4);
                 this.animateGaugeTo(ema);
             }
 
+            this.speedProgress = 100;
             const totalElapsedSec = (performance.now() - started) / 1000;
             const final = (sentBytes * 8 / 1_000_000) / totalElapsedSec;
             this.animateGaugeTo(final);
@@ -206,6 +215,14 @@
             if (this.micAudioCtx) { this.micAudioCtx.close(); this.micAudioCtx = null; }
             this.micLevel = 0;
         },
+        stopScreenCheck() {
+            if (this.screenStream) { this.screenStream.getTracks().forEach(t => t.stop()); this.screenStream = null; }
+        },
+        stopAllChecks() {
+            this.stopMicCheck();
+            this.stopScreenCheck();
+            if (this.cameraStream) { this.cameraStream.getTracks().forEach(t => t.stop()); this.cameraStream = null; }
+        },
         async runScreenCheck() {
             this.screenError = null;
             if (! window.isSecureContext) {
@@ -219,9 +236,17 @@
                 return;
             }
             try {
-                this.screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                this.screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' } });
+                const track = this.screenStream.getVideoTracks()[0];
+                if (track.getSettings().displaySurface !== 'monitor') {
+                    track.stop();
+                    this.screenStream = null;
+                    this.screenError = 'You must share your entire screen, not a window or tab. Please try again and choose &quot;Entire Screen&quot;.';
+                    $wire.markCheckFailed('screen');
+                    return;
+                }
                 $wire.markCheckPassed('screen');
-                this.screenStream.getVideoTracks()[0].addEventListener('ended', () => {
+                track.addEventListener('ended', () => {
                     this.screenStream = null;
                     $wire.markCheckFailed('screen');
                 });
@@ -233,38 +258,65 @@
             }
         },
     }"
+    x-init="$el.closest('main')?.scrollTo(0, 0)"
+    x-on:destroy="stopAllChecks()"
 >
+    <div class="fixed top-0 inset-x-0 flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant bg-surface z-10">
+        <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ $assessment->title }}</h2>
+        <span class="inline-flex items-center px-space-sm py-1 rounded-full text-body-xs font-medium bg-error/10 text-error">Proctored</span>
+    </div>
+
+    <div class="min-h-screen flex items-center justify-center px-gutter py-space-xl pt-24">
     <div class="bg-surface border border-outline-variant rounded-lg p-space-xl max-w-xl w-full space-y-space-lg">
-        <!-- Step indicator -->
-        <div class="flex items-center justify-center gap-space-sm">
-            @foreach (['speed' => '1', 'camera' => '2', 'mic' => '3', 'screen' => '4'] as $stepKey => $stepNumber)
-                <div class="flex items-center gap-space-sm">
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm text-label-sm
-                        {{ $step === $stepKey ? 'bg-primary text-on-primary' : ($checksPassed[$stepKey] ? 'bg-success/10 text-success' : 'bg-surface-container text-on-surface-variant') }}">
-                        @if ($checksPassed[$stepKey] && $step !== $stepKey)
-                            <span class="material-symbols-outlined text-[18px]" data-weight="fill">check</span>
-                        @else
-                            {{ $stepNumber }}
+        @if ($step !== 'instructions')
+            <!-- Step indicator -->
+            <div class="flex items-center justify-center gap-space-sm">
+                @foreach (['speed' => '1', 'camera' => '2', 'mic' => '3', 'screen' => '4'] as $stepKey => $stepNumber)
+                    <div class="flex items-center gap-space-sm">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm text-label-sm
+                            {{ $step === $stepKey ? 'bg-primary text-on-primary' : ($checksPassed[$stepKey] ? 'bg-success/10 text-success' : 'bg-surface-container text-on-surface-variant') }}">
+                            @if ($checksPassed[$stepKey] && $step !== $stepKey)
+                                <span class="material-symbols-outlined text-[18px]" data-weight="fill">check</span>
+                            @else
+                                {{ $stepNumber }}
+                            @endif
+                        </div>
+                        @if ($stepNumber !== '4')
+                            <div class="w-8 h-0.5 bg-outline-variant"></div>
                         @endif
                     </div>
-                    @if ($stepNumber !== '4')
-                        <div class="w-8 h-0.5 bg-outline-variant"></div>
-                    @endif
-                </div>
-            @endforeach
-        </div>
+                @endforeach
+            </div>
+        @endif
 
         <div class="text-center">
-            <h1 class="font-headline-md text-headline-md text-on-surface">{{ $assessment->title }}</h1>
             <p class="text-body-sm text-on-surface-variant mt-space-xs">
                 This exam is proctored. Complete each check below to begin.
             </p>
         </div>
 
-        @if ($finalExam->instructions)
-            <div class="bg-surface-container/50 border border-outline-variant rounded-lg p-space-lg">
-                <p class="font-label-md text-label-md text-on-surface mb-space-sm">Instructions</p>
-                <div class="rte-content prose prose-sm max-w-none text-on-surface-variant">{!! $finalExam->instructions !!}</div>
+        <!-- Step 0: Instructions -->
+        @if ($step === 'instructions')
+            <div class="space-y-space-lg">
+                @if ($finalExam->instructions)
+                    <div class="bg-surface-container/50 border border-outline-variant rounded-lg p-space-lg">
+                        <p class="font-label-md text-label-md text-on-surface mb-space-sm">Instructions</p>
+                        <div class="rte-content prose prose-sm max-w-none text-on-surface-variant">{!! $finalExam->instructions !!}</div>
+                    </div>
+                @endif
+
+                <div class="flex justify-end pt-space-md border-t border-outline-variant">
+                    <button
+                        type="button"
+                        wire:click="goToStep('speed')"
+                        wire:loading.attr="disabled"
+                        wire:target="goToStep('speed')"
+                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
+                    >
+                        <span wire:loading wire:target="goToStep('speed')" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                        Continue
+                    </button>
+                </div>
             </div>
         @endif
 
@@ -294,6 +346,13 @@
                             Preparing upload test…
                         </p>
                     </div>
+                </div>
+
+                <div x-show="speedTesting" x-cloak class="mx-auto w-56 space-y-space-xs">
+                    <div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+                        <div class="h-full bg-primary rounded-full" style="transition: width 0.1s linear;" :style="'width: ' + speedProgress + '%'"></div>
+                    </div>
+                    <p class="text-body-xs text-on-surface-variant text-center" x-text="Math.round(speedProgress) + '%'"></p>
                 </div>
 
                 <div x-show="!speedTesting && speedResult" x-cloak class="flex items-center justify-center gap-space-lg text-body-sm text-on-surface-variant">
@@ -446,6 +505,7 @@
                         <a
                             href="{{ route('assessments.final-exam.proctor.show', $assessment) }}"
                             wire:navigate
+                            @click="stopAllChecks()"
                             class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                         >
                             Start Exam
@@ -454,5 +514,6 @@
                 </div>
             </div>
         @endif
+    </div>
     </div>
 </div>

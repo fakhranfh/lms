@@ -1,6 +1,6 @@
 @section('title', $assessment->title)
 
-<div class="space-y-space-lg">
+<div class="space-y-space-lg" x-data x-init="$el.closest('main')?.scrollTo(0, 0)">
     @if ($errorMessage)
         <div class="px-gutter py-space-md bg-error/10 border border-error/20 rounded-lg flex items-center gap-space-md">
             <span class="material-symbols-outlined text-error text-[20px]" data-weight="fill">error</span>
@@ -18,6 +18,7 @@
                 confirmOpen: false,
                 webcamStream: null,
                 screenStream: null,
+                screenShareError: null,
                 webcamRecorder: null,
                 screenRecorder: null,
                 snapshotTimer: null,
@@ -28,12 +29,7 @@
                     let diff = Math.floor((new Date(this.deadline) - new Date()) / 1000);
                     this.remaining = Math.max(diff, 0);
                     if (diff <= 0) {
-                        clearInterval(this.timer);
-                        if (! this.submitting) {
-                            this.submitting = true;
-                            this.stopRecording();
-                            $wire.submitAttempt();
-                        }
+                        this.finishSubmit();
                     }
                 },
                 formatted() {
@@ -64,28 +60,67 @@
                     }, 'image/jpeg', 0.7);
                 },
                 async startRecording() {
-                    try {
-                        this.webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                        this.$refs.webcamPreview.srcObject = this.webcamStream;
-                    } catch (e) {
-                        this.logEvent('no_face_detected', 'high', { reason: 'camera_unavailable' });
+                    const pending = window.__proctorPendingStreams;
+                    window.__proctorPendingStreams = null;
+
+                    if (pending && pending.webcam.getVideoTracks()[0]?.readyState === 'live') {
+                        this.webcamStream = pending.webcam;
+                    } else {
+                        try {
+                            this.webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                        } catch (e) {
+                            this.logEvent('no_face_detected', 'high', { reason: 'camera_unavailable' });
+                        }
                     }
-                    try {
-                        this.screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                        this.$refs.screenPreview.srcObject = this.screenStream;
+
+                    if (pending && pending.screen.getVideoTracks()[0]?.readyState === 'live') {
+                        this.screenStream = pending.screen;
                         this.screenStream.getVideoTracks()[0].addEventListener('ended', () => {
                             this.screenStream = null;
+                            this.screenShareError = 'Screen sharing was stopped. Click Share Screen to resume.';
+                            this.logEvent('fullscreen_exit', 'high', { reason: 'screen_share_stopped' });
+                        });
+                    } else {
+                        await this.shareScreen();
+                    }
+
+                    this.snapshotTimer = setInterval(() => this.captureSnapshot(), 45000);
+                },
+                async shareScreen() {
+                    this.screenShareError = null;
+                    try {
+                        const stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' } });
+                        const track = stream.getVideoTracks()[0];
+                        if (track.getSettings().displaySurface !== 'monitor') {
+                            track.stop();
+                            this.screenShareError = 'You must share your entire screen, not a window or tab. Click Share Screen and choose &quot;Entire Screen&quot;.';
+                            this.logEvent('fullscreen_exit', 'high', { reason: 'screen_share_not_full_screen' });
+                            return;
+                        }
+                        this.screenStream = stream;
+                        track.addEventListener('ended', () => {
+                            this.screenStream = null;
+                            this.screenShareError = 'Screen sharing was stopped. Click Share Screen to resume.';
                             this.logEvent('fullscreen_exit', 'high', { reason: 'screen_share_stopped' });
                         });
                     } catch (e) {
+                        this.screenShareError = 'Screen sharing was denied or unavailable. Click Share Screen and allow sharing your entire screen.';
                         this.logEvent('fullscreen_exit', 'high', { reason: 'screen_share_denied' });
                     }
-                    this.snapshotTimer = setInterval(() => this.captureSnapshot(), 45000);
                 },
                 stopRecording() {
-                    if (this.snapshotTimer) { clearInterval(this.snapshotTimer); }
-                    if (this.webcamStream) { this.webcamStream.getTracks().forEach(t => t.stop()); }
-                    if (this.screenStream) { this.screenStream.getTracks().forEach(t => t.stop()); }
+                    try {
+                        if (this.snapshotTimer) { clearInterval(this.snapshotTimer); }
+                        if (this.webcamStream) { this.webcamStream.getTracks().forEach(t => t.stop()); }
+                        if (this.screenStream) { this.screenStream.getTracks().forEach(t => t.stop()); }
+                    } catch (e) {}
+                },
+                finishSubmit() {
+                    if (this.submitting) { return; }
+                    this.submitting = true;
+                    clearInterval(this.timer);
+                    this.stopRecording();
+                    $wire.submitAttempt();
                 },
             }"
             x-init="
@@ -151,26 +186,54 @@
                         </div>
                     </div>
 
-                    <div class="space-y-space-sm">
-                        <p class="font-label-sm text-label-sm text-secondary">Camera</p>
-                        <div class="relative rounded-lg overflow-hidden bg-black aspect-video">
-                            <video x-ref="webcamPreview" autoplay muted playsinline class="w-full h-full object-cover"></video>
-                            <span x-show="!webcamStream" x-cloak class="absolute inset-0 flex items-center justify-center text-body-xs text-white/70">
-                                Camera unavailable
-                            </span>
+                    <div
+                        :class="screenStream ? 'space-y-space-sm' : 'fixed inset-0 z-20 bg-surface flex flex-col items-center justify-center gap-space-lg p-space-xl'"
+                    >
+                        <template x-if="!screenStream">
+                            <div class="text-center space-y-space-sm">
+                                <span class="material-symbols-outlined text-error text-[40px]">screen_share</span>
+                                <h3 class="font-headline-sm text-headline-sm text-on-surface">Full-Screen Sharing Required</h3>
+                            </div>
+                        </template>
+
+                        <div :class="screenStream ? 'space-y-space-sm' : 'flex flex-col sm:flex-row gap-space-lg'">
+                            <div class="space-y-space-sm" :class="screenStream ? '' : 'w-48'">
+                                <p class="font-label-sm text-label-sm text-secondary">Camera</p>
+                                <div class="relative rounded-lg overflow-hidden bg-black aspect-video">
+                                    <video x-ref="webcamPreview" x-effect="$el.srcObject = webcamStream" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                                    <span x-show="!webcamStream" x-cloak class="absolute inset-0 flex items-center justify-center text-body-xs text-white/70">
+                                        Camera unavailable
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="space-y-space-sm" :class="screenStream ? '' : 'w-48'">
+                                <p class="font-label-sm text-label-sm text-secondary">Screen Share</p>
+                                <div class="relative rounded-lg overflow-hidden bg-black aspect-video">
+                                    <video x-ref="screenPreview" x-show="screenStream" x-cloak x-effect="$el.srcObject = screenStream" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                                    <span x-show="!screenStream" x-cloak class="absolute inset-0 flex items-center justify-center text-body-xs text-white/70">
+                                        Screen share unavailable
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
-                        <p class="font-label-sm text-label-sm text-secondary">Screen Share</p>
-                        <div class="relative rounded-lg overflow-hidden bg-black aspect-video">
-                            <video x-ref="screenPreview" autoplay muted playsinline class="w-full h-full object-cover"></video>
-                            <span x-show="!screenStream" x-cloak class="absolute inset-0 flex items-center justify-center text-body-xs text-white/70">
-                                Screen share unavailable
-                            </span>
-                        </div>
+                        <template x-if="!screenStream">
+                            <div class="text-center space-y-space-md max-w-sm">
+                                <p class="text-body-sm text-on-surface-variant" x-text="screenShareError || 'The exam is hidden until you share your entire screen again.'"></p>
+                                <button
+                                    type="button"
+                                    @click="shareScreen()"
+                                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                                >
+                                    Share Screen
+                                </button>
+                            </div>
+                        </template>
                     </div>
                 </div>
 
-                <div class="overflow-y-auto p-space-xl">
+                <div class="overflow-y-auto p-space-xl relative">
                     @foreach ($quiz->questions as $question)
                         <div x-show="currentQuestion === {{ $loop->index }}" x-cloak class="space-y-space-lg max-w-2xl mx-auto">
                             <p class="text-body-sm text-on-surface-variant">Question {{ $loop->iteration }} of {{ $quiz->questions->count() }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
@@ -237,7 +300,7 @@
                                 type="button"
                                 wire:loading.attr="disabled"
                                 wire:target="submitAttempt"
-                                @click="confirmOpen = false; submitting = true; clearInterval(timer); stopRecording(); $wire.submitAttempt()"
+                                @click="confirmOpen = false; finishSubmit()"
                                 class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
                             >
                                 <span wire:loading wire:target="submitAttempt" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
@@ -249,16 +312,119 @@
             </template>
         </div>
     @elseif (! $canStart)
+        <div class="fixed top-0 inset-x-0 flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant bg-surface z-10">
+            <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ $assessment->title }}</h2>
+            <span class="inline-flex items-center px-space-sm py-1 rounded-full text-body-xs font-medium bg-error/10 text-error">Proctored</span>
+        </div>
+        <div class="pt-24">
         <div class="bg-surface border border-outline-variant rounded-lg p-space-lg text-center max-w-2xl mx-auto">
             <p class="text-body-md text-on-surface-variant">This exam is not currently available to start.</p>
             <a href="{{ route('assessments.final-exam.show', $assessment) }}" wire:navigate class="text-primary hover:underline">Back to exam overview</a>
         </div>
+        </div>
     @else
-        <div class="bg-surface border border-outline-variant rounded-lg p-space-lg text-center max-w-2xl mx-auto space-y-space-lg" x-data="{ confirmOpen: false }">
-            <p class="text-body-md text-on-surface-variant">Ready to begin? Recording will start immediately.</p>
+        <div class="fixed top-0 inset-x-0 flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant bg-surface z-10">
+            <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ $assessment->title }}</h2>
+            <span class="inline-flex items-center px-space-sm py-1 rounded-full text-body-xs font-medium bg-error/10 text-error">Proctored</span>
+        </div>
+        <div class="pt-24">
+        <div
+            class="bg-surface border border-outline-variant rounded-lg p-space-lg text-center max-w-2xl mx-auto space-y-space-lg"
+            x-data="{
+                confirmOpen: false,
+                cameraStream: null,
+                cameraError: null,
+                screenStream: null,
+                screenError: null,
+                get ready() { return !!this.cameraStream && !!this.screenStream; },
+                async checkCamera() {
+                    this.cameraError = null;
+                    try {
+                        this.cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        this.$nextTick(() => { if (this.$refs.cameraPreview) { this.$refs.cameraPreview.srcObject = this.cameraStream; } });
+                    } catch (e) {
+                        this.cameraError = e.name === 'NotAllowedError'
+                            ? 'Camera access was denied. Please allow camera permission and try again.'
+                            : (e.name === 'NotFoundError' ? 'No camera was found on this device.' : `Camera access was denied or unavailable (${e.name || 'unknown error'}).`);
+                    }
+                },
+                async checkScreen() {
+                    this.screenError = null;
+                    try {
+                        const stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' } });
+                        const track = stream.getVideoTracks()[0];
+                        if (track.getSettings().displaySurface !== 'monitor') {
+                            track.stop();
+                            this.screenError = 'You must share your entire screen, not a window or tab. Click Share Screen and choose &quot;Entire Screen&quot;.';
+                            return;
+                        }
+                        this.screenStream = stream;
+                        this.$nextTick(() => { if (this.$refs.screenPreview) { this.$refs.screenPreview.srcObject = this.screenStream; } });
+                        track.addEventListener('ended', () => {
+                            this.screenStream = null;
+                            this.screenError = 'Screen sharing was stopped. Click Share Screen to try again.';
+                        });
+                    } catch (e) {
+                        this.screenError = e.name === 'NotAllowedError'
+                            ? 'Screen sharing was denied. Please allow sharing your entire screen and try again.'
+                            : `Screen sharing was denied or unavailable (${e.name || 'unknown error'}).`;
+                    }
+                },
+                startExam() {
+                    if (! this.ready) { return; }
+                    window.__proctorPendingStreams = { webcam: this.cameraStream, screen: this.screenStream };
+                    this.confirmOpen = false;
+                    $wire.startAttempt();
+                },
+            }"
+            x-on:destroy="if (! ready) { if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); } if (screenStream) { screenStream.getTracks().forEach(t => t.stop()); } }"
+        >
+            <p class="text-body-md text-on-surface-variant">Camera and full-screen sharing must pass before the exam can begin.</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-lg text-left">
+                <div class="space-y-space-sm">
+                    <p class="font-label-sm text-label-sm text-secondary">Camera</p>
+                    <div class="relative rounded-lg overflow-hidden bg-black aspect-video">
+                        <video x-ref="cameraPreview" x-show="cameraStream" x-cloak autoplay muted playsinline class="w-full h-full object-cover"></video>
+                        <span x-show="!cameraStream" x-cloak class="absolute inset-0 flex items-center justify-center text-body-xs text-white/70">
+                            Camera unavailable
+                        </span>
+                    </div>
+                    <button
+                        type="button"
+                        @click="checkCamera()"
+                        class="w-full px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                    >
+                        <span x-show="!cameraStream">Enable Camera</span>
+                        <span x-show="cameraStream" x-cloak>Retry</span>
+                    </button>
+                    <p x-show="cameraError" x-cloak class="text-body-xs text-error" x-text="cameraError"></p>
+                </div>
+
+                <div class="space-y-space-sm">
+                    <p class="font-label-sm text-label-sm text-secondary">Screen Share</p>
+                    <div class="relative rounded-lg overflow-hidden bg-black aspect-video">
+                        <video x-ref="screenPreview" x-show="screenStream" x-cloak autoplay muted playsinline class="w-full h-full object-cover"></video>
+                        <span x-show="!screenStream" x-cloak class="absolute inset-0 flex items-center justify-center text-body-xs text-white/70">
+                            Screen share unavailable
+                        </span>
+                    </div>
+                    <button
+                        type="button"
+                        @click="checkScreen()"
+                        class="w-full px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                    >
+                        <span x-show="!screenStream">Share Screen</span>
+                        <span x-show="screenStream" x-cloak>Retry</span>
+                    </button>
+                    <p x-show="screenError" x-cloak class="text-body-xs text-error" x-text="screenError"></p>
+                </div>
+            </div>
+
             <button
                 type="button"
                 @click="confirmOpen = true"
+                :disabled="!ready"
                 wire:loading.attr="disabled"
                 wire:target="startAttempt"
                 class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
@@ -291,7 +457,7 @@
                                 type="button"
                                 wire:loading.attr="disabled"
                                 wire:target="startAttempt"
-                                @click="confirmOpen = false; $wire.startAttempt()"
+                                @click="startExam()"
                                 class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
                             >
                                 <span wire:loading wire:target="startAttempt" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
@@ -301,6 +467,7 @@
                     </div>
                 </div>
             </template>
+        </div>
         </div>
     @endif
 </div>

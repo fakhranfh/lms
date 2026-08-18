@@ -77,7 +77,6 @@ class ProctorPreflightShowTest extends TestCase
 
         $component->call('markCheckPassed', 'speed')
             ->call('markCheckPassed', 'camera')
-            ->call('markCheckPassed', 'mic')
             ->call('markCheckPassed', 'screen');
 
         $this->assertTrue($component->get('allChecksPassed'));

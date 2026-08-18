@@ -10,18 +10,21 @@
         displayMbps: 0,
         downloadMbps: 0,
         uploadMbps: 0,
-        speedProgress: 0,
+        downloadProgress: 0,
+        uploadProgress: 0,
         gaugeDeg: -90,
         gaugeRaf: null,
         cameraStream: null,
         cameraError: null,
         screenStream: null,
         screenError: null,
-        micStream: null,
-        micError: null,
         micLevel: 0,
         micAudioCtx: null,
         micRaf: null,
+        screenAudioLevel: 0,
+        screenAudioCtx: null,
+        screenAudioRaf: null,
+        testSoundPlaying: false,
         minMbps: 3,
         maxGaugeMbps: 100,
         phaseDurationMs: 5000,
@@ -49,7 +52,8 @@
             this.displayMbps = 0;
             this.downloadMbps = 0;
             this.uploadMbps = 0;
-            this.speedProgress = 0;
+            this.downloadProgress = 0;
+            this.uploadProgress = 0;
             this.animateGaugeTo(0);
             try {
                 this.speedPhase = 'download';
@@ -63,7 +67,6 @@
                 this.uploadMbps = await this.measureUpload();
 
                 this.speedPhase = null;
-                this.speedProgress = 100;
                 this.animateGaugeTo(0);
 
                 const passed = this.downloadMbps >= this.minMbps && this.uploadMbps >= this.minMbps;
@@ -93,7 +96,7 @@
                     receivedBytes += value.length;
                     const elapsedMs = performance.now() - started;
                     const elapsedSec = elapsedMs / 1000;
-                    this.speedProgress = Math.min(elapsedMs / this.phaseDurationMs, 1) * 50;
+                    this.downloadProgress = Math.min(elapsedMs / this.phaseDurationMs, 1) * 100;
                     if (elapsedSec > 0.15) {
                         const instant = (receivedBytes * 8 / 1_000_000) / elapsedSec;
                         ema = ema === null ? instant : (ema * 0.7 + instant * 0.3);
@@ -106,7 +109,7 @@
                 }
             }
 
-            this.speedProgress = 50;
+            this.downloadProgress = 100;
             const totalElapsedSec = (performance.now() - started) / 1000;
             const final = (receivedBytes * 8 / 1_000_000) / totalElapsedSec;
             this.animateGaugeTo(final);
@@ -131,13 +134,13 @@
                 sentBytes += chunk.size;
                 const chunkElapsedMs = performance.now() - started;
                 const chunkElapsedSec = (performance.now() - chunkStarted) / 1000;
-                this.speedProgress = 50 + Math.min(chunkElapsedMs / this.phaseDurationMs, 1) * 50;
+                this.uploadProgress = Math.min(chunkElapsedMs / this.phaseDurationMs, 1) * 100;
                 const instant = (chunk.size * 8 / 1_000_000) / chunkElapsedSec;
                 ema = ema === null ? instant : (ema * 0.6 + instant * 0.4);
                 this.animateGaugeTo(ema);
             }
 
-            this.speedProgress = 100;
+            this.uploadProgress = 100;
             const totalElapsedSec = (performance.now() - started) / 1000;
             const final = (sentBytes * 8 / 1_000_000) / totalElapsedSec;
             this.animateGaugeTo(final);
@@ -147,7 +150,7 @@
         async runCameraCheck() {
             this.cameraError = null;
             if (! window.isSecureContext) {
-                this.cameraError = 'Camera access requires a secure (HTTPS) connection.';
+                this.cameraError = 'Camera and microphone access require a secure (HTTPS) connection.';
                 $wire.markCheckFailed('camera');
                 return;
             }
@@ -157,69 +160,85 @@
                 return;
             }
             try {
-                this.cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                this.cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 this.$nextTick(() => { if (this.$refs.cameraPreview) { this.$refs.cameraPreview.srcObject = this.cameraStream; } });
                 $wire.markCheckPassed('camera');
+                this.startLevelMeter(this.cameraStream, 'mic');
             } catch (e) {
                 this.cameraError = e.name === 'NotAllowedError'
-                    ? 'Camera access was denied. Please allow camera permission in your browser settings and try again.'
-                    : (e.name === 'NotFoundError' ? 'No camera was found on this device.' : `Camera access was denied or unavailable (${e.name || 'unknown error'}).`);
+                    ? 'Camera and microphone access was denied. Please allow permissions in your browser settings and try again.'
+                    : (e.name === 'NotFoundError' ? 'No camera or microphone was found on this device.' : `Camera access was denied or unavailable (${e.name || 'unknown error'}).`);
                 $wire.markCheckFailed('camera');
             }
         },
-        async runMicCheck() {
-            this.micError = null;
-            if (! window.isSecureContext) {
-                this.micError = 'Microphone access requires a secure (HTTPS) connection.';
-                $wire.markCheckFailed('mic');
-                return;
-            }
-            if (! navigator.mediaDevices || ! navigator.mediaDevices.getUserMedia) {
-                this.micError = 'Your browser does not support microphone access.';
-                $wire.markCheckFailed('mic');
-                return;
-            }
-            try {
-                this.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                $wire.markCheckPassed('mic');
+        startLevelMeter(stream, target) {
+            this.stopLevelMeter(target);
+            const audioTracks = stream ? stream.getAudioTracks() : [];
+            if (audioTracks.length === 0) { return; }
 
-                this.micAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const source = this.micAudioCtx.createMediaStreamSource(this.micStream);
-                const analyser = this.micAudioCtx.createAnalyser();
-                analyser.fftSize = 512;
-                source.connect(analyser);
-                const data = new Uint8Array(analyser.frequencyBinCount);
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const source = ctx.createMediaStreamSource(stream);
+            const analyser = ctx.createAnalyser();
+            analyser.fftSize = 512;
+            source.connect(analyser);
+            const data = new Uint8Array(analyser.frequencyBinCount);
 
-                const tick = () => {
-                    if (! this.micStream) { return; }
-                    analyser.getByteTimeDomainData(data);
-                    let sumSquares = 0;
-                    for (let i = 0; i < data.length; i++) {
-                        const v = (data[i] - 128) / 128;
-                        sumSquares += v * v;
-                    }
-                    this.micLevel = Math.min(Math.sqrt(sumSquares / data.length) * 4, 1);
+            if (target === 'mic') { this.micAudioCtx = ctx; } else { this.screenAudioCtx = ctx; }
+
+            const tick = () => {
+                const ctxRef = target === 'mic' ? this.micAudioCtx : this.screenAudioCtx;
+                if (! ctxRef) { return; }
+                analyser.getByteTimeDomainData(data);
+                let sumSquares = 0;
+                for (let i = 0; i < data.length; i++) {
+                    const v = (data[i] - 128) / 128;
+                    sumSquares += v * v;
+                }
+                const level = Math.min(Math.sqrt(sumSquares / data.length) * 4, 1);
+                if (target === 'mic') {
+                    this.micLevel = level;
                     this.micRaf = requestAnimationFrame(tick);
-                };
-                tick();
-            } catch (e) {
-                this.micError = e.name === 'NotAllowedError'
-                    ? 'Microphone access was denied. Please allow microphone permission in your browser settings and try again.'
-                    : (e.name === 'NotFoundError' ? 'No microphone was found on this device.' : `Microphone access was denied or unavailable (${e.name || 'unknown error'}).`);
-                $wire.markCheckFailed('mic');
+                } else {
+                    this.screenAudioLevel = level;
+                    this.screenAudioRaf = requestAnimationFrame(tick);
+                }
+            };
+            tick();
+        },
+        stopLevelMeter(target) {
+            if (target === 'mic') {
+                if (this.micRaf) { cancelAnimationFrame(this.micRaf); this.micRaf = null; }
+                if (this.micAudioCtx) { this.micAudioCtx.close(); this.micAudioCtx = null; }
+                this.micLevel = 0;
+            } else {
+                if (this.screenAudioRaf) { cancelAnimationFrame(this.screenAudioRaf); this.screenAudioRaf = null; }
+                if (this.screenAudioCtx) { this.screenAudioCtx.close(); this.screenAudioCtx = null; }
+                this.screenAudioLevel = 0;
             }
         },
-        stopMicCheck() {
-            if (this.micRaf) { cancelAnimationFrame(this.micRaf); this.micRaf = null; }
-            if (this.micStream) { this.micStream.getTracks().forEach(t => t.stop()); this.micStream = null; }
-            if (this.micAudioCtx) { this.micAudioCtx.close(); this.micAudioCtx = null; }
-            this.micLevel = 0;
+        async playTestSound() {
+            if (this.testSoundPlaying) { return; }
+            this.testSoundPlaying = true;
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = ctx.createOscillator();
+            const gain = ctx.createGain();
+            oscillator.frequency.value = 440;
+            gain.gain.value = 0.2;
+            oscillator.connect(gain);
+            gain.connect(ctx.destination);
+            oscillator.start();
+            setTimeout(() => {
+                oscillator.stop();
+                ctx.close();
+                this.testSoundPlaying = false;
+            }, 2000);
         },
         stopScreenCheck() {
+            this.stopLevelMeter('screen');
             if (this.screenStream) { this.screenStream.getTracks().forEach(t => t.stop()); this.screenStream = null; }
         },
         stopAllChecks() {
-            this.stopMicCheck();
+            this.stopLevelMeter('mic');
             this.stopScreenCheck();
             if (this.cameraStream) { this.cameraStream.getTracks().forEach(t => t.stop()); this.cameraStream = null; }
         },
@@ -236,18 +255,27 @@
                 return;
             }
             try {
-                this.screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' } });
+                this.screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' }, audio: true });
                 const track = this.screenStream.getVideoTracks()[0];
                 if (track.getSettings().displaySurface !== 'monitor') {
-                    track.stop();
+                    this.screenStream.getTracks().forEach(t => t.stop());
                     this.screenStream = null;
                     this.screenError = 'You must share your entire screen, not a window or tab. Please try again and choose &quot;Entire Screen&quot;.';
                     $wire.markCheckFailed('screen');
                     return;
                 }
+                if (this.screenStream.getAudioTracks().length === 0) {
+                    this.screenStream.getTracks().forEach(t => t.stop());
+                    this.screenStream = null;
+                    this.screenError = 'You must also share audio. Please try again and enable the &quot;Share audio&quot; (or &quot;Share tab audio&quot;) option.';
+                    $wire.markCheckFailed('screen');
+                    return;
+                }
                 $wire.markCheckPassed('screen');
+                this.startLevelMeter(this.screenStream, 'screen');
                 track.addEventListener('ended', () => {
                     this.screenStream = null;
+                    this.stopLevelMeter('screen');
                     $wire.markCheckFailed('screen');
                 });
             } catch (e) {
@@ -271,7 +299,7 @@
         @if ($step !== 'instructions')
             <!-- Step indicator -->
             <div class="flex items-center justify-center gap-space-sm">
-                @foreach (['speed' => '1', 'camera' => '2', 'mic' => '3', 'screen' => '4'] as $stepKey => $stepNumber)
+                @foreach (['speed' => '1', 'camera' => '2', 'screen' => '3'] as $stepKey => $stepNumber)
                     <div class="flex items-center gap-space-sm">
                         <div class="w-8 h-8 rounded-full flex items-center justify-center font-label-sm text-label-sm
                             {{ $step === $stepKey ? 'bg-primary text-on-primary' : ($checksPassed[$stepKey] ? 'bg-success/10 text-success' : 'bg-surface-container text-on-surface-variant') }}">
@@ -281,7 +309,7 @@
                                 {{ $stepNumber }}
                             @endif
                         </div>
-                        @if ($stepNumber !== '4')
+                        @if ($stepNumber !== '3')
                             <div class="w-8 h-0.5 bg-outline-variant"></div>
                         @endif
                     </div>
@@ -348,11 +376,25 @@
                     </div>
                 </div>
 
-                <div x-show="speedTesting" x-cloak class="mx-auto w-56 space-y-space-xs">
-                    <div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
-                        <div class="h-full bg-primary rounded-full" style="transition: width 0.1s linear;" :style="'width: ' + speedProgress + '%'"></div>
+                <div x-show="speedTesting" x-cloak class="mx-auto w-56 space-y-space-sm">
+                    <div class="space-y-space-xs">
+                        <div class="flex items-center justify-between text-body-xs text-on-surface-variant">
+                            <span>Download</span>
+                            <span x-text="Math.round(downloadProgress) + '%'"></span>
+                        </div>
+                        <div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+                            <div class="h-full bg-primary rounded-full" style="transition: width 0.1s linear;" :style="'width: ' + downloadProgress + '%'"></div>
+                        </div>
                     </div>
-                    <p class="text-body-xs text-on-surface-variant text-center" x-text="Math.round(speedProgress) + '%'"></p>
+                    <div class="space-y-space-xs">
+                        <div class="flex items-center justify-between text-body-xs text-on-surface-variant">
+                            <span>Upload</span>
+                            <span x-text="Math.round(uploadProgress) + '%'"></span>
+                        </div>
+                        <div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+                            <div class="h-full bg-primary rounded-full" style="transition: width 0.1s linear;" :style="'width: ' + uploadProgress + '%'"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div x-show="!speedTesting && speedResult" x-cloak class="flex items-center justify-center gap-space-lg text-body-sm text-on-surface-variant">
@@ -393,13 +435,20 @@
             </div>
         @endif
 
-        <!-- Step 2: Camera -->
+        <!-- Step 2: Camera & Microphone -->
         @if ($step === 'camera')
             <div class="space-y-space-lg" x-init="if (! cameraStream) { runCameraCheck(); }">
-                <h3 class="font-label-lg text-label-lg text-on-surface text-center">2. Camera</h3>
-                <p class="text-body-sm text-on-surface-variant text-center">We need to see your face is visible for the duration of the exam.</p>
+                <h3 class="font-label-lg text-label-lg text-on-surface text-center">2. Camera &amp; Microphone</h3>
+                <p class="text-body-sm text-on-surface-variant text-center">We need to see your face and hear audio in your room for the duration of the exam.</p>
 
                 <video x-ref="cameraPreview" x-show="cameraStream" x-cloak autoplay muted playsinline class="w-full max-w-sm mx-auto rounded-lg bg-black aspect-video"></video>
+
+                <div class="max-w-xs mx-auto" x-show="cameraStream" x-cloak>
+                    <div class="h-3 w-full bg-surface-container rounded-full overflow-hidden">
+                        <div class="h-full bg-primary rounded-full" style="transition: width 0.05s linear;" :style="'width: ' + Math.round(micLevel * 100) + '%'"></div>
+                    </div>
+                    <p class="text-body-xs text-on-surface-variant text-center mt-space-xs">Say something to test your microphone.</p>
+                </div>
 
                 <div class="text-center">
                     <button
@@ -407,7 +456,7 @@
                         @click="runCameraCheck()"
                         class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                     >
-                        <span x-show="!cameraStream">Enable Camera</span>
+                        <span x-show="!cameraStream">Enable Camera &amp; Microphone</span>
                         <span x-show="cameraStream" x-cloak>Retry</span>
                     </button>
                     <p x-show="cameraError" x-cloak class="text-body-sm text-error mt-space-sm" x-text="cameraError"></p>
@@ -421,51 +470,6 @@
                         type="button"
                         x-show="cameraStream"
                         x-cloak
-                        wire:click="goToStep('mic')"
-                        wire:loading.attr="disabled"
-                        wire:target="goToStep('mic')"
-                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
-                    >
-                        <span wire:loading wire:target="goToStep('mic')" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-                        Continue
-                    </button>
-                </div>
-            </div>
-        @endif
-
-        <!-- Step 3: Microphone -->
-        @if ($step === 'mic')
-            <div class="space-y-space-lg" x-init="if (! micStream) { runMicCheck(); }" x-on:destroy="stopMicCheck()">
-                <h3 class="font-label-lg text-label-lg text-on-surface text-center">3. Microphone</h3>
-                <p class="text-body-sm text-on-surface-variant text-center">We need to hear audio in your room during the exam.</p>
-
-                <div class="max-w-xs mx-auto">
-                    <div class="h-3 w-full bg-surface-container rounded-full overflow-hidden">
-                        <div class="h-full bg-primary rounded-full" style="transition: width 0.05s linear;" :style="'width: ' + Math.round(micLevel * 100) + '%'"></div>
-                    </div>
-                    <p class="text-body-xs text-on-surface-variant text-center mt-space-xs" x-show="micStream" x-cloak>Say something to test your microphone.</p>
-                </div>
-
-                <div class="text-center">
-                    <button
-                        type="button"
-                        @click="runMicCheck()"
-                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
-                    >
-                        <span x-show="!micStream">Enable Microphone</span>
-                        <span x-show="micStream" x-cloak>Retry</span>
-                    </button>
-                    <p x-show="micError" x-cloak class="text-body-sm text-error mt-space-sm" x-text="micError"></p>
-                </div>
-
-                <div class="flex items-center justify-between pt-space-md border-t border-outline-variant">
-                    <button type="button" wire:click="goToStep('camera')" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
-                        Back
-                    </button>
-                    <button
-                        type="button"
-                        x-show="micStream"
-                        x-cloak
                         wire:click="goToStep('screen')"
                         wire:loading.attr="disabled"
                         wire:target="goToStep('screen')"
@@ -478,11 +482,11 @@
             </div>
         @endif
 
-        <!-- Step 4: Screen capture -->
+        <!-- Step 3: Screen capture -->
         @if ($step === 'screen')
             <div class="space-y-space-lg">
-                <h3 class="font-label-lg text-label-lg text-on-surface text-center">4. Screen Capture</h3>
-                <p class="text-body-sm text-on-surface-variant text-center">Your screen will be recorded during the exam for review.</p>
+                <h3 class="font-label-lg text-label-lg text-on-surface text-center">3. Screen Capture</h3>
+                <p class="text-body-sm text-on-surface-variant text-center">Your screen (and its audio, if shared) will be recorded during the exam for review.</p>
 
                 <div class="text-center">
                     <button
@@ -497,8 +501,31 @@
                     <p x-show="screenError" x-cloak class="text-body-sm text-error mt-space-sm" x-text="screenError"></p>
                 </div>
 
+                <div class="max-w-xs mx-auto space-y-space-sm" x-show="screenStream" x-cloak>
+                    <div>
+                        <div class="h-3 w-full bg-surface-container rounded-full overflow-hidden">
+                            <div class="h-full bg-primary rounded-full" style="transition: width 0.05s linear;" :style="'width: ' + Math.round(screenAudioLevel * 100) + '%'"></div>
+                        </div>
+                        <p class="text-body-xs text-on-surface-variant text-center mt-space-xs">
+                            Play a test sound to check if screen share audio is being captured.
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <button
+                            type="button"
+                            @click="playTestSound()"
+                            :disabled="testSoundPlaying"
+                            class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition disabled:opacity-50 inline-flex items-center gap-space-xs"
+                        >
+                            <span class="material-symbols-outlined text-[16px]">volume_up</span>
+                            <span x-show="!testSoundPlaying">Play Test Sound</span>
+                            <span x-show="testSoundPlaying" x-cloak>Playing…</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="flex items-center justify-between pt-space-md border-t border-outline-variant">
-                    <button type="button" wire:click="goToStep('mic')" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
+                    <button type="button" wire:click="goToStep('camera')" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
                         Back
                     </button>
                     @if ($allChecksPassed)

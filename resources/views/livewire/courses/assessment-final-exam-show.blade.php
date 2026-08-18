@@ -449,7 +449,7 @@
                                     @if ($row['proctorSession']->events->isNotEmpty())
                                         <ul class="text-body-xs text-on-surface-variant space-y-1 max-h-40 overflow-y-auto">
                                             @foreach ($row['proctorSession']->events as $event)
-                                                <li>{{ $event->detected_at_display?->format('H:i:s') ?? $event->detected_at }} &middot; {{ str($event->event_type->value)->replace('_', ' ')->title() }} ({{ $event->severity->value }})</li>
+                                                <li>{{ $event->detected_at_display?->format('M j, Y H:i:s') ?? $event->detected_at }} &middot; {{ str($event->event_type->value)->replace('_', ' ')->title() }} ({{ $event->severity->value }})</li>
                                             @endforeach
                                         </ul>
                                     @endif

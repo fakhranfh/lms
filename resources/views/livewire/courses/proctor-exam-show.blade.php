@@ -122,12 +122,18 @@
                 async shareScreen() {
                     this.screenShareError = null;
                     try {
-                        const stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' } });
+                        const stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' }, audio: true });
                         const track = stream.getVideoTracks()[0];
                         if (track.getSettings().displaySurface !== 'monitor') {
-                            track.stop();
+                            stream.getTracks().forEach(t => t.stop());
                             this.screenShareError = 'You must share your entire screen, not a window or tab. Click Share Screen and choose &quot;Entire Screen&quot;.';
                             this.logEvent('fullscreen_exit', 'high', { reason: 'screen_share_not_full_screen' });
+                            return;
+                        }
+                        if (stream.getAudioTracks().length === 0) {
+                            stream.getTracks().forEach(t => t.stop());
+                            this.screenShareError = 'You must also share audio. Click Share Screen and enable the &quot;Share audio&quot; (or &quot;Share tab audio&quot;) option.';
+                            this.logEvent('fullscreen_exit', 'high', { reason: 'screen_share_no_audio' });
                             return;
                         }
                         this.screenStream = stream;
@@ -363,6 +369,20 @@
                     </div>
                 </div>
             </template>
+
+            <template x-teleport="body">
+                <div
+                    x-show="submitting"
+                    x-cloak
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    class="fixed inset-0 z-[120] flex flex-col items-center justify-center gap-space-lg bg-surface"
+                >
+                    <span class="material-symbols-outlined animate-spin text-primary text-[48px]">progress_activity</span>
+                    <p class="font-label-md text-label-md text-on-surface">Submitting your exam, please wait…</p>
+                </div>
+            </template>
         </div>
     @elseif (! $canStart)
         <div class="fixed top-0 inset-x-0 flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant bg-surface z-10">
@@ -404,11 +424,16 @@
                 async checkScreen() {
                     this.screenError = null;
                     try {
-                        const stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' } });
+                        const stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' }, audio: true });
                         const track = stream.getVideoTracks()[0];
                         if (track.getSettings().displaySurface !== 'monitor') {
-                            track.stop();
+                            stream.getTracks().forEach(t => t.stop());
                             this.screenError = 'You must share your entire screen, not a window or tab. Click Share Screen and choose &quot;Entire Screen&quot;.';
+                            return;
+                        }
+                        if (stream.getAudioTracks().length === 0) {
+                            stream.getTracks().forEach(t => t.stop());
+                            this.screenError = 'You must also share audio. Click Share Screen and enable the &quot;Share audio&quot; (or &quot;Share tab audio&quot;) option.';
                             return;
                         }
                         this.screenStream = stream;

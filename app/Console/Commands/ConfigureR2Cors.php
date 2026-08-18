@@ -28,6 +28,15 @@ class ConfigureR2Cors extends Command
             ...$this->option('origin'),
         ])));
 
+        // Allow both http and https for each origin so CORS doesn't silently
+        // break when the dev/prod environment's scheme doesn't match APP_URL's.
+        $origins = array_values(array_unique(array_merge(
+            $origins,
+            array_map(fn (string $origin) => str_starts_with($origin, 'https://')
+                ? 'http://'.substr($origin, 8)
+                : (str_starts_with($origin, 'http://') ? 'https://'.substr($origin, 7) : $origin), $origins)
+        )));
+
         if (empty($origins)) {
             $this->error('No origins to allow. Set APP_URL or pass --origin=https://example.com');
 

@@ -393,12 +393,12 @@
                 async checkCamera() {
                     this.cameraError = null;
                     try {
-                        this.cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        this.cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                         this.$nextTick(() => { if (this.$refs.cameraPreview) { this.$refs.cameraPreview.srcObject = this.cameraStream; } });
                     } catch (e) {
                         this.cameraError = e.name === 'NotAllowedError'
-                            ? 'Camera access was denied. Please allow camera permission and try again.'
-                            : (e.name === 'NotFoundError' ? 'No camera was found on this device.' : `Camera access was denied or unavailable (${e.name || 'unknown error'}).`);
+                            ? 'Camera and microphone access was denied. Please allow permissions and try again.'
+                            : (e.name === 'NotFoundError' ? 'No camera or microphone was found on this device.' : `Camera access was denied or unavailable (${e.name || 'unknown error'}).`);
                     }
                 },
                 async checkScreen() {

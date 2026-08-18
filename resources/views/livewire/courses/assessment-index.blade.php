@@ -59,7 +59,7 @@
     <!-- Grouped Collapsible Tables -->
     <div class="space-y-space-lg" x-data="{ deleteId: null, deleteName: null, showDeleteModal: false, deleteConfirmText: '' }">
         @foreach ($groupedAssessments as $index => $group)
-            <div x-data="{ open: @js($group['isExpanded']) }">
+            <div x-data="{ open: true }">
                 @if ($group['assessments']->isNotEmpty())
                     <!-- Collapsible Header -->
                     <button

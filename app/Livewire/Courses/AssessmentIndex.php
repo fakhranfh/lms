@@ -16,6 +16,7 @@ use App\Services\AttendanceScoringService;
 use App\Services\CoursePersonService;
 use App\Services\ForumDiscussionScoringService;
 use App\Services\GroupMemberService;
+use App\Services\ProctorSessionService;
 use App\Services\QuizAttemptScoringService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
@@ -90,7 +91,7 @@ class AssessmentIndex extends Component
         $assessmentService->delete($assessmentId);
     }
 
-    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, AttendanceDerivationService $attendanceDerivationService, ForumDiscussionScoringService $forumDiscussionScoringService)
+    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, AttendanceDerivationService $attendanceDerivationService, ForumDiscussionScoringService $forumDiscussionScoringService, ProctorSessionService $proctorSessionService)
     {
         if (! $this->assessmentsLoaded) {
             return view('livewire.courses.assessment-index-placeholder', [
@@ -106,8 +107,8 @@ class AssessmentIndex extends Component
 
         $assessments = $assessmentService->get(['course_id' => $this->course->id], ['attempts.score']);
 
-        $rows = $assessments->mapWithKeys(function (Assessment $assessment) use ($assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService) {
-            return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService)];
+        $rows = $assessments->mapWithKeys(function (Assessment $assessment) use ($assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService, $proctorSessionService) {
+            return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService, $proctorSessionService)];
         })->all();
 
         $allSessions = $attendanceDerivationService->sessionsForCourse($this->course);
@@ -194,7 +195,7 @@ class AssessmentIndex extends Component
     /**
      * @return array{status: string, route: string|null, attemptCount: int, attemptLimit: string, score: float|null, isExpired: bool, statusConfig: array{bg: string, text: string, icon: string}}
      */
-    private function rowStatus(Assessment $assessment, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, ForumDiscussionScoringService $forumDiscussionScoringService): array
+    private function rowStatus(Assessment $assessment, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, ForumDiscussionScoringService $forumDiscussionScoringService, ProctorSessionService $proctorSessionService): array
     {
         $type = $assessment->type;
         $isExpired = $assessment->end_date && $assessment->end_date->isPast();
@@ -308,6 +309,25 @@ class AssessmentIndex extends Component
         }
 
         if ($score) {
+            $isProctoredFinalExam = $type === AssessmentType::TheoryFinalExam
+                && in_array($assessment->finalExam?->exam_type?->value, ['open_book', 'closed_book'], true);
+
+            if ($isProctoredFinalExam) {
+                $proctorSession = $proctorSessionService->findByAttempt($latest->id);
+
+                if ($proctorSession !== null && $proctorSession->reviewed_at === null) {
+                    return [
+                        'status' => 'pending_review',
+                        'route' => $route,
+                        'attemptCount' => $attempts->count(),
+                        'attemptLimit' => $attemptLimit,
+                        'score' => null,
+                        'isExpired' => $isExpired,
+                        'statusConfig' => $this->statusConfig('pending_review'),
+                    ];
+                }
+            }
+
             return [
                 'status' => 'graded',
                 'route' => $route,
@@ -337,7 +357,7 @@ class AssessmentIndex extends Component
     {
         return match ($status) {
             'completed', 'graded' => ['bg' => 'bg-success/10', 'text' => 'text-success', 'icon' => 'check_circle'],
-            'submitted' => ['bg' => 'bg-warning/10', 'text' => 'text-warning', 'icon' => 'schedule'],
+            'submitted', 'pending_review' => ['bg' => 'bg-warning/10', 'text' => 'text-warning', 'icon' => 'schedule'],
             'not_started' => ['bg' => 'bg-on-surface-variant/10', 'text' => 'text-on-surface-variant', 'icon' => 'pending'],
             default => ['bg' => 'bg-on-surface-variant/10', 'text' => 'text-on-surface-variant', 'icon' => 'help'],
         };

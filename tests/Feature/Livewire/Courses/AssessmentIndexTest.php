@@ -5,13 +5,18 @@ namespace Tests\Feature\Livewire\Courses;
 use App\Enums\AssessmentType;
 use App\Enums\AttendanceStatus;
 use App\Enums\DeliveryMode;
+use App\Enums\FinalExamType;
 use App\Enums\RoleName;
 use App\Livewire\Courses\AssessmentIndex;
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
+use App\Models\AssessmentScore;
 use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\CoursePerson;
+use App\Models\FinalExam;
+use App\Models\Period;
+use App\Models\ProctorSession;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\Session;
@@ -203,5 +208,38 @@ class AssessmentIndexTest extends TestCase
         Livewire::test(AssessmentIndex::class, ['course' => $this->course])
             ->call('loadAssessments')
             ->assertSee('Not Started');
+    }
+
+    public function test_proctored_final_exam_shows_pending_review_until_proctor_session_reviewed(): void
+    {
+        CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
+        $this->student->givePermissionTo('assessment.view');
+
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryFinalExam,
+        ]);
+        $period = Period::factory()->for($this->course)->create();
+        FinalExam::factory()->for($assessment)->create([
+            'period_id' => $period->id,
+            'exam_type' => FinalExamType::ClosedBook,
+        ]);
+
+        $attempt = AssessmentAttempt::factory()->for($assessment)->create(['user_id' => $this->student->id]);
+        AssessmentScore::factory()->for($attempt, 'attempt')->create(['score' => 90]);
+        $session = ProctorSession::factory()->for($attempt, 'attempt')->create(['reviewed_at' => null]);
+
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->assertSee('Pending Review')
+            ->assertDontSee('Graded');
+
+        $session->update(['reviewed_at' => now(), 'reviewed_by' => $this->teacher->id]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->assertSee('Graded')
+            ->assertDontSee('Pending Review');
     }
 }

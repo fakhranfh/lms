@@ -151,7 +151,11 @@
 
         <!-- Status Message & Action Button -->
         @if ($isStudent)
-            @if ($latestScore)
+            @if ($latestAttempt && $pendingProctorReview)
+                <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
+                    <p class="text-body-sm text-on-surface-variant">Your submission is pending proctoring review. You'll be notified once it's graded.</p>
+                </div>
+            @elseif ($latestScore)
                 <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
                     <p class="text-body-sm text-on-surface-variant">You have already submitted this exam. It is awaiting the teacher's grading.</p>
                 </div>
@@ -412,7 +416,15 @@
                             </div>
 
                             <span class="inline-flex items-center px-space-md py-space-xs rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant flex-shrink-0">
-                                {{ $row['score'] ? 'Score: '.rtrim(rtrim(number_format($row['score']->score, 2), '0'), '.') : ($row['attempt'] ? 'Ungraded' : 'Not submitted') }}
+                                @if (! $row['attempt'])
+                                    Not submitted
+                                @elseif ($row['pendingProctorReview'])
+                                    Pending Review
+                                @elseif ($row['score'])
+                                    Score: {{ rtrim(rtrim(number_format($row['score']->score, 2), '0'), '.') }}
+                                @else
+                                    Ungraded
+                                @endif
                             </span>
 
                             @if ($canGrade && $row['attempt'])

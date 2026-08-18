@@ -14,6 +14,7 @@ use App\Models\Course;
 use App\Models\CoursePerson;
 use App\Models\FinalExam;
 use App\Models\Period;
+use App\Models\ProctorSession;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
@@ -162,6 +163,27 @@ class AssessmentFinalExamShowTest extends TestCase
             ->assertDontSee('85')
             ->assertDontSee('Well done')
             ->assertSee('awaiting the teacher');
+    }
+
+    public function test_teacher_sees_pending_review_until_proctor_session_reviewed(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
+
+        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
+        AssessmentScore::factory()->for($attempt, 'attempt')->create(['score' => 90]);
+        $session = ProctorSession::factory()->for($attempt, 'attempt')->create(['reviewed_at' => null]);
+
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Pending Review')
+            ->assertDontSee('Score: 90');
+
+        $session->update(['reviewed_at' => now(), 'reviewed_by' => $this->teacher->id]);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Score: 90')
+            ->assertDontSee('Pending Review');
     }
 
     public function test_wrong_type_returns_404(): void

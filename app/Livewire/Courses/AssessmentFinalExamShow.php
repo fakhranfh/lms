@@ -299,9 +299,11 @@ class AssessmentFinalExamShow extends Component
             }
 
             $latestScore = $latest ? $assessmentScoreService->findByAttempt($latest->id) : null;
+            $latestProctorSession = ($isProctored && $latest) ? $proctorSessionService->findByAttempt($latest->id) : null;
 
             $viewData['latestAttempt'] = $latest;
             $viewData['latestScore'] = $latestScore;
+            $viewData['pendingProctorReview'] = $latestProctorSession !== null && $latestProctorSession->reviewed_at === null;
             $viewData['canResubmit'] = $canResubmit;
             $viewData['attemptLimit'] = $attemptLimit ? (string) $attemptLimit : 'Unlimited';
             $viewData['attemptsUsed'] = $attemptsUsed;
@@ -322,6 +324,8 @@ class AssessmentFinalExamShow extends Component
                     ? $proctorSession->snapshots->where('type', ProctorSnapshotType::Recording)->sortBy('captured_at')
                     : collect();
 
+                $pendingProctorReview = $proctorSession !== null && $proctorSession->reviewed_at === null;
+
                 return [
                     'user' => $coursePerson->user,
                     'attempt' => $latest,
@@ -329,6 +333,7 @@ class AssessmentFinalExamShow extends Component
                     'score' => $score,
                     'questionScores' => $questionScores->keyBy('assessment_question_id'),
                     'proctorSession' => $proctorSession,
+                    'pendingProctorReview' => $pendingProctorReview,
                     'cameraRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'webcam-recording'))->values(),
                     'screenRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'screen-recording'))->values(),
                 ];

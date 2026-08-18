@@ -4,6 +4,7 @@ namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentType;
 use App\Enums\ProctorReviewDecision;
+use App\Enums\ProctorSnapshotType;
 use App\Enums\RoleName;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
@@ -15,6 +16,7 @@ use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
 use App\Services\FinalExamService;
 use App\Services\ProctorSessionService;
+use App\Services\R2StorageService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
@@ -165,6 +167,14 @@ class AssessmentFinalExamShow extends Component
         $this->successMessage = __('Proctoring review saved.');
     }
 
+    public function recordingUrl(string $key): string
+    {
+        abort_unless(auth()->user()->can('assessment.grade'), 403);
+        abort_unless(str_contains($key, '/proctor/'), 403);
+
+        return app(R2StorageService::class)->getSignedUrl($key, 3600);
+    }
+
     public function openGrading(string $userId, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService): void
     {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
@@ -308,6 +318,10 @@ class AssessmentFinalExamShow extends Component
                     ? $proctorSessionService->findByAttempt($latest->id, ['events', 'snapshots'])
                     : null;
 
+                $recordings = $proctorSession
+                    ? $proctorSession->snapshots->where('type', ProctorSnapshotType::Recording)->sortBy('captured_at')
+                    : collect();
+
                 return [
                     'user' => $coursePerson->user,
                     'attempt' => $latest,
@@ -315,6 +329,8 @@ class AssessmentFinalExamShow extends Component
                     'score' => $score,
                     'questionScores' => $questionScores->keyBy('assessment_question_id'),
                     'proctorSession' => $proctorSession,
+                    'cameraRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'webcam-recording'))->values(),
+                    'screenRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'screen-recording'))->values(),
                 ];
             })->values();
 

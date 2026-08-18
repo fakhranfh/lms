@@ -427,7 +427,7 @@
                         </div>
 
                         @if ($isProctored && $row['proctorSession'])
-                            <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md" x-data="{ reviewOpen: false }">
+                            <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md" x-data="{ reviewOpen: false, cameraModalOpen: false, screenModalOpen: false }">
                                 <div class="flex items-center justify-between gap-space-md">
                                     <div class="flex items-center gap-space-sm text-body-sm">
                                         <span class="material-symbols-outlined text-[16px]" :class="{}">shield</span>
@@ -452,6 +452,82 @@
                                                 <li>{{ $event->detected_at_display?->format('H:i:s') ?? $event->detected_at }} &middot; {{ str($event->event_type->value)->replace('_', ' ')->title() }} ({{ $event->severity->value }})</li>
                                             @endforeach
                                         </ul>
+                                    @endif
+
+                                    @if ($row['cameraRecordings']->isNotEmpty() || $row['screenRecordings']->isNotEmpty())
+                                        <div class="flex items-center gap-space-sm">
+                                            @if ($row['cameraRecordings']->isNotEmpty())
+                                                <button type="button" @click="cameraModalOpen = true" class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition inline-flex items-center gap-space-xs">
+                                                    <span class="material-symbols-outlined text-[16px]">videocam</span>
+                                                    Preview Camera ({{ $row['cameraRecordings']->count() }})
+                                                </button>
+                                            @endif
+
+                                            @if ($row['screenRecordings']->isNotEmpty())
+                                                <button type="button" @click="screenModalOpen = true" class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition inline-flex items-center gap-space-xs">
+                                                    <span class="material-symbols-outlined text-[16px]">screen_share</span>
+                                                    Preview Screen Share ({{ $row['screenRecordings']->count() }})
+                                                </button>
+                                            @endif
+                                        </div>
+
+                                        <template x-teleport="body">
+                                            <div
+                                                x-show="cameraModalOpen"
+                                                x-cloak
+                                                x-transition:enter="transition ease-out duration-200"
+                                                x-transition:enter-start="opacity-0"
+                                                x-transition:enter-end="opacity-100"
+                                                x-transition:leave="transition ease-in duration-150"
+                                                x-transition:leave-start="opacity-100"
+                                                x-transition:leave-end="opacity-0"
+                                                class="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-gutter"
+                                                @click.self="cameraModalOpen = false"
+                                            >
+                                                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-2xl w-full space-y-space-md">
+                                                    <div class="flex items-center justify-between">
+                                                        <h2 class="font-headline-sm text-headline-sm text-on-surface">Camera Recording &middot; {{ $row['user']->name }}</h2>
+                                                        <button type="button" @click="cameraModalOpen = false" class="text-on-surface-variant hover:text-on-surface">
+                                                            <span class="material-symbols-outlined">close</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="space-y-space-sm max-h-[70vh] overflow-y-auto">
+                                                        @foreach ($row['cameraRecordings'] as $recording)
+                                                            <video controls preload="none" class="w-full rounded-lg bg-black aspect-video" src="{{ $this->recordingUrl($recording->file_url) }}"></video>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <template x-teleport="body">
+                                            <div
+                                                x-show="screenModalOpen"
+                                                x-cloak
+                                                x-transition:enter="transition ease-out duration-200"
+                                                x-transition:enter-start="opacity-0"
+                                                x-transition:enter-end="opacity-100"
+                                                x-transition:leave="transition ease-in duration-150"
+                                                x-transition:leave-start="opacity-100"
+                                                x-transition:leave-end="opacity-0"
+                                                class="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-gutter"
+                                                @click.self="screenModalOpen = false"
+                                            >
+                                                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-2xl w-full space-y-space-md">
+                                                    <div class="flex items-center justify-between">
+                                                        <h2 class="font-headline-sm text-headline-sm text-on-surface">Screen Share Recording &middot; {{ $row['user']->name }}</h2>
+                                                        <button type="button" @click="screenModalOpen = false" class="text-on-surface-variant hover:text-on-surface">
+                                                            <span class="material-symbols-outlined">close</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="space-y-space-sm max-h-[70vh] overflow-y-auto">
+                                                        @foreach ($row['screenRecordings'] as $recording)
+                                                            <video controls preload="none" class="w-full rounded-lg bg-black aspect-video" src="{{ $this->recordingUrl($recording->file_url) }}"></video>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
                                     @endif
 
                                     <div class="flex items-end gap-space-sm">

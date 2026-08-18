@@ -22,6 +22,7 @@
                 webcamRecorder: null,
                 screenRecorder: null,
                 snapshotTimer: null,
+                pendingUploads: [],
                 allowedTypes: @js($examType->value),
                 currentQuestion: 0,
                 tick() {
@@ -50,7 +51,7 @@
                         const recorder = new MediaRecorder(stream, { mimeType });
                         recorder.ondataavailable = (e) => {
                             if (e.data && e.data.size > 0) {
-                                this.uploadRecordingChunk(e.data, prefix);
+                                this.pendingUploads.push(this.uploadRecordingChunk(e.data, prefix));
                             }
                         };
                         recorder.start(60000);
@@ -64,8 +65,10 @@
                         const filename = prefix + '-' + Date.now() + '.webm';
                         const { url, key } = await $wire.requestSnapshotUploadUrl(filename, 'Video');
                         await fetch(url, { method: 'PUT', body: blob, headers: { 'Content-Type': 'video/webm' } });
-                        $wire.recordSnapshotUploaded('recording', key);
-                    } catch (e) {}
+                        await $wire.recordSnapshotUploaded('recording', key);
+                    } catch (e) {
+                        console.error('Proctor recording upload failed', e);
+                    }
                 },
                 async captureSnapshot() {
                     if (this.submitting || ! this.$refs.webcamPreview || ! this.webcamStream) { return; }
@@ -81,8 +84,10 @@
                             const filename = 'snapshot-' + Date.now() + '.jpg';
                             const { url, key } = await $wire.requestSnapshotUploadUrl(filename, 'Image');
                             await fetch(url, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg' } });
-                            $wire.recordSnapshotUploaded('webcam', key);
-                        } catch (e) {}
+                            await $wire.recordSnapshotUploaded('webcam', key);
+                        } catch (e) {
+                            console.error('Proctor snapshot upload failed', e);
+                        }
                     }, 'image/jpeg', 0.7);
                 },
                 async startRecording() {
@@ -157,6 +162,8 @@
                             }));
                         }
                         await Promise.all(stops);
+                        await Promise.all(this.pendingUploads);
+                        this.pendingUploads = [];
                         if (this.webcamStream) { this.webcamStream.getTracks().forEach(t => t.stop()); }
                         if (this.screenStream) { this.screenStream.getTracks().forEach(t => t.stop()); }
                     } catch (e) {}

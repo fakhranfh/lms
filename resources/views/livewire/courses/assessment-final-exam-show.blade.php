@@ -149,28 +149,11 @@
             </div>
         @endif
 
-        <!-- Latest Score Card -->
-        @if ($isStudent && $latestScore)
-            <div class="bg-primary rounded-lg p-space-lg text-on-primary space-y-space-md">
-                <div>
-                    <p class="text-body-sm opacity-90 mb-space-sm">Latest Score</p>
-                    <p class="text-headline-lg font-bold">{{ rtrim(rtrim(number_format($latestScore->score, 1), '0'), '.') }} <span class="text-body-md font-normal">pts</span></p>
-                    <p class="text-body-xs opacity-75 mt-space-md">Score Updated On: {{ $latestScore->graded_at_display?->format('j M Y, H:i') ?? '—' }}</p>
-                </div>
-                @if ($latestScore->feedback)
-                    <div class="pt-space-md border-t border-on-primary/20">
-                        <p class="text-body-xs opacity-90 mb-space-sm">Feedback</p>
-                        <p class="text-body-sm">{{ $latestScore->feedback }}</p>
-                    </div>
-                @endif
-            </div>
-        @endif
-
         <!-- Status Message & Action Button -->
         @if ($isStudent)
             @if ($latestScore)
                 <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
-                    <p class="text-body-sm text-on-surface-variant">The score for this assessment has been approved. You cannot start another attempt.</p>
+                    <p class="text-body-sm text-on-surface-variant">You have already submitted this exam. It is awaiting the teacher's grading.</p>
                 </div>
             @elseif (!$canResubmit && $latestAttempt)
                 <div class="flex items-center justify-between gap-space-md">
@@ -385,101 +368,6 @@
                                 @endforeach
                             </div>
                         @endif
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
-
-    <!-- Answer Attempts Section -->
-    @if ($isStudent && $attemptRows->isNotEmpty())
-        <div class="space-y-space-md">
-            <h2 class="font-label-lg text-label-lg text-on-surface">Answer Attempts</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
-                @foreach ($attemptRows->reverse() as $row)
-                    <div
-                        class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md cursor-pointer hover:bg-surface-container/50 transition"
-                        x-data="{ open: false }"
-                        @click="open = true"
-                    >
-                        <div class="flex items-start justify-between gap-space-md">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-space-sm mb-space-xs">
-                                    <h3 class="font-label-lg text-label-lg text-on-surface">Attempt {{ $row['attempt']->attempt_number }}</h3>
-                                </div>
-                                @if ($row['attempt']->submitter)
-                                    <div class="flex items-center gap-space-sm">
-                                        <x-avatar :user="$row['attempt']->submitter" size="10" />
-                                        <div>
-                                            <p class="text-body-sm text-on-surface-variant">Submitted by <span class="font-medium text-on-surface">{{ $row['attempt']->submitter->name }}</span></p>
-                                            <p class="text-body-xs text-on-surface-variant">
-                                                {{ $row['attempt']->submitted_at ? $row['attempt']->submitted_at_display->format('M j, Y H:i') : 'Not submitted' }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                @else
-                                    <p class="text-body-sm text-on-surface-variant">
-                                        <span class="material-symbols-outlined text-[16px] inline-block -mt-1 mr-space-xs">schedule</span>
-                                        Not submitted
-                                    </p>
-                                @endif
-                            </div>
-                            @if ($row['score'])
-                                <div class="bg-primary rounded-lg p-space-md text-on-primary text-center min-w-[140px] flex-shrink-0">
-                                    <p class="text-body-xs opacity-90 mb-space-xs">SCORE</p>
-                                    <p class="text-headline-sm font-bold">{{ rtrim(rtrim(number_format($row['score']->score, 1), '0'), '.') }} <span class="text-body-xs font-normal">pts</span></p>
-                                    <p class="text-body-xs opacity-75 mt-space-xs">{{ $row['score']->graded_at_display?->format('j M Y, H:i') ?? '—' }}</p>
-                                </div>
-                            @elseif ($latestAttempt && $row['attempt']->id === $latestAttempt->id)
-                                <div class="bg-surface-container rounded-lg p-space-md text-on-surface-variant text-center min-w-[140px] flex-shrink-0">
-                                    <p class="text-body-xs font-medium">Awaiting Grade</p>
-                                </div>
-                            @endif
-                        </div>
-
-                        <template x-teleport="body">
-                            <div
-                                x-show="open"
-                                x-cloak
-                                x-transition:enter="transition ease-out duration-200"
-                                x-transition:enter-start="opacity-0"
-                                x-transition:enter-end="opacity-100"
-                                x-transition:leave="transition ease-in duration-150"
-                                x-transition:leave-start="opacity-100"
-                                x-transition:leave-end="opacity-0"
-                                class="fixed inset-0 z-[100] bg-surface flex flex-col"
-                            >
-                                <div
-                                    x-show="open"
-                                    x-transition:enter="transition ease-out duration-200 delay-75"
-                                    x-transition:enter-start="opacity-0"
-                                    x-transition:enter-end="opacity-100"
-                                    class="flex-1 overflow-y-auto p-space-lg space-y-space-lg"
-                                >
-                                    <div class="flex items-center justify-between border-b border-outline-variant pb-space-md">
-                                        <h2 class="font-headline-sm text-headline-sm text-on-surface">Attempt {{ $row['attempt']->attempt_number }} Answer</h2>
-                                        <button type="button" @click="open = false" class="p-2 hover:bg-surface-container rounded transition">
-                                            <span class="material-symbols-outlined text-on-surface-variant">close</span>
-                                        </button>
-                                    </div>
-
-                                    @if ($row['answer']?->answer_text)
-                                        <div class="rte-content prose prose-sm max-w-none text-on-surface">
-                                            {!! $row['answer']->answer_text !!}
-                                        </div>
-                                    @else
-                                        <p class="text-body-sm text-on-surface-variant">No answer submitted.</p>
-                                    @endif
-
-                                    @if ($row['score']?->feedback)
-                                        <div class="pt-space-md border-t border-outline-variant">
-                                            <p class="text-body-xs text-on-surface-variant mb-space-xs">Feedback</p>
-                                            <p class="text-body-sm text-on-surface">{{ $row['score']->feedback }}</p>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                        </template>
                     </div>
                 @endforeach
             </div>

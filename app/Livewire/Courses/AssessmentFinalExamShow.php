@@ -288,25 +288,13 @@ class AssessmentFinalExamShow extends Component
                 $canResubmit = false;
             }
 
-            $latestAnswer = $latest ? $assessmentAnswerService->findByAttempt($latest->id) : null;
             $latestScore = $latest ? $assessmentScoreService->findByAttempt($latest->id) : null;
 
-            $attemptRows = $allAttempts->map(function ($attempt) use ($assessmentAnswerService, $assessmentScoreService, $assessmentQuestionScoreService) {
-                return [
-                    'attempt' => $attempt,
-                    'answer' => $assessmentAnswerService->findByAttempt($attempt->id),
-                    'score' => $assessmentScoreService->findByAttempt($attempt->id),
-                    'questionScores' => $assessmentQuestionScoreService->findByAttempt($attempt->id)->keyBy('assessment_question_id'),
-                ];
-            })->values();
-
             $viewData['latestAttempt'] = $latest;
-            $viewData['latestAnswer'] = $latestAnswer;
             $viewData['latestScore'] = $latestScore;
             $viewData['canResubmit'] = $canResubmit;
             $viewData['attemptLimit'] = $attemptLimit ? (string) $attemptLimit : 'Unlimited';
             $viewData['attemptsUsed'] = $attemptsUsed;
-            $viewData['attemptRows'] = $attemptRows;
         } else {
             $students = $coursePersonService->studentsForCourse($this->course->id);
 

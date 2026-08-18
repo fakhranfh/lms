@@ -132,7 +132,7 @@ class AssessmentFinalExamShowTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_teacher_grade_creates_score_and_student_sees_it(): void
+    public function test_teacher_grade_creates_score_but_student_does_not_see_score_or_feedback(): void
     {
         $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
 
@@ -159,8 +159,9 @@ class AssessmentFinalExamShowTest extends TestCase
         $this->actingAs($this->student);
 
         Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->assertSee('85')
-            ->assertSee('Well done');
+            ->assertDontSee('85')
+            ->assertDontSee('Well done')
+            ->assertSee('awaiting the teacher');
     }
 
     public function test_wrong_type_returns_404(): void

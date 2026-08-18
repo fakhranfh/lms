@@ -46,7 +46,8 @@ enum RoleName: string
                 'sessions.view', 'sessions.create', 'sessions.edit', 'sessions.delete',
                 'syllabus.view', 'syllabus.edit',
                 'forum.view', 'forum.create', 'forum.moderate',
-                'assessment.view', 'assessment.create', 'assessment.edit', 'assessment.delete', 'assessment.grade',
+                'assessment.view', 'assessment.create', 'assessment.edit', 'assessment.delete', 'assessment.grade', 'groups.manage',
+                'attendance.view', 'attendance.manage',
             ],
             self::Student => [
                 'courses.view',
@@ -54,6 +55,7 @@ enum RoleName: string
                 'syllabus.view',
                 'forum.view', 'forum.create',
                 'assessment.view', 'assessment.submit',
+                'attendance.view',
             ],
         };
     }
@@ -67,7 +69,7 @@ enum RoleName: string
     public function permissionGroups(): array
     {
         return match ($this) {
-            self::SchoolAdmin => ['Users', 'Roles', 'Permissions', 'Media', 'Sessions', 'Syllabus', 'Forum'],
+            self::SchoolAdmin => ['Users', 'Roles', 'Permissions', 'Media', 'Sessions', 'Syllabus', 'Forum', 'Assessment', 'Attendance'],
             default => [],
         };
     }

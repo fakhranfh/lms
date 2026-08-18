@@ -32,14 +32,15 @@ class AssessmentSeeder extends Seeder
     /**
      * Seed a Personal Assignment and a Team Assignment (with groups, questions,
      * and a mix of not-started/submitted/graded attempts) for existing courses
-     * that don't have any assessments yet. Also backfills a Quiz and a Final
-     * Exam for any course that doesn't have one yet, even if it already has
-     * other assessment types, and re-links any previously-seeded Quiz whose
-     * session has since expired to a still-open one.
+     * that don't have one yet (courses may already have the auto-provisioned
+     * Attendance/Forum Discussion assessments). Also backfills a Quiz and a
+     * Final Exam for any course that doesn't have one yet, even if it already
+     * has other assessment types, and re-links any previously-seeded Quiz
+     * whose session has since expired to a still-open one.
      */
     public function run(): void
     {
-        $courses = Course::doesntHave('assessments')->get();
+        $courses = Course::whereDoesntHave('assessments', fn ($query) => $query->where('type', AssessmentType::TheoryPersonalAssignment))->get();
 
         foreach ($courses as $course) {
             $this->seedCourseAssessments($course);

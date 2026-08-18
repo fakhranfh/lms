@@ -34,6 +34,11 @@ class DatabaseSeeder extends Seeder
         // Seed Personal/Team Assignments (with groups, questions, and attempts) for those courses
         $this->call(AssessmentSeeder::class);
 
+        // Enroll the demo student into every demo course and group (migrations
+        // 2026_08_12_000001/000002 only backfill existing installs; on a fresh
+        // seed, courses/groups don't exist yet when migrations run)
+        $this->call(DemoStudentEnrollmentSeeder::class);
+
         // Link each course's assessments to one of its sessions
         $this->call(SessionAssessmentSeeder::class);
 

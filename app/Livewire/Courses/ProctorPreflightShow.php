@@ -24,7 +24,7 @@ class ProctorPreflightShow extends Component
     /**
      * Each check is its own full-screen step, walked through in order.
      */
-    public string $step = 'speed';
+    public string $step = 'instructions';
 
     /**
      * @var array<string, bool>
@@ -68,6 +68,10 @@ class ProctorPreflightShow extends Component
         $this->course = $course;
         $this->assessment = $assessment;
         $this->finalExam = $finalExam;
+
+        if (! $finalExam->instructions) {
+            $this->step = 'speed';
+        }
     }
 
     public function markCheckPassed(string $check): void
@@ -86,7 +90,7 @@ class ProctorPreflightShow extends Component
 
     public function goToStep(string $step): void
     {
-        abort_unless(in_array($step, ['speed', 'camera', 'mic', 'screen', 'ready'], true), 404);
+        abort_unless(in_array($step, ['instructions', 'speed', 'camera', 'mic', 'screen', 'ready'], true), 404);
 
         $this->step = $step;
     }

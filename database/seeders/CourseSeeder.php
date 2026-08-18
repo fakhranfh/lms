@@ -4,10 +4,10 @@ namespace Database\Seeders;
 
 use App\Enums\CourseMembershipStatus;
 use App\Enums\RoleInCourse;
-use App\Models\Course;
 use App\Models\CoursePerson;
 use App\Models\School;
 use App\Models\User;
+use App\Services\CourseService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -17,14 +17,14 @@ class CourseSeeder extends Seeder
      * Seed demo courses for every school. Sessions (and their subtopics,
      * materials, video conferences) are seeded separately by SessionSeeder.
      */
-    public function run(): void
+    public function run(CourseService $courseService): void
     {
         foreach (School::all() as $school) {
-            $this->seedSchoolCourses($school);
+            $this->seedSchoolCourses($school, $courseService);
         }
     }
 
-    private function seedSchoolCourses(School $school): void
+    private function seedSchoolCourses(School $school, CourseService $courseService): void
     {
         $teachers = User::whereHas('memberSchools', fn ($q) => $q->where('schools.id', $school->id))
             ->whereHas('roles', fn ($q) => $q->where('name', 'Teacher'))
@@ -39,7 +39,7 @@ class CourseSeeder extends Seeder
             $teacher = $teachers->random();
             $title = $courseData['title'];
 
-            $course = Course::create([
+            $course = $courseService->create([
                 'id' => (string) Str::uuid(),
                 'school_id' => $school->id,
                 'created_by' => $teacher->id,

@@ -145,7 +145,7 @@ class ProctorExamShow extends Component
         $this->answers = [];
     }
 
-    public function logProctorEvent(string $eventType, string $severity, ?array $metadata = null): void
+    public function logProctorEvent(string $eventType, string $severity, ?array $metadata = null): ?string
     {
         abort_unless(in_array($eventType, $this->allowedEventTypes(), true), 422);
         ProctorEventType::from($eventType);
@@ -153,16 +153,18 @@ class ProctorExamShow extends Component
 
         $session = $this->currentSession();
         if ($session === null) {
-            return;
+            return null;
         }
 
-        app(ProctorEventService::class)->create([
+        $event = app(ProctorEventService::class)->create([
             'proctor_session_id' => $session->id,
             'event_type' => $eventType,
             'severity' => $severity,
             'detected_at' => now(),
             'metadata' => $metadata,
         ]);
+
+        return $event->id;
     }
 
     public function recordSnapshotUploaded(string $type, string $fileUrl, ?string $triggeredByEventId = null): void

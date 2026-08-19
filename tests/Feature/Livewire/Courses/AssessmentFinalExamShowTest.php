@@ -4,6 +4,7 @@ namespace Tests\Feature\Livewire\Courses;
 
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
+use App\Enums\ProctorSnapshotType;
 use App\Enums\RoleName;
 use App\Livewire\Courses\AssessmentFinalExamShow;
 use App\Models\Assessment;
@@ -14,7 +15,9 @@ use App\Models\Course;
 use App\Models\CoursePerson;
 use App\Models\FinalExam;
 use App\Models\Period;
+use App\Models\ProctorEvent;
 use App\Models\ProctorSession;
+use App\Models\ProctorSnapshot;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
@@ -184,6 +187,25 @@ class AssessmentFinalExamShowTest extends TestCase
         Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
             ->assertSee('Score: 90')
             ->assertDontSee('Pending Review');
+    }
+
+    public function test_teacher_sees_event_triggered_screenshots(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
+
+        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
+        $session = ProctorSession::factory()->for($attempt, 'attempt')->create();
+        $event = ProctorEvent::factory()->for($session)->create();
+        ProctorSnapshot::factory()->for($session)->create([
+            'type' => ProctorSnapshotType::Screen,
+            'triggered_by_event_id' => $event->id,
+            'file_url' => 'temp/proctor/'.$session->id.'/screenshot-1.jpg',
+        ]);
+
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Preview Screenshots (1)');
     }
 
     public function test_wrong_type_returns_404(): void

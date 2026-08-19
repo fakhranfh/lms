@@ -98,11 +98,14 @@ class ProctorExamShowTest extends TestCase
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
 
-        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+        $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
-            ->call('logProctorEvent', 'tab_switch', 'medium', ['note' => 'test']);
+            ->instance();
+
+        $eventId = $instance->logProctorEvent('tab_switch', 'medium', ['note' => 'test']);
 
         $this->assertDatabaseHas('proctor_events', [
+            'id' => $eventId,
             'event_type' => 'tab_switch',
             'severity' => 'medium',
         ]);

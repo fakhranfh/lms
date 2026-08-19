@@ -336,6 +336,9 @@ class AssessmentFinalExamShow extends Component
                     'pendingProctorReview' => $pendingProctorReview,
                     'cameraRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'webcam-recording'))->values(),
                     'screenRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'screen-recording'))->values(),
+                    'screenshots' => $proctorSession
+                        ? $proctorSession->snapshots->where('type', ProctorSnapshotType::Screen)->sortBy('captured_at')->values()
+                        : collect(),
                 ];
             })->values();
 

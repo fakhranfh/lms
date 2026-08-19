@@ -39,8 +39,29 @@
                     let s = (this.remaining % 60).toString().padStart(2, '0');
                     return m + ':' + s;
                 },
-                logEvent(eventType, severity, metadata = null) {
-                    $wire.logProctorEvent(eventType, severity, metadata);
+                async logEvent(eventType, severity, metadata = null) {
+                    const eventId = await $wire.logProctorEvent(eventType, severity, metadata);
+                    this.captureEventScreenshot(eventId);
+                },
+                captureEventScreenshot(triggeredByEventId) {
+                    if (! this.$refs.screenPreview || ! this.screenStream) { return; }
+                    const video = this.$refs.screenPreview;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth || 320;
+                    canvas.height = video.videoHeight || 240;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob(async (blob) => {
+                        if (! blob) { return; }
+                        try {
+                            const filename = 'screenshot-' + Date.now() + '.jpg';
+                            const { url, key } = await $wire.requestSnapshotUploadUrl(filename, 'Image');
+                            await fetch(url, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg' } });
+                            await $wire.recordSnapshotUploaded('screen', key, triggeredByEventId);
+                        } catch (e) {
+                            console.error('Proctor event screenshot upload failed', e);
+                        }
+                    }, 'image/jpeg', 0.7);
                 },
                 startMediaRecorder(stream, prefix) {
                     if (! stream) { return null; }

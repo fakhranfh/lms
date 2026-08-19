@@ -27,6 +27,7 @@ use App\Livewire\Courses\CoursesIndex;
 use App\Livewire\Courses\ForumIndex;
 use App\Livewire\Courses\ForumThreadShow;
 use App\Livewire\Courses\GroupsManage;
+use App\Livewire\Courses\HeadMovementTest;
 use App\Livewire\Courses\ProctorExamShow;
 use App\Livewire\Courses\ProctorPreflightShow;
 use App\Livewire\Courses\ProctorQuizQuestionsForm;
@@ -66,6 +67,8 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
     Route::get('/change-password', ChangePassword::class)->name('change-password');
 
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
+
+    Route::get('/dev/head-movement-test', HeadMovementTest::class)->name('dev.head-movement-test');
 
     Route::get('/roles', RoleIndex::class)->middleware('permission:roles.view')->name('roles.index');
     Route::get('/roles/create', RoleCreate::class)->middleware(['permission:roles.view', 'permission:roles.create'])->name('roles.create');

@@ -287,9 +287,7 @@
                                                 @endif
                                             </td>
                                             <td class="px-space-lg py-space-md text-body-sm text-on-surface font-label-md">
-                                                @if ($isStudent && $group['type'] === \App\Enums\AssessmentType::TheoryFinalExam)
-                                                    <span class="text-on-surface-variant">—</span>
-                                                @elseif ($item['row']['score'] !== null)
+                                                @if ($item['row']['score'] !== null)
                                                     {{ number_format($item['row']['score'], 1) }}
                                                 @else
                                                     <span class="text-on-surface-variant">—</span>

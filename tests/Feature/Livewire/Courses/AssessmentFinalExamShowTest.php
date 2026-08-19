@@ -136,7 +136,7 @@ class AssessmentFinalExamShowTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_teacher_grade_creates_score_but_student_does_not_see_score_or_feedback(): void
+    public function test_teacher_grade_creates_score_and_student_sees_score_and_feedback(): void
     {
         $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
 
@@ -163,9 +163,8 @@ class AssessmentFinalExamShowTest extends TestCase
         $this->actingAs($this->student);
 
         Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->assertDontSee('85')
-            ->assertDontSee('Well done')
-            ->assertSee('awaiting the teacher');
+            ->assertSee('85')
+            ->assertSee('Well done');
     }
 
     public function test_teacher_sees_pending_review_until_proctor_session_reviewed(): void
@@ -187,6 +186,28 @@ class AssessmentFinalExamShowTest extends TestCase
         Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
             ->assertSee('Score: 90')
             ->assertDontSee('Pending Review');
+    }
+
+    public function test_student_sees_score_feedback_and_proctor_result_once_reviewed(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+
+        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
+        AssessmentScore::factory()->for($attempt, 'attempt')->create(['score' => 90, 'feedback' => 'Well done']);
+        ProctorSession::factory()->for($attempt, 'attempt')->create([
+            'reviewed_at' => now(),
+            'reviewed_by' => $this->teacher->id,
+            'review_decision' => 'warning',
+            'review_notes' => 'Looked away briefly.',
+        ]);
+
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Score: 90')
+            ->assertSee('Well done')
+            ->assertSee('Warning')
+            ->assertSee('Looked away briefly.');
     }
 
     public function test_teacher_sees_event_triggered_screenshots(): void

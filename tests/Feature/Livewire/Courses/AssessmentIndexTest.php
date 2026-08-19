@@ -242,4 +242,29 @@ class AssessmentIndexTest extends TestCase
             ->assertSee('Graded')
             ->assertDontSee('Pending Review');
     }
+
+    public function test_graded_final_exam_shows_score(): void
+    {
+        CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
+        $this->student->givePermissionTo('assessment.view');
+
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryFinalExam,
+        ]);
+        $period = Period::factory()->for($this->course)->create();
+        FinalExam::factory()->for($assessment)->create([
+            'period_id' => $period->id,
+            'exam_type' => FinalExamType::ClosedBook,
+        ]);
+
+        $attempt = AssessmentAttempt::factory()->for($assessment)->create(['user_id' => $this->student->id]);
+        AssessmentScore::factory()->for($attempt, 'attempt')->create(['score' => 87.5]);
+        ProctorSession::factory()->for($attempt, 'attempt')->create(['reviewed_at' => now(), 'reviewed_by' => $this->teacher->id]);
+
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->assertSee('87.5');
+    }
 }

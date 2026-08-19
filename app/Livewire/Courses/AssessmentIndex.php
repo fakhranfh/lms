@@ -238,6 +238,7 @@ class AssessmentIndex extends Component
                     'attemptCount' => 0,
                     'attemptLimit' => $attemptLimit,
                     'score' => null,
+                    'feedback' => null,
                     'isExpired' => $isExpired,
                     'statusConfig' => $this->statusConfig('not_started'),
                 ];
@@ -322,6 +323,7 @@ class AssessmentIndex extends Component
                         'attemptCount' => $attempts->count(),
                         'attemptLimit' => $attemptLimit,
                         'score' => null,
+                        'feedback' => null,
                         'isExpired' => $isExpired,
                         'statusConfig' => $this->statusConfig('pending_review'),
                     ];
@@ -345,6 +347,7 @@ class AssessmentIndex extends Component
             'attemptCount' => $attempts->count(),
             'attemptLimit' => $attemptLimit,
             'score' => null,
+            'feedback' => null,
             'isExpired' => $isExpired,
             'statusConfig' => $this->statusConfig('submitted'),
         ];

@@ -156,8 +156,30 @@
                     <p class="text-body-sm text-on-surface-variant">Your submission is pending proctoring review. You'll be notified once it's graded.</p>
                 </div>
             @elseif ($latestScore)
-                <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
-                    <p class="text-body-sm text-on-surface-variant">You have already submitted this exam. It is awaiting the teacher's grading.</p>
+                <div class="p-space-lg bg-success/5 border border-success/20 rounded-lg space-y-space-md">
+                    <div class="flex items-center gap-space-sm">
+                        <span class="material-symbols-outlined text-success" data-weight="fill">check_circle</span>
+                        <p class="font-label-md text-label-md text-on-surface">Score: {{ rtrim(rtrim(number_format($latestScore->score, 2), '0'), '.') }}</p>
+                    </div>
+
+                    @if ($latestScore->feedback)
+                        <div>
+                            <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Feedback</p>
+                            <p class="text-body-sm text-on-surface">{{ $latestScore->feedback }}</p>
+                        </div>
+                    @endif
+
+                    @if ($isProctored && $latestProctorSession)
+                        <div>
+                            <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Proctoring Result</p>
+                            <p class="text-body-sm text-on-surface font-medium">
+                                {{ $latestProctorSession->review_decision ? str($latestProctorSession->review_decision->value)->replace('_', ' ')->title() : 'No Action' }}
+                            </p>
+                            @if ($latestProctorSession->review_notes)
+                                <p class="text-body-sm text-on-surface-variant mt-space-xs">{{ $latestProctorSession->review_notes }}</p>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             @elseif (!$canResubmit && $latestAttempt)
                 <div class="flex items-center justify-between gap-space-md">

@@ -303,6 +303,7 @@ class AssessmentFinalExamShow extends Component
 
             $viewData['latestAttempt'] = $latest;
             $viewData['latestScore'] = $latestScore;
+            $viewData['latestProctorSession'] = $latestProctorSession;
             $viewData['pendingProctorReview'] = $latestProctorSession !== null && $latestProctorSession->reviewed_at === null;
             $viewData['canResubmit'] = $canResubmit;
             $viewData['attemptLimit'] = $attemptLimit ? (string) $attemptLimit : 'Unlimited';

@@ -123,4 +123,39 @@ describe('R2StorageService', function () {
             }
         });
     });
+
+    describe('getSignedUrl', function () {
+        test('uses the configured custom domain while keeping the presigned query string', function () {
+            $original = config('services.r2.custom_domain');
+            config(['services.r2.custom_domain' => 'https://cdn.example.com']);
+            $service = app(R2StorageService::class);
+
+            try {
+                $url = $service->getSignedUrl('lessons/abc/materials/file.pdf');
+
+                expect($url)->toStartWith('https://cdn.example.com/')
+                    ->and($url)->toContain('lessons/abc/materials/file.pdf?')
+                    ->and($url)->toContain('X-Amz-Signature');
+            } finally {
+                config(['services.r2.custom_domain' => $original]);
+                app()->forgetInstance(R2StorageService::class);
+            }
+        });
+
+        test('falls back to the raw R2 domain when no custom domain is set', function () {
+            $original = config('services.r2.custom_domain');
+            config(['services.r2.custom_domain' => '']);
+            $service = app(R2StorageService::class);
+
+            try {
+                $url = $service->getSignedUrl('lessons/abc/materials/file.pdf');
+
+                expect($url)->toContain('r2.cloudflarestorage.com')
+                    ->and($url)->toContain('lessons/abc/materials/file.pdf');
+            } finally {
+                config(['services.r2.custom_domain' => $original]);
+                app()->forgetInstance(R2StorageService::class);
+            }
+        });
+    });
 });

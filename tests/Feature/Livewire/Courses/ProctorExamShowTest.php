@@ -20,6 +20,7 @@ use App\Models\QuizQuestionOption;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
+use App\Services\R2StorageService;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -126,6 +127,29 @@ class ProctorExamShowTest extends TestCase
 
         $this->assertSame(ProctorSessionStatus::Completed, $session->status);
         $this->assertNotNull($session->ended_at);
+    }
+
+    public function test_record_snapshot_uploaded_promotes_file_out_of_temp_folder(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $tempKey = 'schools/demo/temp/proctor/session/abc123-screenshot.jpg';
+        $finalKey = 'schools/demo/proctor/session/abc123-screenshot.jpg';
+
+        $r2Mock = $this->mock(R2StorageService::class);
+        $r2Mock->shouldReceive('promoteFromTemp')->once()->with($tempKey, $finalKey);
+
+        $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->instance();
+
+        $instance->recordSnapshotUploaded($r2Mock, 'screen', $tempKey);
+
+        $this->assertDatabaseHas('proctor_snapshots', [
+            'type' => 'screen',
+            'file_url' => $finalKey,
+        ]);
     }
 
     public function test_standard_exam_type_returns_404(): void

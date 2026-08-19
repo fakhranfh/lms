@@ -167,7 +167,7 @@ class ProctorExamShow extends Component
         return $event->id;
     }
 
-    public function recordSnapshotUploaded(string $type, string $fileUrl, ?string $triggeredByEventId = null): void
+    public function recordSnapshotUploaded(R2StorageService $r2StorageService, string $type, string $fileUrl, ?string $triggeredByEventId = null): void
     {
         ProctorSnapshotType::from($type);
 
@@ -176,11 +176,14 @@ class ProctorExamShow extends Component
             return;
         }
 
+        $finalKey = preg_replace('#temp/#', '', $fileUrl, 1);
+        $r2StorageService->promoteFromTemp($fileUrl, $finalKey);
+
         app(ProctorSnapshotService::class)->create([
             'proctor_session_id' => $session->id,
             'type' => $type,
             'captured_at' => now(),
-            'file_url' => $fileUrl,
+            'file_url' => $finalKey,
             'triggered_by_event_id' => $triggeredByEventId,
         ]);
     }

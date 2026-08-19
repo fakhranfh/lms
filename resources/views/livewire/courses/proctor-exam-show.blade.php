@@ -21,10 +21,10 @@
                 screenShareError: null,
                 webcamRecorder: null,
                 screenRecorder: null,
-                snapshotTimer: null,
                 pendingUploads: [],
                 allowedTypes: @js($examType->value),
                 currentQuestion: 0,
+                eventAbortController: null,
                 tick() {
                     if (! this.deadline) { return; }
                     let diff = Math.floor((new Date(this.deadline) - new Date()) / 1000);
@@ -40,28 +40,41 @@
                     return m + ':' + s;
                 },
                 async logEvent(eventType, severity, metadata = null) {
+                    if (this.submitting) { return; }
                     const eventId = await $wire.logProctorEvent(eventType, severity, metadata);
                     this.captureEventScreenshot(eventId);
                 },
                 captureEventScreenshot(triggeredByEventId) {
-                    if (! this.$refs.screenPreview || ! this.screenStream) { return; }
-                    const video = this.$refs.screenPreview;
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth || 320;
-                    canvas.height = video.videoHeight || 240;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    canvas.toBlob(async (blob) => {
-                        if (! blob) { return; }
-                        try {
-                            const filename = 'screenshot-' + Date.now() + '.jpg';
-                            const { url, key } = await $wire.requestSnapshotUploadUrl(filename, 'Image');
-                            await fetch(url, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg' } });
-                            await $wire.recordSnapshotUploaded('screen', key, triggeredByEventId);
-                        } catch (e) {
-                            console.error('Proctor event screenshot upload failed', e);
-                        }
-                    }, 'image/jpeg', 0.7);
+                    this.captureVideoSnapshot(this.$refs.screenPreview, this.screenStream, 'screen', triggeredByEventId);
+                },
+                captureVideoSnapshot(video, stream, type, triggeredByEventId = null) {
+                    if (! video || ! stream || video.readyState < 2) { return; }
+                    let canvas;
+                    try {
+                        canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth || 320;
+                        canvas.height = video.videoHeight || 240;
+                        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                    } catch (e) {
+                        console.error('Proctor ' + type + ' snapshot capture failed', e);
+
+                        return;
+                    }
+                    const upload = new Promise((resolve) => {
+                        canvas.toBlob(async (blob) => {
+                            if (! blob) { resolve(); return; }
+                            try {
+                                const filename = type + '-' + Date.now() + '.jpg';
+                                const { url, key } = await $wire.requestSnapshotUploadUrl(filename, 'Image');
+                                await fetch(url, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg' } });
+                                await $wire.recordSnapshotUploaded(type, key, triggeredByEventId);
+                            } catch (e) {
+                                console.error('Proctor ' + type + ' screenshot upload failed', e);
+                            }
+                            resolve();
+                        }, 'image/jpeg', 0.7);
+                    });
+                    this.pendingUploads.push(upload);
                 },
                 startMediaRecorder(stream, prefix) {
                     if (! stream) { return null; }
@@ -91,26 +104,6 @@
                         console.error('Proctor recording upload failed', e);
                     }
                 },
-                async captureSnapshot() {
-                    if (this.submitting || ! this.$refs.webcamPreview || ! this.webcamStream) { return; }
-                    const video = this.$refs.webcamPreview;
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth || 320;
-                    canvas.height = video.videoHeight || 240;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    canvas.toBlob(async (blob) => {
-                        if (! blob) { return; }
-                        try {
-                            const filename = 'snapshot-' + Date.now() + '.jpg';
-                            const { url, key } = await $wire.requestSnapshotUploadUrl(filename, 'Image');
-                            await fetch(url, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg' } });
-                            await $wire.recordSnapshotUploaded('webcam', key);
-                        } catch (e) {
-                            console.error('Proctor snapshot upload failed', e);
-                        }
-                    }, 'image/jpeg', 0.7);
-                },
                 async startRecording() {
                     const pending = window.__proctorPendingStreams;
                     window.__proctorPendingStreams = null;
@@ -138,7 +131,6 @@
                         await this.shareScreen();
                     }
 
-                    this.snapshotTimer = setInterval(() => this.captureSnapshot(), 45000);
                 },
                 async shareScreen() {
                     this.screenShareError = null;
@@ -174,7 +166,6 @@
                 },
                 async stopRecording() {
                     try {
-                        if (this.snapshotTimer) { clearInterval(this.snapshotTimer); }
                         const stops = [];
                         if (this.webcamRecorder && this.webcamRecorder.state !== 'inactive') {
                             stops.push(new Promise((resolve) => {
@@ -199,6 +190,7 @@
                     if (this.submitting) { return; }
                     this.submitting = true;
                     clearInterval(this.timer);
+                    this.eventAbortController?.abort();
                     await this.stopRecording();
                     $wire.submitAttempt();
                 },
@@ -206,19 +198,21 @@
             x-init="
                 tick(); timer = setInterval(() => tick(), 1000);
                 startRecording();
-                document.addEventListener('visibilitychange', () => { if (document.hidden) { logEvent('tab_switch', 'medium'); } });
-                window.addEventListener('blur', () => logEvent('window_blur', 'low'));
-                document.addEventListener('copy', () => logEvent('copy_paste', 'medium'));
-                document.addEventListener('paste', () => logEvent('copy_paste', 'medium'));
-                document.addEventListener('contextmenu', (e) => { e.preventDefault(); logEvent('right_click', 'low'); });
+                eventAbortController = new AbortController();
+                const listenerOpts = { signal: eventAbortController.signal };
+                document.addEventListener('visibilitychange', () => { if (document.hidden) { logEvent('tab_switch', 'medium'); } }, listenerOpts);
+                window.addEventListener('blur', () => logEvent('window_blur', 'low'), listenerOpts);
+                document.addEventListener('copy', () => logEvent('copy_paste', 'medium'), listenerOpts);
+                document.addEventListener('paste', () => logEvent('copy_paste', 'medium'), listenerOpts);
+                document.addEventListener('contextmenu', (e) => { e.preventDefault(); logEvent('right_click', 'low'); }, listenerOpts);
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I','J','C'].includes(e.key))) {
                         logEvent('devtools_opened', 'high');
                     }
-                });
-                document.addEventListener('fullscreenchange', () => { if (! document.fullscreenElement) { logEvent('fullscreen_exit', 'medium'); } });
+                }, listenerOpts);
+                document.addEventListener('fullscreenchange', () => { if (! document.fullscreenElement) { logEvent('fullscreen_exit', 'medium'); } }, listenerOpts);
             "
-            x-on:destroy="clearInterval(timer); stopRecording()"
+            x-on:destroy="clearInterval(timer); eventAbortController?.abort(); stopRecording()"
             class="fixed inset-0 z-[100] bg-surface flex flex-col"
         >
             <div class="flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">

@@ -437,7 +437,7 @@
 
         <!-- Step 2: Camera & Microphone -->
         @if ($step === 'camera')
-            <div class="space-y-space-lg" x-init="if (! cameraStream) { runCameraCheck(); }">
+            <div class="space-y-space-lg">
                 <h3 class="font-label-lg text-label-lg text-on-surface text-center">2. Camera &amp; Microphone</h3>
                 <p class="text-body-sm text-on-surface-variant text-center">We need to see your face and hear audio in your room for the duration of the exam.</p>
 

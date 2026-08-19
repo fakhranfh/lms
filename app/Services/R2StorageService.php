@@ -189,8 +189,13 @@ class R2StorageService
             ]);
 
             $request = $this->s3Client->createPresignedRequest($cmd, "+{$expiresIn} seconds");
+            $uri = $request->getUri();
 
-            return (string) $request->getUri();
+            if ($this->customDomain) {
+                return "{$this->customDomain}/{$key}?{$uri->getQuery()}";
+            }
+
+            return (string) $uri;
         } catch (AwsException $e) {
             throw new \Exception("Failed to generate signed URL: {$e->getMessage()}");
         }

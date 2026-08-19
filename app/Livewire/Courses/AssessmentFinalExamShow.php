@@ -326,6 +326,12 @@ class AssessmentFinalExamShow extends Component
 
                 $pendingProctorReview = $proctorSession !== null && $proctorSession->reviewed_at === null;
 
+                $screenshots = $proctorSession
+                    ? $proctorSession->snapshots->where('type', ProctorSnapshotType::Screen)->sortBy('captured_at')->values()
+                    : collect();
+
+                $screenshotsByEvent = $screenshots->groupBy(fn ($shot) => $shot->triggered_by_event_id ?? 'none');
+
                 return [
                     'user' => $coursePerson->user,
                     'attempt' => $latest,
@@ -336,9 +342,8 @@ class AssessmentFinalExamShow extends Component
                     'pendingProctorReview' => $pendingProctorReview,
                     'cameraRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'webcam-recording'))->values(),
                     'screenRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'screen-recording'))->values(),
-                    'screenshots' => $proctorSession
-                        ? $proctorSession->snapshots->where('type', ProctorSnapshotType::Screen)->sortBy('captured_at')->values()
-                        : collect(),
+                    'screenshots' => $screenshots,
+                    'screenshotsByEvent' => $screenshotsByEvent,
                 ];
             })->values();
 

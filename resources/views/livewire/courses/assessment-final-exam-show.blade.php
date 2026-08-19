@@ -558,37 +558,59 @@
                                                         <span class="material-symbols-outlined">close</span>
                                                     </button>
                                                 </div>
-                                                <div class="flex-1 overflow-y-auto p-space-lg space-y-space-lg">
-                                                    @if ($row['proctorSession']->events->isNotEmpty())
-                                                        <div>
-                                                            <p class="font-label-sm text-label-sm text-secondary mb-space-sm">Events</p>
-                                                            <ul class="text-body-xs text-on-surface-variant space-y-1 max-h-40 overflow-y-auto border border-outline-variant rounded-lg p-space-md">
-                                                                @foreach ($row['proctorSession']->events as $event)
-                                                                    <li>{{ $event->detected_at_display->format('M j, Y H:i:s') }} &middot; {{ str($event->event_type->value)->replace('_', ' ')->title() }} ({{ $event->severity->value }})</li>
+                                                <div class="flex-1 overflow-y-auto p-space-lg space-y-space-md">
+                                                    @forelse ($row['proctorSession']->events as $event)
+                                                        <div class="border border-outline-variant rounded-lg p-space-md space-y-space-sm">
+                                                            <div class="flex items-center justify-between gap-space-sm">
+                                                                <p class="font-label-sm text-label-sm text-on-surface">
+                                                                    {{ str($event->event_type->value)->replace('_', ' ')->title() }}
+                                                                    <span class="text-body-xs text-on-surface-variant font-normal">({{ $event->severity->value }})</span>
+                                                                </p>
+                                                                <p class="text-body-xs text-on-surface-variant flex-shrink-0">{{ $event->detected_at_display->format('M j, Y H:i:s') }}</p>
+                                                            </div>
+
+                                                            @if ($row['screenshotsByEvent']->get($event->id, collect())->isNotEmpty())
+                                                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
+                                                                    @foreach ($row['screenshotsByEvent']->get($event->id) as $shot)
+                                                                        <div class="space-y-space-xs">
+                                                                            <button
+                                                                                type="button"
+                                                                                @click="lightboxUrl = '{{ $this->recordingUrl($shot->file_url) }}'"
+                                                                                class="block w-full cursor-zoom-in"
+                                                                            >
+                                                                                <img loading="lazy" class="w-full rounded-lg bg-black aspect-video object-cover" src="{{ $this->recordingUrl($shot->file_url) }}" alt="Proctor screenshot" />
+                                                                            </button>
+                                                                            <p class="text-body-xs text-on-surface-variant text-center">{{ $shot->captured_at_display->format('M j, Y H:i:s') }}</p>
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @else
+                                                                <p class="text-body-xs text-on-surface-variant italic">No screenshot captured.</p>
+                                                            @endif
+                                                        </div>
+                                                    @empty
+                                                        <p class="text-body-sm text-on-surface-variant text-center">No events recorded.</p>
+                                                    @endforelse
+
+                                                    @if ($row['screenshotsByEvent']->get('none', collect())->isNotEmpty())
+                                                        <div class="border border-outline-variant rounded-lg p-space-md space-y-space-sm">
+                                                            <p class="font-label-sm text-label-sm text-on-surface">Other Screenshots</p>
+                                                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
+                                                                @foreach ($row['screenshotsByEvent']->get('none') as $shot)
+                                                                    <div class="space-y-space-xs">
+                                                                        <button
+                                                                            type="button"
+                                                                            @click="lightboxUrl = '{{ $this->recordingUrl($shot->file_url) }}'"
+                                                                            class="block w-full cursor-zoom-in"
+                                                                        >
+                                                                            <img loading="lazy" class="w-full rounded-lg bg-black aspect-video object-cover" src="{{ $this->recordingUrl($shot->file_url) }}" alt="Proctor screenshot" />
+                                                                        </button>
+                                                                        <p class="text-body-xs text-on-surface-variant text-center">{{ $shot->captured_at_display->format('M j, Y H:i:s') }}</p>
+                                                                    </div>
                                                                 @endforeach
-                                                            </ul>
+                                                            </div>
                                                         </div>
                                                     @endif
-
-                                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-space-md">
-                                                        @foreach ($row['screenshots'] as $shot)
-                                                            <div class="space-y-space-xs">
-                                                                <button
-                                                                    type="button"
-                                                                    @click="lightboxUrl = '{{ $this->recordingUrl($shot->file_url) }}'"
-                                                                    class="block w-full cursor-zoom-in"
-                                                                >
-                                                                    <img loading="lazy" class="w-full rounded-lg bg-black" src="{{ $this->recordingUrl($shot->file_url) }}" alt="Proctor screenshot" />
-                                                                </button>
-                                                                <p class="text-body-xs text-on-surface-variant">
-                                                                    {{ $shot->captured_at_display->format('M j, Y H:i:s') }}
-                                                                    @if ($shot->triggeredByEvent)
-                                                                        &middot; {{ str($shot->triggeredByEvent->event_type->value)->replace('_', ' ')->title() }}
-                                                                    @endif
-                                                                </p>
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
                                                 </div>
                                             </div>
                                         </template>

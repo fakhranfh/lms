@@ -24,6 +24,7 @@ use App\Services\QuizAttemptScoringService;
 use App\Services\QuizService;
 use App\Services\R2StorageService;
 use App\Support\CurrentSchool;
+use Illuminate\Support\Carbon;
 use Livewire\Component;
 
 class ProctorExamShow extends Component
@@ -167,7 +168,7 @@ class ProctorExamShow extends Component
         return $event->id;
     }
 
-    public function recordSnapshotUploaded(R2StorageService $r2StorageService, string $type, string $fileUrl, ?string $triggeredByEventId = null): void
+    public function recordSnapshotUploaded(R2StorageService $r2StorageService, string $type, string $fileUrl, ?string $triggeredByEventId = null, ?string $capturedAt = null): void
     {
         ProctorSnapshotType::from($type);
 
@@ -182,10 +183,25 @@ class ProctorExamShow extends Component
         app(ProctorSnapshotService::class)->create([
             'proctor_session_id' => $session->id,
             'type' => $type,
-            'captured_at' => now(),
+            'captured_at' => $this->resolveCapturedAt($capturedAt),
             'file_url' => $finalKey,
             'triggered_by_event_id' => $triggeredByEventId,
         ]);
+    }
+
+    protected function resolveCapturedAt(?string $capturedAt): Carbon
+    {
+        if ($capturedAt === null) {
+            return now();
+        }
+
+        try {
+            $parsed = Carbon::parse($capturedAt);
+        } catch (\Exception) {
+            return now();
+        }
+
+        return $parsed->between(now()->subMinutes(30), now()) ? $parsed : now();
     }
 
     /**

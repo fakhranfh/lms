@@ -14,6 +14,7 @@ use App\Models\CoursePerson;
 use App\Models\FinalExam;
 use App\Models\Period;
 use App\Models\ProctorSession;
+use App\Models\ProctorSnapshot;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
 use App\Models\QuizQuestionOption;
@@ -150,6 +151,52 @@ class ProctorExamShowTest extends TestCase
             'type' => 'screen',
             'file_url' => $finalKey,
         ]);
+    }
+
+    public function test_record_snapshot_uploaded_uses_client_captured_at(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $tempKey = 'schools/demo/temp/proctor/session/abc123-screenshot.jpg';
+        $finalKey = 'schools/demo/proctor/session/abc123-screenshot.jpg';
+        $capturedAt = now()->subSeconds(5);
+
+        $r2Mock = $this->mock(R2StorageService::class);
+        $r2Mock->shouldReceive('promoteFromTemp')->once()->with($tempKey, $finalKey);
+
+        $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->instance();
+
+        $instance->recordSnapshotUploaded($r2Mock, 'screen', $tempKey, null, $capturedAt->toIso8601String());
+
+        $this->assertDatabaseHas('proctor_snapshots', [
+            'type' => 'screen',
+            'file_url' => $finalKey,
+            'captured_at' => $capturedAt->toDateTimeString(),
+        ]);
+    }
+
+    public function test_record_snapshot_uploaded_ignores_out_of_range_captured_at(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $tempKey = 'schools/demo/temp/proctor/session/abc123-screenshot.jpg';
+        $finalKey = 'schools/demo/proctor/session/abc123-screenshot.jpg';
+
+        $r2Mock = $this->mock(R2StorageService::class);
+        $r2Mock->shouldReceive('promoteFromTemp')->once()->with($tempKey, $finalKey);
+
+        $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->instance();
+
+        $instance->recordSnapshotUploaded($r2Mock, 'screen', $tempKey, null, now()->subHours(2)->toIso8601String());
+
+        $snapshot = ProctorSnapshot::where('file_url', $finalKey)->firstOrFail();
+        $this->assertTrue($snapshot->captured_at->greaterThan(now()->subMinute()));
     }
 
     public function test_standard_exam_type_returns_404(): void

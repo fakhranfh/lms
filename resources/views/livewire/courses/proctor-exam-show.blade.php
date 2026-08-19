@@ -60,6 +60,7 @@
 
                         return;
                     }
+                    const capturedAt = new Date().toISOString();
                     const upload = new Promise((resolve) => {
                         canvas.toBlob(async (blob) => {
                             if (! blob) { resolve(); return; }
@@ -67,7 +68,7 @@
                                 const filename = type + '-' + Date.now() + '.jpg';
                                 const { url, key } = await $wire.requestSnapshotUploadUrl(filename, 'Image');
                                 await fetch(url, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg' } });
-                                await $wire.recordSnapshotUploaded(type, key, triggeredByEventId);
+                                await $wire.recordSnapshotUploaded(type, key, triggeredByEventId, capturedAt);
                             } catch (e) {
                                 console.error('Proctor ' + type + ' screenshot upload failed', e);
                             }

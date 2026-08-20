@@ -5,6 +5,7 @@ namespace App\Livewire\Courses;
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
 use App\Enums\ProctorEventType;
+use App\Enums\ProctorReviewDecision;
 use App\Enums\ProctorSessionStatus;
 use App\Enums\ProctorSeverity;
 use App\Enums\ProctorSnapshotType;
@@ -15,6 +16,7 @@ use App\Models\Course;
 use App\Models\Quiz;
 use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentQuizAnswerService;
+use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
 use App\Services\FinalExamService;
 use App\Services\ProctorEventService;
@@ -65,6 +67,7 @@ class ProctorExamShow extends Component
             ProctorEventType::FullscreenExit->value,
             ProctorEventType::NetworkActivityDetected->value,
             ProctorEventType::UnauthorizedAppDetected->value,
+            ProctorEventType::ReadingSuspected->value,
         ];
 
         return $common;
@@ -267,6 +270,52 @@ class ProctorExamShow extends Component
         $this->answers = [];
 
         $this->redirectRoute('assessments.final-exam.show', $this->assessment, navigate: true);
+    }
+
+    public function disqualifyAttempt(
+        AssessmentAttemptService $assessmentAttemptService,
+        AssessmentScoreService $assessmentScoreService,
+        ProctorSessionService $proctorSessionService,
+        string $reason,
+    ): void {
+        abort_unless(auth()->user()->can('assessment.submit'), 403);
+
+        $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, auth()->id());
+        $attempt = $attempts->first(fn ($a) => $a->submitted_at === null);
+
+        if (! $attempt) {
+            return;
+        }
+
+        $feedback = __('Disqualified due to proctoring violation: :reason', ['reason' => $reason]);
+
+        $assessmentAttemptService->update($attempt->id, ['submitted_at' => now()]);
+
+        $score = $assessmentScoreService->findByAttempt($attempt->id);
+        if ($score) {
+            $assessmentScoreService->update($score->id, ['score' => 0, 'feedback' => $feedback]);
+        } else {
+            $assessmentScoreService->create([
+                'assessment_attempt_id' => $attempt->id,
+                'score' => 0,
+                'graded_at' => now(),
+                'feedback' => $feedback,
+            ]);
+        }
+
+        $session = $proctorSessionService->findByAttempt($attempt->id);
+        if ($session !== null) {
+            $proctorSessionService->update($session->id, [
+                'status' => ProctorSessionStatus::Terminated,
+                'ended_at' => now(),
+                'review_decision' => ProctorReviewDecision::Disqualified,
+                'reviewed_at' => now(),
+                'review_notes' => $feedback,
+            ]);
+        }
+
+        $this->answers = [];
+        $this->errorMessage = $feedback;
     }
 
     protected function currentSession()

@@ -4,6 +4,7 @@ namespace Tests\Feature\Livewire\Courses;
 
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
+use App\Enums\ProctorReviewDecision;
 use App\Enums\ProctorSessionStatus;
 use App\Enums\RoleName;
 use App\Livewire\Courses\ProctorExamShow;
@@ -197,6 +198,32 @@ class ProctorExamShowTest extends TestCase
 
         $snapshot = ProctorSnapshot::where('file_url', $finalKey)->firstOrFail();
         $this->assertTrue($snapshot->captured_at->greaterThan(now()->subMinute()));
+    }
+
+    public function test_disqualify_attempt_terminates_session_and_zeroes_score(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->call('disqualifyAttempt', 'reading_suspected')
+            ->instance();
+
+        $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
+        $session = ProctorSession::where('assessment_attempt_id', $attempt->id)->firstOrFail();
+
+        $this->assertNotNull($attempt->submitted_at);
+        $this->assertSame(ProctorSessionStatus::Terminated, $session->status);
+        $this->assertSame(ProctorReviewDecision::Disqualified, $session->review_decision);
+        $this->assertNotNull($session->ended_at);
+
+        $this->assertDatabaseHas('assessment_scores', [
+            'assessment_attempt_id' => $attempt->id,
+            'score' => 0,
+        ]);
+
+        $this->assertNotNull($instance->errorMessage);
     }
 
     public function test_standard_exam_type_returns_404(): void

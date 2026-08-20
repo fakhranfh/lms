@@ -461,7 +461,7 @@
                         </div>
 
                         @if ($isProctored && $row['proctorSession'])
-                            <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md" x-data="{ reviewOpen: false, cameraModalOpen: false, screenModalOpen: false, screenshotModalOpen: false, lightboxUrl: null }">
+                            <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md" x-data="{ reviewOpen: false, cameraModalOpen: false, screenModalOpen: false, screenshotModalOpen: false, lightboxUrl: null, screenshotFilter: 'all', screenshotGrouped: true, screenshotSort: 'asc' }">
                                 <div class="flex items-center justify-between gap-space-md">
                                     <div class="flex items-center gap-space-sm text-body-sm">
                                         <span class="material-symbols-outlined text-[16px]" :class="{}">shield</span>
@@ -574,65 +574,137 @@
                                                 x-transition:leave-end="opacity-0"
                                                 class="fixed inset-0 z-[110] bg-surface flex flex-col"
                                             >
-                                                <div class="flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">
+                                                <div class="flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant flex-shrink-0 gap-space-md flex-wrap">
                                                     <h2 class="font-headline-sm text-headline-sm text-on-surface">Event Screenshots &middot; {{ $row['user']->name }}</h2>
-                                                    <button type="button" @click="screenshotModalOpen = false" class="text-on-surface-variant hover:text-on-surface">
-                                                        <span class="material-symbols-outlined">close</span>
-                                                    </button>
+
+                                                    <div class="flex items-center gap-space-sm flex-wrap">
+                                                        <select x-model="screenshotFilter" class="px-space-sm py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface bg-surface">
+                                                            <option value="all">All event types</option>
+                                                            @foreach ($row['eventTypeOptions'] as $eventType)
+                                                                <option value="{{ $eventType }}">{{ $eventType === 'none' ? 'Other' : str($eventType)->replace('_', ' ')->title() }}</option>
+                                                            @endforeach
+                                                        </select>
+
+                                                        <button
+                                                            type="button"
+                                                            x-show="screenshotFilter !== 'all'"
+                                                            x-cloak
+                                                            @click="screenshotFilter = 'all'"
+                                                            class="inline-flex items-center gap-space-xs px-space-sm py-xs font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface"
+                                                        >
+                                                            <span class="material-symbols-outlined text-[16px]">close</span>
+                                                            Clear filter
+                                                        </button>
+
+                                                        <select x-model="screenshotSort" class="px-space-sm py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface bg-surface">
+                                                            <option value="asc">Oldest first</option>
+                                                            <option value="desc">Newest first</option>
+                                                        </select>
+
+                                                        <label class="inline-flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+                                                            <input type="checkbox" x-model="screenshotGrouped" class="w-4 h-4 accent-primary" />
+                                                            Group by event
+                                                        </label>
+
+                                                        <button type="button" @click="screenshotModalOpen = false" class="text-on-surface-variant hover:text-on-surface">
+                                                            <span class="material-symbols-outlined">close</span>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 <div class="flex-1 overflow-y-auto p-space-lg space-y-space-md">
-                                                    @forelse ($row['proctorSession']->events as $event)
-                                                        <div class="border border-outline-variant rounded-lg p-space-md space-y-space-sm">
-                                                            <div class="flex items-center justify-between gap-space-sm">
-                                                                <p class="font-label-sm text-label-sm text-on-surface">
-                                                                    {{ str($event->event_type->value)->replace('_', ' ')->title() }}
-                                                                    <span class="text-body-xs text-on-surface-variant font-normal">({{ $event->severity->value }})</span>
-                                                                </p>
-                                                                <p class="text-body-xs text-on-surface-variant flex-shrink-0">{{ $event->detected_at_display->format('M j, Y H:i:s') }}</p>
-                                                            </div>
+                                                    <template x-if="screenshotGrouped">
+                                                        <div class="space-y-space-md">
+                                                            @forelse ($row['eventsByType'] as $eventType => $events)
+                                                                <div x-show="screenshotFilter === 'all' || screenshotFilter === '{{ $eventType }}'" class="border border-outline-variant rounded-lg p-space-md space-y-space-sm">
+                                                                    <p class="font-label-sm text-label-sm text-on-surface">
+                                                                        {{ str($eventType)->replace('_', ' ')->title() }}
+                                                                        <span class="text-body-xs text-on-surface-variant font-normal">&times; {{ $events->count() }}</span>
+                                                                    </p>
 
-                                                            @if ($row['screenshotsByEvent']->get($event->id, collect())->isNotEmpty())
-                                                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
-                                                                    @foreach ($row['screenshotsByEvent']->get($event->id) as $shot)
-                                                                        <div class="space-y-space-xs">
-                                                                            <button
-                                                                                type="button"
-                                                                                @click="lightboxUrl = '{{ $this->recordingUrl($shot->file_url) }}'"
-                                                                                class="block w-full cursor-zoom-in"
-                                                                            >
-                                                                                <img loading="lazy" class="w-full rounded-lg bg-black aspect-video object-cover" src="{{ $this->recordingUrl($shot->file_url) }}" alt="Proctor screenshot" />
-                                                                            </button>
-                                                                            <p class="text-body-xs text-on-surface-variant text-center">{{ $shot->captured_at_display->format('M j, Y H:i:s') }}</p>
+                                                                    @if ($row['screenshotsByEventType']->get($eventType, collect())->isNotEmpty())
+                                                                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
+                                                                            @foreach ($row['screenshotsByEventType']->get($eventType) as $shot)
+                                                                                <div
+                                                                                    x-data="{ loaded: false }"
+                                                                                    :style="'order: ' + (screenshotSort === 'desc' ? {{ $loop->count - $loop->index }} : {{ $loop->index }})"
+                                                                                    class="space-y-space-xs"
+                                                                                >
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        @click="lightboxUrl = '{{ $this->recordingUrl($shot->file_url) }}'"
+                                                                                        class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
+                                                                                    >
+                                                                                        <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
+                                                                                        <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" src="{{ $this->recordingUrl($shot->file_url) }}" alt="Proctor screenshot" />
+                                                                                    </button>
+                                                                                    <p class="text-body-xs text-on-surface-variant text-center">{{ $shot->captured_at_display->format('M j, Y H:i:s') }}</p>
+                                                                                </div>
+                                                                            @endforeach
                                                                         </div>
-                                                                    @endforeach
+                                                                    @else
+                                                                        <p class="text-body-xs text-on-surface-variant italic">No screenshot captured.</p>
+                                                                    @endif
                                                                 </div>
-                                                            @else
-                                                                <p class="text-body-xs text-on-surface-variant italic">No screenshot captured.</p>
+                                                            @empty
+                                                                <p class="text-body-sm text-on-surface-variant text-center">No events recorded.</p>
+                                                            @endforelse
+
+                                                            @if ($row['screenshotsByEventType']->get('none', collect())->isNotEmpty())
+                                                                <div x-show="screenshotFilter === 'all' || screenshotFilter === 'none'" class="border border-outline-variant rounded-lg p-space-md space-y-space-sm">
+                                                                    <p class="font-label-sm text-label-sm text-on-surface">Other Screenshots</p>
+                                                                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
+                                                                        @foreach ($row['screenshotsByEventType']->get('none') as $shot)
+                                                                            <div
+                                                                                x-data="{ loaded: false }"
+                                                                                :style="'order: ' + (screenshotSort === 'desc' ? {{ $loop->count - $loop->index }} : {{ $loop->index }})"
+                                                                                class="space-y-space-xs"
+                                                                            >
+                                                                                <button
+                                                                                    type="button"
+                                                                                    @click="lightboxUrl = '{{ $this->recordingUrl($shot->file_url) }}'"
+                                                                                    class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
+                                                                                >
+                                                                                    <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
+                                                                                    <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" src="{{ $this->recordingUrl($shot->file_url) }}" alt="Proctor screenshot" />
+                                                                                </button>
+                                                                                <p class="text-body-xs text-on-surface-variant text-center">{{ $shot->captured_at_display->format('M j, Y H:i:s') }}</p>
+                                                                            </div>
+                                                                        @endforeach
+                                                                    </div>
+                                                                </div>
                                                             @endif
                                                         </div>
-                                                    @empty
-                                                        <p class="text-body-sm text-on-surface-variant text-center">No events recorded.</p>
-                                                    @endforelse
+                                                    </template>
 
-                                                    @if ($row['screenshotsByEvent']->get('none', collect())->isNotEmpty())
-                                                        <div class="border border-outline-variant rounded-lg p-space-md space-y-space-sm">
-                                                            <p class="font-label-sm text-label-sm text-on-surface">Other Screenshots</p>
+                                                    <template x-if="!screenshotGrouped">
+                                                        @if ($row['screenshotsFlat']->isNotEmpty())
                                                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
-                                                                @foreach ($row['screenshotsByEvent']->get('none') as $shot)
-                                                                    <div class="space-y-space-xs">
+                                                                @foreach ($row['screenshotsFlat'] as $item)
+                                                                    <div
+                                                                        x-data="{ loaded: false }"
+                                                                        x-show="screenshotFilter === 'all' || screenshotFilter === '{{ $item['eventType'] }}'"
+                                                                        :style="'order: ' + (screenshotSort === 'desc' ? {{ $loop->count - $loop->index }} : {{ $loop->index }})"
+                                                                        class="space-y-space-xs"
+                                                                    >
                                                                         <button
                                                                             type="button"
-                                                                            @click="lightboxUrl = '{{ $this->recordingUrl($shot->file_url) }}'"
-                                                                            class="block w-full cursor-zoom-in"
+                                                                            @click="lightboxUrl = '{{ $this->recordingUrl($item['shot']->file_url) }}'"
+                                                                            class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
                                                                         >
-                                                                            <img loading="lazy" class="w-full rounded-lg bg-black aspect-video object-cover" src="{{ $this->recordingUrl($shot->file_url) }}" alt="Proctor screenshot" />
+                                                                            <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
+                                                                            <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" src="{{ $this->recordingUrl($item['shot']->file_url) }}" alt="Proctor screenshot" />
                                                                         </button>
-                                                                        <p class="text-body-xs text-on-surface-variant text-center">{{ $shot->captured_at_display->format('M j, Y H:i:s') }}</p>
+                                                                        <p class="text-body-xs text-on-surface-variant text-center">
+                                                                            {{ $item['shot']->captured_at_display->format('M j, Y H:i:s') }}
+                                                                            &middot; {{ $item['eventType'] === 'none' ? 'Other' : str($item['eventType'])->replace('_', ' ')->title() }}
+                                                                        </p>
                                                                     </div>
                                                                 @endforeach
                                                             </div>
-                                                        </div>
-                                                    @endif
+                                                        @else
+                                                            <p class="text-body-sm text-on-surface-variant text-center">No screenshots recorded.</p>
+                                                        @endif
+                                                    </template>
                                                 </div>
                                             </div>
                                         </template>

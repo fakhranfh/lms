@@ -15,4 +15,5 @@ enum ProctorEventType: string
     case FullscreenExit = 'fullscreen_exit';
     case NetworkActivityDetected = 'network_activity_detected';
     case UnauthorizedAppDetected = 'unauthorized_app_detected';
+    case ReadingSuspected = 'reading_suspected';
 }

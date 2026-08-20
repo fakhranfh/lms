@@ -331,7 +331,25 @@ class AssessmentFinalExamShow extends Component
                     ? $proctorSession->snapshots->where('type', ProctorSnapshotType::Screen)->sortBy('captured_at')->values()
                     : collect();
 
-                $screenshotsByEvent = $screenshots->groupBy(fn ($shot) => $shot->triggered_by_event_id ?? 'none');
+                $eventsById = $proctorSession ? $proctorSession->events->keyBy('id') : collect();
+
+                $screenshotsByEventType = $screenshots->groupBy(function ($shot) use ($eventsById) {
+                    $event = $shot->triggered_by_event_id ? $eventsById->get($shot->triggered_by_event_id) : null;
+
+                    return $event?->event_type->value ?? 'none';
+                });
+
+                $eventsByType = $proctorSession
+                    ? $proctorSession->events->sortBy('detected_at')->groupBy(fn ($event) => $event->event_type->value)
+                    : collect();
+
+                $screenshotsFlat = $screenshots->map(function ($shot) use ($eventsById) {
+                    $event = $shot->triggered_by_event_id ? $eventsById->get($shot->triggered_by_event_id) : null;
+
+                    return ['shot' => $shot, 'eventType' => $event?->event_type->value ?? 'none'];
+                })->sortBy(fn ($item) => $item['shot']->captured_at)->values();
+
+                $eventTypeOptions = $screenshotsByEventType->keys()->values();
 
                 return [
                     'user' => $coursePerson->user,
@@ -344,7 +362,10 @@ class AssessmentFinalExamShow extends Component
                     'cameraRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'webcam-recording'))->values(),
                     'screenRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'screen-recording'))->values(),
                     'screenshots' => $screenshots,
-                    'screenshotsByEvent' => $screenshotsByEvent,
+                    'eventsByType' => $eventsByType,
+                    'screenshotsByEventType' => $screenshotsByEventType,
+                    'screenshotsFlat' => $screenshotsFlat,
+                    'eventTypeOptions' => $eventTypeOptions,
                 ];
             })->values();
 

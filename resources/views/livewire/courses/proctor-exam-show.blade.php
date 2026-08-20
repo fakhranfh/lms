@@ -25,6 +25,9 @@
                 allowedTypes: @js($examType->value),
                 currentQuestion: 0,
                 eventAbortController: null,
+                readingDetector: null,
+                readingSuspected: false,
+                disqualifying: false,
                 tick() {
                     if (! this.deadline) { return; }
                     let diff = Math.floor((new Date(this.deadline) - new Date()) / 1000);
@@ -42,33 +45,44 @@
                 async logEvent(eventType, severity, metadata = null) {
                     if (this.submitting) { return; }
                     const eventId = await $wire.logProctorEvent(eventType, severity, metadata);
-                    this.captureEventScreenshot(eventId);
+                    // Wait a beat after the event before capturing, so the
+                    // screenshot reflects what's on screen once the violation
+                    // has actually happened (e.g. after a tab switch resolves)
+                    // rather than the transitional frame at the trigger instant.
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                    const capture = this.captureVideoSnapshot(this.$refs.screenPreview, this.screenStream, 'screen');
+                    this.uploadSnapshot(capture, 'screen', eventId);
                 },
-                captureEventScreenshot(triggeredByEventId) {
-                    this.captureVideoSnapshot(this.$refs.screenPreview, this.screenStream, 'screen', triggeredByEventId);
-                },
-                captureVideoSnapshot(video, stream, type, triggeredByEventId = null) {
-                    if (! video || ! stream || video.readyState < 2) { return; }
-                    let canvas;
+                captureVideoSnapshot(video, stream, type) {
+                    if (! video) { console.warn('Proctor ' + type + ' snapshot skipped: no <video> ref'); return null; }
+                    if (! stream) { console.warn('Proctor ' + type + ' snapshot skipped: no stream'); return null; }
+                    if (video.readyState < 2) { console.warn('Proctor ' + type + ' snapshot skipped: video not ready (readyState=' + video.readyState + ')'); return null; }
                     try {
-                        canvas = document.createElement('canvas');
+                        const canvas = document.createElement('canvas');
                         canvas.width = video.videoWidth || 320;
                         canvas.height = video.videoHeight || 240;
                         canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                        return { canvas, capturedAt: new Date().toISOString() };
                     } catch (e) {
                         console.error('Proctor ' + type + ' snapshot capture failed', e);
 
-                        return;
+                        return null;
                     }
-                    const capturedAt = new Date().toISOString();
+                },
+                uploadSnapshot(capture, type, triggeredByEventId = null) {
+                    if (! capture) { return; }
                     const upload = new Promise((resolve) => {
-                        canvas.toBlob(async (blob) => {
-                            if (! blob) { resolve(); return; }
+                        capture.canvas.toBlob(async (blob) => {
+                            if (! blob) { console.warn('Proctor ' + type + ' snapshot skipped: canvas.toBlob returned null (tainted canvas?)'); resolve(); return; }
                             try {
                                 const filename = type + '-' + Date.now() + '.jpg';
                                 const { url, key } = await $wire.requestSnapshotUploadUrl(filename, 'Image');
-                                await fetch(url, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg' } });
-                                await $wire.recordSnapshotUploaded(type, key, triggeredByEventId, capturedAt);
+                                const putResponse = await fetch(url, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg' } });
+                                if (! putResponse.ok) {
+                                    throw new Error('R2 PUT failed with status ' + putResponse.status);
+                                }
+                                await $wire.recordSnapshotUploaded(type, key, triggeredByEventId, capture.capturedAt);
+                                console.log('Proctor ' + type + ' snapshot saved:', key);
                             } catch (e) {
                                 console.error('Proctor ' + type + ' screenshot upload failed', e);
                             }
@@ -119,6 +133,7 @@
                         }
                     }
                     this.webcamRecorder = this.startMediaRecorder(this.webcamStream, 'webcam-recording');
+                    this.startReadingDetector();
 
                     if (pending && pending.screen.getVideoTracks()[0]?.readyState === 'live') {
                         this.screenStream = pending.screen;
@@ -132,6 +147,38 @@
                         await this.shareScreen();
                     }
 
+                },
+                async startReadingDetector() {
+                    if (! this.webcamStream || ! window.createReadingDetector) { return; }
+                    this.readingDetector = window.createReadingDetector({
+                        onReadingSuspectedChange: (suspected) => {
+                            this.readingSuspected = suspected;
+                            if (suspected) {
+                                this.handleReadingDisqualification();
+                            }
+                        },
+                    });
+                    try {
+                        await this.readingDetector.start(this.$refs.webcamPreview);
+                    } catch (e) {
+                        console.error('Reading detector failed to start', e);
+                    }
+                },
+                async handleReadingDisqualification() {
+                    if (this.submitting || this.disqualifying) { return; }
+                    this.disqualifying = true;
+                    this.submitting = true;
+                    clearInterval(this.timer);
+                    this.eventAbortController?.abort();
+                    this.readingDetector?.stop();
+                    const eventId = await $wire.logProctorEvent('reading_suspected', 'high', { reason: 'sustained_gaze_away_from_screen' });
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                    const screenCapture = this.captureVideoSnapshot(this.$refs.screenPreview, this.screenStream, 'screen');
+                    const webcamCapture = this.captureVideoSnapshot(this.$refs.webcamPreview, this.webcamStream, 'webcam');
+                    this.uploadSnapshot(screenCapture, 'screen', eventId);
+                    this.uploadSnapshot(webcamCapture, 'webcam', eventId);
+                    await this.stopRecording();
+                    await $wire.disqualifyAttempt('reading_suspected');
                 },
                 async shareScreen() {
                     this.screenShareError = null;
@@ -167,6 +214,7 @@
                 },
                 async stopRecording() {
                     try {
+                        this.readingDetector?.stop();
                         const stops = [];
                         if (this.webcamRecorder && this.webcamRecorder.state !== 'inactive') {
                             stops.push(new Promise((resolve) => {
@@ -198,7 +246,7 @@
             }"
             x-init="
                 tick(); timer = setInterval(() => tick(), 1000);
-                startRecording();
+                $nextTick(() => startRecording());
                 eventAbortController = new AbortController();
                 const listenerOpts = { signal: eventAbortController.signal };
                 document.addEventListener('visibilitychange', () => { if (document.hidden) { logEvent('tab_switch', 'medium'); } }, listenerOpts);
@@ -213,7 +261,7 @@
                 }, listenerOpts);
                 document.addEventListener('fullscreenchange', () => { if (! document.fullscreenElement) { logEvent('fullscreen_exit', 'medium'); } }, listenerOpts);
             "
-            x-on:destroy="clearInterval(timer); eventAbortController?.abort(); stopRecording()"
+            x-on:destroy="clearInterval(timer); eventAbortController?.abort(); readingDetector?.stop(); stopRecording()"
             class="fixed inset-0 z-[100] bg-surface flex flex-col"
         >
             <div class="flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">
@@ -278,6 +326,9 @@
                                     <video x-ref="webcamPreview" x-effect="$el.srcObject = webcamStream" autoplay muted playsinline class="w-full h-full object-cover"></video>
                                     <span x-show="!webcamStream" x-cloak class="absolute inset-0 flex items-center justify-center text-body-xs text-white/70">
                                         Camera unavailable
+                                    </span>
+                                    <span x-show="readingSuspected" x-cloak class="absolute inset-x-0 bottom-0 px-space-sm py-1 bg-error/90 text-white text-body-xs text-center">
+                                        Look at the screen
                                     </span>
                                 </div>
                             </div>
@@ -395,8 +446,18 @@
                     x-transition:enter-end="opacity-100"
                     class="fixed inset-0 z-[120] flex flex-col items-center justify-center gap-space-lg bg-surface"
                 >
-                    <span class="material-symbols-outlined animate-spin text-primary text-[48px]">progress_activity</span>
-                    <p class="font-label-md text-label-md text-on-surface">Submitting your exam, please wait…</p>
+                    <template x-if="disqualifying">
+                        <div class="flex flex-col items-center gap-space-lg">
+                            <span class="material-symbols-outlined text-error text-[48px]">block</span>
+                            <p class="font-label-md text-label-md text-error">You have been disqualified from this exam.</p>
+                        </div>
+                    </template>
+                    <template x-if="!disqualifying">
+                        <div class="flex flex-col items-center gap-space-lg">
+                            <span class="material-symbols-outlined animate-spin text-primary text-[48px]">progress_activity</span>
+                            <p class="font-label-md text-label-md text-on-surface">Submitting your exam, please wait…</p>
+                        </div>
+                    </template>
                 </div>
             </template>
         </div>

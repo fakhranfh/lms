@@ -13,6 +13,15 @@ const PITCH_THRESHOLD = 12;
 // as "reading suspected" rather than a brief, incidental glance away.
 const READING_SUSPECTED_MS = 2500;
 
+// How long the face must be completely absent from frame before it's flagged
+// as "no face detected" rather than a brief, incidental occlusion.
+const NO_FACE_SUSPECTED_MS = 3000;
+
+// How long the head must stay pitched down (e.g. looking at a phone/notes in
+// the lap) before it's flagged, separately from the shorter generic
+// "reading suspected" away-from-screen threshold above.
+const FACING_DOWN_SUSPECTED_MS = 5000;
+
 async function loadFaceLandmarker() {
     if (faceLandmarker) {
         return faceLandmarker;
@@ -68,6 +77,8 @@ function directionFromPose(yaw, pitch) {
  * @param {(pose: {yaw: number, pitch: number, direction: string, landmarks: Array}) => void} [handlers.onPose]
  * @param {(suspected: boolean) => void} [handlers.onReadingSuspectedChange]
  * @param {() => void} [handlers.onNoFace]
+ * @param {(suspected: boolean) => void} [handlers.onNoFaceSuspectedChange]
+ * @param {(suspected: boolean) => void} [handlers.onFacingDownSuspectedChange]
  */
 export function createReadingDetector(handlers = {}) {
     let videoEl = null;
@@ -75,6 +86,10 @@ export function createReadingDetector(handlers = {}) {
     let running = false;
     let awayFromScreenSince = null;
     let readingSuspected = false;
+    let noFaceSince = null;
+    let noFaceSuspected = false;
+    let facingDownSince = null;
+    let facingDownSuspected = false;
 
     function setReadingSuspected(value) {
         if (value === readingSuspected) {
@@ -82,6 +97,22 @@ export function createReadingDetector(handlers = {}) {
         }
         readingSuspected = value;
         handlers.onReadingSuspectedChange?.(value);
+    }
+
+    function setNoFaceSuspected(value) {
+        if (value === noFaceSuspected) {
+            return;
+        }
+        noFaceSuspected = value;
+        handlers.onNoFaceSuspectedChange?.(value);
+    }
+
+    function setFacingDownSuspected(value) {
+        if (value === facingDownSuspected) {
+            return;
+        }
+        facingDownSuspected = value;
+        handlers.onFacingDownSuspectedChange?.(value);
     }
 
     function tick() {
@@ -102,15 +133,33 @@ export function createReadingDetector(handlers = {}) {
                     awayFromScreenSince = performance.now();
                 }
                 setReadingSuspected((performance.now() - awayFromScreenSince) >= READING_SUSPECTED_MS);
+
+                if (noFaceSince === null) {
+                    noFaceSince = performance.now();
+                }
+                setNoFaceSuspected((performance.now() - noFaceSince) >= NO_FACE_SUSPECTED_MS);
+
+                // A steep enough downward tilt (e.g. looking at a phone/notes
+                // in the lap) typically makes MediaPipe lose face tracking
+                // entirely rather than reporting a "down" pose, so a
+                // sustained no-face reading also counts toward the
+                // facing-down timer instead of resetting it.
+                if (facingDownSince === null) {
+                    facingDownSince = performance.now();
+                }
+                setFacingDownSuspected((performance.now() - facingDownSince) >= FACING_DOWN_SUSPECTED_MS);
                 handlers.onNoFace?.();
             } else {
+                noFaceSince = null;
+                setNoFaceSuspected(false);
+
                 const yawRad = Math.atan2(-matrix[8], Math.sqrt(matrix[0] ** 2 + matrix[4] ** 2));
                 const pitchRad = Math.atan2(matrix[9], matrix[10]);
                 const yaw = -yawRad * (180 / Math.PI);
                 const pitch = pitchRad * (180 / Math.PI);
                 const direction = directionFromPose(yaw, pitch);
 
-                if (direction === 'center') {
+                if (direction === 'center' || direction === 'down') {
                     awayFromScreenSince = null;
                     setReadingSuspected(false);
                 } else {
@@ -118,6 +167,20 @@ export function createReadingDetector(handlers = {}) {
                         awayFromScreenSince = performance.now();
                     }
                     setReadingSuspected((performance.now() - awayFromScreenSince) >= READING_SUSPECTED_MS);
+                }
+
+                // "Down" gets its own, longer-lived timer/event rather than
+                // feeding the generic reading-suspected one above, since a
+                // brief downward glance (e.g. at the keyboard) is normal
+                // during a typed exam and shouldn't be flagged as quickly.
+                if (direction === 'down') {
+                    if (facingDownSince === null) {
+                        facingDownSince = performance.now();
+                    }
+                    setFacingDownSuspected((performance.now() - facingDownSince) >= FACING_DOWN_SUSPECTED_MS);
+                } else {
+                    facingDownSince = null;
+                    setFacingDownSuspected(false);
                 }
 
                 handlers.onPose?.({ yaw, pitch, direction, landmarks });
@@ -134,6 +197,10 @@ export function createReadingDetector(handlers = {}) {
             running = true;
             awayFromScreenSince = null;
             readingSuspected = false;
+            noFaceSince = null;
+            noFaceSuspected = false;
+            facingDownSince = null;
+            facingDownSuspected = false;
             tick();
         },
         stop() {

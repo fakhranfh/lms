@@ -258,6 +258,60 @@ class AssessmentFinalExamShowTest extends TestCase
             });
     }
 
+    public function test_load_proctor_screenshots_pairs_camera_snapshot_from_same_event(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
+
+        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
+        $session = ProctorSession::factory()->for($attempt, 'attempt')->create();
+        $event = ProctorEvent::factory()->for($session)->create(['event_type' => 'tab_switch']);
+        ProctorSnapshot::factory()->for($session)->create([
+            'type' => ProctorSnapshotType::Screen,
+            'triggered_by_event_id' => $event->id,
+            'file_url' => 'temp/proctor/'.$session->id.'/screen-1.jpg',
+        ]);
+        ProctorSnapshot::factory()->for($session)->create([
+            'type' => ProctorSnapshotType::Webcam,
+            'triggered_by_event_id' => $event->id,
+            'file_url' => 'temp/proctor/'.$session->id.'/webcam-1.jpg',
+        ]);
+
+        $r2Mock = $this->mock(R2StorageService::class);
+        $r2Mock->shouldReceive('getSignedUrl')->twice()->andReturn('https://r2.example.com/signed-url');
+
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->call('loadProctorScreenshots', $this->student->id)
+            ->assertReturned(function ($result) {
+                return count($result['items']) === 1
+                    && $result['items'][0]['cameraUrl'] === 'https://r2.example.com/signed-url';
+            });
+    }
+
+    public function test_load_proctor_screenshots_returns_null_camera_url_when_no_paired_webcam_snapshot(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
+
+        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
+        $session = ProctorSession::factory()->for($attempt, 'attempt')->create();
+        $event = ProctorEvent::factory()->for($session)->create(['event_type' => 'tab_switch']);
+        ProctorSnapshot::factory()->for($session)->create([
+            'type' => ProctorSnapshotType::Screen,
+            'triggered_by_event_id' => $event->id,
+            'file_url' => 'temp/proctor/'.$session->id.'/screen-1.jpg',
+        ]);
+
+        $r2Mock = $this->mock(R2StorageService::class);
+        $r2Mock->shouldReceive('getSignedUrl')->once()->andReturn('https://r2.example.com/signed-url');
+
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->call('loadProctorScreenshots', $this->student->id)
+            ->assertReturned(fn ($result) => $result['items'][0]['cameraUrl'] === null);
+    }
+
     public function test_load_proctor_screenshots_filters_server_side_by_event_type(): void
     {
         $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);

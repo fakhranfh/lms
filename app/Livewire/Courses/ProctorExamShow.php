@@ -46,6 +46,10 @@ class ProctorExamShow extends Component
 
     public ?string $errorMessage = null;
 
+    public bool $justSubmitted = false;
+
+    public bool $disqualified = false;
+
     /**
      * Event types allowed to be logged for the current exam type, per the
      * doc's "Detection Rules by Exam Type" (Open Book doesn't flag local
@@ -268,8 +272,7 @@ class ProctorExamShow extends Component
         }
 
         $this->answers = [];
-
-        $this->redirectRoute('assessments.final-exam.show', $this->assessment, navigate: true);
+        $this->justSubmitted = true;
     }
 
     public function disqualifyAttempt(
@@ -287,7 +290,7 @@ class ProctorExamShow extends Component
             return;
         }
 
-        $feedback = __('Disqualified due to proctoring violation: :reason', ['reason' => $reason]);
+        $feedback = __('Disqualified: cheating detected during the exam (:reason).', ['reason' => $reason]);
 
         $assessmentAttemptService->update($attempt->id, ['submitted_at' => now()]);
 
@@ -316,6 +319,7 @@ class ProctorExamShow extends Component
 
         $this->answers = [];
         $this->errorMessage = $feedback;
+        $this->disqualified = true;
     }
 
     protected function currentSession()
@@ -348,6 +352,8 @@ class ProctorExamShow extends Component
             'examType' => $this->examType,
             'inProgress' => $inProgress,
             'canStart' => $canStart,
+            'justSubmitted' => $this->justSubmitted,
+            'disqualified' => $this->disqualified,
             'deadlineIso' => ($inProgress && $this->quiz->time_limit_per_attempt)
                 ? $inProgress->started_at->copy()->addMinutes($this->quiz->time_limit_per_attempt)->toIso8601String()
                 : null,

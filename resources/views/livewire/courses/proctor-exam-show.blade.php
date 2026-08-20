@@ -26,7 +26,8 @@
                 currentQuestion: 0,
                 eventAbortController: null,
                 readingDetector: null,
-                readingSuspected: false,
+                noFaceSuspected: false,
+                facingDownSuspected: false,
                 disqualifying: false,
                 tick() {
                     if (! this.deadline) { return; }
@@ -50,8 +51,10 @@
                     // has actually happened (e.g. after a tab switch resolves)
                     // rather than the transitional frame at the trigger instant.
                     await new Promise((resolve) => setTimeout(resolve, 1000));
-                    const capture = this.captureVideoSnapshot(this.$refs.screenPreview, this.screenStream, 'screen');
-                    this.uploadSnapshot(capture, 'screen', eventId);
+                    const screenCapture = this.captureVideoSnapshot(this.$refs.screenPreview, this.screenStream, 'screen');
+                    const webcamCapture = this.captureVideoSnapshot(this.$refs.webcamPreview, this.webcamStream, 'webcam');
+                    this.uploadSnapshot(screenCapture, 'screen', eventId);
+                    this.uploadSnapshot(webcamCapture, 'webcam', eventId);
                 },
                 captureVideoSnapshot(video, stream, type) {
                     if (! video) { console.warn('Proctor ' + type + ' snapshot skipped: no <video> ref'); return null; }
@@ -151,10 +154,13 @@
                 async startReadingDetector() {
                     if (! this.webcamStream || ! window.createReadingDetector) { return; }
                     this.readingDetector = window.createReadingDetector({
-                        onReadingSuspectedChange: (suspected) => {
-                            this.readingSuspected = suspected;
+                        onNoFaceSuspectedChange: (suspected) => {
+                            this.noFaceSuspected = suspected;
+                        },
+                        onFacingDownSuspectedChange: (suspected) => {
+                            this.facingDownSuspected = suspected;
                             if (suspected) {
-                                this.handleReadingDisqualification();
+                                this.handleDisqualification('reading_suspected', 'sustained_facing_down');
                             }
                         },
                     });
@@ -164,21 +170,21 @@
                         console.error('Reading detector failed to start', e);
                     }
                 },
-                async handleReadingDisqualification() {
+                async handleDisqualification(eventType, reason) {
                     if (this.submitting || this.disqualifying) { return; }
                     this.disqualifying = true;
                     this.submitting = true;
                     clearInterval(this.timer);
                     this.eventAbortController?.abort();
                     this.readingDetector?.stop();
-                    const eventId = await $wire.logProctorEvent('reading_suspected', 'high', { reason: 'sustained_gaze_away_from_screen' });
+                    const eventId = await $wire.logProctorEvent(eventType, 'high', { reason });
                     await new Promise((resolve) => setTimeout(resolve, 1000));
                     const screenCapture = this.captureVideoSnapshot(this.$refs.screenPreview, this.screenStream, 'screen');
                     const webcamCapture = this.captureVideoSnapshot(this.$refs.webcamPreview, this.webcamStream, 'webcam');
                     this.uploadSnapshot(screenCapture, 'screen', eventId);
                     this.uploadSnapshot(webcamCapture, 'webcam', eventId);
                     await this.stopRecording();
-                    await $wire.disqualifyAttempt('reading_suspected');
+                    await $wire.disqualifyAttempt(eventType);
                 },
                 async shareScreen() {
                     this.screenShareError = null;
@@ -327,8 +333,11 @@
                                     <span x-show="!webcamStream" x-cloak class="absolute inset-0 flex items-center justify-center text-body-xs text-white/70">
                                         Camera unavailable
                                     </span>
-                                    <span x-show="readingSuspected" x-cloak class="absolute inset-x-0 bottom-0 px-space-sm py-1 bg-error/90 text-white text-body-xs text-center">
-                                        Look at the screen
+                                    <span x-show="noFaceSuspected" x-cloak class="absolute inset-x-0 bottom-0 px-space-sm py-1 bg-error/90 text-white text-body-xs text-center">
+                                        Face not detected
+                                    </span>
+                                    <span x-show="facingDownSuspected && !noFaceSuspected" x-cloak class="absolute inset-x-0 bottom-0 px-space-sm py-1 bg-error/90 text-white text-body-xs text-center">
+                                        Head down detected
                                     </span>
                                 </div>
                             </div>
@@ -449,7 +458,7 @@
                     <template x-if="disqualifying">
                         <div class="flex flex-col items-center gap-space-lg">
                             <span class="material-symbols-outlined text-error text-[48px]">block</span>
-                            <p class="font-label-md text-label-md text-error">You have been disqualified from this exam.</p>
+                            <p class="font-label-md text-label-md text-error">You have been disqualified from this exam. Submitting your exam, please wait…</p>
                         </div>
                     </template>
                     <template x-if="!disqualifying">
@@ -460,6 +469,31 @@
                     </template>
                 </div>
             </template>
+        </div>
+    @elseif ($justSubmitted)
+        <div class="fixed inset-0 z-[100] bg-surface flex flex-col items-center justify-center gap-space-lg px-gutter">
+            <span class="material-symbols-outlined text-success text-[64px]" data-weight="fill">check_circle</span>
+            <h2 class="font-headline-sm text-headline-sm text-on-surface">Exam Submitted</h2>
+            <p class="text-body-md text-on-surface-variant text-center max-w-md">Your exam has been submitted successfully.</p>
+            <a
+                href="{{ route('assessments.final-exam.show', $assessment) }}"
+                wire:navigate
+                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+            >
+                Back to Exam Overview
+            </a>
+        </div>
+    @elseif ($disqualified)
+        <div class="fixed inset-0 z-[100] bg-surface flex flex-col items-center justify-center gap-space-lg px-gutter">
+            <span class="material-symbols-outlined text-error text-[64px]" data-weight="fill">block</span>
+            <h2 class="font-headline-sm text-headline-sm text-on-surface">Disqualified</h2>
+            <a
+                href="{{ route('assessments.final-exam.show', $assessment) }}"
+                wire:navigate
+                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+            >
+                Back to Exam Overview
+            </a>
         </div>
     @elseif (! $canStart)
         <div class="fixed top-0 inset-x-0 flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant bg-surface z-10">

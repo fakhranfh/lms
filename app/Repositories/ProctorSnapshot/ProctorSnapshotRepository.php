@@ -100,6 +100,35 @@ class ProctorSnapshotRepository implements ProctorSnapshotRepositoryInterface
             ->take($limit)
             ->get();
 
+        $this->attachPairedWebcamSnapshots($items, $proctorSessionId);
+
         return ['items' => $items, 'total' => $total];
+    }
+
+    /**
+     * Screen and webcam snapshots for the same flagged moment share a
+     * `triggered_by_event_id`, so pair each screen shot with its webcam
+     * counterpart for the reviewer to see both stacked together.
+     *
+     * @param  Collection<int, ProctorSnapshot>  $screenSnapshots
+     */
+    private function attachPairedWebcamSnapshots(Collection $screenSnapshots, string $proctorSessionId): void
+    {
+        $eventIds = $screenSnapshots->pluck('triggered_by_event_id')->filter()->all();
+
+        if ($eventIds === []) {
+            return;
+        }
+
+        $webcamByEventId = ProctorSnapshot::query()
+            ->where('proctor_session_id', $proctorSessionId)
+            ->where('type', ProctorSnapshotType::Webcam)
+            ->whereIn('triggered_by_event_id', $eventIds)
+            ->get()
+            ->keyBy('triggered_by_event_id');
+
+        $screenSnapshots->each(function (ProctorSnapshot $snapshot) use ($webcamByEventId) {
+            $snapshot->setRelation('pairedWebcam', $webcamByEventId->get($snapshot->triggered_by_event_id));
+        });
     }
 }

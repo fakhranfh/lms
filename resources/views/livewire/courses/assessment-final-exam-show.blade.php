@@ -726,15 +726,34 @@
                                                                     </p>
                                                                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
                                                                         <template x-for="item in group.items" :key="item.url">
-                                                                            <div x-data="{ loaded: false }" class="space-y-space-xs">
-                                                                                <button
-                                                                                    type="button"
-                                                                                    @click="lightboxUrl = item.url"
-                                                                                    class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
-                                                                                >
-                                                                                    <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
-                                                                                    <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" :src="item.url" alt="Proctor screenshot" />
-                                                                                </button>
+                                                                            <div class="space-y-space-xs">
+                                                                                <div class="grid grid-rows-2 gap-space-xs">
+                                                                                    <div x-data="{ loaded: false }" class="relative">
+                                                                                        <template x-if="item.cameraUrl">
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                @click="lightboxUrl = item.cameraUrl"
+                                                                                                class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
+                                                                                            >
+                                                                                                <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
+                                                                                                <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" :src="item.cameraUrl" alt="Proctor camera screenshot" />
+                                                                                            </button>
+                                                                                        </template>
+                                                                                        <template x-if="!item.cameraUrl">
+                                                                                            <div class="w-full aspect-video rounded-lg bg-surface-container flex items-center justify-center text-body-xs text-on-surface-variant">No camera</div>
+                                                                                        </template>
+                                                                                    </div>
+                                                                                    <div x-data="{ loaded: false }" class="relative">
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            @click="lightboxUrl = item.url"
+                                                                                            class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
+                                                                                        >
+                                                                                            <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
+                                                                                            <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" :src="item.url" alt="Proctor screen screenshot" />
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </div>
                                                                                 <p class="text-body-xs text-on-surface-variant text-center" x-text="item.capturedAt"></p>
                                                                             </div>
                                                                         </template>
@@ -758,15 +777,34 @@
                                                     <template x-if="!screenshotsLoading && ! isGroupedView() && screenshotItems.length > 0">
                                                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
                                                             <template x-for="item in screenshotItems" :key="item.url">
-                                                                <div x-data="{ loaded: false }" class="space-y-space-xs">
-                                                                    <button
-                                                                        type="button"
-                                                                        @click="lightboxUrl = item.url"
-                                                                        class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
-                                                                    >
-                                                                        <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
-                                                                        <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" :src="item.url" alt="Proctor screenshot" />
-                                                                    </button>
+                                                                <div class="space-y-space-xs">
+                                                                    <div class="grid grid-rows-2 gap-space-xs">
+                                                                        <div x-data="{ loaded: false }" class="relative">
+                                                                            <template x-if="item.cameraUrl">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    @click="lightboxUrl = item.cameraUrl"
+                                                                                    class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
+                                                                                >
+                                                                                    <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
+                                                                                    <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" :src="item.cameraUrl" alt="Proctor camera screenshot" />
+                                                                                </button>
+                                                                            </template>
+                                                                            <template x-if="!item.cameraUrl">
+                                                                                <div class="w-full aspect-video rounded-lg bg-surface-container flex items-center justify-center text-body-xs text-on-surface-variant">No camera</div>
+                                                                            </template>
+                                                                        </div>
+                                                                        <div x-data="{ loaded: false }" class="relative">
+                                                                            <button
+                                                                                type="button"
+                                                                                @click="lightboxUrl = item.url"
+                                                                                class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
+                                                                            >
+                                                                                <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
+                                                                                <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" :src="item.url" alt="Proctor screen screenshot" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
                                                                     <p class="text-body-xs text-on-surface-variant text-center" x-text="item.capturedAt + ' · ' + item.eventTypeLabel"></p>
                                                                 </div>
                                                             </template>

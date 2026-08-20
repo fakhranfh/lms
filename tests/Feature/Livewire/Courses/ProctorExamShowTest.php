@@ -119,16 +119,20 @@ class ProctorExamShowTest extends TestCase
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
 
-        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+        $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
             ->set("answers.{$this->mcQuestion->id}", $this->correctOption->id)
-            ->call('submitAttempt');
+            ->call('submitAttempt')
+            ->assertSee('Exam Submitted')
+            ->assertSee('Back to Exam Overview')
+            ->instance();
 
         $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
         $session = ProctorSession::where('assessment_attempt_id', $attempt->id)->firstOrFail();
 
         $this->assertSame(ProctorSessionStatus::Completed, $session->status);
         $this->assertNotNull($session->ended_at);
+        $this->assertTrue($instance->justSubmitted);
     }
 
     public function test_record_snapshot_uploaded_promotes_file_out_of_temp_folder(): void
@@ -208,6 +212,8 @@ class ProctorExamShowTest extends TestCase
         $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
             ->call('disqualifyAttempt', 'reading_suspected')
+            ->assertSee('Disqualified')
+            ->assertSee('Back to Exam Overview')
             ->instance();
 
         $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
@@ -216,6 +222,7 @@ class ProctorExamShowTest extends TestCase
         $this->assertNotNull($attempt->submitted_at);
         $this->assertSame(ProctorSessionStatus::Terminated, $session->status);
         $this->assertSame(ProctorReviewDecision::Disqualified, $session->review_decision);
+        $this->assertNotNull($session->reviewed_at);
         $this->assertNotNull($session->ended_at);
 
         $this->assertDatabaseHas('assessment_scores', [
@@ -224,6 +231,7 @@ class ProctorExamShowTest extends TestCase
         ]);
 
         $this->assertNotNull($instance->errorMessage);
+        $this->assertTrue($instance->disqualified);
     }
 
     public function test_standard_exam_type_returns_404(): void

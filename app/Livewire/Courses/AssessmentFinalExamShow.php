@@ -265,14 +265,16 @@ class AssessmentFinalExamShow extends Component
     }
 
     /**
-     * @return array{url: string, capturedAt: string, capturedAtEpoch: int, eventType: string, eventTypeLabel: string}
+     * @return array{url: string, cameraUrl: ?string, capturedAt: string, capturedAtEpoch: int, eventType: string, eventTypeLabel: string}
      */
     private function formatProctorScreenshotItem(ProctorSnapshot $shot, R2StorageService $r2StorageService): array
     {
         $eventType = $shot->triggeredByEvent?->event_type->value ?? 'none';
+        $pairedWebcam = $shot->relationLoaded('pairedWebcam') ? $shot->getRelation('pairedWebcam') : null;
 
         return [
             'url' => $r2StorageService->getSignedUrl($shot->file_url, 3600),
+            'cameraUrl' => $pairedWebcam ? $r2StorageService->getSignedUrl($pairedWebcam->file_url, 3600) : null,
             'capturedAt' => $shot->captured_at_display->format('M j, Y H:i:s'),
             'capturedAtEpoch' => $shot->captured_at_display->timestamp,
             'eventType' => $eventType,

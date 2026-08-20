@@ -376,7 +376,19 @@
 >
     <div class="fixed top-0 inset-x-0 flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant bg-surface z-10">
         <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ $assessment->title }}</h2>
-        <span class="inline-flex items-center px-space-sm py-1 rounded-full text-body-xs font-medium bg-error/10 text-error">Proctored</span>
+        <div class="flex items-center gap-space-md">
+            @if (app()->environment('local'))
+                <a
+                    href="{{ route('assessments.final-exam.proctor.show', $assessment) }}"
+                    wire:navigate
+                    @click="stopAllChecks()"
+                    class="inline-flex items-center px-space-sm py-1 rounded-full text-body-xs font-medium bg-secondary/10 text-secondary hover:bg-secondary/20 transition"
+                >
+                    Skip (local only)
+                </a>
+            @endif
+            <span class="inline-flex items-center px-space-sm py-1 rounded-full text-body-xs font-medium bg-error/10 text-error">Proctored</span>
+        </div>
     </div>
 
     <div class="min-h-screen flex items-center justify-center px-gutter py-space-xl pt-24">

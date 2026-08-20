@@ -32,6 +32,7 @@ class ProctorPreflightShow extends Component
     public array $checksPassed = [
         'speed' => false,
         'camera' => false,
+        'face' => false,
         'screen' => false,
     ];
 

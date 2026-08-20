@@ -16,6 +16,17 @@
         gaugeRaf: null,
         cameraStream: null,
         cameraError: null,
+        micChecked: false,
+        micThreshold: 0.15,
+        micSustainedSince: null,
+        micCheckDurationMs: 800,
+        faceDetector: null,
+        faceRunning: false,
+        faceLoading: false,
+        faceError: null,
+        faceSequence: ['right', 'left', 'up', 'down'],
+        faceCompleted: [],
+        faceCurrentIndex: 0,
         screenStream: null,
         screenError: null,
         micLevel: 0,
@@ -24,6 +35,9 @@
         screenAudioLevel: 0,
         screenAudioCtx: null,
         screenAudioRaf: null,
+        screenAudioThreshold: 0.05,
+        screenSoundChecked: false,
+        screenSoundError: null,
         testSoundPlaying: false,
         minMbps: 3,
         maxGaugeMbps: 100,
@@ -149,6 +163,8 @@
         },
         async runCameraCheck() {
             this.cameraError = null;
+            this.micChecked = false;
+            this.micSustainedSince = null;
             if (! window.isSecureContext) {
                 this.cameraError = 'Camera and microphone access require a secure (HTTPS) connection.';
                 $wire.markCheckFailed('camera');
@@ -170,6 +186,44 @@
                     : (e.name === 'NotFoundError' ? 'No camera or microphone was found on this device.' : `Camera access was denied or unavailable (${e.name || 'unknown error'}).`);
                 $wire.markCheckFailed('camera');
             }
+        },
+        async runFaceCheck() {
+            this.faceError = null;
+            this.faceCompleted = [];
+            this.faceCurrentIndex = 0;
+            if (! this.cameraStream) {
+                this.faceError = 'Enable your camera first.';
+                $wire.markCheckFailed('face');
+                return;
+            }
+            this.faceLoading = true;
+            try {
+                this.faceDetector = window.createReadingDetector({
+                    onPose: ({ direction }) => this.handleFacePose(direction),
+                });
+                await this.faceDetector.start(this.$refs.cameraPreview);
+                this.faceRunning = true;
+            } catch (e) {
+                this.faceError = 'Failed to load face detection. Please try again.';
+                $wire.markCheckFailed('face');
+            } finally {
+                this.faceLoading = false;
+            }
+        },
+        handleFacePose(direction) {
+            if (this.faceCurrentIndex >= this.faceSequence.length) { return; }
+            const target = this.faceSequence[this.faceCurrentIndex];
+            if (direction !== target) { return; }
+            this.faceCompleted.push(target);
+            this.faceCurrentIndex++;
+            if (this.faceCurrentIndex >= this.faceSequence.length) {
+                this.stopFaceCheck();
+                $wire.markCheckPassed('face');
+            }
+        },
+        stopFaceCheck() {
+            if (this.faceDetector) { this.faceDetector.stop(); this.faceDetector = null; }
+            this.faceRunning = false;
         },
         startLevelMeter(stream, target) {
             this.stopLevelMeter(target);
@@ -197,6 +251,17 @@
                 const level = Math.min(Math.sqrt(sumSquares / data.length) * 4, 1);
                 if (target === 'mic') {
                     this.micLevel = level;
+                    if (! this.micChecked) {
+                        if (level > this.micThreshold) {
+                            if (this.micSustainedSince === null) { this.micSustainedSince = performance.now(); }
+                            if ((performance.now() - this.micSustainedSince) >= this.micCheckDurationMs) {
+                                this.micChecked = true;
+                                if (! this.faceRunning && this.faceCompleted.length === 0) { this.runFaceCheck(); }
+                            }
+                        } else {
+                            this.micSustainedSince = null;
+                        }
+                    }
                     this.micRaf = requestAnimationFrame(tick);
                 } else {
                     this.screenAudioLevel = level;
@@ -219,6 +284,8 @@
         async playTestSound() {
             if (this.testSoundPlaying) { return; }
             this.testSoundPlaying = true;
+            this.screenSoundError = null;
+            let detected = false;
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = ctx.createOscillator();
             const gain = ctx.createGain();
@@ -227,23 +294,40 @@
             oscillator.connect(gain);
             gain.connect(ctx.destination);
             oscillator.start();
+            const checkInterval = setInterval(() => {
+                if (this.screenAudioLevel > this.screenAudioThreshold) { detected = true; }
+            }, 100);
             setTimeout(() => {
                 oscillator.stop();
                 ctx.close();
+                clearInterval(checkInterval);
                 this.testSoundPlaying = false;
+                if (detected) {
+                    this.screenSoundChecked = true;
+                    $wire.markCheckPassed('screen');
+                } else {
+                    this.screenSoundChecked = false;
+                    this.screenSoundError = 'We could not detect the shared screen audio. Make sure &quot;Share audio&quot; is enabled and try again.';
+                    $wire.markCheckFailed('screen');
+                }
             }, 2000);
         },
         stopScreenCheck() {
             this.stopLevelMeter('screen');
             if (this.screenStream) { this.screenStream.getTracks().forEach(t => t.stop()); this.screenStream = null; }
+            this.screenSoundChecked = false;
+            this.screenSoundError = null;
         },
         stopAllChecks() {
             this.stopLevelMeter('mic');
+            this.stopFaceCheck();
             this.stopScreenCheck();
             if (this.cameraStream) { this.cameraStream.getTracks().forEach(t => t.stop()); this.cameraStream = null; }
         },
         async runScreenCheck() {
             this.screenError = null;
+            this.screenSoundChecked = false;
+            this.screenSoundError = null;
             if (! window.isSecureContext) {
                 this.screenError = 'Screen sharing requires a secure (HTTPS) connection.';
                 $wire.markCheckFailed('screen');
@@ -271,11 +355,12 @@
                     $wire.markCheckFailed('screen');
                     return;
                 }
-                $wire.markCheckPassed('screen');
+                $wire.markCheckFailed('screen');
                 this.startLevelMeter(this.screenStream, 'screen');
                 track.addEventListener('ended', () => {
                     this.screenStream = null;
                     this.stopLevelMeter('screen');
+                    this.screenSoundChecked = false;
                     $wire.markCheckFailed('screen');
                 });
             } catch (e) {
@@ -435,31 +520,66 @@
             </div>
         @endif
 
-        <!-- Step 2: Camera & Microphone -->
+        <!-- Step 2: Camera, Microphone & Face Orientation -->
         @if ($step === 'camera')
             <div class="space-y-space-lg">
-                <h3 class="font-label-lg text-label-lg text-on-surface text-center">2. Camera &amp; Microphone</h3>
+                <h3 class="font-label-lg text-label-lg text-on-surface text-center">2. Camera, Microphone &amp; Face Verification</h3>
                 <p class="text-body-sm text-on-surface-variant text-center">We need to see your face and hear audio in your room for the duration of the exam.</p>
 
-                <video x-ref="cameraPreview" x-show="cameraStream" x-cloak autoplay muted playsinline class="w-full max-w-sm mx-auto rounded-lg bg-black aspect-video"></video>
+                <video x-ref="cameraPreview" x-show="cameraStream" x-cloak autoplay muted playsinline class="w-full max-w-sm mx-auto rounded-lg bg-black aspect-video -scale-x-100"></video>
 
-                <div class="max-w-xs mx-auto" x-show="cameraStream" x-cloak>
+                <div class="max-w-xs mx-auto space-y-space-xs" x-show="cameraStream" x-cloak>
                     <div class="h-3 w-full bg-surface-container rounded-full overflow-hidden">
-                        <div class="h-full bg-primary rounded-full" style="transition: width 0.05s linear;" :style="'width: ' + Math.round(micLevel * 100) + '%'"></div>
+                        <div class="h-full rounded-full" :class="micChecked ? 'bg-success' : 'bg-primary'" style="transition: width 0.05s linear;" :style="'width: ' + Math.round(micLevel * 100) + '%'"></div>
                     </div>
-                    <p class="text-body-xs text-on-surface-variant text-center mt-space-xs">Say something to test your microphone.</p>
+                    <p class="text-body-xs text-on-surface-variant text-center" x-show="!micChecked" x-cloak>Say something to test your microphone.</p>
+                    <p class="text-body-xs text-success text-center" x-show="micChecked" x-cloak>Microphone check passed.</p>
                 </div>
 
-                <div class="text-center">
+                <div class="text-center" x-show="!cameraStream" x-cloak>
                     <button
                         type="button"
                         @click="runCameraCheck()"
                         class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                     >
-                        <span x-show="!cameraStream">Enable Camera &amp; Microphone</span>
-                        <span x-show="cameraStream" x-cloak>Retry</span>
+                        Enable Camera &amp; Microphone
                     </button>
                     <p x-show="cameraError" x-cloak class="text-body-sm text-error mt-space-sm" x-text="cameraError"></p>
+                </div>
+
+                <div class="max-w-sm mx-auto space-y-space-sm" x-show="micChecked" x-cloak>
+                    <p class="text-body-sm text-on-surface-variant text-center">Now, slowly turn your head to face each direction as prompted, one at a time.</p>
+
+                    <div class="grid grid-cols-4 gap-space-sm" x-show="!faceLoading" x-cloak>
+                        <template x-for="(dir, index) in faceSequence" :key="dir">
+                            <div
+                                class="flex flex-col items-center gap-space-xs px-space-sm py-space-sm rounded-lg border"
+                                :class="faceCompleted.includes(dir) ? 'bg-success/10 border-success/40 text-success' : (index === faceCurrentIndex ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container border-outline-variant text-on-surface-variant')"
+                            >
+                                <span class="material-symbols-outlined text-[20px]" x-text="faceCompleted.includes(dir) ? 'check' : { right: 'arrow_back', left: 'arrow_forward', up: 'arrow_upward', down: 'arrow_downward' }[dir]"></span>
+                                <span class="text-body-xs" x-text="{ right: 'Right', left: 'Left', up: 'Up', down: 'Down' }[dir]"></span>
+                            </div>
+                        </template>
+                    </div>
+                    <p class="text-body-sm text-on-surface-variant text-center" x-show="faceLoading" x-cloak>Loading face detection model…</p>
+                    <p class="text-body-sm text-on-surface text-center font-medium" x-show="faceRunning && faceCurrentIndex < faceSequence.length" x-cloak>
+                        Turn your head to face:
+                        <span x-text="{ right: 'the RIGHT', left: 'the LEFT', up: 'UP', down: 'DOWN' }[faceSequence[faceCurrentIndex]]"></span>
+                    </p>
+
+                    <div class="text-center">
+                        <button
+                            type="button"
+                            @click="runFaceCheck()"
+                            x-show="!faceRunning && !faceLoading && faceCompleted.length < faceSequence.length"
+                            x-cloak
+                            class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                        >
+                            Retry
+                        </button>
+                        <p x-show="faceError" x-cloak class="text-body-sm text-error mt-space-sm" x-text="faceError"></p>
+                        <p x-show="faceCompleted.length === faceSequence.length" x-cloak class="text-body-sm text-success mt-space-sm">Face orientation check passed.</p>
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-between pt-space-md border-t border-outline-variant">
@@ -468,8 +588,9 @@
                     </button>
                     <button
                         type="button"
-                        x-show="cameraStream"
+                        x-show="faceCompleted.length === faceSequence.length"
                         x-cloak
+                        @click="stopFaceCheck()"
                         wire:click="goToStep('screen')"
                         wire:loading.attr="disabled"
                         wire:target="goToStep('screen')"
@@ -504,10 +625,13 @@
                 <div class="max-w-xs mx-auto space-y-space-sm" x-show="screenStream" x-cloak>
                     <div>
                         <div class="h-3 w-full bg-surface-container rounded-full overflow-hidden">
-                            <div class="h-full bg-primary rounded-full" style="transition: width 0.05s linear;" :style="'width: ' + Math.round(screenAudioLevel * 100) + '%'"></div>
+                            <div class="h-full rounded-full" :class="screenSoundChecked ? 'bg-success' : 'bg-primary'" style="transition: width 0.05s linear;" :style="'width: ' + Math.round(screenAudioLevel * 100) + '%'"></div>
                         </div>
-                        <p class="text-body-xs text-on-surface-variant text-center mt-space-xs">
-                            Play a test sound to check if screen share audio is being captured.
+                        <p class="text-body-xs text-on-surface-variant text-center mt-space-xs" x-show="!screenSoundChecked" x-cloak>
+                            Play a test sound to verify screen share audio is being captured.
+                        </p>
+                        <p class="text-body-xs text-success text-center mt-space-xs" x-show="screenSoundChecked" x-cloak>
+                            Screen audio check passed.
                         </p>
                     </div>
                     <div class="text-center">
@@ -518,9 +642,10 @@
                             class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition disabled:opacity-50 inline-flex items-center gap-space-xs"
                         >
                             <span class="material-symbols-outlined text-[16px]">volume_up</span>
-                            <span x-show="!testSoundPlaying">Play Test Sound</span>
+                            <span x-show="!testSoundPlaying" x-text="screenSoundChecked ? 'Play Test Sound Again' : 'Play Test Sound'"></span>
                             <span x-show="testSoundPlaying" x-cloak>Playing…</span>
                         </button>
+                        <p x-show="screenSoundError" x-cloak class="text-body-sm text-error mt-space-sm" x-text="screenSoundError"></p>
                     </div>
                 </div>
 

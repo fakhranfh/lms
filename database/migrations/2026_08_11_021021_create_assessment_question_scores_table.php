@@ -28,7 +28,7 @@ return new class extends Migration
                 ->on('assessment_questions')
                 ->cascadeOnDelete();
 
-            $table->unique(['assessment_attempt_id', 'assessment_question_id']);
+            $table->unique(['assessment_attempt_id', 'assessment_question_id'], 'aqs_attempt_question_unique');
         });
     }
 

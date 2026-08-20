@@ -124,6 +124,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
 - Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
+- For every new feature, write the test(s) first (they should fail), then implement the feature until the tests pass (TDD). Do not write implementation code before its test exists.
 
 === laravel/core rules ===
 

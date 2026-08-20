@@ -461,7 +461,91 @@
                         </div>
 
                         @if ($isProctored && $row['proctorSession'])
-                            <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md" x-data="{ reviewOpen: false, cameraModalOpen: false, screenModalOpen: false, screenshotModalOpen: false, lightboxUrl: null, screenshotFilter: 'all', screenshotGrouped: true, screenshotSort: 'asc' }">
+                            <div
+                                class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md"
+                                x-data="{
+                                    reviewOpen: false,
+                                    cameraModalOpen: false,
+                                    screenModalOpen: false,
+                                    screenshotModalOpen: false,
+                                    lightboxUrl: null,
+                                    screenshotFilter: 'all',
+                                    screenshotGrouped: true,
+                                    screenshotSort: 'asc',
+                                    screenshotUserId: null,
+                                    screenshotItems: [],
+                                    screenshotGroups: [],
+                                    screenshotEventTypeOptions: [],
+                                    screenshotsLoading: false,
+                                    screenshotsLoadingMore: false,
+                                    screenshotHasMore: false,
+                                    init() {
+                                        this.$watch('screenshotFilter', () => this.fetchScreenshots());
+                                        this.$watch('screenshotSort', () => this.fetchScreenshots());
+                                        this.$watch('screenshotGrouped', () => this.fetchScreenshots());
+                                    },
+                                    openScreenshots(userId) {
+                                        this.screenshotModalOpen = true;
+                                        this.screenshotUserId = userId;
+                                        this.fetchScreenshots();
+                                    },
+                                    isGroupedView() {
+                                        return this.screenshotGrouped && this.screenshotFilter === 'all';
+                                    },
+                                    async fetchScreenshots() {
+                                        if (! this.screenshotUserId) { return; }
+                                        this.screenshotsLoading = true;
+                                        try {
+                                            if (this.isGroupedView()) {
+                                                const data = await $wire.loadProctorScreenshotGroups(this.screenshotUserId, this.screenshotSort, 5);
+                                                this.screenshotGroups = data.groups.map((group) => ({ ...group, loadingMore: false }));
+                                                this.screenshotEventTypeOptions = data.eventTypeOptions;
+                                                this.screenshotItems = [];
+                                                this.screenshotHasMore = false;
+                                            } else {
+                                                const eventType = this.screenshotFilter === 'all' ? null : this.screenshotFilter;
+                                                const data = await $wire.loadProctorScreenshots(this.screenshotUserId, eventType, this.screenshotSort, 0, 5);
+                                                this.screenshotItems = data.items;
+                                                this.screenshotEventTypeOptions = data.eventTypeOptions;
+                                                this.screenshotHasMore = data.hasMore;
+                                                this.screenshotGroups = [];
+                                            }
+                                        } finally {
+                                            this.screenshotsLoading = false;
+                                        }
+                                    },
+                                    async loadMoreScreenshots() {
+                                        if (! this.screenshotUserId || ! this.screenshotHasMore || this.screenshotsLoading || this.screenshotsLoadingMore) { return; }
+                                        this.screenshotsLoadingMore = true;
+                                        try {
+                                            const eventType = this.screenshotFilter === 'all' ? null : this.screenshotFilter;
+                                            const data = await $wire.loadProctorScreenshots(this.screenshotUserId, eventType, this.screenshotSort, this.screenshotItems.length, 5);
+                                            this.screenshotItems = [...this.screenshotItems, ...data.items];
+                                            this.screenshotHasMore = data.hasMore;
+                                        } finally {
+                                            this.screenshotsLoadingMore = false;
+                                        }
+                                    },
+                                    async loadMoreGroupScreenshots(group) {
+                                        if (! group.hasMore || group.loadingMore) { return; }
+                                        group.loadingMore = true;
+                                        try {
+                                            const data = await $wire.loadProctorScreenshots(this.screenshotUserId, group.eventType, this.screenshotSort, group.items.length, 5);
+                                            group.items = [...group.items, ...data.items];
+                                            group.hasMore = data.hasMore;
+                                        } finally {
+                                            group.loadingMore = false;
+                                        }
+                                    },
+                                    onScreenshotListScroll(e) {
+                                        if (this.isGroupedView()) { return; }
+                                        const el = e.target;
+                                        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
+                                            this.loadMoreScreenshots();
+                                        }
+                                    },
+                                }"
+                            >
                                 <div class="flex items-center justify-between gap-space-md">
                                     <div class="flex items-center gap-space-sm text-body-sm">
                                         <span class="material-symbols-outlined text-[16px]" :class="{}">shield</span>
@@ -480,7 +564,7 @@
                                 </div>
 
                                 <div x-show="reviewOpen" x-cloak class="space-y-space-sm">
-                                    @if ($row['cameraRecordings']->isNotEmpty() || $row['screenRecordings']->isNotEmpty() || $row['screenshots']->isNotEmpty())
+                                    @if ($row['cameraRecordings']->isNotEmpty() || $row['screenRecordings']->isNotEmpty() || $row['screenshotsCount'] > 0)
                                         <div class="flex items-center gap-space-sm">
                                             @if ($row['cameraRecordings']->isNotEmpty())
                                                 <button type="button" @click="cameraModalOpen = true" class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition inline-flex items-center gap-space-xs">
@@ -496,10 +580,14 @@
                                                 </button>
                                             @endif
 
-                                            @if ($row['screenshots']->isNotEmpty())
-                                                <button type="button" @click="screenshotModalOpen = true" class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition inline-flex items-center gap-space-xs">
+                                            @if ($row['screenshotsCount'] > 0)
+                                                <button
+                                                    type="button"
+                                                    @click="openScreenshots(@js($row['user']->id))"
+                                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition inline-flex items-center gap-space-xs"
+                                                >
                                                     <span class="material-symbols-outlined text-[16px]">photo_camera</span>
-                                                    Preview Screenshots ({{ $row['screenshots']->count() }})
+                                                    Preview Screenshots ({{ $row['screenshotsCount'] }})
                                                 </button>
                                             @endif
                                         </div>
@@ -580,9 +668,9 @@
                                                     <div class="flex items-center gap-space-sm flex-wrap">
                                                         <select x-model="screenshotFilter" class="px-space-sm py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface bg-surface">
                                                             <option value="all">All event types</option>
-                                                            @foreach ($row['eventTypeOptions'] as $eventType)
-                                                                <option value="{{ $eventType }}">{{ $eventType === 'none' ? 'Other' : str($eventType)->replace('_', ' ')->title() }}</option>
-                                                            @endforeach
+                                                            <template x-for="eventType in screenshotEventTypeOptions" :key="eventType">
+                                                                <option :value="eventType" x-text="eventType === 'none' ? 'Other' : eventType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())"></option>
+                                                            </template>
                                                         </select>
 
                                                         <button
@@ -611,99 +699,84 @@
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <div class="flex-1 overflow-y-auto p-space-lg space-y-space-md">
-                                                    <template x-if="screenshotGrouped">
-                                                        <div class="space-y-space-md">
-                                                            @forelse ($row['eventsByType'] as $eventType => $events)
-                                                                <div x-show="screenshotFilter === 'all' || screenshotFilter === '{{ $eventType }}'" class="border border-outline-variant rounded-lg p-space-md space-y-space-sm">
-                                                                    <p class="font-label-sm text-label-sm text-on-surface">
-                                                                        {{ str($eventType)->replace('_', ' ')->title() }}
-                                                                        <span class="text-body-xs text-on-surface-variant font-normal">&times; {{ $events->count() }}</span>
-                                                                    </p>
-
-                                                                    @if ($row['screenshotsByEventType']->get($eventType, collect())->isNotEmpty())
-                                                                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
-                                                                            @foreach ($row['screenshotsByEventType']->get($eventType) as $shot)
-                                                                                <div
-                                                                                    x-data="{ loaded: false }"
-                                                                                    :style="'order: ' + (screenshotSort === 'desc' ? {{ $loop->count - $loop->index }} : {{ $loop->index }})"
-                                                                                    class="space-y-space-xs"
-                                                                                >
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        @click="lightboxUrl = '{{ $this->recordingUrl($shot->file_url) }}'"
-                                                                                        class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
-                                                                                    >
-                                                                                        <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
-                                                                                        <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" src="{{ $this->recordingUrl($shot->file_url) }}" alt="Proctor screenshot" />
-                                                                                    </button>
-                                                                                    <p class="text-body-xs text-on-surface-variant text-center">{{ $shot->captured_at_display->format('M j, Y H:i:s') }}</p>
-                                                                                </div>
-                                                                            @endforeach
-                                                                        </div>
-                                                                    @else
-                                                                        <p class="text-body-xs text-on-surface-variant italic">No screenshot captured.</p>
-                                                                    @endif
-                                                                </div>
-                                                            @empty
-                                                                <p class="text-body-sm text-on-surface-variant text-center">No events recorded.</p>
-                                                            @endforelse
-
-                                                            @if ($row['screenshotsByEventType']->get('none', collect())->isNotEmpty())
-                                                                <div x-show="screenshotFilter === 'all' || screenshotFilter === 'none'" class="border border-outline-variant rounded-lg p-space-md space-y-space-sm">
-                                                                    <p class="font-label-sm text-label-sm text-on-surface">Other Screenshots</p>
-                                                                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
-                                                                        @foreach ($row['screenshotsByEventType']->get('none') as $shot)
-                                                                            <div
-                                                                                x-data="{ loaded: false }"
-                                                                                :style="'order: ' + (screenshotSort === 'desc' ? {{ $loop->count - $loop->index }} : {{ $loop->index }})"
-                                                                                class="space-y-space-xs"
-                                                                            >
-                                                                                <button
-                                                                                    type="button"
-                                                                                    @click="lightboxUrl = '{{ $this->recordingUrl($shot->file_url) }}'"
-                                                                                    class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
-                                                                                >
-                                                                                    <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
-                                                                                    <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" src="{{ $this->recordingUrl($shot->file_url) }}" alt="Proctor screenshot" />
-                                                                                </button>
-                                                                                <p class="text-body-xs text-on-surface-variant text-center">{{ $shot->captured_at_display->format('M j, Y H:i:s') }}</p>
-                                                                            </div>
-                                                                        @endforeach
-                                                                    </div>
-                                                                </div>
-                                                            @endif
+                                                <div class="flex-1 overflow-y-auto p-space-lg space-y-space-md" @scroll.debounce.150ms="onScreenshotListScroll($event)">
+                                                    <template x-if="screenshotsLoading">
+                                                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
+                                                            <template x-for="n in 6" :key="n">
+                                                                <div class="animate-pulse bg-surface-container rounded-lg aspect-video"></div>
+                                                            </template>
                                                         </div>
                                                     </template>
 
-                                                    <template x-if="!screenshotGrouped">
-                                                        @if ($row['screenshotsFlat']->isNotEmpty())
-                                                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
-                                                                @foreach ($row['screenshotsFlat'] as $item)
-                                                                    <div
-                                                                        x-data="{ loaded: false }"
-                                                                        x-show="screenshotFilter === 'all' || screenshotFilter === '{{ $item['eventType'] }}'"
-                                                                        :style="'order: ' + (screenshotSort === 'desc' ? {{ $loop->count - $loop->index }} : {{ $loop->index }})"
-                                                                        class="space-y-space-xs"
-                                                                    >
-                                                                        <button
-                                                                            type="button"
-                                                                            @click="lightboxUrl = '{{ $this->recordingUrl($item['shot']->file_url) }}'"
-                                                                            class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
-                                                                        >
-                                                                            <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
-                                                                            <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" src="{{ $this->recordingUrl($item['shot']->file_url) }}" alt="Proctor screenshot" />
-                                                                        </button>
-                                                                        <p class="text-body-xs text-on-surface-variant text-center">
-                                                                            {{ $item['shot']->captured_at_display->format('M j, Y H:i:s') }}
-                                                                            &middot; {{ $item['eventType'] === 'none' ? 'Other' : str($item['eventType'])->replace('_', ' ')->title() }}
-                                                                        </p>
+                                                    <template x-if="!screenshotsLoading && isGroupedView() && screenshotGroups.length === 0">
+                                                        <p class="text-body-sm text-on-surface-variant text-center">No screenshots recorded.</p>
+                                                    </template>
+
+                                                    <template x-if="!screenshotsLoading && ! isGroupedView() && screenshotItems.length === 0">
+                                                        <p class="text-body-sm text-on-surface-variant text-center">No screenshots recorded.</p>
+                                                    </template>
+
+                                                    <template x-if="!screenshotsLoading && isGroupedView() && screenshotGroups.length > 0">
+                                                        <div class="space-y-space-md">
+                                                            <template x-for="group in screenshotGroups" :key="group.eventType">
+                                                                <div class="border border-outline-variant rounded-lg p-space-md space-y-space-sm">
+                                                                    <p class="font-label-sm text-label-sm text-on-surface">
+                                                                        <span x-text="group.label"></span>
+                                                                        <span class="text-body-xs text-on-surface-variant font-normal" x-text="'× ' + group.total"></span>
+                                                                    </p>
+                                                                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
+                                                                        <template x-for="item in group.items" :key="item.url">
+                                                                            <div x-data="{ loaded: false }" class="space-y-space-xs">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    @click="lightboxUrl = item.url"
+                                                                                    class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
+                                                                                >
+                                                                                    <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
+                                                                                    <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" :src="item.url" alt="Proctor screenshot" />
+                                                                                </button>
+                                                                                <p class="text-body-xs text-on-surface-variant text-center" x-text="item.capturedAt"></p>
+                                                                            </div>
+                                                                        </template>
                                                                     </div>
-                                                                @endforeach
-                                                            </div>
-                                                        @else
-                                                            <p class="text-body-sm text-on-surface-variant text-center">No screenshots recorded.</p>
-                                                        @endif
+                                                                    <button
+                                                                        type="button"
+                                                                        x-show="group.hasMore"
+                                                                        x-cloak
+                                                                        @click="loadMoreGroupScreenshots(group)"
+                                                                        :disabled="group.loadingMore"
+                                                                        class="text-body-xs text-primary hover:underline disabled:opacity-50 inline-flex items-center gap-space-xs"
+                                                                    >
+                                                                        <span x-show="group.loadingMore" x-cloak class="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>
+                                                                        <span x-text="group.loadingMore ? 'Loading…' : 'Load more'"></span>
+                                                                    </button>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+
+                                                    <template x-if="!screenshotsLoading && ! isGroupedView() && screenshotItems.length > 0">
+                                                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
+                                                            <template x-for="item in screenshotItems" :key="item.url">
+                                                                <div x-data="{ loaded: false }" class="space-y-space-xs">
+                                                                    <button
+                                                                        type="button"
+                                                                        @click="lightboxUrl = item.url"
+                                                                        class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
+                                                                    >
+                                                                        <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
+                                                                        <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" :src="item.url" alt="Proctor screenshot" />
+                                                                    </button>
+                                                                    <p class="text-body-xs text-on-surface-variant text-center" x-text="item.capturedAt + ' · ' + item.eventTypeLabel"></p>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+
+                                                    <template x-if="screenshotsLoadingMore">
+                                                        <div class="flex justify-center pt-space-sm">
+                                                            <span class="material-symbols-outlined animate-spin text-on-surface-variant text-[20px]">progress_activity</span>
+                                                        </div>
                                                     </template>
                                                 </div>
                                             </div>

@@ -9,6 +9,8 @@ use App\Enums\RoleName;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\ProctorEvent;
+use App\Models\ProctorSnapshot;
 use App\Services\AssessmentAnswerService;
 use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentQuestionScoreService;
@@ -20,6 +22,7 @@ use App\Services\R2StorageService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class AssessmentFinalExamShow extends Component
@@ -175,6 +178,138 @@ class AssessmentFinalExamShow extends Component
         return app(R2StorageService::class)->getSignedUrl($key, 3600);
     }
 
+    /**
+     * Loaded on demand when the teacher opens the screenshot review modal
+     * for a student, and re-loaded whenever they change the event-type
+     * filter, sort order, or group-by-event toggle, rather than eagerly
+     * signing URLs for every student's every screenshot on every page
+     * load. Paginated (5 per page) so a session with many screenshots
+     * doesn't sign URLs for items the teacher never scrolls to.
+     *
+     * @return array{items: array<int, array{url: string, capturedAt: string, capturedAtEpoch: int, eventType: string, eventTypeLabel: string}>, eventTypeOptions: array<int, string>, hasMore: bool}
+     */
+    public function loadProctorScreenshots(
+        string $userId,
+        AssessmentAttemptService $assessmentAttemptService,
+        ProctorSessionService $proctorSessionService,
+        R2StorageService $r2StorageService,
+        ?string $eventType = null,
+        string $sort = 'asc',
+        int $offset = 0,
+        int $limit = 5,
+    ): array {
+        abort_unless(auth()->user()->can('assessment.grade'), 403);
+
+        $withType = $this->resolveProctorSnapshotsWithType($userId, $assessmentAttemptService, $proctorSessionService);
+
+        $eventTypeOptions = $withType->pluck('eventType')->unique()->values()->all();
+
+        $filtered = $withType
+            ->when($eventType !== null, fn ($collection) => $collection->where('eventType', $eventType))
+            ->sortBy(fn ($item) => $item['shot']->captured_at->timestamp, SORT_REGULAR, $sort === 'desc')
+            ->values();
+
+        $items = $filtered->slice($offset, $limit)->map(fn ($item) => $this->formatProctorScreenshotItem($item, $r2StorageService))->values()->all();
+
+        return [
+            'items' => $items,
+            'eventTypeOptions' => $eventTypeOptions,
+            'hasMore' => ($offset + $limit) < $filtered->count(),
+        ];
+    }
+
+    /**
+     * Groups screenshots by event type (computed from the full set, not
+     * just what's loaded), then loads only each group's first N items —
+     * so a group's badge count is always accurate, but a session with
+     * many screenshots doesn't sign URLs for items not yet shown.
+     * loadProctorScreenshots() handles paginating further within a group.
+     *
+     * @return array{groups: array<int, array{eventType: string, label: string, total: int, hasMore: bool, items: array<int, array{url: string, capturedAt: string, capturedAtEpoch: int, eventType: string, eventTypeLabel: string}>}>, eventTypeOptions: array<int, string>}
+     */
+    public function loadProctorScreenshotGroups(
+        string $userId,
+        AssessmentAttemptService $assessmentAttemptService,
+        ProctorSessionService $proctorSessionService,
+        R2StorageService $r2StorageService,
+        string $sort = 'asc',
+        int $limitPerGroup = 5,
+    ): array {
+        abort_unless(auth()->user()->can('assessment.grade'), 403);
+
+        $withType = $this->resolveProctorSnapshotsWithType($userId, $assessmentAttemptService, $proctorSessionService);
+
+        $eventTypeOptions = $withType->pluck('eventType')->unique()->values();
+
+        $groups = $eventTypeOptions->map(function ($eventType) use ($withType, $r2StorageService, $sort, $limitPerGroup) {
+            $typeItems = $withType
+                ->where('eventType', $eventType)
+                ->sortBy(fn ($item) => $item['shot']->captured_at->timestamp, SORT_REGULAR, $sort === 'desc')
+                ->values();
+
+            $items = $typeItems->slice(0, $limitPerGroup)->map(fn ($item) => $this->formatProctorScreenshotItem($item, $r2StorageService))->values()->all();
+
+            return [
+                'eventType' => $eventType,
+                'label' => $eventType === 'none' ? 'Other' : str($eventType)->replace('_', ' ')->title()->toString(),
+                'total' => $typeItems->count(),
+                'hasMore' => $limitPerGroup < $typeItems->count(),
+                'items' => $items,
+            ];
+        })->values()->all();
+
+        return [
+            'groups' => $groups,
+            'eventTypeOptions' => $eventTypeOptions->all(),
+        ];
+    }
+
+    /**
+     * @return Collection<int, array{shot: ProctorSnapshot, eventType: string}>
+     */
+    private function resolveProctorSnapshotsWithType(string $userId, AssessmentAttemptService $assessmentAttemptService, ProctorSessionService $proctorSessionService)
+    {
+        $latest = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $userId)->last();
+        abort_if($latest === null, 404);
+
+        $proctorSession = $proctorSessionService->findByAttempt($latest->id, ['events', 'snapshots']);
+        abort_if($proctorSession === null, 404);
+
+        $eventsById = $proctorSession->events->keyBy('id');
+
+        return $proctorSession->snapshots
+            ->where('type', ProctorSnapshotType::Screen)
+            ->map(fn (ProctorSnapshot $shot): array => [
+                'shot' => $shot,
+                'eventType' => $this->resolveProctorEventType($shot->triggered_by_event_id, $eventsById),
+            ]);
+    }
+
+    /**
+     * @param  Collection<int|string, ProctorEvent>  $eventsById
+     */
+    private function resolveProctorEventType(?string $eventId, Collection $eventsById): string
+    {
+        $event = $eventId ? $eventsById->get($eventId) : null;
+
+        return $event?->event_type->value ?? 'none';
+    }
+
+    /**
+     * @param  array{shot: ProctorSnapshot, eventType: string}  $item
+     * @return array{url: string, capturedAt: string, capturedAtEpoch: int, eventType: string, eventTypeLabel: string}
+     */
+    private function formatProctorScreenshotItem(array $item, R2StorageService $r2StorageService): array
+    {
+        return [
+            'url' => $r2StorageService->getSignedUrl($item['shot']->file_url, 3600),
+            'capturedAt' => $item['shot']->captured_at_display->format('M j, Y H:i:s'),
+            'capturedAtEpoch' => $item['shot']->captured_at_display->timestamp,
+            'eventType' => $item['eventType'],
+            'eventTypeLabel' => $item['eventType'] === 'none' ? 'Other' : str($item['eventType'])->replace('_', ' ')->title()->toString(),
+        ];
+    }
+
     public function openGrading(string $userId, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService): void
     {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
@@ -327,29 +462,14 @@ class AssessmentFinalExamShow extends Component
 
                 $pendingProctorReview = $proctorSession !== null && $proctorSession->reviewed_at === null;
 
-                $screenshots = $proctorSession
-                    ? $proctorSession->snapshots->where('type', ProctorSnapshotType::Screen)->sortBy('captured_at')->values()
-                    : collect();
-
-                $eventsById = $proctorSession ? $proctorSession->events->keyBy('id') : collect();
-
-                $screenshotsByEventType = $screenshots->groupBy(function ($shot) use ($eventsById) {
-                    $event = $shot->triggered_by_event_id ? $eventsById->get($shot->triggered_by_event_id) : null;
-
-                    return $event?->event_type->value ?? 'none';
-                });
-
-                $eventsByType = $proctorSession
-                    ? $proctorSession->events->sortBy('detected_at')->groupBy(fn ($event) => $event->event_type->value)
-                    : collect();
-
-                $screenshotsFlat = $screenshots->map(function ($shot) use ($eventsById) {
-                    $event = $shot->triggered_by_event_id ? $eventsById->get($shot->triggered_by_event_id) : null;
-
-                    return ['shot' => $shot, 'eventType' => $event?->event_type->value ?? 'none'];
-                })->sortBy(fn ($item) => $item['shot']->captured_at)->values();
-
-                $eventTypeOptions = $screenshotsByEventType->keys()->values();
+                // Screenshot count only — no signed URLs generated here. The
+                // actual items (with signed URLs) are loaded on demand via
+                // loadProctorScreenshots() when the teacher opens the modal,
+                // so we're not signing URLs for every student's every
+                // screenshot on every page load.
+                $screenshotsCount = $proctorSession
+                    ? $proctorSession->snapshots->where('type', ProctorSnapshotType::Screen)->count()
+                    : 0;
 
                 return [
                     'user' => $coursePerson->user,
@@ -361,11 +481,7 @@ class AssessmentFinalExamShow extends Component
                     'pendingProctorReview' => $pendingProctorReview,
                     'cameraRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'webcam-recording'))->values(),
                     'screenRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'screen-recording'))->values(),
-                    'screenshots' => $screenshots,
-                    'eventsByType' => $eventsByType,
-                    'screenshotsByEventType' => $screenshotsByEventType,
-                    'screenshotsFlat' => $screenshotsFlat,
-                    'eventTypeOptions' => $eventTypeOptions,
+                    'screenshotsCount' => $screenshotsCount,
                 ];
             })->values();
 

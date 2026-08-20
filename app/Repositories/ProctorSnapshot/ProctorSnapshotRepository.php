@@ -2,6 +2,7 @@
 
 namespace App\Repositories\ProctorSnapshot;
 
+use App\Enums\ProctorSnapshotType;
 use App\Models\ProctorSnapshot;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -48,5 +49,57 @@ class ProctorSnapshotRepository implements ProctorSnapshotRepositoryInterface
     public function forSession(string $proctorSessionId): Collection
     {
         return ProctorSnapshot::where('proctor_session_id', $proctorSessionId)->orderBy('captured_at')->get();
+    }
+
+    public function screenshotEventTypesForSession(string $proctorSessionId): array
+    {
+        $types = ProctorSnapshot::query()
+            ->join('proctor_events', 'proctor_events.id', '=', 'proctor_snapshots.triggered_by_event_id')
+            ->where('proctor_snapshots.proctor_session_id', $proctorSessionId)
+            ->where('proctor_snapshots.type', ProctorSnapshotType::Screen->value)
+            ->distinct()
+            ->pluck('proctor_events.event_type')
+            ->all();
+
+        $hasUntriggered = ProctorSnapshot::query()
+            ->where('proctor_session_id', $proctorSessionId)
+            ->where('type', ProctorSnapshotType::Screen)
+            ->whereNull('triggered_by_event_id')
+            ->exists();
+
+        if ($hasUntriggered) {
+            $types[] = 'none';
+        }
+
+        return $types;
+    }
+
+    public function paginateScreenshotsForSession(
+        string $proctorSessionId,
+        ?string $eventType,
+        string $sort,
+        int $offset,
+        int $limit,
+    ): array {
+        $query = ProctorSnapshot::query()
+            ->where('proctor_session_id', $proctorSessionId)
+            ->where('type', ProctorSnapshotType::Screen)
+            ->with('triggeredByEvent');
+
+        if ($eventType === 'none') {
+            $query->whereNull('triggered_by_event_id');
+        } elseif ($eventType !== null) {
+            $query->whereHas('triggeredByEvent', fn ($eventQuery) => $eventQuery->where('event_type', $eventType));
+        }
+
+        $total = (clone $query)->count();
+
+        $items = $query
+            ->orderBy('captured_at', $sort === 'desc' ? 'desc' : 'asc')
+            ->skip($offset)
+            ->take($limit)
+            ->get();
+
+        return ['items' => $items, 'total' => $total];
     }
 }

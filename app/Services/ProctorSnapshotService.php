@@ -41,4 +41,25 @@ class ProctorSnapshotService
     {
         return $this->proctorSnapshotRepository->forSession($proctorSessionId);
     }
+
+    /**
+     * @return array<int, string>
+     */
+    public function screenshotEventTypesForSession(string $proctorSessionId): array
+    {
+        return $this->proctorSnapshotRepository->screenshotEventTypesForSession($proctorSessionId);
+    }
+
+    /**
+     * @return array{items: Collection<int, ProctorSnapshot>, total: int}
+     */
+    public function paginateScreenshotsForSession(
+        string $proctorSessionId,
+        ?string $eventType,
+        string $sort,
+        int $offset,
+        int $limit,
+    ): array {
+        return $this->proctorSnapshotRepository->paginateScreenshotsForSession($proctorSessionId, $eventType, $sort, $offset, $limit);
+    }
 }

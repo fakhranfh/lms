@@ -412,6 +412,7 @@ class AssessmentFinalExamShow extends Component
             $viewData['latestScore'] = $latestScore;
             $viewData['latestProctorSession'] = $latestProctorSession;
             $viewData['pendingProctorReview'] = $latestProctorSession !== null && $latestProctorSession->reviewed_at === null;
+            $viewData['isDisqualified'] = $latestProctorSession?->review_decision === ProctorReviewDecision::Disqualified;
             $viewData['canResubmit'] = $canResubmit;
             $viewData['attemptLimit'] = $attemptLimit ? (string) $attemptLimit : 'Unlimited';
             $viewData['attemptsUsed'] = $attemptsUsed;

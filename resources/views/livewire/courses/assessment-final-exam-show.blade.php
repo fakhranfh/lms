@@ -158,9 +158,9 @@
                     <p class="text-body-sm text-on-surface-variant">Your submission is pending proctoring review. You'll be notified once it's graded.</p>
                 </div>
             @elseif ($latestScore)
-                <div class="p-space-lg bg-success/5 border border-success/20 rounded-lg space-y-space-md">
+                <div class="p-space-lg {{ $isDisqualified ? 'bg-error/5 border border-error/20' : 'bg-success/5 border border-success/20' }} rounded-lg space-y-space-md">
                     <div class="flex items-center gap-space-sm">
-                        <span class="material-symbols-outlined text-success" data-weight="fill">check_circle</span>
+                        <span class="material-symbols-outlined {{ $isDisqualified ? 'text-error' : 'text-success' }}" data-weight="fill">{{ $isDisqualified ? 'cancel' : 'check_circle' }}</span>
                         <p class="font-label-md text-label-md text-on-surface">Score: {{ rtrim(rtrim(number_format($latestScore->score, 2), '0'), '.') }}</p>
                     </div>
 

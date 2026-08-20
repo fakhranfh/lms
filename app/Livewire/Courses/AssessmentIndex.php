@@ -4,6 +4,7 @@ namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentType;
 use App\Enums\DeliveryMode;
+use App\Enums\ProctorReviewDecision;
 use App\Enums\RoleName;
 use App\Models\Assessment;
 use App\Models\Course;
@@ -214,14 +215,18 @@ class AssessmentIndex extends Component
             AssessmentType::ForumDiscussion => route('assessments.forum-discussion.show', $assessment),
         };
 
+        $base = [
+            'route' => $route,
+            'attemptCount' => 0,
+            'attemptLimit' => $attemptLimit,
+            'score' => null,
+            'isExpired' => $isExpired,
+        ];
+
         if (! $this->isStudent) {
             return [
+                ...$base,
                 'status' => $assessment->status->value,
-                'route' => $route,
-                'attemptCount' => 0,
-                'attemptLimit' => $attemptLimit,
-                'score' => null,
-                'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig($assessment->status->value),
             ];
         }
@@ -233,28 +238,23 @@ class AssessmentIndex extends Component
 
             if ($attempts->isEmpty()) {
                 return [
+                    ...$base,
                     'status' => 'not_started',
-                    'route' => $route,
-                    'attemptCount' => 0,
-                    'attemptLimit' => $attemptLimit,
-                    'score' => null,
                     'feedback' => null,
-                    'isExpired' => $isExpired,
                     'statusConfig' => $this->statusConfig('not_started'),
                 ];
             }
 
             $scoredAttempt = $attempts->first(fn ($attempt) => $attempt->score !== null);
             $pending = $attempts->contains(fn ($attempt) => $quizAttemptScoringService->hasPendingGrading($attempt->id));
+            $status = $pending ? 'submitted' : 'graded';
 
             return [
-                'status' => $pending ? 'submitted' : 'graded',
-                'route' => $route,
+                ...$base,
+                'status' => $status,
                 'attemptCount' => $attempts->count(),
-                'attemptLimit' => $attemptLimit,
                 'score' => $scoredAttempt?->score?->score,
-                'isExpired' => $isExpired,
-                'statusConfig' => $this->statusConfig($pending ? 'submitted' : 'graded'),
+                'statusConfig' => $this->statusConfig($status),
             ];
         }
 
@@ -262,12 +262,9 @@ class AssessmentIndex extends Component
             $computed = $attendanceScoringService->computeForUser($assessment, auth()->id());
 
             return [
+                ...$base,
                 'status' => 'graded',
-                'route' => $route,
-                'attemptCount' => 0,
-                'attemptLimit' => $attemptLimit,
                 'score' => $computed['score'],
-                'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig('graded'),
             ];
         }
@@ -276,12 +273,9 @@ class AssessmentIndex extends Component
             $computed = $forumDiscussionScoringService->computeForUser($assessment, auth()->id());
 
             return [
+                ...$base,
                 'status' => 'graded',
-                'route' => $route,
-                'attemptCount' => 0,
-                'attemptLimit' => $attemptLimit,
                 'score' => $computed['score'],
-                'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig('graded'),
             ];
         }
@@ -296,15 +290,13 @@ class AssessmentIndex extends Component
 
         $latest = $attempts->last();
         $score = $latest?->score?->score;
+        $base['attemptCount'] = $attempts->count();
 
         if (! $latest) {
             return [
+                ...$base,
                 'status' => 'not_started',
-                'route' => $route,
                 'attemptCount' => 0,
-                'attemptLimit' => $attemptLimit,
-                'score' => null,
-                'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig('not_started'),
             ];
         }
@@ -318,37 +310,36 @@ class AssessmentIndex extends Component
 
                 if ($proctorSession !== null && $proctorSession->reviewed_at === null) {
                     return [
+                        ...$base,
                         'status' => 'pending_review',
-                        'route' => $route,
-                        'attemptCount' => $attempts->count(),
-                        'attemptLimit' => $attemptLimit,
                         'score' => null,
                         'feedback' => null,
-                        'isExpired' => $isExpired,
                         'statusConfig' => $this->statusConfig('pending_review'),
+                    ];
+                }
+
+                if ($proctorSession?->review_decision === ProctorReviewDecision::Disqualified) {
+                    return [
+                        ...$base,
+                        'status' => 'disqualified',
+                        'score' => $score,
+                        'statusConfig' => $this->statusConfig('disqualified'),
                     ];
                 }
             }
 
             return [
+                ...$base,
                 'status' => 'graded',
-                'route' => $route,
-                'attemptCount' => $attempts->count(),
-                'attemptLimit' => $attemptLimit,
                 'score' => $score,
-                'isExpired' => $isExpired,
                 'statusConfig' => $this->statusConfig('graded'),
             ];
         }
 
         return [
+            ...$base,
             'status' => 'submitted',
-            'route' => $route,
-            'attemptCount' => $attempts->count(),
-            'attemptLimit' => $attemptLimit,
-            'score' => null,
             'feedback' => null,
-            'isExpired' => $isExpired,
             'statusConfig' => $this->statusConfig('submitted'),
         ];
     }
@@ -362,6 +353,7 @@ class AssessmentIndex extends Component
             'completed', 'graded' => ['bg' => 'bg-success/10', 'text' => 'text-success', 'icon' => 'check_circle'],
             'submitted', 'pending_review' => ['bg' => 'bg-warning/10', 'text' => 'text-warning', 'icon' => 'schedule'],
             'not_started' => ['bg' => 'bg-on-surface-variant/10', 'text' => 'text-on-surface-variant', 'icon' => 'pending'],
+            'disqualified' => ['bg' => 'bg-error/10', 'text' => 'text-error', 'icon' => 'cancel'],
             default => ['bg' => 'bg-on-surface-variant/10', 'text' => 'text-on-surface-variant', 'icon' => 'help'],
         };
     }

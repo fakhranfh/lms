@@ -29,6 +29,10 @@
                 noFaceSuspected: false,
                 facingDownSuspected: false,
                 disqualifying: false,
+                violationCounts: {},
+                violationWarningOpen: false,
+                violationWarningMessage: '',
+                lastViolationAt: {},
                 tick() {
                     if (! this.deadline) { return; }
                     let diff = Math.floor((new Date(this.deadline) - new Date()) / 1000);
@@ -170,6 +174,31 @@
                         console.error('Reading detector failed to start', e);
                     }
                 },
+                violationMessages: {
+                    tab_switch: 'You switched away from this exam tab. This has been logged.',
+                    window_blur: 'You switched to another window. This has been logged.',
+                    copy_paste: 'Copy/paste is not allowed during this exam. This has been logged.',
+                    right_click: 'Right-click is not allowed during this exam. This has been logged.',
+                    devtools_opened: 'Opening developer tools is not allowed during this exam. This has been logged.',
+                    fullscreen_exit: 'You exited full-screen mode. This has been logged.',
+                },
+                handleViolation(eventType, severity, metadata = null) {
+                    if (this.submitting || this.disqualifying) { return; }
+                    const now = Date.now();
+                    const last = this.lastViolationAt[eventType] || 0;
+                    if (now - last < 1000) { return; }
+                    this.lastViolationAt[eventType] = now;
+                    const count = (this.violationCounts[eventType] || 0) + 1;
+                    this.violationCounts[eventType] = count;
+                    this.logEvent(eventType, severity, metadata);
+                    if (count === 1) {
+                        this.violationWarningMessage = (this.violationMessages[eventType] || 'A violation was detected.')
+                            + ' If it happens again, you will be automatically disqualified.';
+                        this.violationWarningOpen = true;
+                    } else {
+                        this.handleDisqualification(eventType, 'repeated_' + eventType);
+                    }
+                },
                 async handleDisqualification(eventType, reason) {
                     if (this.submitting || this.disqualifying) { return; }
                     this.disqualifying = true;
@@ -255,17 +284,17 @@
                 $nextTick(() => startRecording());
                 eventAbortController = new AbortController();
                 const listenerOpts = { signal: eventAbortController.signal };
-                document.addEventListener('visibilitychange', () => { if (document.hidden) { logEvent('tab_switch', 'medium'); } }, listenerOpts);
-                window.addEventListener('blur', () => logEvent('window_blur', 'low'), listenerOpts);
-                document.addEventListener('copy', () => logEvent('copy_paste', 'medium'), listenerOpts);
-                document.addEventListener('paste', () => logEvent('copy_paste', 'medium'), listenerOpts);
-                document.addEventListener('contextmenu', (e) => { e.preventDefault(); logEvent('right_click', 'low'); }, listenerOpts);
+                document.addEventListener('visibilitychange', () => { if (document.hidden) { handleViolation('tab_switch', 'medium'); } }, listenerOpts);
+                window.addEventListener('blur', () => handleViolation('window_blur', 'low'), listenerOpts);
+                document.addEventListener('copy', () => handleViolation('copy_paste', 'medium'), listenerOpts);
+                document.addEventListener('paste', () => handleViolation('copy_paste', 'medium'), listenerOpts);
+                document.addEventListener('contextmenu', (e) => { e.preventDefault(); handleViolation('right_click', 'low'); }, listenerOpts);
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I','J','C'].includes(e.key))) {
-                        logEvent('devtools_opened', 'high');
+                        handleViolation('devtools_opened', 'high');
                     }
                 }, listenerOpts);
-                document.addEventListener('fullscreenchange', () => { if (! document.fullscreenElement) { logEvent('fullscreen_exit', 'medium'); } }, listenerOpts);
+                document.addEventListener('fullscreenchange', () => { if (! document.fullscreenElement) { handleViolation('fullscreen_exit', 'medium'); } }, listenerOpts);
             "
             x-on:destroy="clearInterval(timer); eventAbortController?.abort(); readingDetector?.stop(); stopRecording()"
             class="fixed inset-0 z-[100] bg-surface flex flex-col"
@@ -440,6 +469,37 @@
                             >
                                 <span wire:loading wire:target="submitAttempt" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
                                 Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <template x-teleport="body">
+                <div
+                    x-show="violationWarningOpen"
+                    x-cloak
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 z-[130] flex items-center justify-center bg-black/50 px-gutter"
+                >
+                    <div class="bg-surface border border-error/40 rounded-lg p-space-lg max-w-sm w-full space-y-space-lg">
+                        <div class="flex items-center gap-space-md">
+                            <span class="material-symbols-outlined text-error text-[28px]" data-weight="fill">warning</span>
+                            <h2 class="font-headline-sm text-headline-sm text-on-surface">Warning</h2>
+                        </div>
+                        <p class="font-body-md text-body-md text-secondary" x-text="violationWarningMessage"></p>
+                        <div class="flex items-center justify-end">
+                            <button
+                                type="button"
+                                @click="violationWarningOpen = false"
+                                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                            >
+                                I Understand
                             </button>
                         </div>
                     </div>

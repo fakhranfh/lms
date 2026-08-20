@@ -324,11 +324,13 @@ class AssessmentFinalExamShowTest extends TestCase
             'type' => ProctorSnapshotType::Screen,
             'triggered_by_event_id' => $tabSwitchEvent->id,
             'file_url' => 'temp/proctor/'.$session->id.'/screenshot-1.jpg',
+            'captured_at' => now()->subSeconds(2),
         ]);
         ProctorSnapshot::factory()->for($session)->create([
             'type' => ProctorSnapshotType::Screen,
             'triggered_by_event_id' => $windowBlurEvent->id,
             'file_url' => 'temp/proctor/'.$session->id.'/screenshot-2.jpg',
+            'captured_at' => now()->subSecond(),
         ]);
 
         $r2Mock = $this->mock(R2StorageService::class);

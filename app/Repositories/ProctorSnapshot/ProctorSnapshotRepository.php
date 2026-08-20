@@ -57,7 +57,9 @@ class ProctorSnapshotRepository implements ProctorSnapshotRepositoryInterface
             ->join('proctor_events', 'proctor_events.id', '=', 'proctor_snapshots.triggered_by_event_id')
             ->where('proctor_snapshots.proctor_session_id', $proctorSessionId)
             ->where('proctor_snapshots.type', ProctorSnapshotType::Screen->value)
-            ->distinct()
+            ->selectRaw('proctor_events.event_type, MIN(proctor_snapshots.captured_at) as first_captured_at')
+            ->groupBy('proctor_events.event_type')
+            ->orderBy('first_captured_at')
             ->pluck('proctor_events.event_type')
             ->all();
 

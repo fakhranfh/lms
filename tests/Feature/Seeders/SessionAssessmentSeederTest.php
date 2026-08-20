@@ -22,9 +22,9 @@ test('session assessment seeder spreads assessments across multiple sessions rou
     $course = Course::factory()->for($school)->create();
     $sessionOne = Session::factory()->for($course)->create(['date_start' => now()->subDays(2)]);
     $sessionTwo = Session::factory()->for($course)->create(['date_start' => now()->subDay()]);
-    $assessmentOne = Assessment::factory()->for($course)->create(['session_id' => null]);
-    $assessmentTwo = Assessment::factory()->for($course)->create(['session_id' => null]);
-    $assessmentThree = Assessment::factory()->for($course)->create(['session_id' => null]);
+    $assessmentOne = Assessment::factory()->for($course)->create(['session_id' => null, 'created_at' => now()->subSeconds(3)]);
+    $assessmentTwo = Assessment::factory()->for($course)->create(['session_id' => null, 'created_at' => now()->subSeconds(2)]);
+    $assessmentThree = Assessment::factory()->for($course)->create(['session_id' => null, 'created_at' => now()->subSecond()]);
 
     (new SessionAssessmentSeeder)->run();
 

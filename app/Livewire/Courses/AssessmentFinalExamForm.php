@@ -41,10 +41,6 @@ class AssessmentFinalExamForm extends Component
 
     public string $examType = 'closed_book';
 
-    public bool $allowLocalFiles = false;
-
-    public bool $allowInternet = false;
-
     public string $instructions = '';
 
     public string $status = 'draft';
@@ -89,8 +85,6 @@ class AssessmentFinalExamForm extends Component
             if ($finalExam) {
                 $this->periodId = $finalExam->period_id ?? '';
                 $this->examType = $finalExam->exam_type->value;
-                $this->allowLocalFiles = $finalExam->allow_local_files;
-                $this->allowInternet = $finalExam->allow_internet;
                 $this->instructions = $finalExam->instructions ?? '';
             }
         } else {
@@ -184,8 +178,6 @@ class AssessmentFinalExamForm extends Component
                 'exam_type' => FinalExamType::from($this->examType),
                 'start_date' => $this->startDate,
                 'end_date' => $this->endDate,
-                'allow_local_files' => $this->allowLocalFiles,
-                'allow_internet' => $this->allowInternet,
                 'instructions' => $this->instructions !== ''
                     ? HtmlSanitizer::forum($this->promoteRichTextAttachments($this->instructions))
                     : null,

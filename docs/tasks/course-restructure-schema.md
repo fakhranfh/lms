@@ -308,8 +308,6 @@ final_exams
   - exam_type (enum: open_book, closed_book, take_home)
   - start_date (datetime)
   - end_date (datetime)
-  - allow_local_files (boolean, nullable — relevant for open_book/closed_book)
-  - allow_internet (boolean, nullable — relevant for open_book/closed_book)
   - created_at / updated_at
 ```
 

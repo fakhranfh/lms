@@ -62,8 +62,6 @@ class AssessmentFinalExamFormTest extends TestCase
             ->set('endDate', now()->addWeek()->format('Y-m-d\TH:i'))
             ->set('periodId', $this->period->id)
             ->set('examType', FinalExamType::OpenBook->value)
-            ->set('allowLocalFiles', true)
-            ->set('allowInternet', true)
             ->set('questions.0.description', 'Explain the theory.')
             ->set('questions.0.points', '100')
             ->call('save')
@@ -81,8 +79,6 @@ class AssessmentFinalExamFormTest extends TestCase
             'assessment_id' => $assessment->id,
             'period_id' => $this->period->id,
             'exam_type' => FinalExamType::OpenBook->value,
-            'allow_local_files' => true,
-            'allow_internet' => true,
         ]);
 
         $this->assertEquals(1, $assessment->questions()->count());
@@ -127,20 +123,15 @@ class AssessmentFinalExamFormTest extends TestCase
         $finalExam = FinalExam::factory()->for($assessment)->create([
             'period_id' => $this->period->id,
             'exam_type' => FinalExamType::TakeHome,
-            'allow_local_files' => true,
-            'allow_internet' => false,
         ]);
 
         Livewire::test(AssessmentFinalExamForm::class, ['assessment' => $assessment])
             ->assertSet('questions.0.id', $question->id)
             ->assertSet('periodId', $this->period->id)
             ->assertSet('examType', FinalExamType::TakeHome->value)
-            ->assertSet('allowLocalFiles', true)
-            ->assertSet('allowInternet', false)
             ->set('startDate', now()->format('Y-m-d\TH:i'))
             ->set('endDate', now()->addWeek()->format('Y-m-d\TH:i'))
             ->set('questions.0.description', 'Updated description')
-            ->set('allowInternet', true)
             ->call('save');
 
         $this->assertEquals(1, $assessment->questions()->count());
@@ -150,7 +141,7 @@ class AssessmentFinalExamFormTest extends TestCase
         ]);
         $this->assertDatabaseHas('final_exams', [
             'id' => $finalExam->id,
-            'allow_internet' => true,
+            'exam_type' => FinalExamType::TakeHome->value,
         ]);
     }
 

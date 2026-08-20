@@ -227,8 +227,6 @@ class AssessmentSeeder extends Seeder
             'exam_type' => $type,
             'start_date' => $assessment->start_date,
             'end_date' => $assessment->end_date,
-            'allow_local_files' => $type === FinalExamType::TakeHome,
-            'allow_internet' => $type !== FinalExamType::ClosedBook,
             'instructions' => $this->finalExamInstructions($type),
         ]);
 

@@ -71,17 +71,6 @@
                 </div>
             </div>
 
-            <div class="space-y-space-sm">
-                <label class="flex items-center gap-space-sm text-body-sm text-on-surface cursor-pointer">
-                    <input type="checkbox" wire:model="allowLocalFiles" />
-                    Allow local files
-                </label>
-                <label class="flex items-center gap-space-sm text-body-sm text-on-surface cursor-pointer">
-                    <input type="checkbox" wire:model="allowInternet" />
-                    Allow internet access
-                </label>
-            </div>
-
             <div>
                 <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Instructions</label>
                 <p class="text-body-xs text-on-surface-variant mb-space-xs">Shown to students before they start this exam. Tailor it to this exam type (e.g. what materials are allowed).</p>

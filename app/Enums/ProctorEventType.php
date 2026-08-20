@@ -13,6 +13,7 @@ enum ProctorEventType: string
     case RightClick = 'right_click';
     case DevtoolsOpened = 'devtools_opened';
     case FullscreenExit = 'fullscreen_exit';
+    case NavigationAttempt = 'navigation_attempt';
     case NetworkActivityDetected = 'network_activity_detected';
     case UnauthorizedAppDetected = 'unauthorized_app_detected';
     case ReadingSuspected = 'reading_suspected';

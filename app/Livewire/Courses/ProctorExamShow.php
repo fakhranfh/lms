@@ -69,6 +69,7 @@ class ProctorExamShow extends Component
             ProctorEventType::RightClick->value,
             ProctorEventType::DevtoolsOpened->value,
             ProctorEventType::FullscreenExit->value,
+            ProctorEventType::NavigationAttempt->value,
             ProctorEventType::NetworkActivityDetected->value,
             ProctorEventType::UnauthorizedAppDetected->value,
             ProctorEventType::ReadingSuspected->value,
@@ -185,7 +186,17 @@ class ProctorExamShow extends Component
         }
 
         $finalKey = preg_replace('#temp/#', '', $fileUrl, 1);
-        $r2StorageService->promoteFromTemp($fileUrl, $finalKey);
+
+        try {
+            $r2StorageService->promoteFromTemp($fileUrl, $finalKey);
+        } catch (\Throwable $e) {
+            // Evidence capture is best-effort: a snapshot upload that never
+            // landed in R2 (dropped connection, page unload mid-upload, etc.)
+            // shouldn't crash the exam-taking request.
+            report($e);
+
+            return;
+        }
 
         app(ProctorSnapshotService::class)->create([
             'proctor_session_id' => $session->id,

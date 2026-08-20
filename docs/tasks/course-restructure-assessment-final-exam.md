@@ -37,13 +37,13 @@ A Period groups multiple Sessions (see [course-restructure-session.md](course-re
 Structured like a Quiz (see [course-restructure-assessment-quiz.md](course-restructure-assessment-quiz.md)): questions are multiple choice and essay. Students are allowed to open files stored on their own device, but must not access the internet during the attempt.
 
 - Reuses the Quiz structure (`quiz`, `quiz_questions`, `quiz_question_options`, `assessment_quiz_answers`) with `question_type` including `essay` in addition to `multiple_choice`.
-- `allow_local_files` = `true`, `allow_internet` = `false` (see Proctor rules below)
+- No auto-fullscreen; switching windows/apps is allowed, but switching browser tabs or navigating to another site is flagged (see Proctor rules below).
 - Requires Proctor monitoring (see [course-restructure-proctor.md](course-restructure-proctor.md)).
 
 ### 2. Closed Book
 Same structure as Open Book (multiple choice + essay, quiz-like), but no files or references of any kind may be opened during the attempt.
 
-- `allow_local_files` = `false`, `allow_internet` = `false`
+- Auto-enters fullscreen on start; exiting fullscreen for any reason is flagged.
 - Requires Proctor monitoring (see [course-restructure-proctor.md](course-restructure-proctor.md)).
 
 ### 3. Take Home
@@ -79,8 +79,6 @@ final_exams
   - exam_type (enum: open_book, closed_book, take_home)
   - start_date (datetime)
   - end_date (datetime)
-  - allow_local_files (boolean, nullable — relevant for open_book/closed_book)
-  - allow_internet (boolean, nullable — relevant for open_book/closed_book)
   - created_at / updated_at
 ```
 

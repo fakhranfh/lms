@@ -60,8 +60,6 @@ class AssessmentFinalExamShowTest extends TestCase
         FinalExam::factory()->for($this->assessment)->create([
             'period_id' => $period->id,
             'exam_type' => FinalExamType::ClosedBook,
-            'allow_local_files' => false,
-            'allow_internet' => false,
         ]);
     }
 
@@ -82,14 +80,13 @@ class AssessmentFinalExamShowTest extends TestCase
         $this->assertDatabaseHas('assessment_answers', ['answer_text' => 'My answer']);
     }
 
-    public function test_exam_type_and_allow_flags_render(): void
+    public function test_exam_type_renders(): void
     {
         $this->teacher->givePermissionTo('assessment.view');
         $this->actingAs($this->teacher);
 
         Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->assertSee('Closed Book')
-            ->assertSee('Not allowed');
+            ->assertSee('Closed Book');
     }
 
     public function test_student_cannot_resubmit_after_graded(): void

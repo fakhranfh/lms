@@ -158,6 +158,32 @@ class ProctorExamShowTest extends TestCase
         ]);
     }
 
+    public function test_record_snapshot_uploaded_swallows_missing_temp_object_instead_of_500(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $tempKey = 'schools/demo/temp/proctor/session/abc123-screenshot.jpg';
+        $finalKey = 'schools/demo/proctor/session/abc123-screenshot.jpg';
+
+        $r2Mock = $this->mock(R2StorageService::class);
+        $r2Mock->shouldReceive('promoteFromTemp')
+            ->once()
+            ->with($tempKey, $finalKey)
+            ->andThrow(new \Exception('Failed to promote file from temp: NoSuchKey'));
+
+        $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->instance();
+
+        $instance->recordSnapshotUploaded($r2Mock, 'screen', $tempKey);
+
+        $this->assertDatabaseMissing('proctor_snapshots', [
+            'type' => 'screen',
+            'file_url' => $finalKey,
+        ]);
+    }
+
     public function test_record_snapshot_uploaded_uses_client_captured_at(): void
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
@@ -232,6 +258,53 @@ class ProctorExamShowTest extends TestCase
 
         $this->assertNotNull($instance->errorMessage);
         $this->assertTrue($instance->disqualified);
+    }
+
+    public function test_open_book_attempt_view_exposes_open_book_to_alpine_gating(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->assertSet('examType', FinalExamType::OpenBook)
+            ->assertSeeHtml("allowedTypes: 'open_book'")
+            ->assertSeeHtml("if (allowedTypes === 'closed_book' && ! document.fullscreenElement) { document.documentElement.requestFullscreen")
+            ->assertSeeHtml("window.addEventListener('blur', () => handleViolation('window_blur'")
+            ->assertSeeHtml("handleViolation('navigation_attempt'")
+            ->assertSeeHtml("['t', 'n'].includes(e.key.toLowerCase())")
+            ->assertSeeHtml("anchor.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey");
+    }
+
+    public function test_closed_book_attempt_view_auto_requests_fullscreen_and_flags_window_blur(): void
+    {
+        $closedBookAssessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryFinalExam,
+            'end_date' => now()->addWeek(),
+        ]);
+        $period = Period::factory()->for($this->course)->create();
+        FinalExam::factory()->for($closedBookAssessment)->create([
+            'period_id' => $period->id,
+            'exam_type' => FinalExamType::ClosedBook,
+        ]);
+        $quiz = Quiz::factory()->for($closedBookAssessment)->create([
+            'total_attempts' => 2,
+            'time_limit_per_attempt' => null,
+        ]);
+        $question = QuizQuestion::factory()->for($quiz)->create([
+            'question_type' => 'multiple_choice',
+            'points' => 10,
+            'order' => 1,
+        ]);
+        QuizQuestionOption::factory()->for($question, 'question')->create(['is_correct' => true, 'order' => 1]);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $closedBookAssessment])
+            ->call('startAttempt')
+            ->assertSet('examType', FinalExamType::ClosedBook)
+            ->assertSeeHtml("if (allowedTypes === 'closed_book' && ! document.fullscreenElement) { document.documentElement.requestFullscreen");
     }
 
     public function test_standard_exam_type_returns_404(): void

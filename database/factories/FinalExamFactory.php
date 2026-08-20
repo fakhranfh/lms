@@ -28,8 +28,6 @@ class FinalExamFactory extends Factory
             'exam_type' => FinalExamType::TakeHome,
             'start_date' => fake()->dateTimeBetween('now', '+1 week'),
             'end_date' => fake()->dateTimeBetween('+2 weeks', '+1 month'),
-            'allow_local_files' => null,
-            'allow_internet' => null,
         ];
     }
 }

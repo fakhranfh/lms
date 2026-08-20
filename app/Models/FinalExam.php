@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['assessment_id', 'period_id', 'exam_type', 'start_date', 'end_date', 'allow_local_files', 'allow_internet', 'instructions'])]
+#[Fillable(['assessment_id', 'period_id', 'exam_type', 'start_date', 'end_date', 'instructions'])]
 class FinalExam extends Model
 {
     /** @use HasFactory<FinalExamFactory> */
@@ -22,8 +22,6 @@ class FinalExam extends Model
         'exam_type' => FinalExamType::class,
         'start_date' => 'datetime',
         'end_date' => 'datetime',
-        'allow_local_files' => 'boolean',
-        'allow_internet' => 'boolean',
     ];
 
     /**

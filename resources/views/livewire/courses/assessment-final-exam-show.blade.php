@@ -130,18 +130,6 @@
                     {{ $finalExam ? str($finalExam->exam_type->value)->replace('_', ' ')->title() : '—' }}
                 </p>
             </div>
-            <div>
-                <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Local Files</p>
-                <p class="text-body-sm text-on-surface font-medium">
-                    {{ $finalExam && $finalExam->allow_local_files ? 'Allowed' : 'Not allowed' }}
-                </p>
-            </div>
-            <div>
-                <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Internet</p>
-                <p class="text-body-sm text-on-surface font-medium">
-                    {{ $finalExam && $finalExam->allow_internet ? 'Allowed' : 'Not allowed' }}
-                </p>
-            </div>
         </div>
 
         @if ($finalExam?->instructions)

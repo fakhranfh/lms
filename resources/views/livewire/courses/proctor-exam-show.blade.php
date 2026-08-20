@@ -185,10 +185,11 @@
                     right_click: 'Right-click is not allowed during this exam. This has been logged.',
                     devtools_opened: 'Opening developer tools is not allowed during this exam. This has been logged.',
                     fullscreen_exit: 'You exited full-screen mode. This has been logged.',
+                    navigation_attempt: 'Navigating away from this exam is not allowed. This has been logged.',
                 },
                 handleViolation(eventType, severity, metadata = null) {
                     if (this.submitting || this.disqualifying) { return; }
-                    if (this.mediaPromptActive && ['tab_switch', 'window_blur', 'fullscreen_exit'].includes(eventType)) { return; }
+                    if (this.mediaPromptActive && ['tab_switch', 'window_blur', 'fullscreen_exit', 'navigation_attempt'].includes(eventType)) { return; }
                     const now = Date.now();
                     const last = this.lastViolationAt[eventType] || 0;
                     if (now - last < 1000) { return; }
@@ -287,7 +288,7 @@
                 },
                 acknowledgeWarning() {
                     this.violationWarningOpen = false;
-                    if (this.violationWarningEventType === 'fullscreen_exit' && ! document.fullscreenElement) {
+                    if (this.allowedTypes === 'closed_book' && this.violationWarningEventType === 'fullscreen_exit' && ! document.fullscreenElement) {
                         document.documentElement.requestFullscreen?.().catch(() => {});
                     }
                     this.violationWarningEventType = null;
@@ -304,12 +305,18 @@
             }"
             x-init="
                 tick(); timer = setInterval(() => tick(), 1000);
-                if (! document.fullscreenElement) { document.documentElement.requestFullscreen?.().catch(() => {}); }
+                if (allowedTypes === 'closed_book' && ! document.fullscreenElement) { document.documentElement.requestFullscreen?.().catch(() => {}); }
                 $nextTick(() => startRecording());
                 eventAbortController = new AbortController();
                 const listenerOpts = { signal: eventAbortController.signal };
                 document.addEventListener('visibilitychange', () => { if (document.hidden) { handleViolation('tab_switch', 'medium'); } }, listenerOpts);
                 window.addEventListener('blur', () => handleViolation('window_blur', 'low'), listenerOpts);
+                window.addEventListener('beforeunload', (e) => {
+                    if (submitting) { return; }
+                    handleViolation('navigation_attempt', 'medium');
+                    e.preventDefault();
+                    e.returnValue = '';
+                }, listenerOpts);
                 document.addEventListener('copy', () => handleViolation('copy_paste', 'medium'), listenerOpts);
                 document.addEventListener('paste', () => handleViolation('copy_paste', 'medium'), listenerOpts);
                 document.addEventListener('contextmenu', (e) => { e.preventDefault(); handleViolation('right_click', 'low'); }, listenerOpts);
@@ -317,8 +324,26 @@
                     if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I','J','C'].includes(e.key))) {
                         handleViolation('devtools_opened', 'high');
                     }
+                    if ((e.ctrlKey || e.metaKey) && ['t', 'n'].includes(e.key.toLowerCase())) {
+                        handleViolation('navigation_attempt', 'medium', { reason: 'new_tab_shortcut' });
+                    }
                 }, listenerOpts);
-                document.addEventListener('fullscreenchange', () => { if (! document.fullscreenElement) { handleViolation('fullscreen_exit', 'medium'); } }, listenerOpts);
+                document.addEventListener('click', (e) => {
+                    const anchor = e.target.closest && e.target.closest('a[href]');
+                    if (! anchor) { return; }
+                    if (anchor.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey) {
+                        e.preventDefault();
+                        handleViolation('navigation_attempt', 'medium', { reason: 'new_tab_link' });
+                    }
+                }, { ...listenerOpts, capture: true });
+                document.addEventListener('auxclick', (e) => {
+                    if (e.button !== 1) { return; }
+                    const anchor = e.target.closest && e.target.closest('a[href]');
+                    if (! anchor) { return; }
+                    e.preventDefault();
+                    handleViolation('navigation_attempt', 'medium', { reason: 'middle_click_new_tab' });
+                }, { ...listenerOpts, capture: true });
+                if (allowedTypes === 'closed_book') { document.addEventListener('fullscreenchange', () => { if (! document.fullscreenElement) { handleViolation('fullscreen_exit', 'medium'); } }, listenerOpts); }
             "
             x-on:destroy="clearInterval(timer); eventAbortController?.abort(); readingDetector?.stop(); stopRecording()"
             class="fixed inset-0 z-[100] bg-surface flex flex-col"
@@ -647,7 +672,7 @@
                     if (! this.ready) { return; }
                     window.__proctorPendingStreams = { webcam: this.cameraStream, screen: this.screenStream };
                     this.confirmOpen = false;
-                    document.documentElement.requestFullscreen?.().catch(() => {});
+                    if (@js($examType->value) === 'closed_book') { document.documentElement.requestFullscreen?.().catch(() => {}); }
                     $wire.startAttempt();
                 },
             }"

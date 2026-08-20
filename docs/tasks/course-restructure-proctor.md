@@ -19,7 +19,7 @@ One per exam attempt. Tracks the monitoring lifecycle for that attempt.
 Individual detection events logged during a session.
 
 - `proctor_session_id`
-- `event_type` (enum: `tab_switch`, `window_blur`, `multiple_faces`, `no_face_detected`, `face_mismatch`, `copy_paste`, `right_click`, `devtools_opened`, `fullscreen_exit`, `network_activity_detected`, `unauthorized_app_detected`)
+- `event_type` (enum: `tab_switch`, `window_blur`, `multiple_faces`, `no_face_detected`, `face_mismatch`, `copy_paste`, `right_click`, `devtools_opened`, `fullscreen_exit`, `navigation_attempt`, `network_activity_detected`, `unauthorized_app_detected`)
 - `severity` (enum: `low`, `medium`, `high`)
 - `detected_at` (datetime)
 - `metadata` (JSON, nullable — e.g. snapshot URL, app name, detection confidence)
@@ -35,8 +35,10 @@ Periodic or event-triggered webcam/screen captures kept as evidence.
 
 ## Detection Rules by Exam Type
 
-- **Open Book** (`allow_local_files = true`, `allow_internet = false`): flags internet/network activity and unauthorized apps, but does not flag opening local files.
-- **Closed Book** (`allow_local_files = false`, `allow_internet = false`): flags internet/network activity, unauthorized apps, and any file-open activity.
+- **Open Book**: not forced into fullscreen at exam start. Switching browser tabs (`tab_switch`) or switching to another window/app (`window_blur`) are both flagged as violations, same as attempting to navigate away to another link/site (`navigation_attempt`) or open a new tab.
+- **Closed Book**: forced into fullscreen at exam start; flags any exit from fullscreen (`fullscreen_exit`) as a violation, in addition to the same `tab_switch` / `window_blur` / `navigation_attempt` rules as Open Book.
+
+`navigation_attempt` is detected via the browser's `beforeunload` event (triggered by clicking an external link, typing a new URL, closing the tab, etc.) for both exam types — it shows the browser's native "leave site?" confirmation and logs the attempt regardless of whether the student ultimately confirms or cancels.
 
 ## Review & Action
 

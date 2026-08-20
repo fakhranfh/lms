@@ -29,9 +29,11 @@
                 noFaceSuspected: false,
                 facingDownSuspected: false,
                 disqualifying: false,
+                mediaPromptActive: false,
                 violationCounts: {},
                 violationWarningOpen: false,
                 violationWarningMessage: '',
+                violationWarningEventType: null,
                 lastViolationAt: {},
                 tick() {
                     if (! this.deadline) { return; }
@@ -127,6 +129,7 @@
                     }
                 },
                 async startRecording() {
+                    this.mediaPromptActive = true;
                     const pending = window.__proctorPendingStreams;
                     window.__proctorPendingStreams = null;
 
@@ -150,6 +153,7 @@
                             this.logEvent('fullscreen_exit', 'high', { reason: 'screen_share_stopped' });
                         });
                         this.screenRecorder = this.startMediaRecorder(this.screenStream, 'screen-recording');
+                        this.mediaPromptActive = false;
                     } else {
                         await this.shareScreen();
                     }
@@ -184,6 +188,7 @@
                 },
                 handleViolation(eventType, severity, metadata = null) {
                     if (this.submitting || this.disqualifying) { return; }
+                    if (this.mediaPromptActive && ['tab_switch', 'window_blur', 'fullscreen_exit'].includes(eventType)) { return; }
                     const now = Date.now();
                     const last = this.lastViolationAt[eventType] || 0;
                     if (now - last < 1000) { return; }
@@ -192,6 +197,7 @@
                     this.violationCounts[eventType] = count;
                     this.logEvent(eventType, severity, metadata);
                     if (count === 1) {
+                        this.violationWarningEventType = eventType;
                         this.violationWarningMessage = (this.violationMessages[eventType] || 'A violation was detected.')
                             + ' If it happens again, you will be automatically disqualified.';
                         this.violationWarningOpen = true;
@@ -212,10 +218,12 @@
                     const webcamCapture = this.captureVideoSnapshot(this.$refs.webcamPreview, this.webcamStream, 'webcam');
                     this.uploadSnapshot(screenCapture, 'screen', eventId);
                     this.uploadSnapshot(webcamCapture, 'webcam', eventId);
+                    this.exitFullscreen();
                     await this.stopRecording();
                     await $wire.disqualifyAttempt(eventType);
                 },
                 async shareScreen() {
+                    this.mediaPromptActive = true;
                     this.screenShareError = null;
                     try {
                         const stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' }, audio: true });
@@ -245,6 +253,8 @@
                     } catch (e) {
                         this.screenShareError = 'Screen sharing was denied or unavailable. Click Share Screen and allow sharing your entire screen.';
                         this.logEvent('fullscreen_exit', 'high', { reason: 'screen_share_denied' });
+                    } finally {
+                        setTimeout(() => { this.mediaPromptActive = false; }, 1000);
                     }
                 },
                 async stopRecording() {
@@ -270,17 +280,31 @@
                         if (this.screenStream) { this.screenStream.getTracks().forEach(t => t.stop()); }
                     } catch (e) {}
                 },
+                exitFullscreen() {
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen?.().catch(() => {});
+                    }
+                },
+                acknowledgeWarning() {
+                    this.violationWarningOpen = false;
+                    if (this.violationWarningEventType === 'fullscreen_exit' && ! document.fullscreenElement) {
+                        document.documentElement.requestFullscreen?.().catch(() => {});
+                    }
+                    this.violationWarningEventType = null;
+                },
                 async finishSubmit() {
                     if (this.submitting) { return; }
                     this.submitting = true;
                     clearInterval(this.timer);
                     this.eventAbortController?.abort();
+                    this.exitFullscreen();
                     await this.stopRecording();
                     $wire.submitAttempt();
                 },
             }"
             x-init="
                 tick(); timer = setInterval(() => tick(), 1000);
+                if (! document.fullscreenElement) { document.documentElement.requestFullscreen?.().catch(() => {}); }
                 $nextTick(() => startRecording());
                 eventAbortController = new AbortController();
                 const listenerOpts = { signal: eventAbortController.signal };
@@ -496,7 +520,7 @@
                         <div class="flex items-center justify-end">
                             <button
                                 type="button"
-                                @click="violationWarningOpen = false"
+                                @click="acknowledgeWarning()"
                                 class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                             >
                                 I Understand
@@ -623,6 +647,7 @@
                     if (! this.ready) { return; }
                     window.__proctorPendingStreams = { webcam: this.cameraStream, screen: this.screenStream };
                     this.confirmOpen = false;
+                    document.documentElement.requestFullscreen?.().catch(() => {});
                     $wire.startAttempt();
                 },
             }"

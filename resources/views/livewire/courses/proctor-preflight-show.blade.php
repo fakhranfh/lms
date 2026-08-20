@@ -16,10 +16,6 @@
         gaugeRaf: null,
         cameraStream: null,
         cameraError: null,
-        micChecked: false,
-        micThreshold: 0.15,
-        micSustainedSince: null,
-        micCheckDurationMs: 800,
         faceDetector: null,
         faceRunning: false,
         faceLoading: false,
@@ -29,9 +25,6 @@
         faceCurrentIndex: 0,
         screenStream: null,
         screenError: null,
-        micLevel: 0,
-        micAudioCtx: null,
-        micRaf: null,
         screenAudioLevel: 0,
         screenAudioCtx: null,
         screenAudioRaf: null,
@@ -163,8 +156,6 @@
         },
         async runCameraCheck() {
             this.cameraError = null;
-            this.micChecked = false;
-            this.micSustainedSince = null;
             if (! window.isSecureContext) {
                 this.cameraError = 'Camera and microphone access require a secure (HTTPS) connection.';
                 $wire.markCheckFailed('camera');
@@ -179,7 +170,7 @@
                 this.cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 this.$nextTick(() => { if (this.$refs.cameraPreview) { this.$refs.cameraPreview.srcObject = this.cameraStream; } });
                 $wire.markCheckPassed('camera');
-                this.startLevelMeter(this.cameraStream, 'mic');
+                if (! this.faceRunning && this.faceCompleted.length === 0) { this.runFaceCheck(); }
             } catch (e) {
                 this.cameraError = e.name === 'NotAllowedError'
                     ? 'Camera and microphone access was denied. Please allow permissions in your browser settings and try again.'
@@ -237,11 +228,10 @@
             source.connect(analyser);
             const data = new Uint8Array(analyser.frequencyBinCount);
 
-            if (target === 'mic') { this.micAudioCtx = ctx; } else { this.screenAudioCtx = ctx; }
+            this.screenAudioCtx = ctx;
 
             const tick = () => {
-                const ctxRef = target === 'mic' ? this.micAudioCtx : this.screenAudioCtx;
-                if (! ctxRef) { return; }
+                if (! this.screenAudioCtx) { return; }
                 analyser.getByteTimeDomainData(data);
                 let sumSquares = 0;
                 for (let i = 0; i < data.length; i++) {
@@ -249,37 +239,15 @@
                     sumSquares += v * v;
                 }
                 const level = Math.min(Math.sqrt(sumSquares / data.length) * 4, 1);
-                if (target === 'mic') {
-                    this.micLevel = level;
-                    if (! this.micChecked) {
-                        if (level > this.micThreshold) {
-                            if (this.micSustainedSince === null) { this.micSustainedSince = performance.now(); }
-                            if ((performance.now() - this.micSustainedSince) >= this.micCheckDurationMs) {
-                                this.micChecked = true;
-                                if (! this.faceRunning && this.faceCompleted.length === 0) { this.runFaceCheck(); }
-                            }
-                        } else {
-                            this.micSustainedSince = null;
-                        }
-                    }
-                    this.micRaf = requestAnimationFrame(tick);
-                } else {
-                    this.screenAudioLevel = level;
-                    this.screenAudioRaf = requestAnimationFrame(tick);
-                }
+                this.screenAudioLevel = level;
+                this.screenAudioRaf = requestAnimationFrame(tick);
             };
             tick();
         },
         stopLevelMeter(target) {
-            if (target === 'mic') {
-                if (this.micRaf) { cancelAnimationFrame(this.micRaf); this.micRaf = null; }
-                if (this.micAudioCtx) { this.micAudioCtx.close(); this.micAudioCtx = null; }
-                this.micLevel = 0;
-            } else {
-                if (this.screenAudioRaf) { cancelAnimationFrame(this.screenAudioRaf); this.screenAudioRaf = null; }
-                if (this.screenAudioCtx) { this.screenAudioCtx.close(); this.screenAudioCtx = null; }
-                this.screenAudioLevel = 0;
-            }
+            if (this.screenAudioRaf) { cancelAnimationFrame(this.screenAudioRaf); this.screenAudioRaf = null; }
+            if (this.screenAudioCtx) { this.screenAudioCtx.close(); this.screenAudioCtx = null; }
+            this.screenAudioLevel = 0;
         },
         async playTestSound() {
             if (this.testSoundPlaying) { return; }
@@ -319,7 +287,6 @@
             this.screenSoundError = null;
         },
         stopAllChecks() {
-            this.stopLevelMeter('mic');
             this.stopFaceCheck();
             this.stopScreenCheck();
             if (this.cameraStream) { this.cameraStream.getTracks().forEach(t => t.stop()); this.cameraStream = null; }
@@ -532,21 +499,13 @@
             </div>
         @endif
 
-        <!-- Step 2: Camera, Microphone & Face Orientation -->
+        <!-- Step 2: Camera & Face Orientation -->
         @if ($step === 'camera')
             <div class="space-y-space-lg">
-                <h3 class="font-label-lg text-label-lg text-on-surface text-center">2. Camera, Microphone &amp; Face Verification</h3>
-                <p class="text-body-sm text-on-surface-variant text-center">We need to see your face and hear audio in your room for the duration of the exam.</p>
+                <h3 class="font-label-lg text-label-lg text-on-surface text-center">2. Camera &amp; Face Verification</h3>
+                <p class="text-body-sm text-on-surface-variant text-center">We need to see your face for the duration of the exam.</p>
 
                 <video x-ref="cameraPreview" x-show="cameraStream" x-cloak autoplay muted playsinline class="w-full max-w-sm mx-auto rounded-lg bg-black aspect-video -scale-x-100"></video>
-
-                <div class="max-w-xs mx-auto space-y-space-xs" x-show="cameraStream" x-cloak>
-                    <div class="h-3 w-full bg-surface-container rounded-full overflow-hidden">
-                        <div class="h-full rounded-full" :class="micChecked ? 'bg-success' : 'bg-primary'" style="transition: width 0.05s linear;" :style="'width: ' + Math.round(micLevel * 100) + '%'"></div>
-                    </div>
-                    <p class="text-body-xs text-on-surface-variant text-center" x-show="!micChecked" x-cloak>Say something to test your microphone.</p>
-                    <p class="text-body-xs text-success text-center" x-show="micChecked" x-cloak>Microphone check passed.</p>
-                </div>
 
                 <div class="text-center" x-show="!cameraStream" x-cloak>
                     <button
@@ -559,7 +518,7 @@
                     <p x-show="cameraError" x-cloak class="text-body-sm text-error mt-space-sm" x-text="cameraError"></p>
                 </div>
 
-                <div class="max-w-sm mx-auto space-y-space-sm" x-show="micChecked" x-cloak>
+                <div class="max-w-sm mx-auto space-y-space-sm" x-show="cameraStream" x-cloak>
                     <p class="text-body-sm text-on-surface-variant text-center">Now, slowly turn your head to face each direction as prompted, one at a time.</p>
 
                     <div class="grid grid-cols-4 gap-space-sm" x-show="!faceLoading" x-cloak>

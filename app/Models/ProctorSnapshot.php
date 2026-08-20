@@ -3,12 +3,10 @@
 namespace App\Models;
 
 use App\Enums\ProctorSnapshotType;
-use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\ProctorSnapshotFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
@@ -19,7 +17,7 @@ use Illuminate\Support\Carbon;
 class ProctorSnapshot extends Model
 {
     /** @use HasFactory<ProctorSnapshotFactory> */
-    use HasFactory, HasUuid, HasViewerTimezoneDates;
+    use HasFactory, HasUuid;
 
     /**
      * @var array<string, string>

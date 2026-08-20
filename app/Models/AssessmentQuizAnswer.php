@@ -6,7 +6,6 @@ use App\Traits\HasUuid;
 use Database\Factories\AssessmentQuizAnswerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['assessment_attempt_id', 'quiz_question_id', 'selected_option_id', 'answer_text', 'score'])]

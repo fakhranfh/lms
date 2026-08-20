@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Services\R2StorageService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property-read string|null $logo_url

@@ -6,7 +6,6 @@ use App\Traits\HasUuid;
 use Database\Factories\QuizInstructionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['content', 'updated_by'])]

@@ -3,19 +3,17 @@
 namespace App\Models;
 
 use App\Enums\TierChangeType;
-use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\TierChangeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['school_tier_id', 'from_tier_id', 'to_tier_id', 'change_type', 'reason', 'proration_amount', 'changed_at'])]
 class TierChange extends Model
 {
     /** @use HasFactory<TierChangeFactory> */
-    use HasFactory, HasUuid, HasViewerTimezoneDates;
+    use HasFactory, HasUuid;
 
     /**
      * @var array<string, string>

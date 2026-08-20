@@ -4,12 +4,10 @@ namespace App\Models;
 
 use App\Enums\ProctorEventType;
 use App\Enums\ProctorSeverity;
-use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\ProctorEventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
@@ -20,7 +18,7 @@ use Illuminate\Support\Carbon;
 class ProctorEvent extends Model
 {
     /** @use HasFactory<ProctorEventFactory> */
-    use HasFactory, HasUuid, HasViewerTimezoneDates;
+    use HasFactory, HasUuid;
 
     /**
      * @var array<string, string>

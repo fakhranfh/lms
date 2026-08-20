@@ -6,7 +6,6 @@ use App\Traits\HasUuid;
 use Database\Factories\GradebookSessionEntryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['gradebook_entry_id', 'session_id', 'weight', 'score'])]

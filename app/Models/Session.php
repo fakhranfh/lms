@@ -3,12 +3,10 @@
 namespace App\Models;
 
 use App\Enums\DeliveryMode;
-use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\SessionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -22,7 +20,7 @@ use Illuminate\Support\Carbon;
 class Session extends Model
 {
     /** @use HasFactory<SessionFactory> */
-    use HasFactory, HasUuid, HasViewerTimezoneDates;
+    use HasFactory, HasUuid;
 
     protected $table = 'course_sessions';
 

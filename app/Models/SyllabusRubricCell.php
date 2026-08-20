@@ -6,7 +6,6 @@ use App\Traits\HasUuid;
 use Database\Factories\SyllabusRubricCellFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['rubric_key_indicator_id', 'rubric_proficiency_level_id', 'description'])]

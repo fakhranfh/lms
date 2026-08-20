@@ -137,6 +137,8 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 ### Model Creation
 
 - When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `php artisan make:model --help` to check the available options.
+- Every new Eloquent model must extend `App\Models\Model` (`app/Models/Model.php`), not `Illuminate\Database\Eloquent\Model` directly. `App\Models\Model` already applies the `App\Models\Concerns\HasViewerTimezoneDates` trait, so do not add that trait again in the child model.
+- Any datetime value shown in the UI must be displayed in the viewing user's timezone. Use the `{column}_display` accessor (e.g. `$model->created_at_display`) provided by `HasViewerTimezoneDates` instead of the raw `{column}` attribute when rendering dates to users.
 
 ## APIs &amp; Eloquent Resources
 

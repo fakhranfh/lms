@@ -7,7 +7,6 @@ use App\Traits\HasUuid;
 use Database\Factories\FinalExamFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['assessment_id', 'period_id', 'exam_type', 'start_date', 'end_date', 'allow_local_files', 'allow_internet', 'instructions'])]

@@ -6,7 +6,6 @@ use App\Traits\HasUuid;
 use Database\Factories\VideoConferenceParticipationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['video_conference_id', 'user_id', 'joined_at', 'left_at'])]

@@ -3,20 +3,18 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToSchool;
-use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Services\DemoLmsAccessService;
 use App\Traits\HasUuid;
 use Database\Factories\DemoLmsAccessFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['school_id', 'user_id', 'access_token', 'role', 'expires_at', 'accessed_at'])]
 class DemoLmsAccess extends Model
 {
     /** @use HasFactory<DemoLmsAccessFactory> */
-    use BelongsToSchool, HasFactory, HasUuid, HasViewerTimezoneDates;
+    use BelongsToSchool, HasFactory, HasUuid;
 
     public $timestamps = false;
 

@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Traits\HasUuid;
 use Database\Factories\AuditLogFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use RuntimeException;
@@ -20,7 +19,7 @@ use RuntimeException;
 class AuditLog extends Model
 {
     /** @use HasFactory<AuditLogFactory> */
-    use HasFactory, HasUuid, HasViewerTimezoneDates;
+    use HasFactory, HasUuid;
 
     public const UPDATED_AT = null;
 
@@ -46,7 +45,7 @@ class AuditLog extends Model
     /**
      * Get the audited model.
      *
-     * @return MorphTo<Model, $this>
+     * @return MorphTo<EloquentModel, $this>
      */
     public function auditable(): MorphTo
     {
@@ -57,7 +56,7 @@ class AuditLog extends Model
      * @param  Builder<AuditLog>  $query
      * @return Builder<AuditLog>
      */
-    public function scopeForModel(Builder $query, Model $model): Builder
+    public function scopeForModel(Builder $query, EloquentModel $model): Builder
     {
         return $query->where('auditable_type', $model::class)->where('auditable_id', $model->getKey());
     }

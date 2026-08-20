@@ -7,7 +7,6 @@ use App\Traits\HasUuid;
 use Database\Factories\AttendanceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['session_id', 'user_id', 'status', 'recorded_by', 'recorded_at', 'notes'])]

@@ -7,7 +7,6 @@ use App\Traits\HasUuid;
 use Database\Factories\TierSubscriptionDetailFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['payment_transaction_id', 'school_id', 'subscription_id', 'tier_name', 'billing_period', 'from_tier_id', 'change_type', 'proration_amount', 'registration_data'])]

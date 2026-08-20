@@ -6,7 +6,6 @@ use App\Enums\BillingPeriod;
 use Database\Factories\PricingTierFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'slug', 'description', 'price', 'currency', 'billing_period', 'is_active'])]

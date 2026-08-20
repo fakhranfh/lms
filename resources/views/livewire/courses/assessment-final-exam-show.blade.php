@@ -106,7 +106,9 @@
             </div>
             <div>
                 <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Total Question</p>
-                <p class="text-body-sm text-on-surface font-medium">{{ $assessment->questions->count() }}</p>
+                <p class="text-body-sm text-on-surface font-medium">
+                    {{ $assessment->quiz && $assessment->quiz->questions->isNotEmpty() ? $assessment->quiz->questions->count() : $assessment->questions->count() }}
+                </p>
             </div>
             <div>
                 <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Total Attempts</p>
@@ -375,7 +377,7 @@
         @endif
     </div>
 
-    @if (!$isStudent)
+    @if (!$isStudent && !$isProctored)
         <!-- Question List (teacher view, read-only) -->
         <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
             <h2 class="font-label-lg text-label-lg text-on-surface">Questions</h2>

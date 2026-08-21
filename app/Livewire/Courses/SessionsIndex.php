@@ -4,7 +4,6 @@ namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentType;
 use App\Enums\DeliveryMode;
-use App\Enums\MaterialType;
 use App\Enums\RoleName;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
@@ -211,20 +210,6 @@ class SessionsIndex extends Component
         $this->successMessage = __('Session deleted successfully.');
     }
 
-    public function getMaterialIcon(MaterialType $type): string
-    {
-        return match ($type) {
-            MaterialType::Video => '🎥',
-            MaterialType::PDF => '📄',
-            MaterialType::Document => '📝',
-            MaterialType::Audio => '🎵',
-            MaterialType::Presentation => '📊',
-            MaterialType::Image => '🖼️',
-            MaterialType::Interactive => '🎮',
-            MaterialType::Markdown => '📄',
-        };
-    }
-
     /**
      * @return array{id: string, title: string, type: string, icon: string, isImage: bool, url: string|null}
      */
@@ -234,7 +219,7 @@ class SessionsIndex extends Component
             'id' => (string) $material->id,
             'title' => $material->title,
             'type' => $material->type->value,
-            'icon' => $this->getMaterialIcon($material->type),
+            'icon' => $material->type->icon(),
             'isImage' => $material->type->value === 'Image',
             'url' => $material->file_url,
         ];

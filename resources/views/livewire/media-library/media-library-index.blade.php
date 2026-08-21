@@ -186,7 +186,7 @@
                                 id: '{{ $item->id }}',
                                 title: @js($item->title),
                                 type: @js($item->type->value),
-                                icon: @js($this->getMaterialIcon($item->type)),
+                                icon: @js($item->type->icon()),
                                 isImage: {{ $item->type->value === 'Image' ? 'true' : 'false' }},
                                 size: @js($this->formatBytes($item->file_size)),
                                 uploader: @js($item->uploader?->name),
@@ -200,7 +200,7 @@
                                 @if ($item->type->value === 'Image')
                                     <img src="{{ $item->file_url }}" alt="{{ $item->title }}" class="w-full h-full object-cover" loading="lazy" />
                                 @else
-                                    <span class="text-xl">{{ $this->getMaterialIcon($item->type) }}</span>
+                                    <span class="text-xl">{{ $item->type->icon() }}</span>
                                 @endif
                             </div>
                             <p class="w-full text-body-xs text-on-surface text-center line-clamp-2 break-words leading-tight">

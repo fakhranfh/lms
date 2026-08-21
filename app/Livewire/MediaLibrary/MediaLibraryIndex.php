@@ -174,20 +174,6 @@ class MediaLibraryIndex extends Component
         return round($bytes, 2).' '.$units[$pow];
     }
 
-    public function getMaterialIcon(MaterialType $type): string
-    {
-        return match ($type) {
-            MaterialType::Video => '🎥',
-            MaterialType::PDF => '📄',
-            MaterialType::Document => '📝',
-            MaterialType::Audio => '🎵',
-            MaterialType::Presentation => '📊',
-            MaterialType::Image => '🖼️',
-            MaterialType::Interactive => '🎮',
-            MaterialType::Markdown => '📄',
-        };
-    }
-
     /**
      * @return array{used: string, remaining: string, percentage: float, color: string, warning: string|null, limit_gb: int|null}
      */

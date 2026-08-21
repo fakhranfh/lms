@@ -13,6 +13,20 @@ enum MaterialType: string
     case Interactive = 'Interactive';
     case Markdown = 'Markdown';
 
+    public function icon(): string
+    {
+        return match ($this) {
+            self::Video => '🎥',
+            self::PDF => '📄',
+            self::Document => '📝',
+            self::Audio => '🎵',
+            self::Presentation => '📊',
+            self::Image => '🖼️',
+            self::Interactive => '🎮',
+            self::Markdown => '📄',
+        };
+    }
+
     public function label(): string
     {
         return match ($this) {

@@ -4,7 +4,6 @@ namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
-use App\Enums\MaterialType;
 use App\Enums\ProctorEventType;
 use App\Enums\ProctorReviewDecision;
 use App\Enums\ProctorSessionStatus;
@@ -358,20 +357,6 @@ class ProctorExamShow extends Component
         return app(ProctorSessionService::class)->findByAttempt($inProgress->id);
     }
 
-    private function getMaterialIcon(MaterialType $type): string
-    {
-        return match ($type) {
-            MaterialType::Video => '🎥',
-            MaterialType::PDF => '📄',
-            MaterialType::Document => '📝',
-            MaterialType::Audio => '🎵',
-            MaterialType::Presentation => '📊',
-            MaterialType::Image => '🖼️',
-            MaterialType::Interactive => '🎮',
-            MaterialType::Markdown => '📄',
-        };
-    }
-
     /**
      * @return array{id: string, title: string, type: string, icon: string, isImage: bool, url: string|null, extension: string|null, sessionId: string, sessionTitle: string}
      */
@@ -381,7 +366,7 @@ class ProctorExamShow extends Component
             'id' => (string) $material->id,
             'title' => $material->title,
             'type' => $material->type->value,
-            'icon' => $this->getMaterialIcon($material->type),
+            'icon' => $material->type->icon(),
             'isImage' => $material->type->value === 'Image',
             'url' => $material->file_url,
             'extension' => $material->file_path ? strtolower(pathinfo($material->file_path, PATHINFO_EXTENSION)) : null,

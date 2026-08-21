@@ -3,6 +3,7 @@
 use App\Http\Controllers\DemoLmsController;
 use App\Http\Controllers\ForumCommentLikeController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\ProctorDisqualificationStatusController;
 use App\Http\Controllers\ProctorSpeedTestController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SchoolPaymentController;
@@ -122,6 +123,7 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::post('/proctor/speed-test-upload', [ProctorSpeedTestController::class, 'upload'])->name('proctor.speed-test-upload');
         Route::get('/assessments/{assessment}/final-exam/proctor/preflight', ProctorPreflightShow::class)->middleware('permission:assessment.view')->name('assessments.final-exam.proctor.preflight');
         Route::get('/assessments/{assessment}/final-exam/proctor', ProctorExamShow::class)->middleware('permission:assessment.view')->name('assessments.final-exam.proctor.show');
+        Route::get('/assessments/{assessment}/final-exam/proctor/disqualification-stream', [ProctorDisqualificationStatusController::class, 'stream'])->middleware('permission:assessment.view')->name('assessments.final-exam.proctor.disqualification-stream');
         Route::get('/assessments/{assessment}/attendance', AssessmentAttendanceShow::class)->middleware('permission:assessment.view')->name('assessments.attendance.show');
         Route::get('/assessments/{assessment}/forum-discussion', AssessmentForumDiscussionShow::class)->middleware('permission:assessment.view')->name('assessments.forum-discussion.show');
         Route::get('/quiz-instructions', QuizInstructionEdit::class)->middleware('permission:assessment.edit')->name('quiz-instructions.edit');

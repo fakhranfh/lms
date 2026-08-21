@@ -235,6 +235,7 @@
                     this.eventAbortController?.abort();
                     this.readingDetector?.stop();
                     const eventId = await $wire.logProctorEvent(eventType, 'high', { reason });
+                    await $wire.beginDisqualification(eventType);
                     await new Promise((resolve) => setTimeout(resolve, 1000));
                     const screenCapture = this.captureVideoSnapshot(this.$refs.screenPreview, this.screenStream, 'screen');
                     const webcamCapture = this.captureVideoSnapshot(this.$refs.webcamPreview, this.webcamStream, 'webcam');
@@ -242,7 +243,7 @@
                     this.uploadSnapshot(webcamCapture, 'webcam', eventId);
                     this.exitFullscreen();
                     await this.stopRecording();
-                    await $wire.disqualifyAttempt(eventType);
+                    window.location.reload();
                 },
                 async shareScreen() {
                     this.mediaPromptActive = true;
@@ -867,6 +868,25 @@
                     </template>
                 </div>
             </template>
+        </div>
+    @elseif ($submitting)
+        <div
+            x-data="{ eventSource: null }"
+            x-init="
+                eventSource = new EventSource(@js(route('assessments.final-exam.proctor.disqualification-stream', $assessment)));
+                eventSource.onmessage = (e) => {
+                    const data = JSON.parse(e.data);
+                    if (data.status !== 'submitting') {
+                        eventSource.close();
+                        window.location.reload();
+                    }
+                };
+            "
+            x-on:destroy="eventSource?.close()"
+            class="fixed inset-0 z-[100] bg-surface flex flex-col items-center justify-center gap-space-lg px-gutter"
+        >
+            <span class="material-symbols-outlined text-error text-[48px]">block</span>
+            <p class="font-label-md text-label-md text-error text-center">You have been disqualified from this exam. Submitting your exam, please wait…</p>
         </div>
     @elseif ($justSubmitted)
         <div class="fixed inset-0 z-[100] bg-surface flex flex-col items-center justify-center gap-space-lg px-gutter">

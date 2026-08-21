@@ -12,6 +12,7 @@ use App\Enums\ProctorSeverity;
 use App\Enums\ProctorSnapshotType;
 use App\Enums\QuizQuestionType;
 use App\Enums\RoleName;
+use App\Jobs\FinalizeProctorDisqualificationJob;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\MediaLibraryItem;
@@ -19,9 +20,9 @@ use App\Models\Quiz;
 use App\Models\Session;
 use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentQuizAnswerService;
-use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
 use App\Services\FinalExamService;
+use App\Services\ProctorDisqualificationStatusService;
 use App\Services\ProctorEventService;
 use App\Services\ProctorSessionService;
 use App\Services\ProctorSnapshotService;
@@ -328,9 +329,16 @@ class ProctorExamShow extends Component
         $this->justSubmitted = true;
     }
 
-    public function disqualifyAttempt(
+    /**
+     * Flips the proctor session to Submitting immediately (before any of the
+     * client's slow evidence-upload work), then queues the actual
+     * finalization. This is the fast synchronous step that closes the
+     * window where a page refresh could let a disqualified student keep
+     * answering the exam: from this point on, `submitting` is true in
+     * render() regardless of how long the queued job takes to run.
+     */
+    public function beginDisqualification(
         AssessmentAttemptService $assessmentAttemptService,
-        AssessmentScoreService $assessmentScoreService,
         ProctorSessionService $proctorSessionService,
         string $reason,
     ): void {
@@ -343,38 +351,15 @@ class ProctorExamShow extends Component
             return;
         }
 
-        $feedback = __('Disqualified: cheating detected during the exam (:reason).', ['reason' => $reason]);
-
-        $assessmentAttemptService->update($attempt->id, ['submitted_at' => now()]);
-
-        $score = $assessmentScoreService->findByAttempt($attempt->id);
-        if ($score) {
-            $assessmentScoreService->update($score->id, ['score' => 0, 'feedback' => $feedback]);
-        } else {
-            $assessmentScoreService->create([
-                'assessment_attempt_id' => $attempt->id,
-                'score' => 0,
-                'graded_at' => now(),
-                'feedback' => $feedback,
-            ]);
-        }
-
         $session = $proctorSessionService->findByAttempt($attempt->id);
-        if ($session !== null) {
-            $proctorSessionService->update($session->id, [
-                'status' => ProctorSessionStatus::Terminated,
-                'ended_at' => now(),
-                'review_decision' => ProctorReviewDecision::Disqualified,
-                'reviewed_at' => now(),
-                'review_notes' => $feedback,
-            ]);
+
+        if ($session === null || $session->status !== ProctorSessionStatus::Active) {
+            return;
         }
 
-        Redis::del($this->answersRedisKey($attempt->id));
+        $proctorSessionService->update($session->id, ['status' => ProctorSessionStatus::Submitting]);
 
-        $this->answers = [];
-        $this->errorMessage = $feedback;
-        $this->disqualified = true;
+        FinalizeProctorDisqualificationJob::dispatch($attempt->id, $reason);
     }
 
     protected function currentSession()
@@ -421,14 +406,23 @@ class ProctorExamShow extends Component
         ];
     }
 
-    public function render(SessionService $sessionService)
+    public function render(SessionService $sessionService, ProctorDisqualificationStatusService $disqualificationStatusService)
     {
         $assessmentAttemptService = app(AssessmentAttemptService::class);
 
         $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, auth()->id());
         $inProgress = $attempts->first(fn ($a) => $a->submitted_at === null);
 
+        $latestSession = $disqualificationStatusService->latestSessionForAssessment($this->assessment->id, auth()->id());
+        $submitting = $latestSession?->status === ProctorSessionStatus::Submitting;
+        $disqualified = $this->disqualified || $latestSession?->review_decision === ProctorReviewDecision::Disqualified;
+
+        if ($submitting) {
+            $inProgress = null;
+        }
+
         $canStart = ! $inProgress
+            && ! $submitting
             && (! $this->quiz->total_attempts || $attempts->count() < $this->quiz->total_attempts)
             && (! $this->assessment->end_date || ! $this->assessment->end_date->isPast());
 
@@ -461,7 +455,8 @@ class ProctorExamShow extends Component
             'inProgress' => $inProgress,
             'canStart' => $canStart,
             'justSubmitted' => $this->justSubmitted,
-            'disqualified' => $this->disqualified,
+            'submitting' => $submitting,
+            'disqualified' => $disqualified,
             'examMaterials' => $examMaterials,
             'examSessions' => $examSessions,
             'deadlineIso' => ($inProgress && $this->quiz->time_limit_per_attempt)

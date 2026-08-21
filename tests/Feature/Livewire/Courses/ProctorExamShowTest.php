@@ -7,6 +7,7 @@ use App\Enums\FinalExamType;
 use App\Enums\ProctorReviewDecision;
 use App\Enums\ProctorSessionStatus;
 use App\Enums\RoleName;
+use App\Jobs\FinalizeProctorDisqualificationJob;
 use App\Livewire\Courses\ProctorExamShow;
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
@@ -24,7 +25,11 @@ use App\Models\Role;
 use App\Models\School;
 use App\Models\Session;
 use App\Models\User;
+use App\Services\AssessmentAttemptService;
+use App\Services\AssessmentScoreService;
+use App\Services\ProctorSessionService;
 use App\Services\R2StorageService;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Redis;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -233,19 +238,62 @@ class ProctorExamShowTest extends TestCase
         $this->assertTrue($snapshot->captured_at->greaterThan(now()->subMinute()));
     }
 
-    public function test_disqualify_attempt_terminates_session_and_zeroes_score(): void
+    public function test_begin_disqualification_flips_session_to_submitting_and_dispatches_job(): void
+    {
+        Bus::fake();
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->call('beginDisqualification', 'reading_suspected')
+            ->assertSee('You have been disqualified from this exam. Submitting your exam, please wait…');
+
+        $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
+        $session = ProctorSession::where('assessment_attempt_id', $attempt->id)->firstOrFail();
+
+        $this->assertNull($attempt->submitted_at);
+        $this->assertSame(ProctorSessionStatus::Submitting, $session->status);
+
+        Bus::assertDispatched(FinalizeProctorDisqualificationJob::class, fn ($job) => $job->attemptId === $attempt->id && $job->reason === 'reading_suspected');
+    }
+
+    public function test_begin_disqualification_is_idempotent_when_already_submitting(): void
+    {
+        Bus::fake();
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->call('beginDisqualification', 'reading_suspected')
+            ->call('beginDisqualification', 'tab_switch');
+
+        Bus::assertDispatchedTimes(FinalizeProctorDisqualificationJob::class, 1);
+    }
+
+    public function test_finalize_proctor_disqualification_job_terminates_session_and_zeroes_score(): void
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
 
-        $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
-            ->call('startAttempt')
-            ->call('disqualifyAttempt', 'reading_suspected')
-            ->assertSee('Disqualified')
-            ->assertSee('Back to Exam Overview')
-            ->instance();
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt');
 
         $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
+
+        app(FinalizeProctorDisqualificationJob::class, [
+            'attemptId' => $attempt->id,
+            'reason' => 'reading_suspected',
+        ])->handle(
+            app(AssessmentAttemptService::class),
+            app(AssessmentScoreService::class),
+            app(ProctorSessionService::class),
+        );
+
+        $attempt->refresh();
         $session = ProctorSession::where('assessment_attempt_id', $attempt->id)->firstOrFail();
 
         $this->assertNotNull($attempt->submitted_at);
@@ -258,9 +306,23 @@ class ProctorExamShowTest extends TestCase
             'assessment_attempt_id' => $attempt->id,
             'score' => 0,
         ]);
+    }
 
-        $this->assertNotNull($instance->errorMessage);
-        $this->assertTrue($instance->disqualified);
+    public function test_refreshing_while_disqualification_is_submitting_shows_processing_screen_not_the_exam(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt');
+
+        $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
+        $session = ProctorSession::where('assessment_attempt_id', $attempt->id)->firstOrFail();
+        $session->update(['status' => ProctorSessionStatus::Submitting]);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('You have been disqualified from this exam. Submitting your exam, please wait…')
+            ->assertDontSee('Submit Exam');
     }
 
     public function test_open_book_attempt_view_exposes_open_book_to_alpine_gating(): void

@@ -24,9 +24,22 @@
                 pendingUploads: [],
                 allowedTypes: @js($examType->value),
                 examMaterials: @js($examMaterials),
+                examSessions: @js($examSessions),
                 materialListOpen: false,
+                materialSessionFilter: '',
+                materialSearch: '',
                 materialViewerOpen: false,
                 viewingMaterial: null,
+                get filteredMaterials() {
+                    const search = this.materialSearch.trim().toLowerCase();
+
+                    return this.examMaterials.filter((material) => {
+                        const matchesSession = ! this.materialSessionFilter || material.sessionId === this.materialSessionFilter;
+                        const matchesSearch = ! search || material.title.toLowerCase().includes(search);
+
+                        return matchesSession && matchesSearch;
+                    });
+                },
                 currentQuestion: 0,
                 eventAbortController: null,
                 readingDetector: null,
@@ -39,6 +52,7 @@
                 violationWarningMessage: '',
                 violationWarningEventType: null,
                 lastViolationAt: {},
+                violationsDisabled: false,
                 tick() {
                     if (! this.deadline) { return; }
                     let diff = Math.floor((new Date(this.deadline) - new Date()) / 1000);
@@ -192,6 +206,7 @@
                     navigation_attempt: 'Navigating away from this exam is not allowed. This has been logged.',
                 },
                 handleViolation(eventType, severity, metadata = null) {
+                    if (this.violationsDisabled) { return; }
                     if (this.submitting || this.disqualifying) { return; }
                     if (this.mediaPromptActive && ['tab_switch', 'window_blur', 'fullscreen_exit', 'navigation_attempt'].includes(eventType)) { return; }
                     const now = Date.now();
@@ -214,6 +229,8 @@
                     if (this.submitting || this.disqualifying) { return; }
                     this.disqualifying = true;
                     this.submitting = true;
+                    this.materialListOpen = false;
+                    this.materialViewerOpen = false;
                     clearInterval(this.timer);
                     this.eventAbortController?.abort();
                     this.readingDetector?.stop();
@@ -296,15 +313,12 @@
                     this.materialViewerOpen = true;
                 },
                 closeMaterialViewer() {
-                    if (document.fullscreenElement) {
-                        document.exitFullscreen?.().catch(() => {});
-                    }
                     this.materialViewerOpen = false;
                     this.viewingMaterial = null;
                 },
                 acknowledgeWarning() {
                     this.violationWarningOpen = false;
-                    if (this.allowedTypes === 'closed_book' && this.violationWarningEventType === 'fullscreen_exit' && ! document.fullscreenElement) {
+                    if (this.violationWarningEventType === 'fullscreen_exit' && ! document.fullscreenElement) {
                         document.documentElement.requestFullscreen?.().catch(() => {});
                     }
                     this.violationWarningEventType = null;
@@ -321,7 +335,7 @@
             }"
             x-init="
                 tick(); timer = setInterval(() => tick(), 1000);
-                if (allowedTypes === 'closed_book' && ! document.fullscreenElement) { document.documentElement.requestFullscreen?.().catch(() => {}); }
+                if (! document.fullscreenElement) { document.documentElement.requestFullscreen?.().catch(() => {}); }
                 $nextTick(() => startRecording());
                 eventAbortController = new AbortController();
                 const listenerOpts = { signal: eventAbortController.signal };
@@ -362,7 +376,7 @@
                     e.preventDefault();
                     handleViolation('navigation_attempt', 'medium', { reason: 'middle_click_new_tab' });
                 }, { ...listenerOpts, capture: true });
-                if (allowedTypes === 'closed_book') { document.addEventListener('fullscreenchange', () => { if (! document.fullscreenElement) { handleViolation('fullscreen_exit', 'medium'); } }, listenerOpts); }
+                document.addEventListener('fullscreenchange', () => { if (! document.fullscreenElement) { handleViolation('fullscreen_exit', 'medium'); } }, listenerOpts);
             "
             x-on:destroy="clearInterval(timer); eventAbortController?.abort(); readingDetector?.stop(); stopRecording()"
             class="fixed inset-0 z-[100] bg-surface flex flex-col"
@@ -388,6 +402,15 @@
                             class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
                         >
                             Dev: 2s
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="violationsDisabled = ! violationsDisabled"
+                            :class="violationsDisabled ? 'border-error text-error' : 'border-outline text-on-surface'"
+                            class="px-space-md py-space-xs border rounded-lg font-label-sm text-label-sm hover:bg-surface-container transition"
+                        >
+                            <span x-text="violationsDisabled ? 'Dev: Violations Disabled' : 'Dev: Disable Violations'"></span>
                         </button>
                     @endif
 
@@ -609,7 +632,7 @@
                     class="fixed inset-0 z-[124] flex items-center justify-center bg-black/50 px-gutter"
                     @click.self="materialListOpen = false"
                 >
-                    <div class="bg-surface border border-outline-variant rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col">
+                    <div class="bg-surface border border-outline-variant rounded-lg w-full h-full max-h-[90vh] flex flex-col">
                         <div class="flex items-center justify-between gap-space-md px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">
                             <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-space-sm">
                                 <span class="material-symbols-outlined text-[20px]">folder_open</span>
@@ -620,9 +643,31 @@
                             </button>
                         </div>
 
-                        <div class="overflow-y-auto p-space-lg">
-                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-space-lg">
-                                <template x-for="material in examMaterials" :key="material.id">
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-md px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">
+                            <div class="flex-1 h-9 flex items-center gap-space-sm px-space-md border border-outline rounded-lg focus-within:ring-2 focus-within:ring-primary/50">
+                                <span class="material-symbols-outlined text-[18px] leading-none text-secondary">search</span>
+                                <input
+                                    type="text"
+                                    x-model="materialSearch"
+                                    placeholder="Search materials..."
+                                    class="w-full border-0 bg-transparent font-body-sm text-body-sm focus:outline-none focus:ring-0"
+                                />
+                            </div>
+
+                            <select
+                                x-model="materialSessionFilter"
+                                class="h-9 px-space-md border border-outline rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            >
+                                <option value="">All Sessions</option>
+                                <template x-for="session in examSessions" :key="session.id">
+                                    <option :value="session.id" x-text="session.title"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div class="overflow-y-auto p-space-lg flex-1">
+                            <div class="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 gap-space-lg">
+                                <template x-for="material in filteredMaterials" :key="material.id">
                                     <button
                                         type="button"
                                         @click="openMaterial(material)"
@@ -633,6 +678,10 @@
                                     </button>
                                 </template>
                             </div>
+
+                            <p x-show="! filteredMaterials.length" x-cloak class="text-center text-body-sm text-secondary py-space-xl">
+                                No materials found.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -650,17 +699,10 @@
                     x-transition:leave-end="opacity-0"
                     class="fixed inset-0 z-[125] flex items-center justify-center bg-black/70 px-gutter"
                 >
-                    <div x-ref="materialViewerPanel" class="bg-surface rounded-lg p-space-lg max-w-4xl w-full max-h-[90vh] flex flex-col gap-space-md">
+                    <div class="bg-surface rounded-lg p-space-lg max-w-4xl w-full max-h-[90vh] flex flex-col gap-space-md">
                         <div class="flex items-center justify-between gap-space-md flex-shrink-0">
                             <h2 class="font-headline-sm text-headline-sm text-on-surface truncate" x-text="viewingMaterial?.title"></h2>
                             <div class="flex items-center gap-space-sm flex-shrink-0">
-                                <button
-                                    type="button"
-                                    @click="$refs.materialViewerPanel.requestFullscreen?.().catch(() => {})"
-                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
-                                >
-                                    Fullscreen
-                                </button>
                                 <button
                                     type="button"
                                     @click="closeMaterialViewer()"
@@ -919,7 +961,7 @@
                     if (! this.ready) { return; }
                     window.__proctorPendingStreams = { webcam: this.cameraStream, screen: this.screenStream };
                     this.confirmOpen = false;
-                    if (@js($examType->value) === 'closed_book') { document.documentElement.requestFullscreen?.().catch(() => {}); }
+                    document.documentElement.requestFullscreen?.().catch(() => {});
                     $wire.startAttempt();
                 },
             }"

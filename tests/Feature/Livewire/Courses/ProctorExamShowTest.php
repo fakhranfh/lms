@@ -272,7 +272,7 @@ class ProctorExamShowTest extends TestCase
             ->call('startAttempt')
             ->assertSet('examType', FinalExamType::OpenBook)
             ->assertSeeHtml("allowedTypes: 'open_book'")
-            ->assertSeeHtml("if (allowedTypes === 'closed_book' && ! document.fullscreenElement) { document.documentElement.requestFullscreen")
+            ->assertSeeHtml('if (! document.fullscreenElement) { document.documentElement.requestFullscreen')
             ->assertSeeHtml("window.addEventListener('blur', () => handleViolation('window_blur'")
             ->assertSeeHtml("handleViolation('navigation_attempt'")
             ->assertSeeHtml("['t', 'n'].includes(e.key.toLowerCase())")
@@ -336,7 +336,7 @@ class ProctorExamShowTest extends TestCase
             'type' => AssessmentType::TheoryFinalExam,
             'end_date' => now()->addWeek(),
         ]);
-        $period = Period::factory()->for($this->course)->create();
+        $period = Period::factory()->for($this->course)->create(['order' => 98]);
         FinalExam::factory()->for($closedBookAssessment)->create([
             'period_id' => $period->id,
             'exam_type' => FinalExamType::ClosedBook,
@@ -358,7 +358,7 @@ class ProctorExamShowTest extends TestCase
         Livewire::test(ProctorExamShow::class, ['assessment' => $closedBookAssessment])
             ->call('startAttempt')
             ->assertSet('examType', FinalExamType::ClosedBook)
-            ->assertSeeHtml("if (allowedTypes === 'closed_book' && ! document.fullscreenElement) { document.documentElement.requestFullscreen")
+            ->assertSeeHtml('if (! document.fullscreenElement) { document.documentElement.requestFullscreen')
             ->assertSeeHtml("window.addEventListener('blur', () => handleViolation('window_blur'");
     }
 

@@ -16,6 +16,7 @@ use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\MediaLibraryItem;
 use App\Models\Quiz;
+use App\Models\Session;
 use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentQuizAnswerService;
 use App\Services\AssessmentScoreService;
@@ -55,9 +56,8 @@ class ProctorExamShow extends Component
     public bool $disqualified = false;
 
     /**
-     * Event types allowed to be logged for the current exam type, per the
-     * doc's "Detection Rules by Exam Type" (Open Book doesn't flag local
-     * file access; both flag network/unauthorized-app activity).
+     * Event types allowed to be logged. Open book and closed book exams
+     * use identical violation rules.
      *
      * @return array<int, string>
      */
@@ -404,9 +404,9 @@ class ProctorExamShow extends Component
     }
 
     /**
-     * @return array{id: string, title: string, type: string, icon: string, isImage: bool, url: string|null, extension: string|null}
+     * @return array{id: string, title: string, type: string, icon: string, isImage: bool, url: string|null, extension: string|null, sessionId: string, sessionTitle: string}
      */
-    private function toMaterialPayload(MediaLibraryItem $material): array
+    private function toMaterialPayload(MediaLibraryItem $material, Session $session): array
     {
         return [
             'id' => (string) $material->id,
@@ -416,6 +416,8 @@ class ProctorExamShow extends Component
             'isImage' => $material->type->value === 'Image',
             'url' => $material->file_url,
             'extension' => $material->file_path ? strtolower(pathinfo($material->file_path, PATHINFO_EXTENSION)) : null,
+            'sessionId' => (string) $session->id,
+            'sessionTitle' => $session->title,
         ];
     }
 
@@ -431,12 +433,22 @@ class ProctorExamShow extends Component
             && (! $this->assessment->end_date || ! $this->assessment->end_date->isPast());
 
         $examMaterials = [];
+        $examSessions = [];
 
         if ($this->examType === FinalExamType::OpenBook) {
-            $examMaterials = $sessionService->forCourse($this->course->id, ['materials'])
-                ->flatMap->materials
+            $sessions = $sessionService->forCourse($this->course->id, ['materials']);
+
+            $examSessions = $sessions
+                ->filter(fn (Session $session) => $session->materials->isNotEmpty())
+                ->map(fn (Session $session) => ['id' => (string) $session->id, 'title' => $session->title])
+                ->values()
+                ->all();
+
+            $examMaterials = $sessions
+                ->flatMap(fn (Session $session) => $session->materials->map(
+                    fn (MediaLibraryItem $material) => $this->toMaterialPayload($material, $session)
+                )->all())
                 ->unique('id')
-                ->map(fn (MediaLibraryItem $material) => $this->toMaterialPayload($material))
                 ->values()
                 ->all();
         }
@@ -451,6 +463,7 @@ class ProctorExamShow extends Component
             'justSubmitted' => $this->justSubmitted,
             'disqualified' => $this->disqualified,
             'examMaterials' => $examMaterials,
+            'examSessions' => $examSessions,
             'deadlineIso' => ($inProgress && $this->quiz->time_limit_per_attempt)
                 ? $inProgress->started_at->copy()->addMinutes($this->quiz->time_limit_per_attempt)->toIso8601String()
                 : null,

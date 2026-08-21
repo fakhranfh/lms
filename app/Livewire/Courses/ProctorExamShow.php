@@ -27,6 +27,7 @@ use App\Services\QuizService;
 use App\Services\R2StorageService;
 use App\Support\CurrentSchool;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Redis;
 use Livewire\Component;
 
 class ProctorExamShow extends Component
@@ -110,6 +111,42 @@ class ProctorExamShow extends Component
         $this->assessment = $assessment;
         $this->quiz = $quiz;
         $this->examType = $finalExam->exam_type;
+
+        $inProgress = app(AssessmentAttemptService::class)->forAssessmentAndUser($assessment->id, auth()->id())
+            ->first(fn ($attempt) => $attempt->submitted_at === null);
+
+        if ($inProgress !== null) {
+            $this->answers = $this->loadSavedAnswers($inProgress->id);
+        }
+    }
+
+    protected function answersRedisKey(string $attemptId): string
+    {
+        return "proctor_exam_answers:{$attemptId}";
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function loadSavedAnswers(string $attemptId): array
+    {
+        return Redis::hgetall($this->answersRedisKey($attemptId)) ?: [];
+    }
+
+    public function updated(string $name, mixed $value): void
+    {
+        if (! str_starts_with($name, 'answers.')) {
+            return;
+        }
+
+        $session = $this->currentSession();
+        if ($session === null) {
+            return;
+        }
+
+        $questionId = substr($name, strlen('answers.'));
+
+        Redis::hset($this->answersRedisKey($session->assessment_attempt_id), $questionId, (string) $value);
     }
 
     public function startAttempt(AssessmentAttemptService $assessmentAttemptService, ProctorSessionService $proctorSessionService): void
@@ -120,7 +157,7 @@ class ProctorExamShow extends Component
         $inProgress = $attempts->first(fn ($attempt) => $attempt->submitted_at === null);
 
         if ($inProgress) {
-            $this->answers = [];
+            $this->answers = $this->loadSavedAnswers($inProgress->id);
 
             return;
         }
@@ -282,6 +319,8 @@ class ProctorExamShow extends Component
             ]);
         }
 
+        Redis::del($this->answersRedisKey($attempt->id));
+
         $this->answers = [];
         $this->justSubmitted = true;
     }
@@ -327,6 +366,8 @@ class ProctorExamShow extends Component
                 'review_notes' => $feedback,
             ]);
         }
+
+        Redis::del($this->answersRedisKey($attempt->id));
 
         $this->answers = [];
         $this->errorMessage = $feedback;

@@ -23,6 +23,7 @@ use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
 use App\Services\R2StorageService;
+use Illuminate\Support\Facades\Redis;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -305,6 +306,26 @@ class ProctorExamShowTest extends TestCase
             ->call('startAttempt')
             ->assertSet('examType', FinalExamType::ClosedBook)
             ->assertSeeHtml("if (allowedTypes === 'closed_book' && ! document.fullscreenElement) { document.documentElement.requestFullscreen");
+    }
+
+    public function test_answer_selection_is_persisted_to_redis_and_restored_on_remount(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->set("answers.{$this->mcQuestion->id}", $this->correctOption->id);
+
+        $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
+
+        $this->assertSame(
+            (string) $this->correctOption->id,
+            Redis::hget("proctor_exam_answers:{$attempt->id}", (string) $this->mcQuestion->id)
+        );
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->assertSet("answers.{$this->mcQuestion->id}", (string) $this->correctOption->id);
     }
 
     public function test_standard_exam_type_returns_404(): void

@@ -49,7 +49,7 @@ test('disqualification stream reports the terminated status immediately when the
     ]);
 
     $response = $this->actingAs($student)
-        ->get(route('assessments.final-exam.proctor.disqualification-stream', $assessment));
+        ->get(route('assessments.final-exam.proctor.submission-status-stream', $assessment));
 
     $response->assertOk();
     expect($response->headers->get('Content-Type'))->toContain('text/event-stream');

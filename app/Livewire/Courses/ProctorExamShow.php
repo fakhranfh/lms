@@ -10,8 +10,8 @@ use App\Enums\ProctorReviewDecision;
 use App\Enums\ProctorSessionStatus;
 use App\Enums\ProctorSeverity;
 use App\Enums\ProctorSnapshotType;
-use App\Enums\QuizQuestionType;
 use App\Enums\RoleName;
+use App\Jobs\FinalizeExamSubmissionJob;
 use App\Jobs\FinalizeProctorDisqualificationJob;
 use App\Models\Assessment;
 use App\Models\Course;
@@ -19,20 +19,19 @@ use App\Models\MediaLibraryItem;
 use App\Models\Quiz;
 use App\Models\Session;
 use App\Services\AssessmentAttemptService;
-use App\Services\AssessmentQuizAnswerService;
 use App\Services\CoursePersonService;
 use App\Services\FinalExamService;
-use App\Services\ProctorDisqualificationStatusService;
 use App\Services\ProctorEventService;
 use App\Services\ProctorSessionService;
+use App\Services\ProctorSessionStatusService;
 use App\Services\ProctorSnapshotService;
-use App\Services\QuizAttemptScoringService;
 use App\Services\QuizService;
 use App\Services\R2StorageService;
 use App\Services\SessionService;
 use App\Support\CurrentSchool;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redis;
+use Livewire\Attributes\Renderless;
 use Livewire\Component;
 
 class ProctorExamShow extends Component
@@ -51,10 +50,6 @@ class ProctorExamShow extends Component
     public array $answers = [];
 
     public ?string $errorMessage = null;
-
-    public bool $justSubmitted = false;
-
-    public bool $disqualified = false;
 
     /**
      * Event types allowed to be logged. Open book and closed book exams
@@ -274,10 +269,21 @@ class ProctorExamShow extends Component
         return $r2StorageService->generatePresignedPutUrlForPath("proctor/{$session->id}", $filename, $materialType);
     }
 
-    public function submitAttempt(
+    /**
+     * Flips the proctor session to Submitting immediately (before any of the
+     * client's slow evidence-upload/cleanup work), then queues the actual
+     * finalization. Mirrors beginDisqualification() so a refresh mid-submit
+     * can't leave the attempt answerable again.
+     *
+     * Renderless: this is called mid-way through the client's own cleanup
+     * (finishSubmit() still needs to stop the recorder and upload evidence
+     * afterwards). A normal render here would morph the exam DOM to the
+     * "submitting" branch immediately, tearing down the very Alpine
+     * component/MediaRecorder instances that cleanup is still running on.
+     */
+    #[Renderless]
+    public function beginSubmission(
         AssessmentAttemptService $assessmentAttemptService,
-        AssessmentQuizAnswerService $assessmentQuizAnswerService,
-        QuizAttemptScoringService $quizAttemptScoringService,
         ProctorSessionService $proctorSessionService,
     ): void {
         abort_unless(auth()->user()->can('assessment.submit'), 403);
@@ -291,42 +297,15 @@ class ProctorExamShow extends Component
             return;
         }
 
-        foreach ($this->quiz->questions as $question) {
-            $value = $this->answers[$question->id] ?? null;
-
-            $isObjective = in_array($question->question_type, [QuizQuestionType::MultipleChoice, QuizQuestionType::TrueFalse], true);
-
-            $assessmentQuizAnswerService->create([
-                'assessment_attempt_id' => $attempt->id,
-                'quiz_question_id' => $question->id,
-                'selected_option_id' => $isObjective ? ($value ?: null) : null,
-                'answer_text' => $isObjective ? null : ($value ?: null),
-                'score' => $isObjective ? $quizAttemptScoringService->scoreObjectiveAnswer($question, $value ?: null) : null,
-            ]);
-        }
-
-        $deadline = $this->quiz->time_limit_per_attempt
-            ? $attempt->started_at->copy()->addMinutes($this->quiz->time_limit_per_attempt)
-            : null;
-
-        $assessmentAttemptService->update($attempt->id, [
-            'submitted_at' => $deadline && now()->greaterThan($deadline) ? $deadline : now(),
-        ]);
-
-        $quizAttemptScoringService->recomputeForUser($this->quiz, $this->assessment->id, auth()->id());
-
         $session = $proctorSessionService->findByAttempt($attempt->id);
-        if ($session !== null) {
-            $proctorSessionService->update($session->id, [
-                'status' => ProctorSessionStatus::Completed,
-                'ended_at' => now(),
-            ]);
+
+        if ($session === null || $session->status !== ProctorSessionStatus::Active) {
+            return;
         }
 
-        Redis::del($this->answersRedisKey($attempt->id));
+        $proctorSessionService->update($session->id, ['status' => ProctorSessionStatus::Submitting]);
 
-        $this->answers = [];
-        $this->justSubmitted = true;
+        FinalizeExamSubmissionJob::dispatch($attempt->id);
     }
 
     /**
@@ -336,7 +315,12 @@ class ProctorExamShow extends Component
      * window where a page refresh could let a disqualified student keep
      * answering the exam: from this point on, `submitting` is true in
      * render() regardless of how long the queued job takes to run.
+     *
+     * Renderless: see beginSubmission() — the client still needs to finish
+     * uploading evidence snapshots and stopping the recorder afterwards, so
+     * this must not morph the exam DOM away mid-cleanup.
      */
+    #[Renderless]
     public function beginDisqualification(
         AssessmentAttemptService $assessmentAttemptService,
         ProctorSessionService $proctorSessionService,
@@ -406,7 +390,7 @@ class ProctorExamShow extends Component
         ];
     }
 
-    public function render(SessionService $sessionService, ProctorDisqualificationStatusService $disqualificationStatusService)
+    public function render(SessionService $sessionService, ProctorSessionStatusService $disqualificationStatusService)
     {
         $assessmentAttemptService = app(AssessmentAttemptService::class);
 
@@ -415,7 +399,8 @@ class ProctorExamShow extends Component
 
         $latestSession = $disqualificationStatusService->latestSessionForAssessment($this->assessment->id, auth()->id());
         $submitting = $latestSession?->status === ProctorSessionStatus::Submitting;
-        $disqualified = $this->disqualified || $latestSession?->review_decision === ProctorReviewDecision::Disqualified;
+        $disqualified = $latestSession?->review_decision === ProctorReviewDecision::Disqualified;
+        $justSubmitted = $latestSession?->status === ProctorSessionStatus::Completed;
 
         if ($submitting) {
             $inProgress = null;
@@ -454,7 +439,7 @@ class ProctorExamShow extends Component
             'examType' => $this->examType,
             'inProgress' => $inProgress,
             'canStart' => $canStart,
-            'justSubmitted' => $this->justSubmitted,
+            'justSubmitted' => $justSubmitted,
             'submitting' => $submitting,
             'disqualified' => $disqualified,
             'examMaterials' => $examMaterials,

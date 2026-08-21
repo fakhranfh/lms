@@ -329,9 +329,10 @@
                     this.submitting = true;
                     clearInterval(this.timer);
                     this.eventAbortController?.abort();
+                    await $wire.beginSubmission();
                     this.exitFullscreen();
                     await this.stopRecording();
-                    $wire.submitAttempt();
+                    window.location.reload();
                 },
             }"
             x-init="
@@ -419,10 +420,10 @@
                         type="button"
                         @click="confirmOpen = true"
                         wire:loading.attr="disabled"
-                        wire:target="submitAttempt"
+                        wire:target="beginSubmission"
                         class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
                     >
-                        <span wire:loading wire:target="submitAttempt" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                        <span wire:loading wire:target="beginSubmission" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
                         Submit Exam
                     </button>
                 </div>
@@ -577,11 +578,11 @@
                             <button
                                 type="button"
                                 wire:loading.attr="disabled"
-                                wire:target="submitAttempt"
+                                wire:target="beginSubmission"
                                 @click="confirmOpen = false; finishSubmit()"
                                 class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
                             >
-                                <span wire:loading wire:target="submitAttempt" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                <span wire:loading wire:target="beginSubmission" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
                                 Submit
                             </button>
                         </div>
@@ -873,7 +874,7 @@
         <div
             x-data="{ eventSource: null }"
             x-init="
-                eventSource = new EventSource(@js(route('assessments.final-exam.proctor.disqualification-stream', $assessment)));
+                eventSource = new EventSource(@js(route('assessments.final-exam.proctor.submission-status-stream', $assessment)));
                 eventSource.onmessage = (e) => {
                     const data = JSON.parse(e.data);
                     if (data.status !== 'submitting') {
@@ -885,8 +886,8 @@
             x-on:destroy="eventSource?.close()"
             class="fixed inset-0 z-[100] bg-surface flex flex-col items-center justify-center gap-space-lg px-gutter"
         >
-            <span class="material-symbols-outlined text-error text-[48px]">block</span>
-            <p class="font-label-md text-label-md text-error text-center">You have been disqualified from this exam. Submitting your exam, please wait…</p>
+            <span class="material-symbols-outlined animate-spin text-primary text-[48px]">progress_activity</span>
+            <p class="font-label-md text-label-md text-on-surface text-center">Submitting your exam, please wait…</p>
         </div>
     @elseif ($justSubmitted)
         <div class="fixed inset-0 z-[100] bg-surface flex flex-col items-center justify-center gap-space-lg px-gutter">

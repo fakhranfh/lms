@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\ProctorSession;
 
-class ProctorDisqualificationStatusService
+class ProctorSessionStatusService
 {
     public function __construct(
         private AssessmentAttemptService $assessmentAttemptService,

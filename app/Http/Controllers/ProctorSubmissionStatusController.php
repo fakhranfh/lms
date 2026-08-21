@@ -5,18 +5,19 @@ namespace App\Http\Controllers;
 use App\Enums\ProctorSessionStatus;
 use App\Enums\RoleName;
 use App\Models\Assessment;
-use App\Services\ProctorDisqualificationStatusService;
+use App\Services\ProctorSessionStatusService;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class ProctorDisqualificationStatusController extends Controller
+class ProctorSubmissionStatusController extends Controller
 {
     /**
      * Streams the proctor session status for the authenticated student's
      * latest attempt on this assessment as Server-Sent Events, so the
-     * "processing disqualification" screen can move on the moment the
-     * queued finalization job finishes, without polling from the client.
+     * "processing submission" screen (shown while an exam submission or
+     * disqualification is being finalized by a queued job) can move on the
+     * moment that job finishes, without polling from the client.
      */
-    public function stream(Assessment $assessment, ProctorDisqualificationStatusService $statusService): StreamedResponse
+    public function stream(Assessment $assessment, ProctorSessionStatusService $statusService): StreamedResponse
     {
         abort_unless(auth()->user()->can('assessment.view'), 403);
         abort_unless(auth()->user()->hasRole(RoleName::Student), 403);

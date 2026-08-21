@@ -5,7 +5,7 @@ use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
 use App\Models\ProctorSession;
 use App\Models\User;
-use App\Services\ProctorDisqualificationStatusService;
+use App\Services\ProctorSessionStatusService;
 
 test('latest session for assessment returns the most recently started attempt session', function () {
     $assessment = Assessment::factory()->create();
@@ -25,7 +25,7 @@ test('latest session for assessment returns the most recently started attempt se
     ]);
     $latestSession = ProctorSession::factory()->for($latest, 'attempt')->create(['status' => ProctorSessionStatus::Submitting]);
 
-    $found = app(ProctorDisqualificationStatusService::class)->latestSessionForAssessment($assessment->id, $user->id);
+    $found = app(ProctorSessionStatusService::class)->latestSessionForAssessment($assessment->id, $user->id);
 
     expect($found->id)->toBe($latestSession->id);
 });
@@ -34,7 +34,7 @@ test('latest session for assessment returns null when the user has no attempts',
     $assessment = Assessment::factory()->create();
     $user = User::factory()->create();
 
-    $found = app(ProctorDisqualificationStatusService::class)->latestSessionForAssessment($assessment->id, $user->id);
+    $found = app(ProctorSessionStatusService::class)->latestSessionForAssessment($assessment->id, $user->id);
 
     expect($found)->toBeNull();
 });

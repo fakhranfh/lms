@@ -6,6 +6,7 @@ use App\Enums\ProctorSessionStatus;
 use App\Enums\RoleName;
 use App\Models\Assessment;
 use App\Services\ProctorSessionStatusService;
+use App\Support\Sse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProctorSubmissionStatusController extends Controller
@@ -22,7 +23,7 @@ class ProctorSubmissionStatusController extends Controller
         abort_unless(auth()->user()->can('assessment.view'), 403);
         abort_unless(auth()->user()->hasRole(RoleName::Student), 403);
 
-        return response()->stream(function () use ($assessment, $statusService) {
+        return Sse::response(function () use ($assessment, $statusService): void {
             set_time_limit(0);
 
             $maxIterations = 150;
@@ -35,12 +36,7 @@ class ProctorSubmissionStatusController extends Controller
                 $session = $statusService->latestSessionForAssessment($assessment->id, auth()->id());
                 $status = $session?->status;
 
-                echo 'data: '.json_encode(['status' => $status?->value])."\n\n";
-
-                if (ob_get_level() > 0) {
-                    ob_flush();
-                }
-                flush();
+                Sse::emitData(['status' => $status?->value]);
 
                 if ($status !== ProctorSessionStatus::Submitting) {
                     break;
@@ -48,10 +44,6 @@ class ProctorSubmissionStatusController extends Controller
 
                 sleep(2);
             }
-        }, 200, [
-            'Content-Type' => 'text/event-stream',
-            'Cache-Control' => 'no-cache',
-            'X-Accel-Buffering' => 'no',
-        ]);
+        });
     }
 }

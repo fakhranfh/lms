@@ -91,6 +91,13 @@ return [
         'active_pattern' => 'admin.audit-logs.*',
     ],
     [
+        'label' => 'Redis',
+        'route' => 'admin.redis.index',
+        'icon' => 'memory',
+        'active_pattern' => 'admin.redis.*',
+        'local_only' => true,
+    ],
+    [
         'label' => 'Horizon',
         'url' => '/horizon',
         'route' => 'admin.dashboard',

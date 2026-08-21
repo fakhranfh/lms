@@ -6,6 +6,7 @@ use App\Http\Controllers\PermissionController;
 use App\Livewire\Admin\AdminStorageDashboard;
 use App\Livewire\Admin\AuditLogTable;
 use App\Livewire\Admin\BillingSettings;
+use App\Livewire\Admin\RedisManagement;
 use App\Livewire\Admin\TransactionShow;
 use App\Livewire\Admin\TransactionSummary;
 use App\Livewire\Admin\TransactionTable;
@@ -68,6 +69,10 @@ foreach (RootDomains::all() as $index => $rootDomain) {
             Route::get('/transactions/{transaction}', TransactionShow::class)->name("admin.transactions.show{$suffix}");
 
             Route::get('/storage', AdminStorageDashboard::class)->name("admin.storage.dashboard{$suffix}");
+
+            Route::middleware('local-only')->group(function () use ($suffix) {
+                Route::get('/redis', RedisManagement::class)->name("admin.redis.index{$suffix}");
+            });
 
             Route::get('/schools', SchoolIndex::class)->name("admin.schools.index{$suffix}");
             Route::get('/schools/{school}/edit', SchoolEdit::class)->name("admin.schools.edit{$suffix}");

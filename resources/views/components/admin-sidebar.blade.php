@@ -5,6 +5,7 @@
         <ul class="space-y-space-xs">
             @foreach (config('admin-sidebar') as $item)
                 @continue(($item['requires_permission'] ?? null) && ! auth()->user()->can($item['requires_permission']))
+                @continue(($item['local_only'] ?? false) && ! app()->environment('local'))
                 <li>
                     @if (isset($item['children']))
                         <div class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-black {{ request()->routeIs(...(array) $item['active_pattern']) ? 'text-primary' : '' }}">

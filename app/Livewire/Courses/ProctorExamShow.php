@@ -4,6 +4,7 @@ namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
+use App\Enums\MaterialType;
 use App\Enums\ProctorEventType;
 use App\Enums\ProctorReviewDecision;
 use App\Enums\ProctorSessionStatus;
@@ -13,6 +14,7 @@ use App\Enums\QuizQuestionType;
 use App\Enums\RoleName;
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\MediaLibraryItem;
 use App\Models\Quiz;
 use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentQuizAnswerService;
@@ -25,6 +27,7 @@ use App\Services\ProctorSnapshotService;
 use App\Services\QuizAttemptScoringService;
 use App\Services\QuizService;
 use App\Services\R2StorageService;
+use App\Services\SessionService;
 use App\Support\CurrentSchool;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redis;
@@ -386,7 +389,37 @@ class ProctorExamShow extends Component
         return app(ProctorSessionService::class)->findByAttempt($inProgress->id);
     }
 
-    public function render()
+    private function getMaterialIcon(MaterialType $type): string
+    {
+        return match ($type) {
+            MaterialType::Video => '🎥',
+            MaterialType::PDF => '📄',
+            MaterialType::Document => '📝',
+            MaterialType::Audio => '🎵',
+            MaterialType::Presentation => '📊',
+            MaterialType::Image => '🖼️',
+            MaterialType::Interactive => '🎮',
+            MaterialType::Markdown => '📄',
+        };
+    }
+
+    /**
+     * @return array{id: string, title: string, type: string, icon: string, isImage: bool, url: string|null, extension: string|null}
+     */
+    private function toMaterialPayload(MediaLibraryItem $material): array
+    {
+        return [
+            'id' => (string) $material->id,
+            'title' => $material->title,
+            'type' => $material->type->value,
+            'icon' => $this->getMaterialIcon($material->type),
+            'isImage' => $material->type->value === 'Image',
+            'url' => $material->file_url,
+            'extension' => $material->file_path ? strtolower(pathinfo($material->file_path, PATHINFO_EXTENSION)) : null,
+        ];
+    }
+
+    public function render(SessionService $sessionService)
     {
         $assessmentAttemptService = app(AssessmentAttemptService::class);
 
@@ -397,6 +430,17 @@ class ProctorExamShow extends Component
             && (! $this->quiz->total_attempts || $attempts->count() < $this->quiz->total_attempts)
             && (! $this->assessment->end_date || ! $this->assessment->end_date->isPast());
 
+        $examMaterials = [];
+
+        if ($this->examType === FinalExamType::OpenBook) {
+            $examMaterials = $sessionService->forCourse($this->course->id, ['materials'])
+                ->flatMap->materials
+                ->unique('id')
+                ->map(fn (MediaLibraryItem $material) => $this->toMaterialPayload($material))
+                ->values()
+                ->all();
+        }
+
         return view('livewire.courses.proctor-exam-show', [
             'course' => $this->course,
             'assessment' => $this->assessment,
@@ -406,6 +450,7 @@ class ProctorExamShow extends Component
             'canStart' => $canStart,
             'justSubmitted' => $this->justSubmitted,
             'disqualified' => $this->disqualified,
+            'examMaterials' => $examMaterials,
             'deadlineIso' => ($inProgress && $this->quiz->time_limit_per_attempt)
                 ? $inProgress->started_at->copy()->addMinutes($this->quiz->time_limit_per_attempt)->toIso8601String()
                 : null,

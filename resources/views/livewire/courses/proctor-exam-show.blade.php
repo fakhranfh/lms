@@ -23,6 +23,10 @@
                 screenRecorder: null,
                 pendingUploads: [],
                 allowedTypes: @js($examType->value),
+                examMaterials: @js($examMaterials),
+                materialListOpen: false,
+                materialViewerOpen: false,
+                viewingMaterial: null,
                 currentQuestion: 0,
                 eventAbortController: null,
                 readingDetector: null,
@@ -286,6 +290,18 @@
                         document.exitFullscreen?.().catch(() => {});
                     }
                 },
+                openMaterial(material) {
+                    this.materialListOpen = false;
+                    this.viewingMaterial = material;
+                    this.materialViewerOpen = true;
+                },
+                closeMaterialViewer() {
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen?.().catch(() => {});
+                    }
+                    this.materialViewerOpen = false;
+                    this.viewingMaterial = null;
+                },
                 acknowledgeWarning() {
                     this.violationWarningOpen = false;
                     if (this.allowedTypes === 'closed_book' && this.violationWarningEventType === 'fullscreen_exit' && ! document.fullscreenElement) {
@@ -313,7 +329,10 @@
                 window.addEventListener('blur', () => handleViolation('window_blur', 'low'), listenerOpts);
                 window.addEventListener('beforeunload', (e) => {
                     if (submitting) { return; }
-                    handleViolation('navigation_attempt', 'medium');
+                    // A refresh fires this identical event to a tab close or
+                    // navigation attempt, so it can't be distinguished here.
+                    // Only warn the student; tab_switch/window_blur handle
+                    // the actual violation detection for leaving the exam.
                     e.preventDefault();
                     e.returnValue = '';
                 }, listenerOpts);
@@ -362,6 +381,16 @@
                         </div>
                     @endif
 
+                    @if (app()->isLocal())
+                        <button
+                            type="button"
+                            @click="deadline = new Date(Date.now() + 2000).toISOString()"
+                            class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                        >
+                            Dev: 2s
+                        </button>
+                    @endif
+
                     <button
                         type="button"
                         @click="confirmOpen = true"
@@ -391,6 +420,18 @@
                                 </button>
                             @endforeach
                         </div>
+                    </div>
+
+                    <div x-show="allowedTypes === 'open_book' && examMaterials.length" x-cloak>
+                        <button
+                            type="button"
+                            @click="materialListOpen = true"
+                            class="w-full flex items-center gap-space-sm px-space-md py-space-sm bg-surface-container rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container/70 transition"
+                        >
+                            <span class="material-symbols-outlined text-[18px]">folder_open</span>
+                            Course Materials
+                            <span class="ml-auto text-body-xs text-secondary" x-text="examMaterials.length"></span>
+                        </button>
                     </div>
 
                     <div
@@ -550,6 +591,212 @@
                             >
                                 I Understand
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <template x-teleport="body">
+                <div
+                    x-show="materialListOpen"
+                    x-cloak
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 z-[124] flex items-center justify-center bg-black/50 px-gutter"
+                    @click.self="materialListOpen = false"
+                >
+                    <div class="bg-surface border border-outline-variant rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col">
+                        <div class="flex items-center justify-between gap-space-md px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">
+                            <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-space-sm">
+                                <span class="material-symbols-outlined text-[20px]">folder_open</span>
+                                Course Materials
+                            </h2>
+                            <button type="button" @click="materialListOpen = false" class="text-secondary hover:text-on-surface transition">
+                                <span class="material-symbols-outlined text-[22px]">close</span>
+                            </button>
+                        </div>
+
+                        <div class="overflow-y-auto p-space-lg">
+                            <div class="grid grid-cols-3 sm:grid-cols-4 gap-space-lg">
+                                <template x-for="material in examMaterials" :key="material.id">
+                                    <button
+                                        type="button"
+                                        @click="openMaterial(material)"
+                                        class="flex flex-col items-center gap-space-sm p-space-md rounded-lg hover:bg-surface-container transition text-center"
+                                    >
+                                        <span class="text-4xl" x-text="material.icon"></span>
+                                        <span class="w-full truncate font-body-xs text-body-xs text-on-surface" x-text="material.title"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <template x-teleport="body">
+                <div
+                    x-show="materialViewerOpen"
+                    x-cloak
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 z-[125] flex items-center justify-center bg-black/70 px-gutter"
+                >
+                    <div x-ref="materialViewerPanel" class="bg-surface rounded-lg p-space-lg max-w-4xl w-full max-h-[90vh] flex flex-col gap-space-md">
+                        <div class="flex items-center justify-between gap-space-md flex-shrink-0">
+                            <h2 class="font-headline-sm text-headline-sm text-on-surface truncate" x-text="viewingMaterial?.title"></h2>
+                            <div class="flex items-center gap-space-sm flex-shrink-0">
+                                <button
+                                    type="button"
+                                    @click="$refs.materialViewerPanel.requestFullscreen?.().catch(() => {})"
+                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                                >
+                                    Fullscreen
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="closeMaterialViewer()"
+                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+
+                        <div
+                            class="bg-surface-container rounded-lg flex-1 overflow-auto"
+                            :class="viewingMaterial?.type === 'Markdown' ? '' : 'aspect-video'"
+                        >
+                            <template x-if="viewingMaterial?.type === 'Video'">
+                                <video :src="viewingMaterial.url" width="100%" height="100%" controls class="w-full h-full">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </template>
+
+                            <template x-if="viewingMaterial?.type === 'PDF'">
+                                <embed :src="viewingMaterial.url" type="application/pdf" width="100%" height="100%" class="rounded" />
+                            </template>
+
+                            <template x-if="viewingMaterial?.type === 'Audio'">
+                                <div class="w-full h-full flex flex-col items-center justify-center gap-space-md p-space-lg">
+                                    <span class="text-5xl">🎵</span>
+                                    <p class="text-body-md text-on-surface" x-text="viewingMaterial.title"></p>
+                                    <audio :src="viewingMaterial.url" controls class="w-full">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                </div>
+                            </template>
+
+                            <template x-if="viewingMaterial?.type === 'Image'">
+                                <div class="w-full h-full flex items-center justify-center overflow-auto">
+                                    <img :src="viewingMaterial.url" :alt="viewingMaterial.title" class="max-w-full max-h-full" />
+                                </div>
+                            </template>
+
+                            <template x-if="viewingMaterial?.type === 'Interactive'">
+                                <iframe
+                                    :src="viewingMaterial.url"
+                                    class="w-full h-full rounded border-0"
+                                    sandbox="allow-scripts allow-same-origin allow-forms"
+                                    :title="viewingMaterial.title"
+                                ></iframe>
+                            </template>
+
+                            <template x-if="viewingMaterial?.type === 'Presentation'">
+                                <iframe
+                                    :src="'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(viewingMaterial.url)"
+                                    width="100%"
+                                    height="100%"
+                                    frameborder="0"
+                                    class="rounded"
+                                ></iframe>
+                            </template>
+
+                            <template x-if="viewingMaterial?.type === 'Document' && viewingMaterial.extension === 'pdf'">
+                                <embed :src="viewingMaterial.url" type="application/pdf" width="100%" height="100%" class="rounded" />
+                            </template>
+
+                            <template x-if="viewingMaterial?.type === 'Document' && ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(viewingMaterial.extension)">
+                                <iframe
+                                    :src="'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(viewingMaterial.url)"
+                                    width="100%"
+                                    height="100%"
+                                    frameborder="0"
+                                    class="rounded"
+                                ></iframe>
+                            </template>
+
+                            <template x-if="viewingMaterial?.type === 'Document' && ['txt', 'csv', 'md'].includes(viewingMaterial.extension)">
+                                <div
+                                    x-data="{ text: null, error: null }"
+                                    x-init="
+                                        fetch(viewingMaterial.url)
+                                            .then(response => {
+                                                if (! response.ok) throw new Error('HTTP ' + response.status);
+                                                return response.text();
+                                            })
+                                            .then(content => { text = content; })
+                                            .catch(err => { error = err.message; });
+                                    "
+                                    class="w-full h-full overflow-auto p-space-lg"
+                                >
+                                    <template x-if="! text && ! error">
+                                        <p class="text-center text-on-surface-variant">Loading...</p>
+                                    </template>
+                                    <template x-if="error">
+                                        <p class="text-red-600 font-medium" x-text="'Error loading document: ' + error"></p>
+                                    </template>
+                                    <pre x-show="text" class="whitespace-pre-wrap font-body-sm text-body-sm text-on-surface" x-text="text"></pre>
+                                </div>
+                            </template>
+
+                            <template x-if="viewingMaterial?.type === 'Document' && ! ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'md'].includes(viewingMaterial.extension)">
+                                <div class="w-full h-full flex flex-col items-center justify-center gap-space-md p-space-lg">
+                                    <span class="text-5xl">📝</span>
+                                    <p class="text-body-md text-on-surface" x-text="viewingMaterial.title"></p>
+                                    <a
+                                        :href="viewingMaterial.url"
+                                        download
+                                        class="px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition"
+                                    >
+                                        Download Document
+                                    </a>
+                                </div>
+                            </template>
+
+                            <template x-if="viewingMaterial?.type === 'Markdown'">
+                                <div
+                                    x-data="{ html: null, error: null }"
+                                    x-init="
+                                        fetch(viewingMaterial.url)
+                                            .then(response => {
+                                                if (! response.ok) throw new Error('HTTP ' + response.status);
+                                                return response.text();
+                                            })
+                                            .then(markdown => { html = window.renderMarkdown(markdown); })
+                                            .catch(err => { error = err.message; });
+                                    "
+                                    class="w-full p-space-lg"
+                                >
+                                    <div class="w-full text-on-surface">
+                                        <template x-if="! html && ! error">
+                                            <p class="text-center text-on-surface-variant">Loading...</p>
+                                        </template>
+                                        <template x-if="error">
+                                            <p class="text-red-600 font-medium" x-text="'Error loading markdown: ' + error"></p>
+                                        </template>
+                                        <div x-show="html" x-html="html"></div>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -770,3 +1017,7 @@
         </div>
     @endif
 </div>
+
+@push('scripts')
+    @include('partials.markdown-renderer-script')
+@endpush

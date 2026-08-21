@@ -13,6 +13,7 @@ use App\Models\AssessmentAttempt;
 use App\Models\Course;
 use App\Models\CoursePerson;
 use App\Models\FinalExam;
+use App\Models\MediaLibraryItem;
 use App\Models\Period;
 use App\Models\ProctorSession;
 use App\Models\ProctorSnapshot;
@@ -21,6 +22,7 @@ use App\Models\QuizQuestion;
 use App\Models\QuizQuestionOption;
 use App\Models\Role;
 use App\Models\School;
+use App\Models\Session;
 use App\Models\User;
 use App\Services\R2StorageService;
 use Illuminate\Support\Facades\Redis;
@@ -277,6 +279,57 @@ class ProctorExamShowTest extends TestCase
             ->assertSeeHtml("anchor.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey");
     }
 
+    public function test_open_book_attempt_view_exposes_course_materials_for_alpine(): void
+    {
+        $session = Session::factory()->for($this->course)->create();
+        $material = MediaLibraryItem::factory()->for($this->school)->create(['title' => 'Reference Sheet']);
+        $session->materials()->attach($material->id, ['order' => 1]);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->assertSet('examType', FinalExamType::OpenBook)
+            ->assertSeeHtml('Reference Sheet');
+    }
+
+    public function test_closed_book_attempt_view_does_not_expose_course_materials(): void
+    {
+        $closedBookAssessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryFinalExam,
+            'end_date' => now()->addWeek(),
+        ]);
+        $period = Period::factory()->for($this->course)->create(['order' => 99]);
+        FinalExam::factory()->for($closedBookAssessment)->create([
+            'period_id' => $period->id,
+            'exam_type' => FinalExamType::ClosedBook,
+        ]);
+        $quiz = Quiz::factory()->for($closedBookAssessment)->create([
+            'total_attempts' => 2,
+            'time_limit_per_attempt' => null,
+        ]);
+        $question = QuizQuestion::factory()->for($quiz)->create([
+            'question_type' => 'multiple_choice',
+            'points' => 10,
+            'order' => 1,
+        ]);
+        QuizQuestionOption::factory()->for($question, 'question')->create(['is_correct' => true, 'order' => 1]);
+
+        $session = Session::factory()->for($this->course)->create();
+        $material = MediaLibraryItem::factory()->for($this->school)->create(['title' => 'Reference Sheet']);
+        $session->materials()->attach($material->id, ['order' => 1]);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $closedBookAssessment])
+            ->call('startAttempt')
+            ->assertSet('examType', FinalExamType::ClosedBook)
+            ->assertSeeHtml('examMaterials: [],')
+            ->assertDontSeeHtml('Reference Sheet');
+    }
+
     public function test_closed_book_attempt_view_auto_requests_fullscreen_and_flags_window_blur(): void
     {
         $closedBookAssessment = Assessment::factory()->for($this->course)->create([
@@ -305,7 +358,8 @@ class ProctorExamShowTest extends TestCase
         Livewire::test(ProctorExamShow::class, ['assessment' => $closedBookAssessment])
             ->call('startAttempt')
             ->assertSet('examType', FinalExamType::ClosedBook)
-            ->assertSeeHtml("if (allowedTypes === 'closed_book' && ! document.fullscreenElement) { document.documentElement.requestFullscreen");
+            ->assertSeeHtml("if (allowedTypes === 'closed_book' && ! document.fullscreenElement) { document.documentElement.requestFullscreen")
+            ->assertSeeHtml("window.addEventListener('blur', () => handleViolation('window_blur'");
     }
 
     public function test_answer_selection_is_persisted_to_redis_and_restored_on_remount(): void

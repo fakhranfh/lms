@@ -53,6 +53,14 @@
                 violationWarningEventType: null,
                 lastViolationAt: {},
                 violationsDisabled: false,
+                needsFullscreenResume: false,
+                resumeFullscreen() {
+                    document.documentElement.requestFullscreen?.().then(() => {
+                        this.needsFullscreenResume = false;
+                    }).catch(() => {
+                        this.needsFullscreenResume = true;
+                    });
+                },
                 tick() {
                     if (! this.deadline) { return; }
                     let diff = Math.floor((new Date(this.deadline) - new Date()) / 1000);
@@ -337,21 +345,14 @@
             }"
             x-init="
                 tick(); timer = setInterval(() => tick(), 1000);
-                if (! document.fullscreenElement) { document.documentElement.requestFullscreen?.().catch(() => {}); }
+                if (! document.fullscreenElement) {
+                    document.documentElement.requestFullscreen?.().catch(() => { needsFullscreenResume = true; });
+                }
                 $nextTick(() => startRecording());
                 eventAbortController = new AbortController();
                 const listenerOpts = { signal: eventAbortController.signal };
                 document.addEventListener('visibilitychange', () => { if (document.hidden) { handleViolation('tab_switch', 'medium'); } }, listenerOpts);
                 window.addEventListener('blur', () => handleViolation('window_blur', 'low'), listenerOpts);
-                window.addEventListener('beforeunload', (e) => {
-                    if (submitting) { return; }
-                    // A refresh fires this identical event to a tab close or
-                    // navigation attempt, so it can't be distinguished here.
-                    // Only warn the student; tab_switch/window_blur handle
-                    // the actual violation detection for leaving the exam.
-                    e.preventDefault();
-                    e.returnValue = '';
-                }, listenerOpts);
                 document.addEventListener('copy', () => handleViolation('copy_paste', 'medium'), listenerOpts);
                 document.addEventListener('paste', () => handleViolation('copy_paste', 'medium'), listenerOpts);
                 document.addEventListener('contextmenu', (e) => { e.preventDefault(); handleViolation('right_click', 'low'); }, listenerOpts);
@@ -378,7 +379,14 @@
                     e.preventDefault();
                     handleViolation('navigation_attempt', 'medium', { reason: 'middle_click_new_tab' });
                 }, { ...listenerOpts, capture: true });
-                document.addEventListener('fullscreenchange', () => { if (! document.fullscreenElement) { handleViolation('fullscreen_exit', 'medium'); } }, listenerOpts);
+                document.addEventListener('fullscreenchange', () => {
+                    if (! document.fullscreenElement) {
+                        handleViolation('fullscreen_exit', 'medium');
+                        resumeFullscreen();
+                    } else {
+                        needsFullscreenResume = false;
+                    }
+                }, listenerOpts);
             "
             x-on:destroy="clearInterval(timer); eventAbortController?.abort(); readingDetector?.stop(); stopRecording()"
             class="fixed inset-0 z-[100] bg-surface flex flex-col"
@@ -843,6 +851,24 @@
                             </template>
                         </div>
                     </div>
+                </div>
+            </template>
+
+            <template x-teleport="body">
+                <div
+                    x-show="needsFullscreenResume && ! submitting"
+                    x-cloak
+                    class="fixed inset-0 z-[140] flex flex-col items-center justify-center gap-space-lg bg-surface px-gutter"
+                >
+                    <span class="material-symbols-outlined text-error text-[48px]">fullscreen</span>
+                    <p class="font-label-md text-label-md text-on-surface text-center max-w-sm">Full-screen mode is required to continue this exam.</p>
+                    <button
+                        type="button"
+                        @click="resumeFullscreen()"
+                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                    >
+                        Return to Full-Screen
+                    </button>
                 </div>
             </template>
 

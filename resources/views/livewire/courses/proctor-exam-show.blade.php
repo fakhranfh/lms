@@ -222,8 +222,6 @@
                     }
                 },
                 violationMessages: {
-                    tab_switch: 'You switched away from this exam tab. This has been logged.',
-                    window_blur: 'You switched to another window. This has been logged.',
                     copy_paste: 'Copy/paste is not allowed during this exam. This has been logged.',
                     right_click: 'Right-click is not allowed during this exam. This has been logged.',
                     devtools_opened: 'Opening developer tools is not allowed during this exam. This has been logged.',
@@ -233,7 +231,7 @@
                 handleViolation(eventType, severity, metadata = null) {
                     if (this.violationsDisabled) { return; }
                     if (this.submitting || this.disqualifying) { return; }
-                    if (this.mediaPromptActive && ['tab_switch', 'window_blur', 'fullscreen_exit', 'navigation_attempt'].includes(eventType)) { return; }
+                    if (this.mediaPromptActive && ['fullscreen_exit', 'navigation_attempt'].includes(eventType)) { return; }
                     const now = Date.now();
                     const last = this.lastViolationAt[eventType] || 0;
                     if (now - last < 1000) { return; }
@@ -370,8 +368,6 @@
                 $nextTick(() => startRecording());
                 eventAbortController = new AbortController();
                 const listenerOpts = { signal: eventAbortController.signal };
-                document.addEventListener('visibilitychange', () => { if (document.hidden) { handleViolation('tab_switch', 'medium'); } }, listenerOpts);
-                window.addEventListener('blur', () => handleViolation('window_blur', 'low'), listenerOpts);
                 document.addEventListener('copy', () => handleViolation('copy_paste', 'medium'), listenerOpts);
                 document.addEventListener('paste', () => handleViolation('copy_paste', 'medium'), listenerOpts);
                 document.addEventListener('contextmenu', (e) => { e.preventDefault(); handleViolation('right_click', 'low'); }, listenerOpts);

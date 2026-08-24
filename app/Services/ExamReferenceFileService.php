@@ -107,4 +107,17 @@ class ExamReferenceFileService
 
         return $this->repository->delete($id);
     }
+
+    public function deleteAllForAssessmentAndUser(string $assessmentId, string $userId): int
+    {
+        $files = $this->repository->forAssessmentAndUser($assessmentId, $userId);
+
+        $deleted = 0;
+        foreach ($files as $file) {
+            $this->r2Service->delete($file->file_path);
+            $deleted += $this->repository->delete((string) $file->id);
+        }
+
+        return $deleted;
+    }
 }

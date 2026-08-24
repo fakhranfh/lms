@@ -202,6 +202,9 @@
                             referenceError: @js($referenceFileError ?? null),
                             referenceViewerOpen: false,
                             viewingReferenceFile: null,
+                            confirmDeleteFile: null,
+                            confirmDeleteAllOpen: false,
+                            deletingAll: false,
                             openReferenceFile(file) {
                                 this.viewingReferenceFile = file;
                                 this.referenceViewerOpen = true;
@@ -294,7 +297,11 @@
                             dismissReferenceUpload(key) {
                                 this.referenceUploads = this.referenceUploads.filter((u) => u.key !== key);
                             },
+                            confirmRemoveReferenceFile(file) {
+                                this.confirmDeleteFile = file;
+                            },
                             async removeReferenceFile(id) {
+                                this.confirmDeleteFile = null;
                                 this.referenceRemovingIds = [...this.referenceRemovingIds, id];
                                 try {
                                     await $wire.deleteReferenceFile(id);
@@ -303,11 +310,36 @@
                                     this.referenceRemovingIds = this.referenceRemovingIds.filter((removingId) => removingId !== id);
                                 }
                             },
+                            async removeAllReferenceFiles() {
+                                this.confirmDeleteAllOpen = false;
+                                this.deletingAll = true;
+                                this.referenceRemovingIds = this.referenceFiles.map((file) => file.id);
+                                try {
+                                    await $wire.deleteAllReferenceFiles();
+                                    this.referenceFiles = [];
+                                } finally {
+                                    this.deletingAll = false;
+                                    this.referenceRemovingIds = [];
+                                }
+                            },
                         }"
                     >
                         @if ($isOpenBook ?? false)
                             <div class="mb-space-lg space-y-space-sm text-left" wire:key="reference-file-upload">
-                                <p class="font-label-sm text-label-sm text-secondary">Reference Files</p>
+                                <div class="flex items-center justify-between gap-space-md">
+                                    <p class="font-label-sm text-label-sm text-secondary">Reference Files</p>
+                                    <button
+                                        type="button"
+                                        x-show="referenceFiles.length > 0"
+                                        x-cloak
+                                        :disabled="deletingAll"
+                                        @click="confirmDeleteAllOpen = true"
+                                        class="text-body-xs text-error hover:underline disabled:opacity-50 inline-flex items-center gap-space-xs"
+                                    >
+                                        <span x-show="deletingAll" x-cloak class="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>
+                                        Delete All
+                                    </button>
+                                </div>
                                 <p class="text-body-xs text-on-surface-variant">Upload any documents, images, or slides you want to reference during this open-book exam.</p>
 
                                 <template x-if="referenceError">
@@ -336,7 +368,7 @@
                                             <button
                                                 type="button"
                                                 x-show="!referenceRemovingIds.includes(file.id)"
-                                                @click="removeReferenceFile(file.id)"
+                                                @click="confirmRemoveReferenceFile(file)"
                                                 class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-error text-white opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
                                                 title="Remove"
                                             >
@@ -546,6 +578,70 @@
                                                     </div>
                                                 </div>
                                             </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template x-teleport="body">
+                                <div
+                                    x-show="confirmDeleteFile !== null"
+                                    x-cloak
+                                    x-transition:enter="transition ease-out duration-200"
+                                    x-transition:enter-start="opacity-0"
+                                    x-transition:enter-end="opacity-100"
+                                    x-transition:leave="transition ease-in duration-150"
+                                    x-transition:leave-start="opacity-100"
+                                    x-transition:leave-end="opacity-0"
+                                    class="fixed inset-0 z-[130] flex items-center justify-center bg-black/50 px-gutter"
+                                    @click.self="confirmDeleteFile = null"
+                                >
+                                    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg">
+                                        <h2 class="font-headline-sm text-headline-sm text-on-surface">Remove reference file?</h2>
+                                        <p class="font-body-md text-body-md text-secondary">
+                                            Are you sure you want to remove "<span x-text="confirmDeleteFile?.title"></span>"? This cannot be undone.
+                                        </p>
+                                        <div class="flex items-center justify-end gap-space-md">
+                                            <button type="button" @click="confirmDeleteFile = null" class="px-space-lg py-space-sm font-label-md text-label-md text-secondary hover:underline">Cancel</button>
+                                            <button
+                                                type="button"
+                                                @click="removeReferenceFile(confirmDeleteFile.id)"
+                                                class="px-space-lg py-space-sm bg-error text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template x-teleport="body">
+                                <div
+                                    x-show="confirmDeleteAllOpen"
+                                    x-cloak
+                                    x-transition:enter="transition ease-out duration-200"
+                                    x-transition:enter-start="opacity-0"
+                                    x-transition:enter-end="opacity-100"
+                                    x-transition:leave="transition ease-in duration-150"
+                                    x-transition:leave-start="opacity-100"
+                                    x-transition:leave-end="opacity-0"
+                                    class="fixed inset-0 z-[130] flex items-center justify-center bg-black/50 px-gutter"
+                                    @click.self="confirmDeleteAllOpen = false"
+                                >
+                                    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg">
+                                        <h2 class="font-headline-sm text-headline-sm text-on-surface">Delete all reference files?</h2>
+                                        <p class="font-body-md text-body-md text-secondary">
+                                            Are you sure you want to delete all reference files? This cannot be undone.
+                                        </p>
+                                        <div class="flex items-center justify-end gap-space-md">
+                                            <button type="button" @click="confirmDeleteAllOpen = false" class="px-space-lg py-space-sm font-label-md text-label-md text-secondary hover:underline">Cancel</button>
+                                            <button
+                                                type="button"
+                                                @click="removeAllReferenceFiles()"
+                                                class="px-space-lg py-space-sm bg-error text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                                            >
+                                                Delete All
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

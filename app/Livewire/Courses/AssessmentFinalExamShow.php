@@ -236,6 +236,18 @@ class AssessmentFinalExamShow extends Component
         $examReferenceFileService->delete($id, auth()->id());
     }
 
+    /**
+     * Renderless — see generateReferenceFileUploadUrl(). The grid is cleared
+     * client-side once this resolves.
+     */
+    #[Renderless]
+    public function deleteAllReferenceFiles(ExamReferenceFileService $examReferenceFileService): void
+    {
+        abort_unless(auth()->user()->can('assessment.submit'), 403);
+
+        $examReferenceFileService->deleteAllForAssessmentAndUser($this->assessment->id, auth()->id());
+    }
+
     public function reviewProctorSession(
         string $proctorSessionId,
         ProctorSessionService $proctorSessionService,

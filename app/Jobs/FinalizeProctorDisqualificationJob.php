@@ -50,6 +50,7 @@ class FinalizeProctorDisqualificationJob implements ShouldQueue
                 'reviewed_at' => now(),
                 'review_notes' => $feedback,
             ]);
+            $proctorSessionService->clearSubmitting($session->id);
         }
 
         Redis::del("proctor_exam_answers:{$this->attemptId}");

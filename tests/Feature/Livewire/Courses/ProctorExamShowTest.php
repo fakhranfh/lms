@@ -142,7 +142,7 @@ class ProctorExamShowTest extends TestCase
         $session = ProctorSession::where('assessment_attempt_id', $attempt->id)->firstOrFail();
 
         $this->assertNull($attempt->submitted_at);
-        $this->assertSame(ProctorSessionStatus::Submitting, $session->status);
+        $this->assertTrue(app(ProctorSessionService::class)->isSubmitting($session->id));
 
         Bus::assertDispatched(FinalizeExamSubmissionJob::class, fn ($job) => $job->attemptId === $attempt->id);
 
@@ -212,7 +212,7 @@ class ProctorExamShowTest extends TestCase
 
         $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
         $session = ProctorSession::where('assessment_attempt_id', $attempt->id)->firstOrFail();
-        $session->update(['status' => ProctorSessionStatus::Submitting]);
+        app(ProctorSessionService::class)->markSubmitting($session->id);
 
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->assertSee('Submitting your exam, please wait…')
@@ -329,7 +329,7 @@ class ProctorExamShowTest extends TestCase
         $session = ProctorSession::where('assessment_attempt_id', $attempt->id)->firstOrFail();
 
         $this->assertNull($attempt->submitted_at);
-        $this->assertSame(ProctorSessionStatus::Submitting, $session->status);
+        $this->assertTrue(app(ProctorSessionService::class)->isSubmitting($session->id));
 
         Bus::assertDispatched(FinalizeProctorDisqualificationJob::class, fn ($job) => $job->attemptId === $attempt->id && $job->reason === 'reading_suspected');
 
@@ -398,7 +398,7 @@ class ProctorExamShowTest extends TestCase
 
         $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
         $session = ProctorSession::where('assessment_attempt_id', $attempt->id)->firstOrFail();
-        $session->update(['status' => ProctorSessionStatus::Submitting]);
+        app(ProctorSessionService::class)->markSubmitting($session->id);
 
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->assertSee('Submitting your exam, please wait…')

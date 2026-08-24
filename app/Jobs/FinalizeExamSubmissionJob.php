@@ -72,6 +72,7 @@ class FinalizeExamSubmissionJob implements ShouldQueue
                 'status' => ProctorSessionStatus::Completed,
                 'ended_at' => now(),
             ]);
+            $proctorSessionService->clearSubmitting($session->id);
         }
 
         Redis::del("proctor_exam_answers:{$this->attemptId}");

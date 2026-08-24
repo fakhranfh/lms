@@ -269,10 +269,10 @@ class ProctorExamShow extends Component
     }
 
     /**
-     * Flips the proctor session to Submitting immediately (before any of the
-     * client's slow evidence-upload/cleanup work), then queues the actual
-     * finalization. Mirrors beginDisqualification() so a refresh mid-submit
-     * can't leave the attempt answerable again.
+     * Flags the proctor session as submitting in Redis immediately (before
+     * any of the client's slow evidence-upload/cleanup work), then runs the
+     * actual finalization synchronously. Mirrors beginDisqualification() so
+     * a refresh mid-submit can't leave the attempt answerable again.
      *
      * Renderless: this is called mid-way through the client's own cleanup
      * (finishSubmit() still needs to stop the recorder and upload evidence
@@ -298,18 +298,18 @@ class ProctorExamShow extends Component
 
         $session = $proctorSessionService->findByAttempt($attempt->id);
 
-        if ($session === null || $session->status !== ProctorSessionStatus::Active) {
+        if ($session === null || $session->status !== ProctorSessionStatus::Active || $proctorSessionService->isSubmitting($session->id)) {
             return;
         }
 
-        $proctorSessionService->update($session->id, ['status' => ProctorSessionStatus::Submitting]);
+        $proctorSessionService->markSubmitting($session->id);
 
         FinalizeExamSubmissionJob::dispatchSync($attempt->id);
     }
 
     /**
-     * Flips the proctor session to Submitting immediately (before any of the
-     * client's slow evidence-upload work), then runs the actual
+     * Flags the proctor session as submitting in Redis immediately (before
+     * any of the client's slow evidence-upload work), then runs the actual
      * finalization synchronously (dispatchSync), independent of whether a
      * queue worker is running. This is the fast step that closes the
      * window where a page refresh could let a disqualified student keep
@@ -337,11 +337,11 @@ class ProctorExamShow extends Component
 
         $session = $proctorSessionService->findByAttempt($attempt->id);
 
-        if ($session === null || $session->status !== ProctorSessionStatus::Active) {
+        if ($session === null || $session->status !== ProctorSessionStatus::Active || $proctorSessionService->isSubmitting($session->id)) {
             return;
         }
 
-        $proctorSessionService->update($session->id, ['status' => ProctorSessionStatus::Submitting]);
+        $proctorSessionService->markSubmitting($session->id);
 
         FinalizeProctorDisqualificationJob::dispatchSync($attempt->id, $reason);
     }
@@ -376,7 +376,7 @@ class ProctorExamShow extends Component
         ];
     }
 
-    public function render(SessionService $sessionService, ProctorSessionStatusService $disqualificationStatusService)
+    public function render(SessionService $sessionService, ProctorSessionStatusService $disqualificationStatusService, ProctorSessionService $proctorSessionService)
     {
         $assessmentAttemptService = app(AssessmentAttemptService::class);
 
@@ -384,7 +384,7 @@ class ProctorExamShow extends Component
         $inProgress = $attempts->first(fn ($a) => $a->submitted_at === null);
 
         $latestSession = $disqualificationStatusService->latestSessionForAssessment($this->assessment->id, auth()->id());
-        $submitting = $latestSession?->status === ProctorSessionStatus::Submitting;
+        $submitting = $latestSession !== null && $proctorSessionService->isSubmitting($latestSession->id);
         $disqualified = $latestSession?->review_decision === ProctorReviewDecision::Disqualified;
         $justSubmitted = $latestSession?->status === ProctorSessionStatus::Completed;
 

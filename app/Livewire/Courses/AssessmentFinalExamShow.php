@@ -3,18 +3,22 @@
 namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentType;
+use App\Enums\FinalExamType;
+use App\Enums\MaterialType;
 use App\Enums\ProctorReviewDecision;
 use App\Enums\ProctorSnapshotType;
 use App\Enums\RoleName;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\ExamReferenceFile;
 use App\Models\ProctorSnapshot;
 use App\Services\AssessmentAnswerService;
 use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentQuestionScoreService;
 use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
+use App\Services\ExamReferenceFileService;
 use App\Services\FinalExamService;
 use App\Services\ProctorSessionService;
 use App\Services\ProctorSnapshotService;
@@ -22,6 +26,7 @@ use App\Services\R2StorageService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
+use Livewire\Attributes\Renderless;
 use Livewire\Component;
 
 class AssessmentFinalExamShow extends Component
@@ -45,6 +50,8 @@ class AssessmentFinalExamShow extends Component
     public ?string $errorMessage = null;
 
     public ?string $successMessage = null;
+
+    public ?string $referenceFileError = null;
 
     public array $gradeQuestionScores = [];
 
@@ -131,6 +138,102 @@ class AssessmentFinalExamShow extends Component
     public function clearSuccessMessage(): void
     {
         $this->successMessage = null;
+    }
+
+    private function assertOpenBook(FinalExamService $finalExamService): void
+    {
+        $finalExam = $finalExamService->findByAssessment($this->assessment->id);
+        abort_unless($finalExam?->exam_type === FinalExamType::OpenBook, 403);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function referenceExtensionToTypeMap(): array
+    {
+        $map = [];
+        foreach (MaterialType::cases() as $type) {
+            foreach ($type->allowedExtensions() as $extension) {
+                $map[$extension] = $type->value;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Renderless: this is fired for every file the student picks, often
+     * several in flight at once. A normal render here would morph the DOM
+     * mid-upload, which can visibly disturb the Alpine-rendered progress
+     * grid (tiles flickering) while requests are still in flight.
+     *
+     * @return array{url?: string, key?: string, error?: string}
+     */
+    #[Renderless]
+    public function generateReferenceFileUploadUrl(string $filename, string $materialType, FinalExamService $finalExamService, ExamReferenceFileService $examReferenceFileService): array
+    {
+        abort_unless(auth()->user()->can('assessment.submit'), 403);
+        $this->assertOpenBook($finalExamService);
+
+        if (MaterialType::tryFrom($materialType) === null) {
+            return ['error' => 'Invalid material type'];
+        }
+
+        try {
+            return $examReferenceFileService->generatePresignedUploadUrl($this->assessment->id, auth()->id(), $filename, $materialType);
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * @return array{id: string, title: string, type: string, icon: string, url: string|null, extension: string|null}
+     */
+    private function toReferenceFilePayload(ExamReferenceFile $file): array
+    {
+        return [
+            'id' => (string) $file->id,
+            'title' => $file->title,
+            'type' => $file->type->value,
+            'icon' => $file->type->icon(),
+            'url' => $file->file_url,
+            'extension' => $file->file_path ? strtolower(pathinfo($file->file_path, PATHINFO_EXTENSION)) : null,
+        ];
+    }
+
+    /**
+     * Renderless — see generateReferenceFileUploadUrl().
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{error?: string, file?: array{id: string, title: string, type: string, icon: string, url: string|null, extension: string|null}}
+     */
+    #[Renderless]
+    public function finalizeReferenceFileUpload(array $data, FinalExamService $finalExamService, ExamReferenceFileService $examReferenceFileService): array
+    {
+        abort_unless(auth()->user()->can('assessment.submit'), 403);
+        $this->assertOpenBook($finalExamService);
+
+        try {
+            $file = $examReferenceFileService->finalizeUpload($this->assessment->id, auth()->id(), $data);
+            $this->referenceFileError = null;
+
+            return ['file' => $this->toReferenceFilePayload($file)];
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Renderless — see generateReferenceFileUploadUrl(). The deleted tile is
+     * already removed client-side once this resolves, so a render here
+     * would only risk morphing the rest of the upload grid mid-interaction.
+     */
+    #[Renderless]
+    public function deleteReferenceFile(string $id, ExamReferenceFileService $examReferenceFileService): void
+    {
+        abort_unless(auth()->user()->can('assessment.submit'), 403);
+
+        $examReferenceFileService->delete($id, auth()->id());
     }
 
     public function reviewProctorSession(
@@ -373,17 +476,27 @@ class AssessmentFinalExamShow extends Component
         $this->successMessage = __('Grade saved.');
     }
 
-    public function render(CoursePersonService $coursePersonService, AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, FinalExamService $finalExamService, ProctorSessionService $proctorSessionService)
-    {
+    public function render(
+        CoursePersonService $coursePersonService,
+        AssessmentAttemptService $assessmentAttemptService,
+        AssessmentAnswerService $assessmentAnswerService,
+        AssessmentScoreService $assessmentScoreService,
+        AssessmentQuestionScoreService $assessmentQuestionScoreService,
+        FinalExamService $finalExamService,
+        ProctorSessionService $proctorSessionService,
+        ExamReferenceFileService $examReferenceFileService,
+    ) {
         $isExpired = $this->assessment->end_date && $this->assessment->end_date->isPast();
         $finalExam = $finalExamService->findByAssessment($this->assessment->id);
         $isProctored = $finalExam && in_array($finalExam->exam_type->value, ['open_book', 'closed_book']);
+        $isOpenBook = $finalExam?->exam_type === FinalExamType::OpenBook;
 
         $viewData = [
             'course' => $this->course,
             'assessment' => $this->assessment,
             'finalExam' => $finalExam,
             'isProctored' => $isProctored,
+            'isOpenBook' => $isOpenBook,
             'isStudent' => $this->isStudent,
             'canGrade' => auth()->user()->can('assessment.grade'),
             'canSubmit' => auth()->user()->can('assessment.submit'),
@@ -392,6 +505,10 @@ class AssessmentFinalExamShow extends Component
                 ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
                 : null,
             'isExpired' => $isExpired,
+            'referenceFiles' => [],
+            'referenceExtensionTypeMap' => [],
+            'referenceAcceptedExtensions' => '',
+            'referenceFileError' => $this->referenceFileError,
         ];
 
         if ($this->isStudent) {
@@ -416,6 +533,17 @@ class AssessmentFinalExamShow extends Component
             $viewData['canResubmit'] = $canResubmit;
             $viewData['attemptLimit'] = $attemptLimit ? (string) $attemptLimit : 'Unlimited';
             $viewData['attemptsUsed'] = $attemptsUsed;
+
+            if ($isOpenBook) {
+                $extensionTypeMap = $this->referenceExtensionToTypeMap();
+
+                $viewData['referenceFiles'] = $examReferenceFileService->forAssessmentAndUser($this->assessment->id, auth()->id())
+                    ->map(fn (ExamReferenceFile $file) => $this->toReferenceFilePayload($file))
+                    ->values()
+                    ->all();
+                $viewData['referenceExtensionTypeMap'] = $extensionTypeMap;
+                $viewData['referenceAcceptedExtensions'] = implode(',', array_map(fn (string $ext) => ".{$ext}", array_keys($extensionTypeMap)));
+            }
         } else {
             $students = $coursePersonService->studentsForCourse($this->course->id);
 

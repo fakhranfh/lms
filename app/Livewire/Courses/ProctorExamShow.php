@@ -14,11 +14,13 @@ use App\Jobs\FinalizeExamSubmissionJob;
 use App\Jobs\FinalizeProctorDisqualificationJob;
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\ExamReferenceFile;
 use App\Models\MediaLibraryItem;
 use App\Models\Quiz;
 use App\Models\Session;
 use App\Services\AssessmentAttemptService;
 use App\Services\CoursePersonService;
+use App\Services\ExamReferenceFileService;
 use App\Services\FinalExamService;
 use App\Services\ProctorEventService;
 use App\Services\ProctorSessionService;
@@ -189,6 +191,15 @@ class ProctorExamShow extends Component
         $this->answers = [];
     }
 
+    /**
+     * Renderless: this fires on every proctoring violation, including while
+     * a student has the reference-file/material PDF viewer open. The PDF
+     * pages are rendered onto <canvas> elements via direct DOM manipulation
+     * (outside Alpine/Livewire's tracked bindings), so a normal render here
+     * would morph that container back to its empty server-rendered state
+     * and wipe the preview out from under the student.
+     */
+    #[Renderless]
     public function logProctorEvent(string $eventType, string $severity, ?array $metadata = null): ?string
     {
         abort_unless(in_array($eventType, $this->allowedEventTypes(), true), 422);
@@ -211,6 +222,10 @@ class ProctorExamShow extends Component
         return $event->id;
     }
 
+    /**
+     * Renderless — see logProctorEvent().
+     */
+    #[Renderless]
     public function recordSnapshotUploaded(R2StorageService $r2StorageService, string $type, string $fileUrl, ?string $triggeredByEventId = null, ?string $capturedAt = null): void
     {
         ProctorSnapshotType::from($type);
@@ -258,8 +273,11 @@ class ProctorExamShow extends Component
     }
 
     /**
+     * Renderless — see logProctorEvent().
+     *
      * @return array{url: string, key: string}
      */
+    #[Renderless]
     public function requestSnapshotUploadUrl(R2StorageService $r2StorageService, string $filename, string $materialType = 'Image'): array
     {
         $session = $this->currentOrLatestSession();
@@ -391,8 +409,27 @@ class ProctorExamShow extends Component
         ];
     }
 
-    public function render(SessionService $sessionService, ProctorSessionStatusService $disqualificationStatusService, ProctorSessionService $proctorSessionService)
+    /**
+     * @return array{id: string, title: string, type: string, icon: string, url: string|null, extension: string|null}
+     */
+    private function toReferenceFilePayload(ExamReferenceFile $file): array
     {
+        return [
+            'id' => (string) $file->id,
+            'title' => $file->title,
+            'type' => $file->type->value,
+            'icon' => $file->type->icon(),
+            'url' => $file->file_url,
+            'extension' => $file->file_path ? strtolower(pathinfo($file->file_path, PATHINFO_EXTENSION)) : null,
+        ];
+    }
+
+    public function render(
+        SessionService $sessionService,
+        ProctorSessionStatusService $disqualificationStatusService,
+        ProctorSessionService $proctorSessionService,
+        ExamReferenceFileService $examReferenceFileService,
+    ) {
         $assessmentAttemptService = app(AssessmentAttemptService::class);
 
         $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, auth()->id());
@@ -414,6 +451,7 @@ class ProctorExamShow extends Component
 
         $examMaterials = [];
         $examSessions = [];
+        $referenceFiles = [];
 
         if ($this->examType === FinalExamType::OpenBook) {
             $sessions = $sessionService->forCourse($this->course->id, ['materials']);
@@ -431,6 +469,11 @@ class ProctorExamShow extends Component
                 ->unique('id')
                 ->values()
                 ->all();
+
+            $referenceFiles = $examReferenceFileService->forAssessmentAndUser($this->assessment->id, auth()->id())
+                ->map(fn (ExamReferenceFile $file) => $this->toReferenceFilePayload($file))
+                ->values()
+                ->all();
         }
 
         return view('livewire.courses.proctor-exam-show', [
@@ -445,6 +488,7 @@ class ProctorExamShow extends Component
             'disqualified' => $disqualified,
             'examMaterials' => $examMaterials,
             'examSessions' => $examSessions,
+            'referenceFiles' => $referenceFiles,
             'deadlineIso' => ($inProgress && $this->quiz->time_limit_per_attempt)
                 ? $inProgress->started_at->copy()->addMinutes($this->quiz->time_limit_per_attempt)->toIso8601String()
                 : null,

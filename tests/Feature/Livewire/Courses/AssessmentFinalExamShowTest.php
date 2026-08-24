@@ -13,6 +13,7 @@ use App\Models\AssessmentQuestion;
 use App\Models\AssessmentScore;
 use App\Models\Course;
 use App\Models\CoursePerson;
+use App\Models\ExamReferenceFile;
 use App\Models\FinalExam;
 use App\Models\Period;
 use App\Models\ProctorEvent;
@@ -21,6 +22,8 @@ use App\Models\ProctorSnapshot;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
+use App\Services\ExamReferenceFileService;
+use App\Services\FinalExamService;
 use App\Services\R2StorageService;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -428,5 +431,120 @@ class AssessmentFinalExamShowTest extends TestCase
 
         Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $personalAssessment])
             ->assertStatus(404);
+    }
+
+    private function makeOpenBookAssessment(): Assessment
+    {
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryFinalExam,
+            'end_date' => now()->addWeek(),
+        ]);
+
+        $period = Period::factory()->for($this->course)->create(['order' => random_int(100, 10000)]);
+        FinalExam::factory()->for($assessment)->create([
+            'period_id' => $period->id,
+            'exam_type' => FinalExamType::OpenBook,
+        ]);
+
+        return $assessment;
+    }
+
+    public function test_generate_reference_file_upload_url_rejects_invalid_material_type(): void
+    {
+        $openBookAssessment = $this->makeOpenBookAssessment();
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $result = Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $openBookAssessment])
+            ->instance()
+            ->generateReferenceFileUploadUrl('notes.exe', 'NotAType', app(FinalExamService::class), app(ExamReferenceFileService::class));
+
+        expect($result)->toHaveKey('error');
+    }
+
+    public function test_generate_reference_file_upload_url_rejects_closed_book_exam(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->call('generateReferenceFileUploadUrl', 'notes.pdf', 'PDF')
+            ->assertStatus(403);
+    }
+
+    public function test_generate_reference_file_upload_url_returns_presigned_url_for_open_book_exam(): void
+    {
+        $openBookAssessment = $this->makeOpenBookAssessment();
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $instance = Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $openBookAssessment])->instance();
+
+        $result = $instance->generateReferenceFileUploadUrl('notes.pdf', 'PDF', app(FinalExamService::class), app(ExamReferenceFileService::class));
+
+        $this->assertArrayHasKey('key', $result);
+        $this->assertStringContainsString((string) $openBookAssessment->id, $result['key']);
+        $this->assertStringContainsString((string) $this->student->id, $result['key']);
+    }
+
+    public function test_finalize_reference_file_upload_persists_record_and_returns_payload(): void
+    {
+        $openBookAssessment = $this->makeOpenBookAssessment();
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $tempKey = "schools/demo/temp/exam-reference/{$openBookAssessment->id}/{$this->student->id}/abc123-notes.pdf";
+
+        $r2Mock = $this->mock(R2StorageService::class);
+        $r2Mock->shouldReceive('verifyFileExists')->once()->with($tempKey)->andReturn(['exists' => true, 'size' => 1024, 'mime_type' => 'application/pdf']);
+        $r2Mock->shouldReceive('downloadToLocalTemp')->once()->with($tempKey)->andReturn(sys_get_temp_dir().'/fake-notes.pdf');
+        $r2Mock->shouldReceive('validateFileContent')->once();
+        $r2Mock->shouldReceive('validateMimeType')->once();
+        $r2Mock->shouldReceive('schoolPrefix')->once()->andReturn('schools/demo/');
+        $r2Mock->shouldReceive('promoteFromTemp')->once();
+        $r2Mock->shouldReceive('getPublicUrl')->andReturn('https://example.test/notes.pdf');
+
+        $instance = Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $openBookAssessment])->instance();
+
+        $result = $instance->finalizeReferenceFileUpload([
+            'type' => 'PDF',
+            'temp_key' => $tempKey,
+            'title' => 'notes.pdf',
+        ], app(FinalExamService::class), app(ExamReferenceFileService::class));
+
+        $this->assertArrayHasKey('file', $result);
+        $this->assertSame('notes.pdf', $result['file']['title']);
+
+        $this->assertDatabaseHas('exam_reference_files', [
+            'assessment_id' => $openBookAssessment->id,
+            'user_id' => $this->student->id,
+            'title' => 'notes.pdf',
+        ]);
+    }
+
+    public function test_delete_reference_file_only_removes_the_students_own_file(): void
+    {
+        $openBookAssessment = $this->makeOpenBookAssessment();
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $otherStudent = User::factory()->forSchool($this->school)->create();
+        $otherFile = ExamReferenceFile::factory()->for($openBookAssessment)->for($otherStudent)->create();
+        $ownFile = ExamReferenceFile::factory()->for($openBookAssessment)->for($this->student)->create();
+
+        $r2Mock = $this->mock(R2StorageService::class);
+        $r2Mock->shouldReceive('delete')->once();
+        $r2Mock->shouldReceive('getPublicUrl')->andReturn('https://example.test/file');
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $openBookAssessment])
+            ->call('deleteReferenceFile', $ownFile->id)
+            ->call('deleteReferenceFile', $otherFile->id);
+
+        $this->assertDatabaseMissing('exam_reference_files', ['id' => $ownFile->id]);
+        $this->assertDatabaseHas('exam_reference_files', ['id' => $otherFile->id]);
     }
 }

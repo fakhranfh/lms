@@ -14,6 +14,7 @@ use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
 use App\Models\Course;
 use App\Models\CoursePerson;
+use App\Models\ExamReferenceFile;
 use App\Models\FinalExam;
 use App\Models\MediaLibraryItem;
 use App\Models\Period;
@@ -459,6 +460,32 @@ class ProctorExamShowTest extends TestCase
             ->call('startAttempt')
             ->assertSet('examType', FinalExamType::OpenBook)
             ->assertSeeHtml('Reference Sheet');
+    }
+
+    public function test_open_book_attempt_view_exposes_reference_files_for_alpine(): void
+    {
+        ExamReferenceFile::factory()->for($this->assessment)->for($this->student)->create(['title' => 'My Cheat Sheet.pdf']);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->assertSet('examType', FinalExamType::OpenBook)
+            ->assertSeeHtml('My Cheat Sheet.pdf');
+    }
+
+    public function test_open_book_attempt_view_only_exposes_the_students_own_reference_files(): void
+    {
+        $otherStudent = User::factory()->forSchool($this->school)->create();
+        ExamReferenceFile::factory()->for($this->assessment)->for($otherStudent)->create(['title' => 'Someone Elses Notes.pdf']);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->assertDontSeeHtml('Someone Elses Notes.pdf');
     }
 
     public function test_closed_book_attempt_view_does_not_expose_course_materials(): void

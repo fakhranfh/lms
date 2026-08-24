@@ -37,6 +37,8 @@ use App\Repositories\CoursePerson\CoursePersonRepository;
 use App\Repositories\CoursePerson\CoursePersonRepositoryInterface;
 use App\Repositories\DemoLmsAccess\DemoLmsAccessRepository;
 use App\Repositories\DemoLmsAccess\DemoLmsAccessRepositoryInterface;
+use App\Repositories\ExamReferenceFile\ExamReferenceFileRepository;
+use App\Repositories\ExamReferenceFile\ExamReferenceFileRepositoryInterface;
 use App\Repositories\FinalExam\FinalExamRepository;
 use App\Repositories\FinalExam\FinalExamRepositoryInterface;
 use App\Repositories\Forum\ForumRepository;
@@ -270,6 +272,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ProctorSessionRepositoryInterface::class, ProctorSessionRepository::class);
         $this->app->bind(ProctorEventRepositoryInterface::class, ProctorEventRepository::class);
         $this->app->bind(ProctorSnapshotRepositoryInterface::class, ProctorSnapshotRepository::class);
+        $this->app->bind(ExamReferenceFileRepositoryInterface::class, ExamReferenceFileRepository::class);
         $this->app->bind(GradebookGradeScaleRepositoryInterface::class, GradebookGradeScaleRepository::class);
         $this->app->bind(GradebookEntryRepositoryInterface::class, GradebookEntryRepository::class);
         $this->app->bind(GradebookSessionEntryRepositoryInterface::class, GradebookSessionEntryRepository::class);

@@ -40,6 +40,23 @@
                         return matchesSession && matchesSearch;
                     });
                 },
+                referenceFiles: @js($referenceFiles ?? []),
+                referenceListOpen: false,
+                referenceSearch: '',
+                referenceTypeFilter: '',
+                get referenceTypeOptions() {
+                    return [...new Set(this.referenceFiles.map((file) => file.type))];
+                },
+                get filteredReferenceFiles() {
+                    const search = this.referenceSearch.trim().toLowerCase();
+
+                    return this.referenceFiles.filter((file) => {
+                        const matchesType = ! this.referenceTypeFilter || file.type === this.referenceTypeFilter;
+                        const matchesSearch = ! search || file.title.toLowerCase().includes(search);
+
+                        return matchesType && matchesSearch;
+                    });
+                },
                 currentQuestion: 0,
                 eventAbortController: null,
                 readingDetector: null,
@@ -239,6 +256,7 @@
                     this.submitting = true;
                     this.materialListOpen = false;
                     this.materialViewerOpen = false;
+                    this.referenceListOpen = false;
                     clearInterval(this.timer);
                     this.eventAbortController?.abort();
                     this.readingDetector?.stop();
@@ -318,6 +336,7 @@
                 },
                 openMaterial(material) {
                     this.materialListOpen = false;
+                    this.referenceListOpen = false;
                     this.viewingMaterial = material;
                     this.materialViewerOpen = true;
                 },
@@ -464,6 +483,18 @@
                             <span class="material-symbols-outlined text-[18px]">folder_open</span>
                             Course Materials
                             <span class="ml-auto text-body-xs text-secondary" x-text="examMaterials.length"></span>
+                        </button>
+                    </div>
+
+                    <div x-show="allowedTypes === 'open_book' && referenceFiles.length" x-cloak>
+                        <button
+                            type="button"
+                            @click="referenceListOpen = true"
+                            class="w-full flex items-center gap-space-sm px-space-md py-space-sm bg-surface-container rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container/70 transition"
+                        >
+                            <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                            Reference Files
+                            <span class="ml-auto text-body-xs text-secondary" x-text="referenceFiles.length"></span>
                         </button>
                     </div>
 
@@ -699,6 +730,74 @@
 
             <template x-teleport="body">
                 <div
+                    x-show="referenceListOpen"
+                    x-cloak
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0"
+                    x-transition:enter-end="opacity-100"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 z-[124] flex items-center justify-center bg-black/50 px-gutter"
+                    @click.self="referenceListOpen = false"
+                >
+                    <div class="bg-surface border border-outline-variant rounded-lg w-full h-full max-h-[90vh] flex flex-col">
+                        <div class="flex items-center justify-between gap-space-md px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">
+                            <h2 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-space-sm">
+                                <span class="material-symbols-outlined text-[20px]">upload_file</span>
+                                Reference Files
+                            </h2>
+                            <button type="button" @click="referenceListOpen = false" class="text-secondary hover:text-on-surface transition">
+                                <span class="material-symbols-outlined text-[22px]">close</span>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-md px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">
+                            <div class="flex-1 h-9 flex items-center gap-space-sm px-space-md border border-outline rounded-lg focus-within:ring-2 focus-within:ring-primary/50">
+                                <span class="material-symbols-outlined text-[18px] leading-none text-secondary">search</span>
+                                <input
+                                    type="text"
+                                    x-model="referenceSearch"
+                                    placeholder="Search reference files..."
+                                    class="w-full border-0 bg-transparent font-body-sm text-body-sm focus:outline-none focus:ring-0"
+                                />
+                            </div>
+
+                            <select
+                                x-model="referenceTypeFilter"
+                                class="h-9 px-space-md border border-outline rounded-lg font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            >
+                                <option value="">All Types</option>
+                                <template x-for="type in referenceTypeOptions" :key="type">
+                                    <option :value="type" x-text="type"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div class="overflow-y-auto p-space-lg flex-1">
+                            <div class="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 gap-space-lg">
+                                <template x-for="file in filteredReferenceFiles" :key="file.id">
+                                    <button
+                                        type="button"
+                                        @click="openMaterial(file)"
+                                        class="flex flex-col items-center gap-space-sm p-space-md rounded-lg hover:bg-surface-container transition text-center"
+                                    >
+                                        <span class="text-4xl" x-text="file.icon"></span>
+                                        <span class="w-full truncate font-body-xs text-body-xs text-on-surface" x-text="file.title"></span>
+                                    </button>
+                                </template>
+                            </div>
+
+                            <p x-show="! filteredReferenceFiles.length" x-cloak class="text-center text-body-sm text-secondary py-space-xl">
+                                No reference files found.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <template x-teleport="body">
+                <div
                     x-show="materialViewerOpen"
                     x-cloak
                     x-transition:enter="transition ease-out duration-200"
@@ -707,149 +806,231 @@
                     x-transition:leave="transition ease-in duration-150"
                     x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0"
-                    class="fixed inset-0 z-[125] flex items-center justify-center bg-black/70 px-gutter"
+                    class="fixed inset-0 z-[125] bg-surface flex flex-col"
                 >
-                    <div class="bg-surface rounded-lg p-space-lg max-w-4xl w-full max-h-[90vh] flex flex-col gap-space-md">
-                        <div class="flex items-center justify-between gap-space-md flex-shrink-0">
-                            <h2 class="font-headline-sm text-headline-sm text-on-surface truncate" x-text="viewingMaterial?.title"></h2>
-                            <div class="flex items-center gap-space-sm flex-shrink-0">
-                                <button
-                                    type="button"
-                                    @click="closeMaterialViewer()"
-                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
-                                >
-                                    Close
-                                </button>
-                            </div>
+                    <div class="flex items-center justify-between gap-space-md flex-shrink-0 px-space-lg py-space-md border-b border-outline-variant">
+                        <h2 class="font-headline-sm text-headline-sm text-on-surface truncate" x-text="viewingMaterial?.title"></h2>
+                        <div class="flex items-center gap-space-sm flex-shrink-0">
+                            <button
+                                type="button"
+                                @click="closeMaterialViewer()"
+                                class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                            >
+                                Close
+                            </button>
                         </div>
+                    </div>
 
-                        <div
-                            class="bg-surface-container rounded-lg flex-1 overflow-auto"
-                            :class="viewingMaterial?.type === 'Markdown' ? '' : 'aspect-video'"
-                        >
-                            <template x-if="viewingMaterial?.type === 'Video'">
-                                <video :src="viewingMaterial.url" width="100%" height="100%" controls class="w-full h-full">
-                                    Your browser does not support the video tag.
-                                </video>
-                            </template>
+                    <div class="bg-surface-container flex-1 overflow-auto">
+                        <template x-if="viewingMaterial?.type === 'Video'">
+                            <video :src="viewingMaterial.url" width="100%" height="100%" controls class="w-full h-full">
+                                Your browser does not support the video tag.
+                            </video>
+                        </template>
 
-                            <template x-if="viewingMaterial?.type === 'PDF'">
-                                <embed :src="viewingMaterial.url" type="application/pdf" width="100%" height="100%" class="rounded" />
-                            </template>
+                        <template x-if="viewingMaterial?.type === 'PDF' || (viewingMaterial?.type === 'Document' && viewingMaterial.extension === 'pdf')">
+                            <div
+                                x-data="{
+                                    pdfLoaded: false,
+                                    pdfLoadedUrl: null,
+                                    pdfPage: 1,
+                                    pdfPageCount: 0,
+                                    pdfPageInput: '1',
+                                    pdfLoading: false,
+                                    pdfError: null,
+                                    async loadPdf(url) {
+                                        if (this.pdfLoadedUrl === url) { return; }
+                                        this.pdfLoadedUrl = url;
+                                        this.pdfLoaded = false;
+                                        this.pdfPage = 1;
+                                        this.pdfPageInput = '1';
+                                        this.pdfPageCount = 0;
+                                        this.pdfError = null;
+                                        this.pdfLoading = true;
 
-                            <template x-if="viewingMaterial?.type === 'Audio'">
-                                <div class="w-full h-full flex flex-col items-center justify-center gap-space-md p-space-lg">
-                                    <span class="text-5xl">🎵</span>
-                                    <p class="text-body-md text-on-surface" x-text="viewingMaterial.title"></p>
-                                    <audio :src="viewingMaterial.url" controls class="w-full">
-                                        Your browser does not support the audio element.
-                                    </audio>
-                                </div>
-                            </template>
-
-                            <template x-if="viewingMaterial?.type === 'Image'">
-                                <div class="w-full h-full flex items-center justify-center overflow-auto">
-                                    <img :src="viewingMaterial.url" :alt="viewingMaterial.title" class="max-w-full max-h-full" />
-                                </div>
-                            </template>
-
-                            <template x-if="viewingMaterial?.type === 'Interactive'">
-                                <iframe
-                                    :src="viewingMaterial.url"
-                                    class="w-full h-full rounded border-0"
-                                    sandbox="allow-scripts allow-same-origin allow-forms"
-                                    :title="viewingMaterial.title"
-                                ></iframe>
-                            </template>
-
-                            <template x-if="viewingMaterial?.type === 'Presentation'">
-                                <iframe
-                                    :src="'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(viewingMaterial.url)"
-                                    width="100%"
-                                    height="100%"
-                                    frameborder="0"
-                                    class="rounded"
-                                ></iframe>
-                            </template>
-
-                            <template x-if="viewingMaterial?.type === 'Document' && viewingMaterial.extension === 'pdf'">
-                                <embed :src="viewingMaterial.url" type="application/pdf" width="100%" height="100%" class="rounded" />
-                            </template>
-
-                            <template x-if="viewingMaterial?.type === 'Document' && ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(viewingMaterial.extension)">
-                                <iframe
-                                    :src="'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(viewingMaterial.url)"
-                                    width="100%"
-                                    height="100%"
-                                    frameborder="0"
-                                    class="rounded"
-                                ></iframe>
-                            </template>
-
-                            <template x-if="viewingMaterial?.type === 'Document' && ['txt', 'csv', 'md'].includes(viewingMaterial.extension)">
+                                        try {
+                                            const { numPages } = await window.loadPdfIntoContainer(this.$refs.pdfCanvas, url);
+                                            this.pdfLoaded = true;
+                                            this.pdfPageCount = numPages;
+                                            await this.renderCurrentPage();
+                                        } catch (e) {
+                                            this.pdfError = e.message || 'Failed to load PDF';
+                                        } finally {
+                                            this.pdfLoading = false;
+                                        }
+                                    },
+                                    async renderCurrentPage() {
+                                        if (! this.pdfLoaded) { return; }
+                                        try {
+                                            await window.renderPdfPage(this.$refs.pdfCanvas, this.pdfPage);
+                                        } catch (e) {
+                                            this.pdfError = e.message || 'Failed to render page';
+                                        }
+                                    },
+                                    goToPage(page) {
+                                        const target = Math.min(Math.max(parseInt(page) || 1, 1), this.pdfPageCount);
+                                        this.pdfPageInput = String(target);
+                                        if (target === this.pdfPage) { return; }
+                                        this.pdfPage = target;
+                                        this.renderCurrentPage();
+                                    },
+                                }"
+                                x-effect="loadPdf(viewingMaterial.url)"
+                                class="w-full h-full flex flex-col"
+                            >
                                 <div
-                                    x-data="{ text: null, error: null }"
-                                    x-init="
-                                        fetch(viewingMaterial.url)
-                                            .then(response => {
-                                                if (! response.ok) throw new Error('HTTP ' + response.status);
-                                                return response.text();
-                                            })
-                                            .then(content => { text = content; })
-                                            .catch(err => { error = err.message; });
-                                    "
-                                    class="w-full h-full overflow-auto p-space-lg"
+                                    x-show="pdfPageCount > 1"
+                                    x-cloak
+                                    class="flex items-center justify-center gap-space-sm px-space-lg py-space-sm border-b border-outline-variant flex-shrink-0 bg-surface"
                                 >
-                                    <template x-if="! text && ! error">
+                                    <button
+                                        type="button"
+                                        @click="goToPage(pdfPage - 1)"
+                                        :disabled="pdfPage <= 1"
+                                        class="px-space-sm py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition disabled:opacity-50"
+                                    >
+                                        <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                                    </button>
+
+                                    <form @submit.prevent="goToPage(pdfPageInput)" class="flex items-center gap-space-xs">
+                                        <span class="text-body-sm text-on-surface-variant">Page</span>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            :max="pdfPageCount"
+                                            x-model="pdfPageInput"
+                                            @blur="goToPage(pdfPageInput)"
+                                            class="w-16 px-space-sm py-1 border border-outline rounded-lg font-body-sm text-body-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                        />
+                                        <span class="text-body-sm text-on-surface-variant" x-text="'of ' + pdfPageCount"></span>
+                                    </form>
+
+                                    <button
+                                        type="button"
+                                        @click="goToPage(pdfPage + 1)"
+                                        :disabled="pdfPage >= pdfPageCount"
+                                        class="px-space-sm py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition disabled:opacity-50"
+                                    >
+                                        <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                                    </button>
+                                </div>
+
+                                <div class="flex-1 overflow-auto p-space-lg">
+                                    <p x-show="pdfLoading" x-cloak class="text-center text-on-surface-variant">Loading PDF...</p>
+                                    <p x-show="pdfError" x-cloak class="text-center text-error" x-text="pdfError"></p>
+                                    <div x-show="! pdfLoading && ! pdfError" x-cloak x-ref="pdfCanvas"></div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="viewingMaterial?.type === 'Audio'">
+                            <div class="w-full h-full flex flex-col items-center justify-center gap-space-md p-space-lg">
+                                <span class="text-5xl">🎵</span>
+                                <p class="text-body-md text-on-surface" x-text="viewingMaterial.title"></p>
+                                <audio :src="viewingMaterial.url" controls class="w-full">
+                                    Your browser does not support the audio element.
+                                </audio>
+                            </div>
+                        </template>
+
+                        <template x-if="viewingMaterial?.type === 'Image'">
+                            <div class="w-full h-full flex items-center justify-center overflow-auto">
+                                <img :src="viewingMaterial.url" :alt="viewingMaterial.title" class="max-w-full max-h-full" />
+                            </div>
+                        </template>
+
+                        <template x-if="viewingMaterial?.type === 'Interactive'">
+                            <iframe
+                                :src="viewingMaterial.url"
+                                class="w-full h-full rounded border-0"
+                                sandbox="allow-scripts allow-same-origin allow-forms"
+                                :title="viewingMaterial.title"
+                            ></iframe>
+                        </template>
+
+                        <template x-if="viewingMaterial?.type === 'Presentation'">
+                            <iframe
+                                :src="'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(viewingMaterial.url)"
+                                width="100%"
+                                height="100%"
+                                frameborder="0"
+                                class="rounded"
+                            ></iframe>
+                        </template>
+
+                        <template x-if="viewingMaterial?.type === 'Document' && ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(viewingMaterial.extension)">
+                            <iframe
+                                :src="'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(viewingMaterial.url)"
+                                width="100%"
+                                height="100%"
+                                frameborder="0"
+                                class="rounded"
+                            ></iframe>
+                        </template>
+
+                        <template x-if="viewingMaterial?.type === 'Document' && ['txt', 'csv', 'md'].includes(viewingMaterial.extension)">
+                            <div
+                                x-data="{ text: null, error: null }"
+                                x-init="
+                                    fetch(viewingMaterial.url)
+                                        .then(response => {
+                                            if (! response.ok) throw new Error('HTTP ' + response.status);
+                                            return response.text();
+                                        })
+                                        .then(content => { text = content; })
+                                        .catch(err => { error = err.message; });
+                                "
+                                class="w-full h-full overflow-auto p-space-lg"
+                            >
+                                <template x-if="! text && ! error">
+                                    <p class="text-center text-on-surface-variant">Loading...</p>
+                                </template>
+                                <template x-if="error">
+                                    <p class="text-red-600 font-medium" x-text="'Error loading document: ' + error"></p>
+                                </template>
+                                <pre x-show="text" class="whitespace-pre-wrap font-body-sm text-body-sm text-on-surface" x-text="text"></pre>
+                            </div>
+                        </template>
+
+                        <template x-if="viewingMaterial?.type === 'Document' && ! ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'md'].includes(viewingMaterial.extension)">
+                            <div class="w-full h-full flex flex-col items-center justify-center gap-space-md p-space-lg">
+                                <span class="text-5xl">📝</span>
+                                <p class="text-body-md text-on-surface" x-text="viewingMaterial.title"></p>
+                                <a
+                                    :href="viewingMaterial.url"
+                                    download
+                                    class="px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition"
+                                >
+                                    Download Document
+                                </a>
+                            </div>
+                        </template>
+
+                        <template x-if="viewingMaterial?.type === 'Markdown'">
+                            <div
+                                x-data="{ html: null, error: null }"
+                                x-init="
+                                    fetch(viewingMaterial.url)
+                                        .then(response => {
+                                            if (! response.ok) throw new Error('HTTP ' + response.status);
+                                            return response.text();
+                                        })
+                                        .then(markdown => { html = window.renderMarkdown(markdown); })
+                                        .catch(err => { error = err.message; });
+                                "
+                                class="w-full p-space-lg"
+                            >
+                                <div class="w-full text-on-surface">
+                                    <template x-if="! html && ! error">
                                         <p class="text-center text-on-surface-variant">Loading...</p>
                                     </template>
                                     <template x-if="error">
-                                        <p class="text-red-600 font-medium" x-text="'Error loading document: ' + error"></p>
+                                        <p class="text-red-600 font-medium" x-text="'Error loading markdown: ' + error"></p>
                                     </template>
-                                    <pre x-show="text" class="whitespace-pre-wrap font-body-sm text-body-sm text-on-surface" x-text="text"></pre>
+                                    <div x-show="html" x-html="html"></div>
                                 </div>
-                            </template>
-
-                            <template x-if="viewingMaterial?.type === 'Document' && ! ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'md'].includes(viewingMaterial.extension)">
-                                <div class="w-full h-full flex flex-col items-center justify-center gap-space-md p-space-lg">
-                                    <span class="text-5xl">📝</span>
-                                    <p class="text-body-md text-on-surface" x-text="viewingMaterial.title"></p>
-                                    <a
-                                        :href="viewingMaterial.url"
-                                        download
-                                        class="px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition"
-                                    >
-                                        Download Document
-                                    </a>
-                                </div>
-                            </template>
-
-                            <template x-if="viewingMaterial?.type === 'Markdown'">
-                                <div
-                                    x-data="{ html: null, error: null }"
-                                    x-init="
-                                        fetch(viewingMaterial.url)
-                                            .then(response => {
-                                                if (! response.ok) throw new Error('HTTP ' + response.status);
-                                                return response.text();
-                                            })
-                                            .then(markdown => { html = window.renderMarkdown(markdown); })
-                                            .catch(err => { error = err.message; });
-                                    "
-                                    class="w-full p-space-lg"
-                                >
-                                    <div class="w-full text-on-surface">
-                                        <template x-if="! html && ! error">
-                                            <p class="text-center text-on-surface-variant">Loading...</p>
-                                        </template>
-                                        <template x-if="error">
-                                            <p class="text-red-600 font-medium" x-text="'Error loading markdown: ' + error"></p>
-                                        </template>
-                                        <div x-show="html" x-html="html"></div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </template>
@@ -1109,4 +1290,5 @@
 
 @push('scripts')
     @include('partials.markdown-renderer-script')
+    @include('partials.pdf-reader-script')
 @endpush

@@ -191,7 +191,367 @@
                 </div>
             @elseif ($canSubmit && $canResubmit && $finalExam && in_array($finalExam->exam_type->value, ['open_book', 'closed_book']))
                 @if ($assessment->quiz && $assessment->quiz->questions->isNotEmpty())
-                    <div x-data="{ confirmOpen: false, navigating: false }">
+                    <div
+                        x-data="{
+                            confirmOpen: false,
+                            navigating: false,
+                            referenceFiles: @js($referenceFiles ?? []),
+                            referenceExtensionTypeMap: @js($referenceExtensionTypeMap ?? []),
+                            referenceUploads: [],
+                            referenceRemovingIds: [],
+                            referenceError: @js($referenceFileError ?? null),
+                            referenceViewerOpen: false,
+                            viewingReferenceFile: null,
+                            openReferenceFile(file) {
+                                this.viewingReferenceFile = file;
+                                this.referenceViewerOpen = true;
+                            },
+                            closeReferenceFileViewer() {
+                                this.referenceViewerOpen = false;
+                                this.viewingReferenceFile = null;
+                            },
+                            uploadReferenceFiles(fileList) {
+                                const files = Array.from(fileList || []);
+                                if (files.length === 0) { return; }
+
+                                this.referenceError = null;
+                                files.forEach((file) => this.uploadReferenceFile(file));
+                                this.$refs.referenceFileInput.value = '';
+                            },
+                            async uploadReferenceFile(file) {
+                                const extension = file.name.split('.').pop().toLowerCase();
+                                const materialType = this.referenceExtensionTypeMap[extension];
+
+                                const upload = {
+                                    key: file.name + '-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+                                    name: file.name,
+                                    progress: 0,
+                                    statusText: 'Preparing upload...',
+                                    error: null,
+                                };
+                                this.referenceUploads = [...this.referenceUploads, upload];
+
+                                if (! materialType) {
+                                    upload.error = 'Unsupported file type: .' + extension;
+
+                                    return;
+                                }
+
+                                try {
+                                    const result = await $wire.generateReferenceFileUploadUrl(file.name, materialType);
+
+                                    if (result.error) {
+                                        upload.error = result.error;
+
+                                        return;
+                                    }
+
+                                    upload.statusText = 'Uploading...';
+                                    await this.putReferenceFile(result.url, file, upload);
+
+                                    upload.statusText = 'Finalizing...';
+                                    const finalizeResult = await $wire.finalizeReferenceFileUpload({
+                                        type: materialType,
+                                        temp_key: result.key,
+                                        title: file.name,
+                                    });
+
+                                    if (finalizeResult?.error) {
+                                        upload.error = finalizeResult.error;
+                                    } else if (finalizeResult?.file) {
+                                        this.referenceFiles = [...this.referenceFiles, finalizeResult.file];
+                                        this.referenceUploads = this.referenceUploads.filter((u) => u.key !== upload.key);
+                                    }
+                                } catch (error) {
+                                    upload.error = error.message || 'Upload failed';
+                                }
+                            },
+                            putReferenceFile(url, file, upload) {
+                                return new Promise((resolve, reject) => {
+                                    const xhr = new XMLHttpRequest();
+                                    xhr.open('PUT', url, true);
+                                    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+                                    xhr.upload.addEventListener('progress', (event) => {
+                                        if (event.lengthComputable) {
+                                            upload.progress = Math.round((event.loaded / event.total) * 100);
+                                        }
+                                    });
+
+                                    xhr.addEventListener('load', () => {
+                                        if (xhr.status >= 200 && xhr.status < 300) {
+                                            resolve();
+                                        } else {
+                                            reject(new Error('Upload failed with status ' + xhr.status));
+                                        }
+                                    });
+
+                                    xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
+
+                                    xhr.send(file);
+                                });
+                            },
+                            dismissReferenceUpload(key) {
+                                this.referenceUploads = this.referenceUploads.filter((u) => u.key !== key);
+                            },
+                            async removeReferenceFile(id) {
+                                this.referenceRemovingIds = [...this.referenceRemovingIds, id];
+                                try {
+                                    await $wire.deleteReferenceFile(id);
+                                    this.referenceFiles = this.referenceFiles.filter((file) => file.id !== id);
+                                } finally {
+                                    this.referenceRemovingIds = this.referenceRemovingIds.filter((removingId) => removingId !== id);
+                                }
+                            },
+                        }"
+                    >
+                        @if ($isOpenBook ?? false)
+                            <div class="mb-space-lg space-y-space-sm text-left" wire:key="reference-file-upload">
+                                <p class="font-label-sm text-label-sm text-secondary">Reference Files</p>
+                                <p class="text-body-xs text-on-surface-variant">Upload any documents, images, or slides you want to reference during this open-book exam.</p>
+
+                                <template x-if="referenceError">
+                                    <p class="text-body-xs text-error" x-text="referenceError"></p>
+                                </template>
+
+                                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-space-md" x-show="referenceFiles.length > 0" x-cloak>
+                                    <template x-for="file in referenceFiles" :key="file.id">
+                                        <div class="relative group">
+                                            <template x-if="referenceRemovingIds.includes(file.id)">
+                                                <div class="flex flex-col items-center gap-space-sm p-space-md rounded-lg animate-pulse">
+                                                    <div class="w-10 h-10 rounded-lg bg-surface-container"></div>
+                                                    <div class="w-full h-3 rounded bg-surface-container"></div>
+                                                </div>
+                                            </template>
+                                            <template x-if="!referenceRemovingIds.includes(file.id)">
+                                                <button
+                                                    type="button"
+                                                    @click="openReferenceFile(file)"
+                                                    class="w-full flex flex-col items-center gap-space-sm p-space-md rounded-lg hover:bg-surface-container transition text-center"
+                                                >
+                                                    <span class="text-4xl" x-text="file.icon"></span>
+                                                    <span class="w-full truncate font-body-xs text-body-xs text-on-surface" x-text="file.title"></span>
+                                                </button>
+                                            </template>
+                                            <button
+                                                type="button"
+                                                x-show="!referenceRemovingIds.includes(file.id)"
+                                                @click="removeReferenceFile(file.id)"
+                                                class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-error text-white opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
+                                                title="Remove"
+                                            >
+                                                <span class="material-symbols-outlined text-[14px]">close</span>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-space-md" x-show="referenceUploads.length > 0" x-cloak>
+                                    <template x-for="upload in referenceUploads" :key="upload.key">
+                                        <div class="relative flex flex-col items-center gap-space-sm p-space-md rounded-lg text-center">
+                                            <span class="text-4xl" :class="upload.error ? '' : 'animate-pulse'" x-text="upload.error ? '⚠️' : '📤'"></span>
+                                            <span class="w-full truncate font-body-xs text-body-xs text-on-surface" x-text="upload.name"></span>
+
+                                            <template x-if="upload.error">
+                                                <p class="w-full text-body-xs text-error truncate" x-text="upload.error"></p>
+                                            </template>
+                                            <template x-if="!upload.error">
+                                                <div class="w-full space-y-space-xs">
+                                                    <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                                                        <div class="h-full bg-primary transition-all duration-150" :style="`width: ${upload.progress}%`"></div>
+                                                    </div>
+                                                    <p class="text-body-xs text-on-surface-variant truncate" x-text="upload.statusText + (upload.statusText === 'Uploading...' ? ' (' + upload.progress + '%)' : '')"></p>
+                                                </div>
+                                            </template>
+
+                                            <button
+                                                type="button"
+                                                x-show="upload.error"
+                                                x-cloak
+                                                @click="dismissReferenceUpload(upload.key)"
+                                                class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-error text-white flex items-center justify-center"
+                                                title="Dismiss"
+                                            >
+                                                <span class="material-symbols-outlined text-[14px]">close</span>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <input
+                                    type="file"
+                                    multiple
+                                    x-ref="referenceFileInput"
+                                    accept="{{ $referenceAcceptedExtensions ?? '' }}"
+                                    class="hidden"
+                                    @change="uploadReferenceFiles($refs.referenceFileInput.files)"
+                                />
+                                <button
+                                    type="button"
+                                    @click="$refs.referenceFileInput.click()"
+                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                                >
+                                    Upload Reference Files
+                                </button>
+                            </div>
+
+                            <template x-teleport="body">
+                                <div
+                                    x-show="referenceViewerOpen"
+                                    x-cloak
+                                    x-transition:enter="transition ease-out duration-200"
+                                    x-transition:enter-start="opacity-0"
+                                    x-transition:enter-end="opacity-100"
+                                    x-transition:leave="transition ease-in duration-150"
+                                    x-transition:leave-start="opacity-100"
+                                    x-transition:leave-end="opacity-0"
+                                    class="fixed inset-0 z-[125] flex items-center justify-center bg-black/70 px-gutter"
+                                    @click.self="closeReferenceFileViewer()"
+                                >
+                                    <div class="bg-surface rounded-lg p-space-lg max-w-4xl w-full max-h-[90vh] flex flex-col gap-space-md">
+                                        <div class="flex items-center justify-between gap-space-md flex-shrink-0">
+                                            <h2 class="font-headline-sm text-headline-sm text-on-surface truncate" x-text="viewingReferenceFile?.title"></h2>
+                                            <button
+                                                type="button"
+                                                @click="closeReferenceFileViewer()"
+                                                class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition flex-shrink-0"
+                                            >
+                                                Close
+                                            </button>
+                                        </div>
+
+                                        <div
+                                            class="bg-surface-container rounded-lg flex-1 overflow-auto"
+                                            :class="viewingReferenceFile?.type === 'Markdown' ? '' : 'aspect-video'"
+                                        >
+                                            <template x-if="viewingReferenceFile?.type === 'Video'">
+                                                <video :src="viewingReferenceFile.url" width="100%" height="100%" controls class="w-full h-full">
+                                                    Your browser does not support the video tag.
+                                                </video>
+                                            </template>
+
+                                            <template x-if="viewingReferenceFile?.type === 'PDF'">
+                                                <embed :src="viewingReferenceFile.url" type="application/pdf" width="100%" height="100%" class="rounded" />
+                                            </template>
+
+                                            <template x-if="viewingReferenceFile?.type === 'Audio'">
+                                                <div class="w-full h-full flex flex-col items-center justify-center gap-space-md p-space-lg">
+                                                    <span class="text-5xl">🎵</span>
+                                                    <p class="text-body-md text-on-surface" x-text="viewingReferenceFile.title"></p>
+                                                    <audio :src="viewingReferenceFile.url" controls class="w-full">
+                                                        Your browser does not support the audio element.
+                                                    </audio>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="viewingReferenceFile?.type === 'Image'">
+                                                <div class="w-full h-full flex items-center justify-center overflow-auto">
+                                                    <img :src="viewingReferenceFile.url" :alt="viewingReferenceFile.title" class="max-w-full max-h-full" />
+                                                </div>
+                                            </template>
+
+                                            <template x-if="viewingReferenceFile?.type === 'Interactive'">
+                                                <iframe
+                                                    :src="viewingReferenceFile.url"
+                                                    class="w-full h-full rounded border-0"
+                                                    sandbox="allow-scripts allow-same-origin allow-forms"
+                                                    :title="viewingReferenceFile.title"
+                                                ></iframe>
+                                            </template>
+
+                                            <template x-if="viewingReferenceFile?.type === 'Presentation'">
+                                                <iframe
+                                                    :src="'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(viewingReferenceFile.url)"
+                                                    width="100%"
+                                                    height="100%"
+                                                    frameborder="0"
+                                                    class="rounded"
+                                                ></iframe>
+                                            </template>
+
+                                            <template x-if="viewingReferenceFile?.type === 'Document' && viewingReferenceFile.extension === 'pdf'">
+                                                <embed :src="viewingReferenceFile.url" type="application/pdf" width="100%" height="100%" class="rounded" />
+                                            </template>
+
+                                            <template x-if="viewingReferenceFile?.type === 'Document' && ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(viewingReferenceFile.extension)">
+                                                <iframe
+                                                    :src="'https://view.officeapps.live.com/op/embed.aspx?src=' + encodeURIComponent(viewingReferenceFile.url)"
+                                                    width="100%"
+                                                    height="100%"
+                                                    frameborder="0"
+                                                    class="rounded"
+                                                ></iframe>
+                                            </template>
+
+                                            <template x-if="viewingReferenceFile?.type === 'Document' && ['txt', 'csv', 'md'].includes(viewingReferenceFile.extension)">
+                                                <div
+                                                    x-data="{ text: null, error: null }"
+                                                    x-init="
+                                                        fetch(viewingReferenceFile.url)
+                                                            .then(response => {
+                                                                if (! response.ok) throw new Error('HTTP ' + response.status);
+                                                                return response.text();
+                                                            })
+                                                            .then(content => { text = content; })
+                                                            .catch(err => { error = err.message; });
+                                                    "
+                                                    class="w-full h-full overflow-auto p-space-lg"
+                                                >
+                                                    <template x-if="! text && ! error">
+                                                        <p class="text-center text-on-surface-variant">Loading...</p>
+                                                    </template>
+                                                    <template x-if="error">
+                                                        <p class="text-red-600 font-medium" x-text="'Error loading document: ' + error"></p>
+                                                    </template>
+                                                    <pre x-show="text" class="whitespace-pre-wrap font-body-sm text-body-sm text-on-surface" x-text="text"></pre>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="viewingReferenceFile?.type === 'Document' && ! ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'md'].includes(viewingReferenceFile.extension)">
+                                                <div class="w-full h-full flex flex-col items-center justify-center gap-space-md p-space-lg">
+                                                    <span class="text-5xl">📝</span>
+                                                    <p class="text-body-md text-on-surface" x-text="viewingReferenceFile.title"></p>
+                                                    <a
+                                                        :href="viewingReferenceFile.url"
+                                                        download
+                                                        class="px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition"
+                                                    >
+                                                        Download Document
+                                                    </a>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="viewingReferenceFile?.type === 'Markdown'">
+                                                <div
+                                                    x-data="{ html: null, error: null }"
+                                                    x-init="
+                                                        fetch(viewingReferenceFile.url)
+                                                            .then(response => {
+                                                                if (! response.ok) throw new Error('HTTP ' + response.status);
+                                                                return response.text();
+                                                            })
+                                                            .then(markdown => { html = window.renderMarkdown(markdown); })
+                                                            .catch(err => { error = err.message; });
+                                                    "
+                                                    class="w-full p-space-lg"
+                                                >
+                                                    <div class="w-full text-on-surface">
+                                                        <template x-if="! html && ! error">
+                                                            <p class="text-center text-on-surface-variant">Loading...</p>
+                                                        </template>
+                                                        <template x-if="error">
+                                                            <p class="text-red-600 font-medium" x-text="'Error loading markdown: ' + error"></p>
+                                                        </template>
+                                                        <div x-show="html" x-html="html"></div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        @endif
+
                         <button
                             type="button"
                             @click="confirmOpen = true"

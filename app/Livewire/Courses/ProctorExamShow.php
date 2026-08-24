@@ -304,16 +304,17 @@ class ProctorExamShow extends Component
 
         $proctorSessionService->update($session->id, ['status' => ProctorSessionStatus::Submitting]);
 
-        FinalizeExamSubmissionJob::dispatch($attempt->id);
+        FinalizeExamSubmissionJob::dispatchSync($attempt->id);
     }
 
     /**
      * Flips the proctor session to Submitting immediately (before any of the
-     * client's slow evidence-upload work), then queues the actual
-     * finalization. This is the fast synchronous step that closes the
+     * client's slow evidence-upload work), then runs the actual
+     * finalization synchronously (dispatchSync), independent of whether a
+     * queue worker is running. This is the fast step that closes the
      * window where a page refresh could let a disqualified student keep
      * answering the exam: from this point on, `submitting` is true in
-     * render() regardless of how long the queued job takes to run.
+     * render() regardless of how long finalization takes to run.
      *
      * Renderless: see beginSubmission() — the client still needs to finish
      * uploading evidence snapshots and stopping the recorder afterwards, so
@@ -342,7 +343,7 @@ class ProctorExamShow extends Component
 
         $proctorSessionService->update($session->id, ['status' => ProctorSessionStatus::Submitting]);
 
-        FinalizeProctorDisqualificationJob::dispatch($attempt->id, $reason);
+        FinalizeProctorDisqualificationJob::dispatchSync($attempt->id, $reason);
     }
 
     protected function currentSession()

@@ -242,6 +242,31 @@ class ProctorExamShowTest extends TestCase
         ]);
     }
 
+    public function test_request_snapshot_upload_url_still_works_right_after_submission_completes(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        // Mirrors finishSubmit()'s real sequence: beginSubmission() finishes
+        // (marking the attempt submitted and the session Completed) before
+        // the client's MediaRecorder flushes its trailing chunk, which
+        // triggers one more requestSnapshotUploadUrl() call for a session
+        // that's no longer "in progress".
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->call('beginSubmission');
+
+        $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
+        $session = ProctorSession::where('assessment_attempt_id', $attempt->id)->firstOrFail();
+        $this->assertSame(ProctorSessionStatus::Completed, $session->fresh()->status);
+
+        $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])->instance();
+
+        $result = $instance->requestSnapshotUploadUrl(app(R2StorageService::class), 'webcam-recording-123.webm', 'Video');
+
+        $this->assertStringContainsString((string) $session->id, $result['key']);
+    }
+
     public function test_record_snapshot_uploaded_swallows_missing_temp_object_instead_of_500(): void
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);

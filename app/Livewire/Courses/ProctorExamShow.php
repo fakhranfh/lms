@@ -215,7 +215,7 @@ class ProctorExamShow extends Component
     {
         ProctorSnapshotType::from($type);
 
-        $session = $this->currentSession();
+        $session = $this->currentOrLatestSession();
         if ($session === null) {
             return;
         }
@@ -262,7 +262,7 @@ class ProctorExamShow extends Component
      */
     public function requestSnapshotUploadUrl(R2StorageService $r2StorageService, string $filename, string $materialType = 'Image'): array
     {
-        $session = $this->currentSession();
+        $session = $this->currentOrLatestSession();
         abort_if($session === null, 404);
 
         return $r2StorageService->generatePresignedPutUrlForPath("proctor/{$session->id}", $filename, $materialType);
@@ -356,6 +356,21 @@ class ProctorExamShow extends Component
         }
 
         return app(ProctorSessionService::class)->findByAttempt($inProgress->id);
+    }
+
+    /**
+     * Same as currentSession(), but falls back to the most recently started
+     * attempt's session when there's no attempt in progress. Evidence
+     * uploads (recording chunks, snapshots) can still be flushing for a
+     * few seconds after beginSubmission()/beginDisqualification() has
+     * already marked the attempt submitted and the session Completed, and
+     * that trailing evidence for the session that was just recording is
+     * still legitimate to store.
+     */
+    protected function currentOrLatestSession()
+    {
+        return $this->currentSession()
+            ?? app(ProctorSessionStatusService::class)->latestSessionForAssessment($this->assessment->id, auth()->id());
     }
 
     /**

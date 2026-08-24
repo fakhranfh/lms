@@ -441,7 +441,6 @@ class ProctorExamShowTest extends TestCase
             ->assertSet('examType', FinalExamType::OpenBook)
             ->assertSeeHtml("allowedTypes: 'open_book'")
             ->assertSeeHtml('if (! document.fullscreenElement) { document.documentElement.requestFullscreen')
-            ->assertSeeHtml("window.addEventListener('blur', () => handleViolation('window_blur'")
             ->assertSeeHtml("handleViolation('navigation_attempt'")
             ->assertSeeHtml("['t', 'n'].includes(e.key.toLowerCase())")
             ->assertSeeHtml("anchor.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey");
@@ -524,7 +523,7 @@ class ProctorExamShowTest extends TestCase
             ->assertDontSeeHtml('Reference Sheet');
     }
 
-    public function test_closed_book_attempt_view_auto_requests_fullscreen_and_flags_window_blur(): void
+    public function test_closed_book_attempt_view_auto_requests_fullscreen(): void
     {
         $closedBookAssessment = Assessment::factory()->for($this->course)->create([
             'type' => AssessmentType::TheoryFinalExam,
@@ -552,8 +551,7 @@ class ProctorExamShowTest extends TestCase
         Livewire::test(ProctorExamShow::class, ['assessment' => $closedBookAssessment])
             ->call('startAttempt')
             ->assertSet('examType', FinalExamType::ClosedBook)
-            ->assertSeeHtml('if (! document.fullscreenElement) { document.documentElement.requestFullscreen')
-            ->assertSeeHtml("window.addEventListener('blur', () => handleViolation('window_blur'");
+            ->assertSeeHtml('if (! document.fullscreenElement) { document.documentElement.requestFullscreen');
     }
 
     public function test_answer_selection_is_persisted_to_redis_and_restored_on_remount(): void

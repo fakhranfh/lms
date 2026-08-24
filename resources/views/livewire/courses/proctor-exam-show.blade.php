@@ -362,9 +362,7 @@
             }"
             x-init="
                 tick(); timer = setInterval(() => tick(), 1000);
-                if (! document.fullscreenElement) {
-                    document.documentElement.requestFullscreen?.().catch(() => { needsFullscreenResume = true; });
-                }
+                if (! document.fullscreenElement) { document.documentElement.requestFullscreen?.().catch(() => { needsFullscreenResume = true; }); }
                 $nextTick(() => startRecording());
                 eventAbortController = new AbortController();
                 const listenerOpts = { signal: eventAbortController.signal };

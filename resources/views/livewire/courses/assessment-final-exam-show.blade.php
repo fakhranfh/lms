@@ -183,7 +183,7 @@
                         <p class="text-body-sm text-on-surface-variant">The submission window for this assessment has closed.</p>
                     </div>
                 </div>
-            @elseif ($attemptLimit && $attemptsUsed >= $attemptLimit)
+            @elseif ($attemptLimit && $attemptsUsed >= $attemptLimit && ! $isInProgress)
                 <div class="flex items-center justify-between gap-space-md">
                     <div class="flex-1">
                         <p class="text-body-sm text-on-surface-variant">You have reached the maximum number of attempts for this assessment.</p>
@@ -855,14 +855,18 @@
                                 <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg">
                                     <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ $latestAttempt ? 'Continue Exam?' : 'Start Exam?' }}</h2>
                                     <p class="font-body-md text-body-md text-secondary">
-                                        This is a proctored exam. You'll first go through pre-flight checks (internet speed, camera, microphone, screen sharing) before the exam begins.
+                                        @if ($isInProgress)
+                                            This is a proctored exam. You have an attempt already in progress — you'll be taken straight back into it.
+                                        @else
+                                            This is a proctored exam. You'll first go through pre-flight checks (internet speed, camera, microphone, screen sharing) before the exam begins.
+                                        @endif
                                     </p>
                                     <div class="flex items-center justify-end gap-space-md">
                                         <button type="button" @click="confirmOpen = false" class="px-space-lg py-space-sm font-label-md text-label-md text-secondary hover:underline">Cancel</button>
                                         <button
                                             type="button"
                                             :disabled="navigating"
-                                            @click="navigating = true; Livewire.navigate('{{ route('assessments.final-exam.proctor.preflight', $assessment) }}')"
+                                            @click="navigating = true; Livewire.navigate('{{ $isInProgress ? route('assessments.final-exam.proctor.show', $assessment) : route('assessments.final-exam.proctor.preflight', $assessment) }}')"
                                             class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
                                         >
                                             <span x-show="navigating" x-cloak class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>

@@ -55,6 +55,7 @@ Structured like an Assignment (see [course-restructure-assessment-assignment-sch
 
 - Uses the generic `assessment_attempts` table (see [course-restructure-assessment.md](course-restructure-assessment.md)).
 - An attempt must be started and submitted before `end_date`; an attempt still open at `end_date` is auto-submitted with whatever was saved (open/closed book) or marked as a missed submission (take home, if nothing was uploaded).
+- If the student has an in-progress attempt (started, not yet submitted, and before `end_date`) for this exam, the exam entry point shows a **Continue Exam** button instead of Start Exam — resuming the same attempt with previously saved answers and remaining time/deadline intact, rather than starting a new attempt.
 
 ## Schema Summary (proposal)
 

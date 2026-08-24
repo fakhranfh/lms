@@ -19,6 +19,8 @@ use App\Models\Period;
 use App\Models\ProctorEvent;
 use App\Models\ProctorSession;
 use App\Models\ProctorSnapshot;
+use App\Models\Quiz;
+use App\Models\QuizQuestion;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
@@ -418,6 +420,48 @@ class AssessmentFinalExamShowTest extends TestCase
                     && count($blurGroup['items']) === 1
                     && $blurGroup['hasMore'] === false;
             });
+    }
+
+    public function test_student_sees_continue_exam_for_in_progress_unsubmitted_attempt(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+
+        $quiz = Quiz::factory()->for($this->assessment)->create();
+        QuizQuestion::factory()->for($quiz)->create(['question_type' => 'multiple_choice', 'order' => 1]);
+
+        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create([
+            'user_id' => $this->student->id,
+            'submitted_at' => null,
+        ]);
+        ProctorSession::factory()->for($attempt, 'attempt')->create(['reviewed_at' => null]);
+
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Continue Exam')
+            ->assertDontSee('pending proctoring review');
+    }
+
+    public function test_student_sees_continue_exam_when_attempt_limit_reached_by_unsubmitted_attempt(): void
+    {
+        $this->assessment->update(['attempt_limit' => 1]);
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+
+        $quiz = Quiz::factory()->for($this->assessment)->create();
+        QuizQuestion::factory()->for($quiz)->create(['question_type' => 'multiple_choice', 'order' => 1]);
+
+        AssessmentAttempt::factory()->for($this->assessment)->create([
+            'user_id' => $this->student->id,
+            'attempt_number' => 1,
+            'submitted_at' => null,
+        ]);
+
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Continue Exam')
+            ->assertDontSee('awaiting grading')
+            ->assertDontSee('reached the maximum number of attempts');
     }
 
     public function test_wrong_type_returns_404(): void

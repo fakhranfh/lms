@@ -267,4 +267,33 @@ class AssessmentIndexTest extends TestCase
             ->call('loadAssessments')
             ->assertSee('87.5');
     }
+
+    public function test_final_exam_shows_in_progress_when_attempt_not_yet_submitted(): void
+    {
+        CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
+        $this->student->givePermissionTo('assessment.view');
+
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryFinalExam,
+        ]);
+        $period = Period::factory()->for($this->course)->create();
+        FinalExam::factory()->for($assessment)->create([
+            'period_id' => $period->id,
+            'exam_type' => FinalExamType::OpenBook,
+        ]);
+
+        $attempt = AssessmentAttempt::factory()->for($assessment)->create([
+            'user_id' => $this->student->id,
+            'submitted_at' => null,
+        ]);
+        ProctorSession::factory()->for($attempt, 'attempt')->create(['reviewed_at' => null]);
+
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->assertSee('In Progress')
+            ->assertDontSee('Submitted')
+            ->assertDontSee('Pending Review');
+    }
 }

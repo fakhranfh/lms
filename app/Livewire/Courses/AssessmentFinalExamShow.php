@@ -527,10 +527,12 @@ class AssessmentFinalExamShow extends Component
             $allAttempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, auth()->id());
             $latest = $allAttempts->last();
 
+            $isInProgress = $latest !== null && $latest->submitted_at === null;
+
             $attemptLimit = $this->assessment->attempt_limit;
             $attemptsUsed = $allAttempts->count();
             $canResubmit = ! $latest?->score && (! $this->assessment->end_date || now()->lessThanOrEqualTo($this->assessment->end_date));
-            if ($attemptLimit && $attemptsUsed >= $attemptLimit) {
+            if ($attemptLimit && $attemptsUsed >= $attemptLimit && ! $isInProgress) {
                 $canResubmit = false;
             }
 
@@ -540,9 +542,10 @@ class AssessmentFinalExamShow extends Component
             $viewData['latestAttempt'] = $latest;
             $viewData['latestScore'] = $latestScore;
             $viewData['latestProctorSession'] = $latestProctorSession;
-            $viewData['pendingProctorReview'] = $latestProctorSession !== null && $latestProctorSession->reviewed_at === null;
+            $viewData['pendingProctorReview'] = $latestProctorSession !== null && $latestProctorSession->reviewed_at === null && ! $isInProgress;
             $viewData['isDisqualified'] = $latestProctorSession?->review_decision === ProctorReviewDecision::Disqualified;
             $viewData['canResubmit'] = $canResubmit;
+            $viewData['isInProgress'] = $isInProgress;
             $viewData['attemptLimit'] = $attemptLimit ? (string) $attemptLimit : 'Unlimited';
             $viewData['attemptsUsed'] = $attemptsUsed;
 
@@ -573,7 +576,8 @@ class AssessmentFinalExamShow extends Component
                     ? $proctorSession->snapshots->where('type', ProctorSnapshotType::Recording)->sortBy('captured_at')
                     : collect();
 
-                $pendingProctorReview = $proctorSession !== null && $proctorSession->reviewed_at === null;
+                $isInProgress = $latest !== null && $latest->submitted_at === null;
+                $pendingProctorReview = $proctorSession !== null && $proctorSession->reviewed_at === null && ! $isInProgress;
 
                 // Screenshot count only — no signed URLs generated here. The
                 // actual items (with signed URLs) are loaded on demand via

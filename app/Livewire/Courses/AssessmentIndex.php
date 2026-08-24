@@ -301,6 +301,15 @@ class AssessmentIndex extends Component
             ];
         }
 
+        if ($latest->submitted_at === null) {
+            return [
+                ...$base,
+                'status' => 'in_progress',
+                'feedback' => null,
+                'statusConfig' => $this->statusConfig('in_progress'),
+            ];
+        }
+
         if ($score) {
             $isProctoredFinalExam = $type === AssessmentType::TheoryFinalExam
                 && in_array($assessment->finalExam?->exam_type?->value, ['open_book', 'closed_book'], true);
@@ -353,6 +362,7 @@ class AssessmentIndex extends Component
             'completed', 'graded' => ['bg' => 'bg-success/10', 'text' => 'text-success', 'icon' => 'check_circle'],
             'submitted', 'pending_review' => ['bg' => 'bg-warning/10', 'text' => 'text-warning', 'icon' => 'schedule'],
             'not_started' => ['bg' => 'bg-on-surface-variant/10', 'text' => 'text-on-surface-variant', 'icon' => 'pending'],
+            'in_progress' => ['bg' => 'bg-primary/10', 'text' => 'text-primary', 'icon' => 'timelapse'],
             'disqualified' => ['bg' => 'bg-error/10', 'text' => 'text-error', 'icon' => 'cancel'],
             default => ['bg' => 'bg-on-surface-variant/10', 'text' => 'text-on-surface-variant', 'icon' => 'help'],
         };

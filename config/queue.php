@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Grading Queue Connection Name
+    |--------------------------------------------------------------------------
+    |
+    | The grading queue health check always inspects this connection's depth,
+    | regardless of the application's default queue connection above.
+    |
+    */
+
+    'grading_connection' => env('QUEUE_GRADING_CONNECTION', 'redis'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Queue Connections
     |--------------------------------------------------------------------------
     |

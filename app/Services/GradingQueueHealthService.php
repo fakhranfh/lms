@@ -2,10 +2,9 @@
 
 namespace App\Services;
 
+use App\Repositories\Cache\CacheRepositoryInterface;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Redis;
-use Throwable;
 
 class GradingQueueHealthService
 {
@@ -14,19 +13,23 @@ class GradingQueueHealthService
      */
     public const DEPTH_ALERT_THRESHOLD = 1000;
 
+    public function __construct(
+        private CacheRepositoryInterface $cacheRepository
+    ) {}
+
     /**
-     * Check Redis connectivity and the grading queue depth.
+     * Check cache connectivity and the grading queue depth.
      *
-     * @return array{redis_connected: bool, queue_size: int, threshold_exceeded: bool}
+     * @return array{cache_connected: bool, queue_size: int, threshold_exceeded: bool}
      */
     public function check(): array
     {
-        $redisConnected = $this->isRedisConnected();
-        $queueSize = $redisConnected ? $this->queueSize() : 0;
+        $cacheConnected = $this->isCacheConnected();
+        $queueSize = $cacheConnected ? $this->queueSize() : 0;
         $thresholdExceeded = $queueSize > self::DEPTH_ALERT_THRESHOLD;
 
-        if (! $redisConnected) {
-            Log::critical('GradingQueueHealthService: Redis connection unavailable');
+        if (! $cacheConnected) {
+            Log::critical('GradingQueueHealthService: cache connection unavailable');
         }
 
         if ($thresholdExceeded) {
@@ -37,23 +40,21 @@ class GradingQueueHealthService
         }
 
         return [
-            'redis_connected' => $redisConnected,
+            'cache_connected' => $cacheConnected,
             'queue_size' => $queueSize,
             'threshold_exceeded' => $thresholdExceeded,
         ];
     }
 
-    protected function isRedisConnected(): bool
+    protected function isCacheConnected(): bool
     {
-        try {
-            return Redis::connection()->ping() !== false;
-        } catch (Throwable) {
-            return false;
-        }
+        return $this->cacheRepository->isAvailable();
     }
 
     protected function queueSize(): int
     {
-        return Queue::connection('redis')->size(config('queue.connections.redis.queue', 'default'));
+        $connection = config('queue.grading_connection');
+
+        return Queue::connection($connection)->size(config("queue.connections.{$connection}.queue", 'default'));
     }
 }

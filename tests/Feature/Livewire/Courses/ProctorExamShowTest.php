@@ -539,7 +539,7 @@ class ProctorExamShowTest extends TestCase
             ->assertSeeHtml('if (! document.fullscreenElement) { document.documentElement.requestFullscreen');
     }
 
-    public function test_answer_selection_is_persisted_to_redis_and_restored_on_remount(): void
+    public function test_answer_selection_is_persisted_to_cache_and_restored_on_remount(): void
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);

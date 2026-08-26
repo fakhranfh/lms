@@ -8,10 +8,10 @@ use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentScoreService;
 use App\Services\AssessmentService;
 use App\Services\GradebookScoringService;
+use App\Services\ProctorExamAnswersService;
 use App\Services\ProctorSessionService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Redis;
 
 class FinalizeProctorDisqualificationJob implements ShouldQueue
 {
@@ -28,6 +28,7 @@ class FinalizeProctorDisqualificationJob implements ShouldQueue
         ProctorSessionService $proctorSessionService,
         AssessmentService $assessmentService,
         GradebookScoringService $gradebookScoringService,
+        ProctorExamAnswersService $proctorExamAnswersService,
     ): void {
         $feedback = __('Disqualified: cheating detected during the exam (:reason).', ['reason' => $this->reason]);
 
@@ -62,6 +63,6 @@ class FinalizeProctorDisqualificationJob implements ShouldQueue
             $proctorSessionService->clearSubmitting($session->id);
         }
 
-        Redis::del("proctor_exam_answers:{$this->attemptId}");
+        $proctorExamAnswersService->clear($this->attemptId);
     }
 }

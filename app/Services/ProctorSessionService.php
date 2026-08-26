@@ -3,9 +3,9 @@
 namespace App\Services;
 
 use App\Models\ProctorSession;
+use App\Repositories\Cache\CacheRepositoryInterface;
 use App\Repositories\ProctorSession\ProctorSessionRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Redis;
 
 class ProctorSessionService
 {
@@ -17,7 +17,8 @@ class ProctorSessionService
     private const SUBMITTING_TTL_SECONDS = 300;
 
     public function __construct(
-        private ProctorSessionRepositoryInterface $proctorSessionRepository
+        private ProctorSessionRepositoryInterface $proctorSessionRepository,
+        private CacheRepositoryInterface $cacheRepository,
     ) {}
 
     public function get(array $filters = [], array $with = []): Collection
@@ -51,22 +52,22 @@ class ProctorSessionService
     }
 
     /**
-     * Flags a session as submitting/finalizing in Redis instead of persisting
+     * Flags a session as submitting/finalizing in the cache instead of persisting
      * a transient "submitting" status row to the database.
      */
     public function markSubmitting(string $sessionId): void
     {
-        Redis::setex($this->submittingKey($sessionId), self::SUBMITTING_TTL_SECONDS, 1);
+        $this->cacheRepository->put($this->submittingKey($sessionId), '1', self::SUBMITTING_TTL_SECONDS);
     }
 
     public function clearSubmitting(string $sessionId): void
     {
-        Redis::del($this->submittingKey($sessionId));
+        $this->cacheRepository->forget($this->submittingKey($sessionId));
     }
 
     public function isSubmitting(string $sessionId): bool
     {
-        return (bool) Redis::exists($this->submittingKey($sessionId));
+        return $this->cacheRepository->has($this->submittingKey($sessionId));
     }
 
     private function submittingKey(string $sessionId): string

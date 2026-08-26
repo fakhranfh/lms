@@ -9,17 +9,17 @@ class GradingQueueHealthCheck extends Command
 {
     protected $signature = 'grading:health';
 
-    protected $description = 'Check Redis connectivity and grading queue depth';
+    protected $description = 'Check cache connectivity and grading queue depth';
 
     public function handle(GradingQueueHealthService $service): int
     {
         $result = $service->check();
 
-        $this->line('Redis connected: '.($result['redis_connected'] ? 'yes' : 'no'));
+        $this->line('Cache connected: '.($result['cache_connected'] ? 'yes' : 'no'));
         $this->line("Queue size: {$result['queue_size']}");
 
-        if (! $result['redis_connected']) {
-            $this->error('Redis connection unavailable.');
+        if (! $result['cache_connected']) {
+            $this->error('Cache connection unavailable.');
 
             return self::FAILURE;
         }

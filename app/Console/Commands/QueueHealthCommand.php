@@ -2,30 +2,27 @@
 
 namespace App\Console\Commands;
 
+use App\Services\GradingQueueHealthService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\Redis;
-use Throwable;
 
 class QueueHealthCommand extends Command
 {
     protected $signature = 'queue:health';
 
-    protected $description = 'Check Redis connectivity, pending jobs, and failed jobs count';
+    protected $description = 'Check cache connectivity, pending jobs, and failed jobs count';
 
-    public function handle(): int
+    public function handle(GradingQueueHealthService $gradingQueueHealthService): int
     {
-        $redisConnected = $this->isRedisConnected();
-        $pendingJobs = $redisConnected ? $this->pendingJobsCount() : 0;
+        $health = $gradingQueueHealthService->check();
         $failedJobs = DB::table('failed_jobs')->count();
 
-        $this->line('Redis connected: '.($redisConnected ? 'yes' : 'no'));
-        $this->line("Pending jobs: {$pendingJobs}");
+        $this->line('Cache connected: '.($health['cache_connected'] ? 'yes' : 'no'));
+        $this->line("Pending jobs: {$health['queue_size']}");
         $this->line("Failed jobs: {$failedJobs}");
 
-        if (! $redisConnected) {
-            $this->error('Redis connection unavailable.');
+        if (! $health['cache_connected']) {
+            $this->error('Cache connection unavailable.');
 
             return self::FAILURE;
         }
@@ -33,19 +30,5 @@ class QueueHealthCommand extends Command
         $this->info('Queue is healthy.');
 
         return self::SUCCESS;
-    }
-
-    private function isRedisConnected(): bool
-    {
-        try {
-            return Redis::connection()->ping() !== false;
-        } catch (Throwable) {
-            return false;
-        }
-    }
-
-    private function pendingJobsCount(): int
-    {
-        return Queue::connection('redis')->size(config('queue.connections.redis.queue', 'default'));
     }
 }

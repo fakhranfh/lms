@@ -8,12 +8,12 @@ use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentQuizAnswerService;
 use App\Services\AssessmentService;
 use App\Services\GradebookScoringService;
+use App\Services\ProctorExamAnswersService;
 use App\Services\ProctorSessionService;
 use App\Services\QuizAttemptScoringService;
 use App\Services\QuizService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Redis;
 
 class FinalizeExamSubmissionJob implements ShouldQueue
 {
@@ -31,6 +31,7 @@ class FinalizeExamSubmissionJob implements ShouldQueue
         QuizService $quizService,
         AssessmentService $assessmentService,
         GradebookScoringService $gradebookScoringService,
+        ProctorExamAnswersService $proctorExamAnswersService,
     ): void {
         $attempt = $assessmentAttemptService->find($this->attemptId);
 
@@ -44,7 +45,7 @@ class FinalizeExamSubmissionJob implements ShouldQueue
             return;
         }
 
-        $answers = Redis::hgetall("proctor_exam_answers:{$this->attemptId}") ?: [];
+        $answers = $proctorExamAnswersService->all($this->attemptId);
 
         foreach ($quiz->questions as $question) {
             $value = $answers[$question->id] ?? null;
@@ -84,6 +85,6 @@ class FinalizeExamSubmissionJob implements ShouldQueue
             $proctorSessionService->clearSubmitting($session->id);
         }
 
-        Redis::del("proctor_exam_answers:{$this->attemptId}");
+        $proctorExamAnswersService->clear($this->attemptId);
     }
 }

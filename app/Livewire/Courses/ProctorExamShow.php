@@ -23,6 +23,7 @@ use App\Services\CoursePersonService;
 use App\Services\ExamReferenceFileService;
 use App\Services\FinalExamService;
 use App\Services\ProctorEventService;
+use App\Services\ProctorExamAnswersService;
 use App\Services\ProctorSessionService;
 use App\Services\ProctorSessionStatusService;
 use App\Services\ProctorSnapshotService;
@@ -31,7 +32,6 @@ use App\Services\R2StorageService;
 use App\Services\SessionService;
 use App\Support\CurrentSchool;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Redis;
 use Livewire\Attributes\Renderless;
 use Livewire\Component;
 
@@ -120,20 +120,15 @@ class ProctorExamShow extends Component
         }
     }
 
-    protected function answersRedisKey(string $attemptId): string
-    {
-        return "proctor_exam_answers:{$attemptId}";
-    }
-
     /**
      * @return array<string, string>
      */
     protected function loadSavedAnswers(string $attemptId): array
     {
-        return Redis::hgetall($this->answersRedisKey($attemptId)) ?: [];
+        return app(ProctorExamAnswersService::class)->all($attemptId);
     }
 
-    public function updated(string $name, mixed $value): void
+    public function updated(string $name, mixed $value, ProctorExamAnswersService $proctorExamAnswersService): void
     {
         if (! str_starts_with($name, 'answers.')) {
             return;
@@ -146,7 +141,7 @@ class ProctorExamShow extends Component
 
         $questionId = substr($name, strlen('answers.'));
 
-        Redis::hset($this->answersRedisKey($session->assessment_attempt_id), $questionId, (string) $value);
+        $proctorExamAnswersService->save($session->assessment_attempt_id, $questionId, (string) $value);
     }
 
     public function startAttempt(AssessmentAttemptService $assessmentAttemptService, ProctorSessionService $proctorSessionService): void

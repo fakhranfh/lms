@@ -1,4 +1,4 @@
-@section('title', 'Redis Management')
+@section('title', 'Cache Management')
 
 <div class="space-y-space-lg" x-data="{ deleteKey: null, showModal: false, showFlushModal: false }">
     @if ($successMessage)
@@ -17,8 +17,8 @@
 
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="font-headline-sm text-headline-sm text-on-surface">Redis Management</h1>
-            <p class="text-body-sm text-on-surface-variant mt-1">Monitor and manage the Redis instance (local only)</p>
+            <h1 class="font-headline-sm text-headline-sm text-on-surface">Cache Management</h1>
+            <p class="text-body-sm text-on-surface-variant mt-1">Monitor and manage the cache instance (local only)</p>
         </div>
         <button type="button" @click="showFlushModal = true" class="px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
             Flush Database
@@ -28,7 +28,7 @@
     <div class="grid grid-cols-2 md:grid-cols-5 gap-space-md">
         <div class="bg-surface border border-outline-variant rounded-lg p-space-md">
             <p class="font-label-sm text-label-sm text-secondary uppercase">Version</p>
-            <p class="font-body-md text-body-md text-on-surface mt-1">{{ $info['redis_version'] }}</p>
+            <p class="font-body-md text-body-md text-on-surface mt-1">{{ $info['version'] }}</p>
         </div>
         <div class="bg-surface border border-outline-variant rounded-lg p-space-md">
             <p class="font-label-sm text-label-sm text-secondary uppercase">Memory Used</p>
@@ -183,7 +183,7 @@
                     </div>
                     <div class="text-center space-y-space-sm">
                         <h3 class="font-headline-sm text-headline-sm text-on-surface">Flush Database</h3>
-                        <p class="font-body-sm text-body-sm text-on-surface-variant">This will permanently delete ALL keys in this Redis database. This action cannot be undone.</p>
+                        <p class="font-body-sm text-body-sm text-on-surface-variant">This will permanently delete ALL keys in this cache database. This action cannot be undone.</p>
                     </div>
                     <div>
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">

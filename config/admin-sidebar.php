@@ -91,10 +91,10 @@ return [
         'active_pattern' => 'admin.audit-logs.*',
     ],
     [
-        'label' => 'Redis',
-        'route' => 'admin.redis.index',
+        'label' => 'Cache',
+        'route' => 'admin.cache.index',
         'icon' => 'memory',
-        'active_pattern' => 'admin.redis.*',
+        'active_pattern' => 'admin.cache.*',
         'local_only' => true,
     ],
     [

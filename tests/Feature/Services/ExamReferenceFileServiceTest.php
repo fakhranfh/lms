@@ -34,6 +34,20 @@ describe('ExamReferenceFileService', function () {
             ->toThrow(InvalidArgumentException::class);
     });
 
+    test('finalize upload rejects material types other than image and PDF', function () {
+        $service = app(ExamReferenceFileService::class);
+
+        expect(fn () => $service->finalizeUpload('assessment-id', 'user-id', ['type' => MaterialType::Video->value, 'temp_key' => 'temp/exam-reference/foo.mp4']))
+            ->toThrow(InvalidArgumentException::class, 'Only image and PDF files are allowed for exam materials.');
+    });
+
+    test('generate presigned upload url rejects material types other than image and PDF', function () {
+        $service = app(ExamReferenceFileService::class);
+
+        expect(fn () => $service->generatePresignedUploadUrl('assessment-id', 'user-id', 'notes.docx', MaterialType::Document->value))
+            ->toThrow(InvalidArgumentException::class, 'Only image and PDF files are allowed for exam materials.');
+    });
+
     test('finalize upload requires a temp key', function () {
         $service = app(ExamReferenceFileService::class);
 

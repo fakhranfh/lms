@@ -152,7 +152,7 @@ class AssessmentFinalExamShow extends Component
     private function referenceExtensionToTypeMap(): array
     {
         $map = [];
-        foreach (MaterialType::cases() as $type) {
+        foreach ([MaterialType::Image, MaterialType::PDF] as $type) {
             foreach ($type->allowedExtensions() as $extension) {
                 $map[$extension] = $type->value;
             }
@@ -175,8 +175,8 @@ class AssessmentFinalExamShow extends Component
         abort_unless(auth()->user()->can('assessment.submit'), 403);
         $this->assertOpenBook($finalExamService);
 
-        if (MaterialType::tryFrom($materialType) === null) {
-            return ['error' => 'Invalid material type'];
+        if (! in_array($materialType, [MaterialType::Image->value, MaterialType::PDF->value], true)) {
+            return ['error' => 'Only image and PDF files are allowed for exam materials.'];
         }
 
         try {

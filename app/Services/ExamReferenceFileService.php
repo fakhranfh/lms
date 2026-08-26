@@ -27,6 +27,8 @@ class ExamReferenceFileService
      */
     public function generatePresignedUploadUrl(string $assessmentId, string $userId, string $filename, string $materialType): array
     {
+        $this->assertAllowedMaterialType($materialType);
+
         $this->r2Service->enforceQuotaLimit();
 
         return $this->r2Service->generatePresignedPutUrlForPath("exam-reference/{$assessmentId}/{$userId}", $filename, $materialType);
@@ -45,6 +47,8 @@ class ExamReferenceFileService
         if (! $type) {
             throw new \InvalidArgumentException("Invalid material type: {$data['type']}");
         }
+
+        $this->assertAllowedMaterialType($type->value);
 
         $tempKey = $data['temp_key'] ?? '';
         if (! $tempKey) {
@@ -92,6 +96,13 @@ class ExamReferenceFileService
             if (! $validationPassed) {
                 $this->r2Service->deleteTempObject($tempKey);
             }
+        }
+    }
+
+    private function assertAllowedMaterialType(string $materialType): void
+    {
+        if (! in_array($materialType, [MaterialType::Image->value, MaterialType::PDF->value], true)) {
+            throw new \InvalidArgumentException('Only image and PDF files are allowed for exam materials.');
         }
     }
 

@@ -71,6 +71,7 @@
                 lastViolationAt: {},
                 violationsDisabled: false,
                 needsFullscreenResume: false,
+                isFullscreen: false,
                 resumeFullscreen() {
                     document.documentElement.requestFullscreen?.().then(() => {
                         this.needsFullscreenResume = false;
@@ -364,6 +365,7 @@
             }"
             x-init="
                 tick(); timer = setInterval(() => tick(), 1000);
+                isFullscreen = !!document.fullscreenElement;
                 if (! document.fullscreenElement) { document.documentElement.requestFullscreen?.().catch(() => { needsFullscreenResume = true; }); }
                 $nextTick(() => startRecording());
                 eventAbortController = new AbortController();
@@ -397,6 +399,7 @@
                     handleViolation('navigation_attempt', 'medium', { reason: 'middle_click_new_tab' });
                 }, { ...listenerOpts, capture: true });
                 document.addEventListener('fullscreenchange', () => {
+                    isFullscreen = !!document.fullscreenElement;
                     if (! document.fullscreenElement) {
                         handleViolation('fullscreen_exit', 'medium');
                         resumeFullscreen();
@@ -944,7 +947,7 @@
 
             <template x-teleport="body">
                 <div
-                    x-show="needsFullscreenResume && ! submitting"
+                    x-show="! isFullscreen && ! submitting"
                     x-cloak
                     class="fixed inset-0 z-[140] flex flex-col items-center justify-center gap-space-lg bg-surface px-gutter"
                 >

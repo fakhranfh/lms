@@ -139,6 +139,53 @@
             </div>
         @endif
 
+        @if ($isStudent && $latestAnswer && $finalExam?->exam_type?->value === 'take_home')
+            <div x-data="{ previewOpen: false }">
+                <button
+                    type="button"
+                    @click="previewOpen = true"
+                    class="inline-flex items-center gap-space-xs px-space-lg py-space-sm border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors"
+                >
+                    <span class="material-symbols-outlined text-[18px]">visibility</span>
+                    View Last Submission
+                </button>
+
+                <template x-teleport="body">
+                    <div
+                        x-show="previewOpen"
+                        x-cloak
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0"
+                        x-transition:enter-end="opacity-100"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
+                        @click.self="previewOpen = false"
+                        @keydown.escape.window="previewOpen = false"
+                    >
+                        <div
+                            x-show="previewOpen"
+                            x-transition:enter="transition ease-out duration-200 delay-75"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            class="bg-surface border border-outline-variant rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col"
+                        >
+                            <div class="flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant">
+                                <h2 class="font-headline-sm text-headline-sm text-on-surface">Your Last Submission</h2>
+                                <button type="button" @click="previewOpen = false" class="p-2 hover:bg-surface-container rounded transition">
+                                    <span class="material-symbols-outlined text-on-surface-variant">close</span>
+                                </button>
+                            </div>
+                            <div class="overflow-y-auto p-space-lg">
+                                <div class="rte-content prose prose-sm max-w-none text-on-surface">{!! $latestAnswer->answer_text !!}</div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        @endif
+
         <!-- Status Message & Action Button -->
         @if ($isStudent)
             @if ($latestAttempt && $pendingProctorReview)

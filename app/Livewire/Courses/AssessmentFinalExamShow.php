@@ -540,7 +540,8 @@ class AssessmentFinalExamShow extends Component
 
             $isInProgress = $latest !== null && $latest->submitted_at === null;
 
-            $attemptLimit = $this->assessment->attempt_limit;
+            $isTakeHome = $finalExam?->exam_type === FinalExamType::TakeHome;
+            $attemptLimit = $isTakeHome ? null : $this->assessment->attempt_limit;
             $attemptsUsed = $allAttempts->count();
             $canResubmit = ! $latest?->score && (! $this->assessment->end_date || now()->lessThanOrEqualTo($this->assessment->end_date));
             if ($attemptLimit && $attemptsUsed >= $attemptLimit && ! $isInProgress) {
@@ -548,10 +549,12 @@ class AssessmentFinalExamShow extends Component
             }
 
             $latestScore = $latest ? $assessmentScoreService->findByAttempt($latest->id) : null;
+            $latestAnswer = $latest ? $assessmentAnswerService->findByAttempt($latest->id) : null;
             $latestProctorSession = ($isProctored && $latest) ? $proctorSessionService->findByAttempt($latest->id) : null;
 
             $viewData['latestAttempt'] = $latest;
             $viewData['latestScore'] = $latestScore;
+            $viewData['latestAnswer'] = $latestAnswer;
             $viewData['latestProctorSession'] = $latestProctorSession;
             $viewData['pendingProctorReview'] = $latestProctorSession !== null && $latestProctorSession->reviewed_at === null && ! $isInProgress;
             $viewData['isDisqualified'] = $latestProctorSession?->review_decision === ProctorReviewDecision::Disqualified;

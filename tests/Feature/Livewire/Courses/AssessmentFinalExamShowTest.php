@@ -86,6 +86,68 @@ class AssessmentFinalExamShowTest extends TestCase
         $this->assertDatabaseHas('assessment_answers', ['answer_text' => 'My answer']);
     }
 
+    public function test_student_can_preview_last_submitted_answer_for_take_home_exam(): void
+    {
+        $this->assessment->finalExam->update(['exam_type' => FinalExamType::TakeHome]);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->set('answerText', 'My take-home answer')
+            ->call('submit')
+            ->assertSee('View Last Submission')
+            ->assertSee('My take-home answer');
+    }
+
+    public function test_take_home_exam_ignores_attempt_limit(): void
+    {
+        $this->assessment->finalExam->update(['exam_type' => FinalExamType::TakeHome]);
+        $this->assessment->update(['attempt_limit' => 1]);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        AssessmentAttempt::factory()->for($this->assessment)->create([
+            'user_id' => $this->student->id,
+            'attempt_number' => 1,
+            'submitted_at' => now(),
+        ]);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Unlimited')
+            ->assertDontSee('reached the maximum number of attempts')
+            ->set('answerText', 'Second attempt answer')
+            ->call('submit');
+
+        $this->assertDatabaseHas('assessment_attempts', [
+            'assessment_id' => $this->assessment->id,
+            'user_id' => $this->student->id,
+            'attempt_number' => 2,
+        ]);
+    }
+
+    public function test_student_cannot_resubmit_take_home_exam_after_graded(): void
+    {
+        $this->assessment->finalExam->update(['exam_type' => FinalExamType::TakeHome]);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create([
+            'user_id' => $this->student->id,
+            'attempt_number' => 1,
+        ]);
+        AssessmentScore::factory()->for($attempt, 'attempt')->create();
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->set('answerText', 'Revised answer after grading')
+            ->call('submit')
+            ->assertSee('already been graded');
+
+        $this->assertDatabaseMissing('assessment_attempts', ['attempt_number' => 2]);
+    }
+
     public function test_exam_type_renders(): void
     {
         $this->teacher->givePermissionTo('assessment.view');

@@ -24,6 +24,7 @@ use App\Models\QuizQuestion;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
+use App\Services\AssessmentAttemptService;
 use App\Services\ExamReferenceFileService;
 use App\Services\FinalExamService;
 use App\Services\R2StorageService;
@@ -502,7 +503,7 @@ class AssessmentFinalExamShowTest extends TestCase
 
         $result = Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $openBookAssessment])
             ->instance()
-            ->generateReferenceFileUploadUrl('notes.exe', 'NotAType', app(FinalExamService::class), app(ExamReferenceFileService::class));
+            ->generateReferenceFileUploadUrl('notes.exe', 'NotAType', app(FinalExamService::class), app(ExamReferenceFileService::class), app(AssessmentAttemptService::class));
 
         expect($result)->toHaveKey('error');
     }
@@ -526,7 +527,7 @@ class AssessmentFinalExamShowTest extends TestCase
 
         $instance = Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $openBookAssessment])->instance();
 
-        $result = $instance->generateReferenceFileUploadUrl('notes.pdf', 'PDF', app(FinalExamService::class), app(ExamReferenceFileService::class));
+        $result = $instance->generateReferenceFileUploadUrl('notes.pdf', 'PDF', app(FinalExamService::class), app(ExamReferenceFileService::class), app(AssessmentAttemptService::class));
 
         $this->assertArrayHasKey('key', $result);
         $this->assertStringContainsString((string) $openBookAssessment->id, $result['key']);
@@ -557,7 +558,7 @@ class AssessmentFinalExamShowTest extends TestCase
             'type' => 'PDF',
             'temp_key' => $tempKey,
             'title' => 'notes.pdf',
-        ], app(FinalExamService::class), app(ExamReferenceFileService::class));
+        ], app(FinalExamService::class), app(ExamReferenceFileService::class), app(AssessmentAttemptService::class));
 
         $this->assertArrayHasKey('file', $result);
         $this->assertSame('notes.pdf', $result['file']['title']);
@@ -590,5 +591,39 @@ class AssessmentFinalExamShowTest extends TestCase
 
         $this->assertDatabaseMissing('exam_reference_files', ['id' => $ownFile->id]);
         $this->assertDatabaseHas('exam_reference_files', ['id' => $otherFile->id]);
+    }
+
+    public function test_reference_file_actions_are_blocked_while_attempt_is_in_progress(): void
+    {
+        $openBookAssessment = $this->makeOpenBookAssessment();
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        AssessmentAttempt::factory()->for($openBookAssessment)->create([
+            'user_id' => $this->student->id,
+            'attempt_number' => 1,
+            'submitted_at' => null,
+        ]);
+
+        $ownFile = ExamReferenceFile::factory()->for($openBookAssessment)->for($this->student)->create();
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $openBookAssessment])
+            ->call('generateReferenceFileUploadUrl', 'notes.pdf', 'PDF')
+            ->assertStatus(403);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $openBookAssessment])
+            ->call('finalizeReferenceFileUpload', ['type' => 'PDF', 'temp_key' => 'foo', 'title' => 'notes.pdf'])
+            ->assertStatus(403);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $openBookAssessment])
+            ->call('deleteReferenceFile', $ownFile->id)
+            ->assertStatus(403);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $openBookAssessment])
+            ->call('deleteAllReferenceFiles')
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('exam_reference_files', ['id' => $ownFile->id]);
     }
 }

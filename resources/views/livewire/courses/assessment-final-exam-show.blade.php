@@ -330,7 +330,7 @@
                                     <p class="font-label-sm text-label-sm text-secondary">Reference Files</p>
                                     <button
                                         type="button"
-                                        x-show="referenceFiles.length > 0"
+                                        @if ($isInProgress ?? false) x-show="false" @else x-show="referenceFiles.length > 0" @endif
                                         x-cloak
                                         :disabled="deletingAll"
                                         @click="confirmDeleteAllOpen = true"
@@ -341,6 +341,9 @@
                                     </button>
                                 </div>
                                 <p class="text-body-xs text-on-surface-variant">Upload any documents, images, or slides you want to reference during this open-book exam.</p>
+                                @if ($isInProgress ?? false)
+                                    <p class="text-body-xs text-on-surface-variant italic">Materials cannot be added or removed while the exam is in progress.</p>
+                                @endif
 
                                 <template x-if="referenceError">
                                     <p class="text-body-xs text-error" x-text="referenceError"></p>
@@ -365,15 +368,17 @@
                                                     <span class="w-full truncate font-body-xs text-body-xs text-on-surface" x-text="file.title"></span>
                                                 </button>
                                             </template>
-                                            <button
-                                                type="button"
-                                                x-show="!referenceRemovingIds.includes(file.id)"
-                                                @click="confirmRemoveReferenceFile(file)"
-                                                class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-error text-white opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
-                                                title="Remove"
-                                            >
-                                                <span class="material-symbols-outlined text-[14px]">close</span>
-                                            </button>
+                                            @if (! ($isInProgress ?? false))
+                                                <button
+                                                    type="button"
+                                                    x-show="!referenceRemovingIds.includes(file.id)"
+                                                    @click="confirmRemoveReferenceFile(file)"
+                                                    class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-error text-white opacity-0 group-hover:opacity-100 transition flex items-center justify-center"
+                                                    title="Remove"
+                                                >
+                                                    <span class="material-symbols-outlined text-[14px]">close</span>
+                                                </button>
+                                            @endif
                                         </div>
                                     </template>
                                 </div>
@@ -410,21 +415,23 @@
                                     </template>
                                 </div>
 
-                                <input
-                                    type="file"
-                                    multiple
-                                    x-ref="referenceFileInput"
-                                    accept="{{ $referenceAcceptedExtensions ?? '' }}"
-                                    class="hidden"
-                                    @change="uploadReferenceFiles($refs.referenceFileInput.files)"
-                                />
-                                <button
-                                    type="button"
-                                    @click="$refs.referenceFileInput.click()"
-                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
-                                >
-                                    Upload Reference Files
-                                </button>
+                                @if (! ($isInProgress ?? false))
+                                    <input
+                                        type="file"
+                                        multiple
+                                        x-ref="referenceFileInput"
+                                        accept="{{ $referenceAcceptedExtensions ?? '' }}"
+                                        class="hidden"
+                                        @change="uploadReferenceFiles($refs.referenceFileInput.files)"
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="$refs.referenceFileInput.click()"
+                                        class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                                    >
+                                        Upload Reference Files
+                                    </button>
+                                @endif
                             </div>
 
                             <template x-teleport="body">

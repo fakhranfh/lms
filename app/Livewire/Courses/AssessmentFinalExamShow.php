@@ -146,6 +146,13 @@ class AssessmentFinalExamShow extends Component
         abort_unless($finalExam?->exam_type === FinalExamType::OpenBook, 403);
     }
 
+    private function assertNotInProgress(AssessmentAttemptService $assessmentAttemptService): void
+    {
+        $latest = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, auth()->id())->last();
+
+        abort_if($latest !== null && $latest->submitted_at === null, 403, 'Reference files cannot be changed while the exam is in progress.');
+    }
+
     /**
      * @return array<string, string>
      */
@@ -170,10 +177,11 @@ class AssessmentFinalExamShow extends Component
      * @return array{url?: string, key?: string, error?: string}
      */
     #[Renderless]
-    public function generateReferenceFileUploadUrl(string $filename, string $materialType, FinalExamService $finalExamService, ExamReferenceFileService $examReferenceFileService): array
+    public function generateReferenceFileUploadUrl(string $filename, string $materialType, FinalExamService $finalExamService, ExamReferenceFileService $examReferenceFileService, AssessmentAttemptService $assessmentAttemptService): array
     {
         abort_unless(auth()->user()->can('assessment.submit'), 403);
         $this->assertOpenBook($finalExamService);
+        $this->assertNotInProgress($assessmentAttemptService);
 
         if (! in_array($materialType, [MaterialType::Image->value, MaterialType::PDF->value], true)) {
             return ['error' => 'Only image and PDF files are allowed for exam materials.'];
@@ -208,10 +216,11 @@ class AssessmentFinalExamShow extends Component
      * @return array{error?: string, file?: array{id: string, title: string, type: string, icon: string, url: string|null, extension: string|null}}
      */
     #[Renderless]
-    public function finalizeReferenceFileUpload(array $data, FinalExamService $finalExamService, ExamReferenceFileService $examReferenceFileService): array
+    public function finalizeReferenceFileUpload(array $data, FinalExamService $finalExamService, ExamReferenceFileService $examReferenceFileService, AssessmentAttemptService $assessmentAttemptService): array
     {
         abort_unless(auth()->user()->can('assessment.submit'), 403);
         $this->assertOpenBook($finalExamService);
+        $this->assertNotInProgress($assessmentAttemptService);
 
         try {
             $file = $examReferenceFileService->finalizeUpload($this->assessment->id, auth()->id(), $data);
@@ -229,9 +238,10 @@ class AssessmentFinalExamShow extends Component
      * would only risk morphing the rest of the upload grid mid-interaction.
      */
     #[Renderless]
-    public function deleteReferenceFile(string $id, ExamReferenceFileService $examReferenceFileService): void
+    public function deleteReferenceFile(string $id, ExamReferenceFileService $examReferenceFileService, AssessmentAttemptService $assessmentAttemptService): void
     {
         abort_unless(auth()->user()->can('assessment.submit'), 403);
+        $this->assertNotInProgress($assessmentAttemptService);
 
         $examReferenceFileService->delete($id, auth()->id());
     }
@@ -241,9 +251,10 @@ class AssessmentFinalExamShow extends Component
      * client-side once this resolves.
      */
     #[Renderless]
-    public function deleteAllReferenceFiles(ExamReferenceFileService $examReferenceFileService): void
+    public function deleteAllReferenceFiles(ExamReferenceFileService $examReferenceFileService, AssessmentAttemptService $assessmentAttemptService): void
     {
         abort_unless(auth()->user()->can('assessment.submit'), 403);
+        $this->assertNotInProgress($assessmentAttemptService);
 
         $examReferenceFileService->deleteAllForAssessmentAndUser($this->assessment->id, auth()->id());
     }

@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 class GradebookSessionEntryRepository implements GradebookSessionEntryRepositoryInterface
 {
+    /**
+     * @return Collection<int, GradebookSessionEntry>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         $query = GradebookSessionEntry::query();
@@ -45,6 +48,9 @@ class GradebookSessionEntryRepository implements GradebookSessionEntryRepository
         return GradebookSessionEntry::destroy($id);
     }
 
+    /**
+     * @return Collection<int, GradebookSessionEntry>
+     */
     public function forGradebookEntry(string $gradebookEntryId): Collection
     {
         return GradebookSessionEntry::where('gradebook_entry_id', $gradebookEntryId)->get();

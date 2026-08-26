@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 interface GradebookSessionEntryRepositoryInterface
 {
+    /**
+     * @return Collection<int, GradebookSessionEntry>
+     */
     public function get(array $filters = [], array $with = []): Collection;
 
     public function find(string $id, array $with = []): ?GradebookSessionEntry;
@@ -17,5 +20,8 @@ interface GradebookSessionEntryRepositoryInterface
 
     public function delete(string $id): int;
 
+    /**
+     * @return Collection<int, GradebookSessionEntry>
+     */
     public function forGradebookEntry(string $gradebookEntryId): Collection;
 }

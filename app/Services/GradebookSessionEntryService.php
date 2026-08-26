@@ -12,6 +12,9 @@ class GradebookSessionEntryService
         private GradebookSessionEntryRepositoryInterface $gradebookSessionEntryRepository
     ) {}
 
+    /**
+     * @return Collection<int, GradebookSessionEntry>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         return $this->gradebookSessionEntryRepository->get($filters, $with);
@@ -37,6 +40,9 @@ class GradebookSessionEntryService
         return $this->gradebookSessionEntryRepository->delete($id);
     }
 
+    /**
+     * @return Collection<int, GradebookSessionEntry>
+     */
     public function forGradebookEntry(string $gradebookEntryId): Collection
     {
         return $this->gradebookSessionEntryRepository->forGradebookEntry($gradebookEntryId);

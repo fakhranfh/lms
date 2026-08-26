@@ -6,6 +6,8 @@ use App\Enums\ProctorSessionStatus;
 use App\Enums\QuizQuestionType;
 use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentQuizAnswerService;
+use App\Services\AssessmentService;
+use App\Services\GradebookScoringService;
 use App\Services\ProctorSessionService;
 use App\Services\QuizAttemptScoringService;
 use App\Services\QuizService;
@@ -27,6 +29,8 @@ class FinalizeExamSubmissionJob implements ShouldQueue
         QuizAttemptScoringService $quizAttemptScoringService,
         ProctorSessionService $proctorSessionService,
         QuizService $quizService,
+        AssessmentService $assessmentService,
+        GradebookScoringService $gradebookScoringService,
     ): void {
         $attempt = $assessmentAttemptService->find($this->attemptId);
 
@@ -65,6 +69,11 @@ class FinalizeExamSubmissionJob implements ShouldQueue
         ]);
 
         $quizAttemptScoringService->recomputeForUser($quiz, $attempt->assessment_id, $attempt->user_id);
+
+        $assessment = $assessmentService->find($attempt->assessment_id, ['course']);
+        if ($assessment !== null) {
+            $gradebookScoringService->recomputeForUser($assessment->course, $attempt->user_id);
+        }
 
         $session = $proctorSessionService->findByAttempt($this->attemptId);
         if ($session !== null) {

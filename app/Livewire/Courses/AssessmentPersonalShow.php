@@ -12,6 +12,7 @@ use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentQuestionScoreService;
 use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
+use App\Services\GradebookScoringService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
@@ -146,7 +147,7 @@ class AssessmentPersonalShow extends Component
         $this->gradeFeedback = '';
     }
 
-    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService): void
+    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, GradebookScoringService $gradebookScoringService): void
     {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
         abort_unless($this->gradingUserId !== null, 404);
@@ -202,6 +203,8 @@ class AssessmentPersonalShow extends Component
         } else {
             $assessmentScoreService->create($data);
         }
+
+        $gradebookScoringService->recomputeForUser($this->course, $this->gradingUserId);
 
         $this->cancelGrading();
         $this->successMessage = __('Grade saved.');

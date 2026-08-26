@@ -12,6 +12,7 @@ use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentQuizAnswerService;
 use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
+use App\Services\GradebookScoringService;
 use App\Services\QuizAttemptScoringService;
 use App\Services\QuizInstructionService;
 use App\Services\QuizService;
@@ -110,6 +111,7 @@ class AssessmentQuizShow extends Component
         AssessmentAttemptService $assessmentAttemptService,
         AssessmentQuizAnswerService $assessmentQuizAnswerService,
         QuizAttemptScoringService $quizAttemptScoringService,
+        GradebookScoringService $gradebookScoringService,
     ): void {
         abort_unless(auth()->user()->can('assessment.submit'), 403);
 
@@ -145,6 +147,7 @@ class AssessmentQuizShow extends Component
         ]);
 
         $quizAttemptScoringService->recomputeForUser($this->quiz, $this->assessment->id, auth()->id());
+        $gradebookScoringService->recomputeForUser($this->course, auth()->id());
 
         $this->answers = [];
         $this->successMessage = __('Your quiz has been submitted.');

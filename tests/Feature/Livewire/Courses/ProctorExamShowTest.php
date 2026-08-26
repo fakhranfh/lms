@@ -27,12 +27,7 @@ use App\Models\Role;
 use App\Models\School;
 use App\Models\Session;
 use App\Models\User;
-use App\Services\AssessmentAttemptService;
-use App\Services\AssessmentQuizAnswerService;
-use App\Services\AssessmentScoreService;
 use App\Services\ProctorSessionService;
-use App\Services\QuizAttemptScoringService;
-use App\Services\QuizService;
 use App\Services\R2StorageService;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Redis;
@@ -181,13 +176,7 @@ class ProctorExamShowTest extends TestCase
 
         $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
 
-        app(FinalizeExamSubmissionJob::class, ['attemptId' => $attempt->id])->handle(
-            app(AssessmentAttemptService::class),
-            app(AssessmentQuizAnswerService::class),
-            app(QuizAttemptScoringService::class),
-            app(ProctorSessionService::class),
-            app(QuizService::class),
-        );
+        app()->call([app(FinalizeExamSubmissionJob::class, ['attemptId' => $attempt->id]), 'handle']);
 
         $attempt->refresh();
         $session = ProctorSession::where('assessment_attempt_id', $attempt->id)->firstOrFail();
@@ -390,14 +379,10 @@ class ProctorExamShowTest extends TestCase
 
         $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
 
-        app(FinalizeProctorDisqualificationJob::class, [
+        app()->call([app(FinalizeProctorDisqualificationJob::class, [
             'attemptId' => $attempt->id,
             'reason' => 'reading_suspected',
-        ])->handle(
-            app(AssessmentAttemptService::class),
-            app(AssessmentScoreService::class),
-            app(ProctorSessionService::class),
-        );
+        ]), 'handle']);
 
         $attempt->refresh();
         $session = ProctorSession::where('assessment_attempt_id', $attempt->id)->firstOrFail();

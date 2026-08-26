@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 interface GradebookGradeScaleRepositoryInterface
 {
+    /**
+     * @return Collection<int, GradebookGradeScale>
+     */
     public function get(array $filters = [], array $with = []): Collection;
 
     public function find(string $id, array $with = []): ?GradebookGradeScale;
@@ -17,5 +20,8 @@ interface GradebookGradeScaleRepositoryInterface
 
     public function delete(string $id): int;
 
+    /**
+     * @return Collection<int, GradebookGradeScale>
+     */
     public function forCourseOrDefault(?string $courseId): Collection;
 }

@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Models\Session;
 use App\Services\CoursePersonService;
 use App\Services\ForumDiscussionScoringService;
+use App\Services\GradebookScoringService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use Livewire\Component;
@@ -51,6 +52,7 @@ class AssessmentForumDiscussionShow extends Component
     public function render(
         CoursePersonService $coursePersonService,
         ForumDiscussionScoringService $forumDiscussionScoringService,
+        GradebookScoringService $gradebookScoringService,
     ) {
         $viewData = [
             'course' => $this->course,
@@ -66,6 +68,7 @@ class AssessmentForumDiscussionShow extends Component
 
         if ($this->isStudent) {
             $forumDiscussionScoringService->recomputeForUser($this->assessment, auth()->id());
+            $gradebookScoringService->recomputeForUser($this->course, auth()->id());
 
             $viewData['sessionRows'] = $onlineSessions->map(fn (Session $session) => [
                 'session' => $session,
@@ -77,6 +80,7 @@ class AssessmentForumDiscussionShow extends Component
 
             foreach ($students as $coursePerson) {
                 $forumDiscussionScoringService->recomputeForUser($this->assessment, $coursePerson->user_id);
+                $gradebookScoringService->recomputeForUser($this->course, $coursePerson->user_id);
             }
 
             $viewData['sessionRows'] = $onlineSessions->map(function (Session $session) use ($students, $forumDiscussionScoringService) {

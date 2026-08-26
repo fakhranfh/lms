@@ -11,6 +11,7 @@ use App\Models\Session;
 use App\Services\AttendanceDerivationService;
 use App\Services\AttendanceScoringService;
 use App\Services\CoursePersonService;
+use App\Services\GradebookScoringService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use Livewire\Component;
@@ -54,6 +55,7 @@ class AssessmentAttendanceShow extends Component
         CoursePersonService $coursePersonService,
         AttendanceScoringService $attendanceScoringService,
         AttendanceDerivationService $attendanceDerivationService,
+        GradebookScoringService $gradebookScoringService,
     ) {
         $viewData = [
             'course' => $this->course,
@@ -71,6 +73,7 @@ class AssessmentAttendanceShow extends Component
 
         if ($this->isStudent) {
             $attendanceScoringService->recomputeForUser($this->assessment, auth()->id());
+            $gradebookScoringService->recomputeForUser($this->course, auth()->id());
 
             $viewData['sessionRows'] = $virtualClassSessions->map(fn (Session $session) => [
                 'session' => $session,
@@ -81,6 +84,7 @@ class AssessmentAttendanceShow extends Component
 
             foreach ($students as $coursePerson) {
                 $attendanceScoringService->recomputeForUser($this->assessment, $coursePerson->user_id);
+                $gradebookScoringService->recomputeForUser($this->course, $coursePerson->user_id);
             }
 
             $viewData['sessionRows'] = $virtualClassSessions->map(function (Session $session) use ($students, $attendanceDerivationService) {

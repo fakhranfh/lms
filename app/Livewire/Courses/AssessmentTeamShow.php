@@ -11,6 +11,7 @@ use App\Services\AssessmentAnswerService;
 use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
+use App\Services\GradebookScoringService;
 use App\Services\GroupMemberService;
 use App\Services\GroupService;
 use App\Support\CourseTabs;
@@ -150,7 +151,7 @@ class AssessmentTeamShow extends Component
         $this->gradeFeedback = '';
     }
 
-    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService): void
+    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, GroupMemberService $groupMemberService, GradebookScoringService $gradebookScoringService): void
     {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
         abort_unless($this->gradingGroupId !== null, 404);
@@ -178,6 +179,10 @@ class AssessmentTeamShow extends Component
             $assessmentScoreService->update($existingScore->id, $data);
         } else {
             $assessmentScoreService->create($data);
+        }
+
+        foreach ($groupMemberService->get(['group_id' => $this->gradingGroupId]) as $member) {
+            $gradebookScoringService->recomputeForUser($this->course, $member->user_id);
         }
 
         $this->cancelGrading();

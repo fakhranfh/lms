@@ -6,6 +6,8 @@ use App\Enums\ProctorReviewDecision;
 use App\Enums\ProctorSessionStatus;
 use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentScoreService;
+use App\Services\AssessmentService;
+use App\Services\GradebookScoringService;
 use App\Services\ProctorSessionService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -24,10 +26,12 @@ class FinalizeProctorDisqualificationJob implements ShouldQueue
         AssessmentAttemptService $assessmentAttemptService,
         AssessmentScoreService $assessmentScoreService,
         ProctorSessionService $proctorSessionService,
+        AssessmentService $assessmentService,
+        GradebookScoringService $gradebookScoringService,
     ): void {
         $feedback = __('Disqualified: cheating detected during the exam (:reason).', ['reason' => $this->reason]);
 
-        $assessmentAttemptService->update($this->attemptId, ['submitted_at' => now()]);
+        $attempt = $assessmentAttemptService->update($this->attemptId, ['submitted_at' => now()]);
 
         $score = $assessmentScoreService->findByAttempt($this->attemptId);
         if ($score) {
@@ -39,6 +43,11 @@ class FinalizeProctorDisqualificationJob implements ShouldQueue
                 'graded_at' => now(),
                 'feedback' => $feedback,
             ]);
+        }
+
+        $assessment = $assessmentService->find($attempt->assessment_id, ['course']);
+        if ($assessment !== null && $attempt->user_id !== null) {
+            $gradebookScoringService->recomputeForUser($assessment->course, $attempt->user_id);
         }
 
         $session = $proctorSessionService->findByAttempt($this->attemptId);

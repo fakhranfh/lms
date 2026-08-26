@@ -92,7 +92,7 @@ class AttendanceScoringService
     /**
      * @return Collection<int, Session>
      */
-    private function sessionsInScope(Assessment $assessment): Collection
+    public function sessionsInScope(Assessment $assessment): Collection
     {
         $sessions = $this->sessionService->forCourse($assessment->course_id, ['videoConferences.participations'])
             ->filter(fn (Session $session) => $session->delivery_mode === DeliveryMode::VirtualClass)

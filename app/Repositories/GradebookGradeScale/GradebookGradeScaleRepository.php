@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 class GradebookGradeScaleRepository implements GradebookGradeScaleRepositoryInterface
 {
+    /**
+     * @return Collection<int, GradebookGradeScale>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         $query = GradebookGradeScale::query();
@@ -45,8 +48,17 @@ class GradebookGradeScaleRepository implements GradebookGradeScaleRepositoryInte
         return GradebookGradeScale::destroy($id);
     }
 
+    /**
+     * @return Collection<int, GradebookGradeScale>
+     */
     public function forCourseOrDefault(?string $courseId): Collection
     {
-        return GradebookGradeScale::where('course_id', $courseId)->orderBy('order')->get();
+        $courseScales = $courseId
+            ? GradebookGradeScale::where('course_id', $courseId)->orderBy('order')->get()
+            : new Collection;
+
+        return $courseScales->isNotEmpty()
+            ? $courseScales
+            : GradebookGradeScale::whereNull('course_id')->orderBy('order')->get();
     }
 }

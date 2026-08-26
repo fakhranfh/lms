@@ -12,6 +12,9 @@ class GradebookEntryService
         private GradebookEntryRepositoryInterface $gradebookEntryRepository
     ) {}
 
+    /**
+     * @return Collection<int, GradebookEntry>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         return $this->gradebookEntryRepository->get($filters, $with);
@@ -37,6 +40,9 @@ class GradebookEntryService
         return $this->gradebookEntryRepository->delete($id);
     }
 
+    /**
+     * @return Collection<int, GradebookEntry>
+     */
     public function forCourseAndUser(string $courseId, string $userId): Collection
     {
         return $this->gradebookEntryRepository->forCourseAndUser($courseId, $userId);

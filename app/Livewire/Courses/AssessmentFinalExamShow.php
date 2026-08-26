@@ -20,6 +20,7 @@ use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
 use App\Services\ExamReferenceFileService;
 use App\Services\FinalExamService;
+use App\Services\GradebookScoringService;
 use App\Services\ProctorSessionService;
 use App\Services\ProctorSnapshotService;
 use App\Services\R2StorageService;
@@ -263,6 +264,8 @@ class AssessmentFinalExamShow extends Component
         string $proctorSessionId,
         ProctorSessionService $proctorSessionService,
         AssessmentScoreService $assessmentScoreService,
+        AssessmentAttemptService $assessmentAttemptService,
+        GradebookScoringService $gradebookScoringService,
     ): void {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
 
@@ -289,6 +292,11 @@ class AssessmentFinalExamShow extends Component
                     'graded_at' => now(),
                     'feedback' => __('Disqualified due to proctoring violation.'),
                 ]);
+            }
+
+            $attempt = $assessmentAttemptService->find($session->assessment_attempt_id);
+            if ($attempt !== null) {
+                $gradebookScoringService->recomputeForUser($this->course, $attempt->user_id);
             }
         }
 
@@ -438,7 +446,7 @@ class AssessmentFinalExamShow extends Component
         $this->gradeFeedback = '';
     }
 
-    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService): void
+    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, GradebookScoringService $gradebookScoringService): void
     {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
         abort_unless($this->gradingUserId !== null, 404);
@@ -494,6 +502,8 @@ class AssessmentFinalExamShow extends Component
         } else {
             $assessmentScoreService->create($data);
         }
+
+        $gradebookScoringService->recomputeForUser($this->course, $this->gradingUserId);
 
         $this->cancelGrading();
         $this->successMessage = __('Grade saved.');

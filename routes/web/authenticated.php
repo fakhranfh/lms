@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DemoLmsController;
 use App\Http\Controllers\ForumCommentLikeController;
+use App\Http\Controllers\GradebookSessionBreakdownController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProctorSpeedTestController;
 use App\Http\Controllers\ProctorSubmissionStatusController;
@@ -27,6 +28,7 @@ use App\Livewire\Courses\CourseForm;
 use App\Livewire\Courses\CoursesIndex;
 use App\Livewire\Courses\ForumIndex;
 use App\Livewire\Courses\ForumThreadShow;
+use App\Livewire\Courses\GradebookIndex;
 use App\Livewire\Courses\GroupsManage;
 use App\Livewire\Courses\HeadMovementTest;
 use App\Livewire\Courses\ProctorExamShow;
@@ -131,6 +133,8 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/courses/{course}/groups', GroupsManage::class)->middleware('permission:groups.manage')->name('groups.manage');
 
         Route::get('/courses/{course}/attendance', AttendanceIndex::class)->middleware('permission:attendance.view')->name('attendance.index');
+        Route::get('/courses/{course}/gradebook', GradebookIndex::class)->middleware('permission:gradebook.view')->name('gradebook.index');
+        Route::get('/courses/{course}/gradebook/types/{type}/sessions', GradebookSessionBreakdownController::class)->middleware('permission:gradebook.view')->name('gradebook.sessions');
 
         Route::get('/courses/{course}/tabs/{tab}', CourseComingSoon::class)->middleware('permission:courses.view')->name('course-tabs.coming-soon');
 

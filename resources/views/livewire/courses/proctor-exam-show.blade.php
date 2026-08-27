@@ -480,36 +480,8 @@
                 </div>
             </div>
 
-            <div class="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-[220px_1fr]">
+            <div class="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-[220px_1fr_260px]">
                 <div class="overflow-y-auto p-space-lg border-b md:border-b-0 md:border-r border-outline-variant space-y-space-lg">
-                    <div>
-                        <p class="font-label-sm text-label-sm text-secondary mb-space-md">Questions</p>
-                        <div class="grid grid-cols-6 md:grid-cols-4 gap-space-xs">
-                            @foreach ($quiz->questions as $question)
-                                <button
-                                    type="button"
-                                    @click="currentQuestion = {{ $loop->index }}"
-                                    :class="currentQuestion === {{ $loop->index }}
-                                        ? 'bg-primary text-on-primary'
-                                        : ($wire.answers['{{ $question->id }}'] ? 'bg-primary/20 text-primary' : 'bg-surface-container text-on-surface hover:bg-surface-container/70')"
-                                    class="w-10 h-10 {{ $question->question_type->value === 'essay' ? 'rounded-full' : 'rounded-lg' }} font-label-sm text-label-sm flex items-center justify-center transition"
-                                >
-                                    {{ $loop->iteration }}
-                                </button>
-                            @endforeach
-                        </div>
-                        <div class="flex items-center gap-space-lg mt-space-sm">
-                            <div class="flex items-center gap-space-xs">
-                                <span class="w-4 h-4 rounded-none border border-outline bg-surface-container flex-shrink-0"></span>
-                                <span class="font-body-xs text-body-xs text-secondary">Multiple Choice</span>
-                            </div>
-                            <div class="flex items-center gap-space-xs">
-                                <span class="w-4 h-4 rounded-full border border-outline bg-surface-container flex-shrink-0"></span>
-                                <span class="font-body-xs text-body-xs text-secondary">Essay</span>
-                            </div>
-                        </div>
-                    </div>
-
                     <div x-show="allowedTypes === 'open_book' && examMaterials.length" x-cloak>
                         <button
                             type="button"
@@ -534,6 +506,80 @@
                         </button>
                     </div>
 
+                    <div>
+                        <p class="font-label-sm text-label-sm text-secondary mb-space-md">Questions</p>
+                        <div class="flex items-center gap-space-lg mb-space-sm">
+                            <div class="flex items-center gap-space-xs">
+                                <span class="w-4 h-4 rounded-none border border-outline bg-surface-container flex-shrink-0"></span>
+                                <span class="font-body-xs text-body-xs text-secondary">Multiple Choice</span>
+                            </div>
+                            <div class="flex items-center gap-space-xs">
+                                <span class="w-4 h-4 rounded-full border border-outline bg-surface-container flex-shrink-0"></span>
+                                <span class="font-body-xs text-body-xs text-secondary">Essay</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-6 md:grid-cols-4 gap-space-xs">
+                            @foreach ($quiz->questions as $question)
+                                <button
+                                    type="button"
+                                    @click="currentQuestion = {{ $loop->index }}"
+                                    :class="currentQuestion === {{ $loop->index }}
+                                        ? 'bg-primary text-on-primary'
+                                        : ($wire.answers['{{ $question->id }}'] ? 'bg-primary/20 text-primary' : 'bg-surface-container text-on-surface hover:bg-surface-container/70')"
+                                    class="w-10 h-10 {{ $question->question_type->value === 'essay' ? 'rounded-full' : 'rounded-lg' }} font-label-sm text-label-sm flex items-center justify-center transition"
+                                >
+                                    {{ $loop->iteration }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-y-auto p-space-xl relative">
+                    @foreach ($quiz->questions as $question)
+                        <div x-show="currentQuestion === {{ $loop->index }}" x-cloak class="space-y-space-lg max-w-2xl mx-auto">
+                            <p class="text-body-sm text-on-surface-variant">Question {{ $loop->iteration }} of {{ $quiz->questions->count() }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
+                            <div class="rte-content prose prose-lg max-w-none text-on-surface">{!! $question->description !!}</div>
+
+                            @if (in_array($question->question_type->value, ['multiple_choice', 'true_false']))
+                                <div class="space-y-space-md">
+                                    @foreach ($question->options as $option)
+                                        <label class="flex items-center gap-space-md p-space-lg border border-outline rounded-lg cursor-pointer hover:bg-surface-container/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition">
+                                            <input type="radio" name="answer-{{ $question->id }}" wire:model="answers.{{ $question->id }}" value="{{ $option->id }}" class="w-5 h-5 accent-primary flex-shrink-0" />
+                                            <span class="text-body-lg text-on-surface">{{ $option->label }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div x-on:focusout.capture="$wire.set('answers.{{ $question->id }}', $wire.answers['{{ $question->id }}'])">
+                                    <x-rich-text-editor id="exam-question-{{ $question->id }}" wire-model="answers.{{ $question->id }}" :value="$answers[$question->id] ?? ''" :allow-attachments="false" :allow-links="false" />
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+
+                    <div class="flex items-center justify-between pt-space-lg mt-space-lg border-t border-outline-variant max-w-2xl mx-auto">
+                        <button
+                            type="button"
+                            @click="currentQuestion = Math.max(currentQuestion - 1, 0)"
+                            :disabled="currentQuestion === 0"
+                            class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition disabled:opacity-50"
+                        >
+                            Previous
+                        </button>
+
+                        <button
+                            type="button"
+                            x-show="currentQuestion < {{ $quiz->questions->count() - 1 }}"
+                            @click="currentQuestion = Math.min(currentQuestion + 1, {{ $quiz->questions->count() - 1 }})"
+                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-y-auto p-space-lg border-t md:border-t-0 md:border-l border-outline-variant">
                     <div
                         :class="screenStream ? 'space-y-space-sm' : 'fixed inset-0 z-20 bg-surface flex flex-col items-center justify-center gap-space-lg p-space-xl'"
                     >
@@ -584,50 +630,6 @@
                                 </button>
                             </div>
                         </template>
-                    </div>
-                </div>
-
-                <div class="overflow-y-auto p-space-xl relative">
-                    @foreach ($quiz->questions as $question)
-                        <div x-show="currentQuestion === {{ $loop->index }}" x-cloak class="space-y-space-lg max-w-2xl mx-auto">
-                            <p class="text-body-sm text-on-surface-variant">Question {{ $loop->iteration }} of {{ $quiz->questions->count() }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
-                            <div class="rte-content prose prose-lg max-w-none text-on-surface">{!! $question->description !!}</div>
-
-                            @if (in_array($question->question_type->value, ['multiple_choice', 'true_false']))
-                                <div class="space-y-space-md">
-                                    @foreach ($question->options as $option)
-                                        <label class="flex items-center gap-space-md p-space-lg border border-outline rounded-lg cursor-pointer hover:bg-surface-container/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition">
-                                            <input type="radio" name="answer-{{ $question->id }}" wire:model="answers.{{ $question->id }}" value="{{ $option->id }}" class="w-5 h-5 accent-primary flex-shrink-0" />
-                                            <span class="text-body-lg text-on-surface">{{ $option->label }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div x-on:focusout.capture="$wire.set('answers.{{ $question->id }}', $wire.answers['{{ $question->id }}'])">
-                                    <x-rich-text-editor id="exam-question-{{ $question->id }}" wire-model="answers.{{ $question->id }}" :value="$answers[$question->id] ?? ''" :allow-attachments="false" :allow-links="false" />
-                                </div>
-                            @endif
-                        </div>
-                    @endforeach
-
-                    <div class="flex items-center justify-between pt-space-lg mt-space-lg border-t border-outline-variant max-w-2xl mx-auto">
-                        <button
-                            type="button"
-                            @click="currentQuestion = Math.max(currentQuestion - 1, 0)"
-                            :disabled="currentQuestion === 0"
-                            class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition disabled:opacity-50"
-                        >
-                            Previous
-                        </button>
-
-                        <button
-                            type="button"
-                            x-show="currentQuestion < {{ $quiz->questions->count() - 1 }}"
-                            @click="currentQuestion = Math.min(currentQuestion + 1, {{ $quiz->questions->count() - 1 }})"
-                            class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
-                        >
-                            Next
-                        </button>
                     </div>
                 </div>
             </div>

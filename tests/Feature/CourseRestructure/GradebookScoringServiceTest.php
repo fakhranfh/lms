@@ -9,10 +9,8 @@ use App\Models\AssessmentQuestion;
 use App\Models\AssessmentScore;
 use App\Models\Attendance;
 use App\Models\Course;
-use App\Models\GradebookGradeScale;
 use App\Models\Session;
 use App\Models\User;
-use App\Services\GradebookGradeScaleService;
 use App\Services\GradebookScoringService;
 
 test('computeForUser weights a graded Personal Assignment percentage by its question points', function () {
@@ -112,24 +110,6 @@ test('personal/team/quiz/final-exam types have no session breakdown', function (
     expect($typeRow['sessions'])->toBe([]);
 });
 
-test('final score resolves a grade from the course grading scale', function () {
-    $course = Course::factory()->create();
-    $user = User::factory()->create();
-
-    GradebookGradeScale::factory()->for($course)->create(['label' => 'A', 'score_min' => 85, 'score_max' => 100, 'order' => 1]);
-    GradebookGradeScale::factory()->for($course)->create(['label' => 'B', 'score_min' => 70, 'score_max' => 84, 'order' => 2]);
-
-    $assessment = Assessment::factory()->for($course)->create(['type' => 'theory_personal_assignment', 'weight' => 100]);
-    AssessmentQuestion::factory()->for($assessment)->create(['points' => 100]);
-    $attempt = AssessmentAttempt::factory()->for($assessment)->for($user)->create();
-    AssessmentScore::factory()->for($attempt, 'attempt')->create(['score' => 90, 'graded_at' => now()]);
-
-    $result = app(GradebookScoringService::class)->computeForUser($course, $user->id);
-
-    expect($result['final']['score'])->toBe(90.0)
-        ->and($result['final']['grade'])->toBe('A');
-});
-
 test('recomputeForUser persists a GradebookEntry per assessment type with matching session entries', function () {
     $course = Course::factory()->create();
     $user = User::factory()->create();
@@ -160,15 +140,4 @@ test('recomputeForUser persists a GradebookEntry per assessment type with matchi
 
     $this->assertDatabaseCount('gradebook_entries', 1);
     $this->assertDatabaseHas('gradebook_entries', ['course_id' => $course->id, 'user_id' => $user->id, 'score' => 0]);
-});
-
-test('forCourseOrDefault falls back to the school-level default scale when the course has none', function () {
-    $course = Course::factory()->create();
-
-    GradebookGradeScale::factory()->create(['course_id' => null, 'label' => 'A', 'order' => 1]);
-
-    $scales = app(GradebookGradeScaleService::class)->forCourseOrDefault($course->id);
-
-    expect($scales)->toHaveCount(1)
-        ->and($scales->first()->label)->toBe('A');
 });

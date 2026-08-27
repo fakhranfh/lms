@@ -6,7 +6,6 @@ use App\Enums\AssessmentType;
 use App\Enums\RoleName;
 use App\Models\Course;
 use App\Services\CoursePersonService;
-use App\Services\GradebookGradeScaleService;
 use App\Services\GradebookScoringService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
@@ -22,16 +21,6 @@ class GradebookIndex extends Component
     public bool $dataLoaded = false;
 
     public ?string $selectedStudentId = null;
-
-    public bool $showGradeScales = false;
-
-    public string $scaleLabel = '';
-
-    public string $scaleMin = '';
-
-    public string $scaleMax = '';
-
-    public ?string $editingScaleId = null;
 
     public ?string $errorMessage = null;
 
@@ -58,66 +47,6 @@ class GradebookIndex extends Component
         $this->selectedStudentId = $userId;
     }
 
-    public function startEditScale(string $scaleId, GradebookGradeScaleService $gradebookGradeScaleService): void
-    {
-        abort_unless(auth()->user()->can('gradebook.manage'), 403);
-
-        $scale = $gradebookGradeScaleService->find($scaleId);
-
-        if (! $scale) {
-            return;
-        }
-
-        $this->editingScaleId = $scale->id;
-        $this->scaleLabel = $scale->label;
-        $this->scaleMin = (string) $scale->score_min;
-        $this->scaleMax = (string) $scale->score_max;
-    }
-
-    public function cancelScaleForm(): void
-    {
-        $this->editingScaleId = null;
-        $this->scaleLabel = '';
-        $this->scaleMin = '';
-        $this->scaleMax = '';
-    }
-
-    public function saveGradeScale(GradebookGradeScaleService $gradebookGradeScaleService): void
-    {
-        abort_unless(auth()->user()->can('gradebook.manage'), 403);
-
-        $this->validate([
-            'scaleLabel' => 'required|string|max:10',
-            'scaleMin' => 'required|integer|min:0|max:100',
-            'scaleMax' => 'required|integer|min:0|max:100|gte:scaleMin',
-        ]);
-
-        $data = [
-            'course_id' => $this->course->id,
-            'label' => $this->scaleLabel,
-            'score_min' => (int) $this->scaleMin,
-            'score_max' => (int) $this->scaleMax,
-            'order' => $gradebookGradeScaleService->forCourseOrDefault($this->course->id)->count(),
-        ];
-
-        if ($this->editingScaleId) {
-            $gradebookGradeScaleService->update($this->editingScaleId, $data);
-        } else {
-            $gradebookGradeScaleService->create($data);
-        }
-
-        $this->cancelScaleForm();
-        $this->successMessage = __('Grading scale saved.');
-    }
-
-    public function deleteGradeScale(string $scaleId, GradebookGradeScaleService $gradebookGradeScaleService): void
-    {
-        abort_unless(auth()->user()->can('gradebook.manage'), 403);
-
-        $gradebookGradeScaleService->delete($scaleId);
-        $this->successMessage = __('Grading scale removed.');
-    }
-
     public function clearSuccessMessage(): void
     {
         $this->successMessage = null;
@@ -126,7 +55,6 @@ class GradebookIndex extends Component
     public function render(
         CoursePersonService $coursePersonService,
         GradebookScoringService $gradebookScoringService,
-        GradebookGradeScaleService $gradebookGradeScaleService,
     ) {
         $viewData = [
             'course' => $this->course,
@@ -143,8 +71,6 @@ class GradebookIndex extends Component
                 ->extends('layouts.app', ['topbarTitle' => $this->course->title])
                 ->section('app-content');
         }
-
-        $viewData['gradeScales'] = $gradebookGradeScaleService->forCourseOrDefault($this->course->id);
 
         if ($this->isStudent) {
             $result = $gradebookScoringService->computeForUser($this->course, auth()->id());

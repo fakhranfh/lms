@@ -42,11 +42,10 @@ class GradebookScoringService
         private ForumDiscussionScoringService $forumDiscussionScoringService,
         private GradebookEntryService $gradebookEntryService,
         private GradebookSessionEntryService $gradebookSessionEntryService,
-        private GradebookGradeScaleService $gradebookGradeScaleService,
     ) {}
 
     /**
-     * @return array{final: array{score: ?float, grade: ?string, last_updated_at: ?Carbon}, types: array<int, array{type: AssessmentType, weight: float, score: ?float, last_updated_at: ?Carbon, sessions: array<int, array{session: Session, weight: float, score: float}>}>}
+     * @return array{final: array{score: ?float, last_updated_at: ?Carbon}, types: array<int, array{type: AssessmentType, weight: float, score: ?float, last_updated_at: ?Carbon, sessions: array<int, array{session: Session, weight: float, score: float}>}>}
      */
     public function computeForUser(Course $course, string $userId): array
     {
@@ -109,7 +108,6 @@ class GradebookScoringService
         return [
             'final' => [
                 'score' => $finalScore,
-                'grade' => $finalScore !== null ? $this->gradeForScore($course, $finalScore) : null,
                 'last_updated_at' => $contributingTypes->pluck('last_updated_at')->filter()->max(),
             ],
             'types' => $types,
@@ -302,13 +300,5 @@ class GradebookScoringService
                 'score' => $met ? 100.0 : 0.0,
             ];
         })->all();
-    }
-
-    private function gradeForScore(Course $course, float $score): ?string
-    {
-        $scale = $this->gradebookGradeScaleService->forCourseOrDefault($course->id)
-            ->first(fn ($s) => $score >= $s->score_min && $score <= $s->score_max);
-
-        return $scale?->label;
     }
 }

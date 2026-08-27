@@ -8,18 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('gradebook_grade_scales', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->uuid('course_id')->nullable()->index();
-            $table->string('label', 10);
-            $table->unsignedInteger('score_min');
-            $table->unsignedInteger('score_max');
-            $table->unsignedInteger('order');
-            $table->timestamps();
-
-            $table->foreign('course_id')->references('id')->on('courses')->cascadeOnDelete();
-        });
-
         Schema::create('gradebook_entries', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('course_id')->index();
@@ -53,6 +41,5 @@ return new class extends Migration
     {
         Schema::dropIfExists('gradebook_session_entries');
         Schema::dropIfExists('gradebook_entries');
-        Schema::dropIfExists('gradebook_grade_scales');
     }
 };

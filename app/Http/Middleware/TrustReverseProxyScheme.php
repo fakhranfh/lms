@@ -8,16 +8,20 @@ use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Local dev only: when a local TLS-terminating proxy (see bin/https-proxy.sh)
- * forwards a request to the plain-HTTP dev server, this makes Laravel treat
- * the request as secure and generate https:// URLs, so links, CSRF/session
+ * When a local TLS-terminating proxy (see bin/https-proxy.sh) forwards a
+ * request to the plain-HTTP dev server, this makes Laravel treat the
+ * request as secure and generate https:// URLs, so links, CSRF/session
  * cookies, and asset URLs (including Livewire's) match the page's origin.
+ *
+ * Not gated on app()->environment('local') because this app intentionally
+ * runs with APP_ENV=production locally; the proxy's X-Forwarded-Proto
+ * header is trusted regardless of environment.
  */
 class TrustReverseProxyScheme
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (app()->environment('local') && $request->header('X-Forwarded-Proto') === 'https') {
+        if ($request->header('X-Forwarded-Proto') === 'https') {
             $request->server->set('HTTPS', 'on');
             URL::forceScheme('https');
         }

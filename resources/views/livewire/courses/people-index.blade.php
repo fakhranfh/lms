@@ -10,209 +10,234 @@
         </div>
     @endif
 
-    <h1 class="font-headline-md text-headline-md text-on-surface">People</h1>
-
-    <div class="flex flex-wrap gap-space-xs border-b border-outline-variant">
-        <button
-            type="button"
-            wire:click="selectSubTab('teachers')"
-            class="px-space-md py-space-sm rounded-t-lg border-b-2 font-label-sm text-label-sm transition {{ $activeSubTab === 'teachers' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:bg-surface-container/50' }}"
-        >
-            Teachers
-        </button>
-        @unless ($isStudent)
+    <div class="space-y-space-lg">
+        <div class="flex w-full sm:w-1/4 bg-surface border border-outline-variant rounded-lg overflow-hidden divide-x divide-outline-variant">
             <button
                 type="button"
                 wire:click="selectSubTab('students')"
-                class="px-space-md py-space-sm rounded-t-lg border-b-2 font-label-sm text-label-sm transition {{ $activeSubTab === 'students' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:bg-surface-container/50' }}"
+                wire:loading.attr="disabled"
+                wire:target="selectSubTab('students'), selectSubTab('groups'), selectSubTab('teachers')"
+                class="flex-1 py-space-md text-center font-label-md text-label-md transition disabled:opacity-60 disabled:cursor-not-allowed {{ $activeSubTab === 'students' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container' }}"
             >
+                <span class="block font-headline-sm text-headline-sm">{{ $studentsCount }}</span>
                 Students
             </button>
-        @endunless
-        <button
-            type="button"
-            wire:click="selectSubTab('groups')"
-            class="px-space-md py-space-sm rounded-t-lg border-b-2 font-label-sm text-label-sm transition {{ $activeSubTab === 'groups' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:bg-surface-container/50' }}"
-        >
-            Groups
-        </button>
-    </div>
-
-    @if ($activeSubTab === 'teachers')
-        <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-outline-variant bg-surface-container/50">
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Name</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Email</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Role</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-outline-variant">
-                        @forelse ($teachers as $coursePerson)
-                            <tr wire:key="teacher-{{ $coursePerson->id }}">
-                                <td class="px-space-lg py-space-md font-label-md text-label-md text-on-surface">{{ $coursePerson->user->name }}</td>
-                                <td class="px-space-lg py-space-md text-body-sm text-on-surface-variant">{{ $coursePerson->user->email }}</td>
-                                <td class="px-space-lg py-space-md">
-                                    <span class="inline-flex items-center px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-primary/10 text-primary">
-                                        {{ str($coursePerson->role_in_course->value)->title() }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No teachers assigned yet.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+            <button
+                type="button"
+                wire:click="selectSubTab('groups')"
+                wire:loading.attr="disabled"
+                wire:target="selectSubTab('students'), selectSubTab('groups'), selectSubTab('teachers')"
+                class="flex-1 py-space-md text-center font-label-md text-label-md transition disabled:opacity-60 disabled:cursor-not-allowed {{ $activeSubTab === 'groups' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container' }}"
+            >
+                <span class="block font-headline-sm text-headline-sm">{{ $groupsCount }}</span>
+                {{ str()->plural('Group', $groupsCount) }}
+            </button>
+            <button
+                type="button"
+                wire:click="selectSubTab('teachers')"
+                wire:loading.attr="disabled"
+                wire:target="selectSubTab('students'), selectSubTab('groups'), selectSubTab('teachers')"
+                class="flex-1 py-space-md text-center font-label-md text-label-md transition disabled:opacity-60 disabled:cursor-not-allowed {{ $activeSubTab === 'teachers' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container' }}"
+            >
+                <span class="block font-headline-sm text-headline-sm">{{ $teachersCount }}</span>
+                Teachers
+            </button>
         </div>
-    @endif
 
-    @if ($activeSubTab === 'students')
         <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-outline-variant bg-surface-container/50">
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Name</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Email</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Group</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-outline-variant">
-                        @forelse ($students as $coursePerson)
-                            <tr wire:key="student-{{ $coursePerson->id }}">
-                                <td class="px-space-lg py-space-md font-label-md text-label-md text-on-surface">{{ $coursePerson->user->name }}</td>
-                                <td class="px-space-lg py-space-md text-body-sm text-on-surface-variant">{{ $coursePerson->user->email }}</td>
-                                <td class="px-space-lg py-space-md text-body-sm text-on-surface">
-                                    {{ $studentGroupByUserId[$coursePerson->user_id] ?? 'Unassigned' }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No students enrolled yet.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    @endif
-
-    @if ($activeSubTab === 'groups')
-        @if ($isStudent)
-            <div class="bg-surface border border-outline-variant rounded-lg p-space-lg">
-                @if ($ownGroup)
-                    <p class="font-label-lg text-label-lg text-on-surface mb-space-md">{{ $ownGroup->name }}</p>
-                    <div class="flex flex-wrap gap-space-xs">
-                        @forelse ($ownGroup->members as $member)
-                            <span class="inline-flex items-center px-space-sm py-1 rounded-full bg-surface-container text-body-xs text-on-surface">
-                                {{ $member->user->name }}
-                            </span>
-                        @empty
-                            <p class="text-body-sm text-on-surface-variant">No members yet.</p>
-                        @endforelse
+            <div wire:loading.grid wire:target="selectSubTab('students'), selectSubTab('teachers')" class="hidden grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant animate-pulse">
+                @for ($i = 0; $i < 9; $i++)
+                    <div class="bg-surface p-space-lg flex flex-col items-center gap-space-sm">
+                        <div class="w-12 h-12 rounded-full bg-surface-container"></div>
+                        <div class="h-4 bg-surface-container rounded w-2/3"></div>
                     </div>
-                @else
-                    <p class="text-body-sm text-on-surface-variant">You are not in a group yet.</p>
-                @endif
+                @endfor
             </div>
-        @else
-            @if ($unassignedStudents->isNotEmpty())
-                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg">
-                    <p class="font-label-sm text-label-sm text-secondary mb-space-xs">Unassigned Students ({{ $unassignedStudents->count() }})</p>
-                    <p class="text-body-sm text-on-surface-variant">{{ $unassignedStudents->pluck('user.name')->implode(', ') }}</p>
+
+            <div wire:loading.block wire:target="selectSubTab('groups')" class="hidden w-full p-space-lg space-y-space-md animate-pulse">
+                <div>
+                    <div class="h-5 bg-surface-container rounded w-32"></div>
                 </div>
-            @endif
-
-            @if ($canManageGroups)
-                <form wire:submit="createGroup" class="bg-surface border border-outline-variant rounded-lg p-space-lg flex items-end gap-space-md">
-                    <div class="flex-1">
-                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">New Group Name</label>
-                        <input type="text" wire:model="newGroupName" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                        @error('newGroupName') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                @for ($i = 0; $i < 2; $i++)
+                    <div class="border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+                        <div class="h-4 bg-surface-container rounded w-24"></div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                            @for ($j = 0; $j < 4; $j++)
+                                <div class="flex items-center gap-space-sm">
+                                    <div class="w-8 h-8 rounded-full bg-surface-container flex-shrink-0"></div>
+                                    <div class="h-4 bg-surface-container rounded w-2/3"></div>
+                                </div>
+                            @endfor
+                        </div>
                     </div>
-                    <button type="submit" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm">
-                        <span class="material-symbols-outlined">add</span>
-                        Create Group
-                    </button>
-                </form>
-            @endif
+                @endfor
+            </div>
 
-            <div class="space-y-space-md">
-                @forelse ($groups as $group)
-                    <div wire:key="group-{{ $group->id }}" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
-                        <div class="flex items-center justify-between gap-space-md">
-                            @if ($canManageGroups && $renamingGroupId === $group->id)
-                                <form wire:submit="saveRename" class="flex items-center gap-space-sm flex-1">
-                                    <input type="text" wire:model="renameValue" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                                    <button type="submit" class="text-primary text-body-sm font-medium hover:underline">Save</button>
-                                    <button type="button" wire:click="cancelRename" class="text-on-surface-variant text-body-sm hover:underline">Cancel</button>
-                                </form>
-                            @else
-                                <p class="font-label-lg text-label-lg text-on-surface">{{ $group->name }}</p>
-                                @if ($canManageGroups)
-                                    <div class="flex gap-space-sm">
-                                        <button type="button" wire:click="startRename('{{ $group->id }}')" class="p-2 hover:bg-surface-container rounded transition text-primary inline-flex">
-                                            <span class="material-symbols-outlined">edit</span>
-                                        </button>
-                                        <button type="button" wire:click="deleteGroup('{{ $group->id }}')" class="p-2 hover:bg-surface-container rounded transition text-error inline-flex">
-                                            <span class="material-symbols-outlined">delete</span>
-                                        </button>
-                                    </div>
-                                @endif
-                            @endif
-                        </div>
+            <div wire:loading.remove wire:target="selectSubTab('students'), selectSubTab('teachers'), selectSubTab('groups')">
+                @if ($activeSubTab === 'students')
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant">
+                        @forelse ($students as $coursePerson)
+                            <div wire:key="student-{{ $coursePerson->id }}" class="bg-surface p-space-lg flex flex-col items-center text-center gap-space-sm">
+                                <x-avatar :user="$coursePerson->user" size="12" />
+                                <p class="font-label-lg text-label-lg text-on-surface uppercase">{{ $coursePerson->user->name }}</p>
+                            </div>
+                        @empty
+                            <div class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">No students enrolled yet.</div>
+                        @endforelse
+                        @for ($i = 0; $i < (3 - $students->count() % 3) % 3; $i++)
+                            <div class="bg-surface hidden md:block"></div>
+                        @endfor
+                    </div>
+                @endif
 
-                        <div class="flex flex-wrap gap-space-xs">
-                            @forelse ($group->members as $member)
-                                <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container text-body-xs text-on-surface">
-                                    {{ $member->user->name }}
-                                    @if ($canManageGroups)
-                                        <button type="button" wire:click="removeStudent('{{ $member->id }}')" class="text-error">&times;</button>
-                                    @endif
+                @if ($activeSubTab === 'teachers')
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant">
+                        @forelse ($teachers as $coursePerson)
+                            <div wire:key="teacher-{{ $coursePerson->id }}" class="bg-surface p-space-lg flex flex-col items-center text-center gap-space-sm">
+                                <div class="rounded-full ring-2 ring-secondary ring-offset-2">
+                                    <x-avatar :user="$coursePerson->user" size="12" />
+                                </div>
+                                <p class="font-label-lg text-label-lg text-on-surface">{{ $coursePerson->user->name }}</p>
+                                <span class="inline-flex items-center px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-primary/10 text-primary">
+                                    {{ str($coursePerson->role_in_course->value)->title() }}
                                 </span>
-                            @empty
-                                <p class="text-body-sm text-on-surface-variant">No members yet.</p>
-                            @endforelse
+                            </div>
+                        @empty
+                            <div class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">No teachers assigned yet.</div>
+                        @endforelse
+                        @for ($i = 0; $i < (3 - $teachers->count() % 3) % 3; $i++)
+                            <div class="bg-surface hidden md:block"></div>
+                        @endfor
+                    </div>
+                @endif
+
+                @if ($activeSubTab === 'groups')
+                    <div class="p-space-lg space-y-space-md">
+                        <div>
+                            <h2 class="font-headline-sm text-headline-sm text-on-surface">Class Group</h2>
                         </div>
 
-                        @if ($canManageGroups)
-                            @if ($assigningGroupId === $group->id)
-                                <div class="border border-outline-variant rounded-lg p-space-md space-y-space-xs max-h-48 overflow-y-auto">
-                                    @forelse ($allStudents as $coursePerson)
-                                        <button
-                                            type="button"
-                                            wire:click="addStudent('{{ $group->id }}', '{{ $coursePerson->user_id }}')"
-                                            class="w-full text-left px-space-sm py-space-xs rounded hover:bg-surface-container text-body-sm text-on-surface flex items-center justify-between"
-                                        >
-                                            {{ $coursePerson->user->name }}
-                                            @if (in_array($coursePerson->user_id, $assignedUserIds, true))
-                                                <span class="text-body-xs text-on-surface-variant">move here</span>
-                                            @endif
-                                        </button>
-                                    @empty
-                                        <p class="text-body-sm text-on-surface-variant">No students enrolled.</p>
-                                    @endforelse
-                                    <button type="button" wire:click="cancelAssigning" class="text-body-sm text-on-surface-variant hover:underline mt-space-xs">Close</button>
+                        @if ($isStudent)
+                            @if ($ownGroup)
+                                <div class="border border-outline-variant rounded-lg p-space-lg">
+                                    <p class="font-label-lg text-label-lg text-on-surface mb-space-md">{{ $ownGroup->name }}</p>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                                        @forelse ($ownGroup->members as $member)
+                                            <div class="flex items-center gap-space-sm">
+                                                <x-avatar :user="$member->user" size="8" />
+                                                <p class="font-label-md text-label-md text-on-surface">{{ $member->user->name }}</p>
+                                            </div>
+                                        @empty
+                                            <p class="text-body-sm text-on-surface-variant">No members yet.</p>
+                                        @endforelse
+                                    </div>
                                 </div>
                             @else
-                                <button type="button" wire:click="startAssigning('{{ $group->id }}')" class="text-primary text-body-sm font-medium hover:underline inline-flex items-center gap-space-xs">
-                                    <span class="material-symbols-outlined text-[16px]">person_add</span>
-                                    Add Student
-                                </button>
+                                <p class="text-body-sm text-on-surface-variant">You are not in a group yet.</p>
                             @endif
+                        @else
+                            @if ($unassignedStudents->isNotEmpty())
+                                <div class="bg-surface-container/50 border border-outline-variant rounded-lg p-space-md">
+                                    <p class="font-label-sm text-label-sm text-secondary mb-space-xs">Unassigned Students ({{ $unassignedStudents->count() }})</p>
+                                    <p class="text-body-sm text-on-surface-variant">{{ $unassignedStudents->pluck('user.name')->implode(', ') }}</p>
+                                </div>
+                            @endif
+
+                            @if ($canManageGroups)
+                                <form wire:submit="createGroup" class="flex items-end gap-space-md">
+                                    <div class="flex-1">
+                                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">New Group Name</label>
+                                        <input type="text" wire:model="newGroupName" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                                        @error('newGroupName') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                                    </div>
+                                    <button type="submit" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm">
+                                        <span class="material-symbols-outlined">add</span>
+                                        Create Group
+                                    </button>
+                                </form>
+                            @endif
+
+                            <div class="space-y-space-sm">
+                                @forelse ($groups as $group)
+                                    <div wire:key="group-{{ $group->id }}" x-data="{ open: true }" class="border border-outline-variant rounded-lg overflow-hidden">
+                                        <button type="button" @click="open = !open" class="w-full flex items-center justify-between px-space-lg py-space-md bg-surface-container/30">
+                                            @if ($canManageGroups && $renamingGroupId === $group->id)
+                                                <form wire:submit="saveRename" @click.stop class="flex items-center gap-space-sm flex-1">
+                                                    <input type="text" wire:model="renameValue" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                                                    <button type="submit" class="text-primary text-body-sm font-medium hover:underline">Save</button>
+                                                    <button type="button" wire:click="cancelRename" class="text-on-surface-variant text-body-sm hover:underline">Cancel</button>
+                                                </form>
+                                            @else
+                                                <span class="font-label-lg text-label-lg text-on-surface">{{ $group->name }}</span>
+                                                <div class="flex items-center gap-space-sm">
+                                                    @if ($canManageGroups)
+                                                        <span @click.stop wire:click="startRename('{{ $group->id }}')" class="p-1 hover:bg-surface-container rounded transition text-primary inline-flex">
+                                                            <span class="material-symbols-outlined text-[18px]">edit</span>
+                                                        </span>
+                                                        <span @click.stop wire:click="deleteGroup('{{ $group->id }}')" class="p-1 hover:bg-surface-container rounded transition text-error inline-flex">
+                                                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                                                        </span>
+                                                    @endif
+                                                    <span class="material-symbols-outlined text-on-surface-variant transition" :class="open ? 'rotate-180' : ''">expand_more</span>
+                                                </div>
+                                            @endif
+                                        </button>
+
+                                        <div x-show="open" x-transition class="p-space-lg space-y-space-md">
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                                                @forelse ($group->members as $member)
+                                                    <div class="flex items-center justify-between gap-space-sm">
+                                                        <div class="flex items-center gap-space-sm">
+                                                            <x-avatar :user="$member->user" size="8" />
+                                                            <p class="font-label-md text-label-md text-on-surface">{{ $member->user->name }}</p>
+                                                        </div>
+                                                        @if ($canManageGroups)
+                                                            <button type="button" wire:click="removeStudent('{{ $member->id }}')" class="text-error text-[18px] material-symbols-outlined">close</button>
+                                                        @endif
+                                                    </div>
+                                                @empty
+                                                    <p class="text-body-sm text-on-surface-variant">No members yet.</p>
+                                                @endforelse
+                                            </div>
+
+                                            @if ($canManageGroups)
+                                                @if ($assigningGroupId === $group->id)
+                                                    <div class="border border-outline-variant rounded-lg p-space-md space-y-space-xs max-h-48 overflow-y-auto">
+                                                        @forelse ($allStudents as $coursePerson)
+                                                            <button
+                                                                type="button"
+                                                                wire:click="addStudent('{{ $group->id }}', '{{ $coursePerson->user_id }}')"
+                                                                class="w-full text-left px-space-sm py-space-xs rounded hover:bg-surface-container text-body-sm text-on-surface flex items-center justify-between"
+                                                            >
+                                                                {{ $coursePerson->user->name }}
+                                                                @if (in_array($coursePerson->user_id, $assignedUserIds, true))
+                                                                    <span class="text-body-xs text-on-surface-variant">move here</span>
+                                                                @endif
+                                                            </button>
+                                                        @empty
+                                                            <p class="text-body-sm text-on-surface-variant">No students enrolled.</p>
+                                                        @endforelse
+                                                        <button type="button" wire:click="cancelAssigning" class="text-body-sm text-on-surface-variant hover:underline mt-space-xs">Close</button>
+                                                    </div>
+                                                @else
+                                                    <button type="button" wire:click="startAssigning('{{ $group->id }}')" class="text-primary text-body-sm font-medium hover:underline inline-flex items-center gap-space-xs">
+                                                        <span class="material-symbols-outlined text-[16px]">person_add</span>
+                                                        Add Student
+                                                    </button>
+                                                @endif
+                                            @endif
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="border border-outline-variant rounded-lg p-8 text-center text-body-sm text-on-surface-variant">
+                                        No groups yet.
+                                    </div>
+                                @endforelse
+                            </div>
                         @endif
                     </div>
-                @empty
-                    <div class="bg-surface border border-outline-variant rounded-lg p-8 text-center text-body-sm text-on-surface-variant">
-                        No groups yet.
-                    </div>
-                @endforelse
+                @endif
             </div>
-        @endif
-    @endif
+        </div>
+    </div>
 </div>

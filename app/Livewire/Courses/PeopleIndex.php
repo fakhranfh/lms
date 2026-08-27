@@ -9,6 +9,7 @@ use App\Services\GroupMemberService;
 use App\Services\GroupService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 class PeopleIndex extends Component
@@ -21,7 +22,8 @@ class PeopleIndex extends Component
 
     public bool $dataLoaded = false;
 
-    public string $activeSubTab = 'teachers';
+    #[Url(as: 'tab', history: true)]
+    public string $activeSubTab = 'students';
 
     public string $newGroupName = '';
 
@@ -33,7 +35,7 @@ class PeopleIndex extends Component
 
     public ?string $errorMessage = null;
 
-    public function mount(CurrentSchool $currentSchool, Course $course, ?string $tab = null): void
+    public function mount(CurrentSchool $currentSchool, Course $course): void
     {
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
         abort_unless(auth()->user()->can('people.view') && $course->school_id === $schoolId, 403);
@@ -41,8 +43,8 @@ class PeopleIndex extends Component
         $this->course = $course;
         $this->isStudent = auth()->user()->hasRole(RoleName::Student);
 
-        if ($tab !== null && in_array($tab, self::SUB_TABS, true) && $this->subTabAllowed($tab)) {
-            $this->activeSubTab = $tab;
+        if (! in_array($this->activeSubTab, self::SUB_TABS, true)) {
+            $this->activeSubTab = 'students';
         }
     }
 
@@ -53,14 +55,9 @@ class PeopleIndex extends Component
 
     public function selectSubTab(string $tab): void
     {
-        if (in_array($tab, self::SUB_TABS, true) && $this->subTabAllowed($tab)) {
+        if (in_array($tab, self::SUB_TABS, true)) {
             $this->activeSubTab = $tab;
         }
-    }
-
-    private function subTabAllowed(string $tab): bool
-    {
-        return ! ($this->isStudent && $tab === 'students');
     }
 
     public function createGroup(GroupService $groupService): void
@@ -199,38 +196,32 @@ class PeopleIndex extends Component
                 ->section('app-content');
         }
 
-        $viewData['teachers'] = $coursePersonService->teachersForCourse($this->course->id);
-
+        $teachers = $coursePersonService->teachersForCourse($this->course->id);
+        $students = $coursePersonService->studentsForCourse($this->course->id);
         $groups = $groupService->forCourse($this->course->id);
-        $assignedUserIds = $groups->flatMap(fn ($group) => $group->members->pluck('user_id'))->all();
 
-        $studentGroupByUserId = [];
-        foreach ($groups as $group) {
-            foreach ($group->members as $member) {
-                $studentGroupByUserId[$member->user_id] = $group->name;
-            }
-        }
+        $viewData['teachers'] = $teachers;
+        $viewData['teachersCount'] = $teachers->count();
+        $viewData['students'] = $students;
+        $viewData['studentsCount'] = $students->count();
 
-        if ($this->activeSubTab === 'students' && ! $this->isStudent) {
-            $students = $coursePersonService->studentsForCourse($this->course->id);
-            $viewData['students'] = $students;
-            $viewData['studentGroupByUserId'] = $studentGroupByUserId;
-        }
+        if ($this->isStudent) {
+            $ownGroup = $groups->first(
+                fn ($group) => $group->members->contains(fn ($member) => $member->user_id === auth()->id())
+            );
 
-        if ($this->activeSubTab === 'groups') {
-            if ($this->isStudent) {
-                $viewData['ownGroup'] = $groups->first(
-                    fn ($group) => $group->members->contains(fn ($member) => $member->user_id === auth()->id())
-                );
-            } else {
-                $students = $coursePersonService->studentsForCourse($this->course->id);
-                $viewData['groups'] = $groups;
-                $viewData['allStudents'] = $students;
-                $viewData['assignedUserIds'] = $assignedUserIds;
-                $viewData['unassignedStudents'] = $students->reject(
-                    fn ($coursePerson) => in_array($coursePerson->user_id, $assignedUserIds, true)
-                );
-            }
+            $viewData['ownGroup'] = $ownGroup;
+            $viewData['groupsCount'] = $ownGroup ? 1 : 0;
+        } else {
+            $viewData['groupsCount'] = $groups->count();
+            $assignedUserIds = $groups->flatMap(fn ($group) => $group->members->pluck('user_id'))->all();
+
+            $viewData['groups'] = $groups;
+            $viewData['allStudents'] = $students;
+            $viewData['assignedUserIds'] = $assignedUserIds;
+            $viewData['unassignedStudents'] = $students->reject(
+                fn ($coursePerson) => in_array($coursePerson->user_id, $assignedUserIds, true)
+            );
         }
 
         return view('livewire.courses.people-index', $viewData)

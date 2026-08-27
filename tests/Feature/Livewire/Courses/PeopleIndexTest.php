@@ -65,12 +65,12 @@ class PeopleIndexTest extends TestCase
         $this->teacher->givePermissionTo('people.view');
         $this->actingAs($this->teacher);
 
-        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+        Livewire::test(PeopleIndex::class, ['course' => $this->course, 'activeSubTab' => 'teachers'])
             ->call('loadData')
             ->assertSee($this->teacher->name);
     }
 
-    public function test_teacher_sees_students_with_group_column(): void
+    public function test_teacher_sees_students_list(): void
     {
         $this->teacher->givePermissionTo('people.view');
         $this->actingAs($this->teacher);
@@ -78,19 +78,18 @@ class PeopleIndexTest extends TestCase
         Livewire::test(PeopleIndex::class, ['course' => $this->course])
             ->call('loadData')
             ->call('selectSubTab', 'students')
-            ->assertSee($this->student->name)
-            ->assertSee('Unassigned');
+            ->assertSee($this->student->name);
     }
 
-    public function test_student_cannot_select_students_sub_tab(): void
+    public function test_student_can_see_students_sub_tab(): void
     {
         $this->student->givePermissionTo('people.view');
         $this->actingAs($this->student);
 
         Livewire::test(PeopleIndex::class, ['course' => $this->course])
             ->call('loadData')
-            ->call('selectSubTab', 'students')
-            ->assertSet('activeSubTab', 'teachers');
+            ->assertSet('activeSubTab', 'students')
+            ->assertSee($this->student->name);
     }
 
     public function test_deep_links_directly_to_groups_sub_tab(): void
@@ -98,7 +97,7 @@ class PeopleIndexTest extends TestCase
         $this->teacher->givePermissionTo('people.view');
         $this->actingAs($this->teacher);
 
-        Livewire::test(PeopleIndex::class, ['course' => $this->course, 'tab' => 'groups'])
+        Livewire::test(PeopleIndex::class, ['course' => $this->course, 'activeSubTab' => 'groups'])
             ->assertSet('activeSubTab', 'groups');
     }
 
@@ -110,7 +109,7 @@ class PeopleIndexTest extends TestCase
         $group = Group::factory()->for($this->course)->create(['name' => 'Team Alpha']);
         GroupMember::factory()->for($group)->create(['user_id' => $this->student->id]);
 
-        Livewire::test(PeopleIndex::class, ['course' => $this->course, 'tab' => 'groups'])
+        Livewire::test(PeopleIndex::class, ['course' => $this->course, 'activeSubTab' => 'groups'])
             ->call('loadData')
             ->assertSee('Team Alpha');
     }
@@ -120,9 +119,35 @@ class PeopleIndexTest extends TestCase
         $this->student->givePermissionTo('people.view');
         $this->actingAs($this->student);
 
-        Livewire::test(PeopleIndex::class, ['course' => $this->course, 'tab' => 'groups'])
+        Livewire::test(PeopleIndex::class, ['course' => $this->course, 'activeSubTab' => 'groups'])
             ->call('loadData')
             ->assertSee('You are not in a group yet.');
+    }
+
+    public function test_group_count_for_student_reflects_only_their_own_group(): void
+    {
+        $this->student->givePermissionTo('people.view');
+        $this->actingAs($this->student);
+
+        Group::factory()->for($this->course)->create();
+        $ownGroup = Group::factory()->for($this->course)->create();
+        GroupMember::factory()->for($ownGroup)->create(['user_id' => $this->student->id]);
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->assertViewHas('groupsCount', 1);
+    }
+
+    public function test_group_count_for_teacher_reflects_all_course_groups(): void
+    {
+        $this->teacher->givePermissionTo('people.view');
+        $this->actingAs($this->teacher);
+
+        Group::factory()->for($this->course)->count(2)->create();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->assertViewHas('groupsCount', 2);
     }
 
     public function test_student_cannot_manage_groups(): void

@@ -12,6 +12,7 @@ use App\Enums\ProctorSnapshotType;
 use App\Enums\RoleName;
 use App\Jobs\FinalizeExamSubmissionJob;
 use App\Jobs\FinalizeProctorDisqualificationJob;
+use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\ExamReferenceFile;
@@ -37,6 +38,8 @@ use Livewire\Component;
 
 class ProctorExamShow extends Component
 {
+    use WithRichTextEditor;
+
     public Course $course;
 
     public Assessment $assessment;
@@ -77,6 +80,15 @@ class ProctorExamShow extends Component
         ];
 
         return $common;
+    }
+
+    /**
+     * Exam essay answers never allow file attachments, so this endpoint is
+     * always blocked regardless of what the client sends.
+     */
+    public function insertRichTextFile(R2StorageService $r2StorageService): string
+    {
+        abort(403);
     }
 
     public function mount(

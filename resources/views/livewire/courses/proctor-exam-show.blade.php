@@ -436,6 +436,29 @@
 
                         <button
                             type="button"
+                            @click="
+                                const devQuestions = @js($quiz->questions->map(fn ($question) => [
+                                    'id' => (string) $question->id,
+                                    'isEssay' => $question->question_type->value === 'essay',
+                                    'value' => in_array($question->question_type->value, ['multiple_choice', 'true_false'])
+                                        ? (string) optional($question->options->first())->id
+                                        : '<p>Dev-filled answer for question '.$question->order.'.</p>',
+                                ]));
+                                for (const question of devQuestions) {
+                                    if (question.isEssay) {
+                                        window.dispatchEvent(new CustomEvent('rich-text-set-content', { detail: { id: 'exam-question-' + question.id, value: question.value } }));
+                                    } else {
+                                        $wire.set('answers.' + question.id, question.value);
+                                    }
+                                }
+                            "
+                            class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                        >
+                            Dev: Fill All
+                        </button>
+
+                        <button
+                            type="button"
                             @click="violationsDisabled = ! violationsDisabled"
                             :class="violationsDisabled ? 'border-error text-error' : 'border-outline text-on-surface'"
                             class="px-space-md py-space-xs border rounded-lg font-label-sm text-label-sm hover:bg-surface-container transition"
@@ -466,12 +489,24 @@
                                 <button
                                     type="button"
                                     @click="currentQuestion = {{ $loop->index }}"
-                                    :class="currentQuestion === {{ $loop->index }} ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface hover:bg-surface-container/70'"
-                                    class="w-10 h-10 rounded-lg font-label-sm text-label-sm flex items-center justify-center transition"
+                                    :class="currentQuestion === {{ $loop->index }}
+                                        ? 'bg-primary text-on-primary'
+                                        : ($wire.answers['{{ $question->id }}'] ? 'bg-primary/20 text-primary' : 'bg-surface-container text-on-surface hover:bg-surface-container/70')"
+                                    class="w-10 h-10 {{ $question->question_type->value === 'essay' ? 'rounded-full' : 'rounded-lg' }} font-label-sm text-label-sm flex items-center justify-center transition"
                                 >
                                     {{ $loop->iteration }}
                                 </button>
                             @endforeach
+                        </div>
+                        <div class="flex items-center gap-space-lg mt-space-sm">
+                            <div class="flex items-center gap-space-xs">
+                                <span class="w-4 h-4 rounded-none border border-outline bg-surface-container flex-shrink-0"></span>
+                                <span class="font-body-xs text-body-xs text-secondary">Multiple Choice</span>
+                            </div>
+                            <div class="flex items-center gap-space-xs">
+                                <span class="w-4 h-4 rounded-full border border-outline bg-surface-container flex-shrink-0"></span>
+                                <span class="font-body-xs text-body-xs text-secondary">Essay</span>
+                            </div>
                         </div>
                     </div>
 
@@ -568,7 +603,9 @@
                                     @endforeach
                                 </div>
                             @else
-                                <textarea wire:model="answers.{{ $question->id }}" rows="8" class="w-full px-space-lg py-space-md border border-outline rounded-lg font-body-lg text-body-lg focus:outline-none focus:ring-2 focus:ring-primary/50"></textarea>
+                                <div x-on:focusout.capture="$wire.set('answers.{{ $question->id }}', $wire.answers['{{ $question->id }}'])">
+                                    <x-rich-text-editor id="exam-question-{{ $question->id }}" wire-model="answers.{{ $question->id }}" :value="$answers[$question->id] ?? ''" :allow-attachments="false" :allow-links="false" />
+                                </div>
                             @endif
                         </div>
                     @endforeach

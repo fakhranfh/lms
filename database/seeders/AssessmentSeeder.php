@@ -312,7 +312,8 @@ class AssessmentSeeder extends Seeder
     /**
      * Open Book / Closed Book final exams are proctored and use the
      * quiz-style attempt flow (ProctorExamShow), so they need a Quiz with
-     * multiple-choice questions rather than essay AssessmentQuestions.
+     * 15 multiple-choice questions and 5 essay questions rather than essay
+     * AssessmentQuestions.
      */
     private function seedFinalExamQuizQuestions(Assessment $assessment, FinalExamType $type): void
     {
@@ -326,52 +327,24 @@ class AssessmentSeeder extends Seeder
             'time_limit_per_attempt' => 60,
         ]);
 
-        $definitions = $type === FinalExamType::OpenBook ? [
-            [
-                'description' => '<p>Using any course materials as reference, which option best solves the case study provided?</p>',
-                'points' => 50,
-                'options' => [
-                    ['label' => 'Apply the approach covered in Week 3, adapted to the given constraints', 'is_correct' => true],
-                    ['label' => 'Ignore the case study constraints entirely', 'is_correct' => false],
-                    ['label' => 'Use a method not covered in this course', 'is_correct' => false],
-                ],
-            ],
-            [
-                'description' => '<p>Which comparison best justifies choosing one approach over the other for the given scenario?</p>',
-                'points' => 50,
-                'options' => [
-                    ['label' => 'Approach A trades simplicity for flexibility, which fits this scenario', 'is_correct' => true],
-                    ['label' => 'Both approaches are functionally identical', 'is_correct' => false],
-                    ['label' => 'Neither approach applies to this scenario', 'is_correct' => false],
-                ],
-            ],
-        ] : [
-            [
-                'description' => '<p>Without referring to any materials, which statement best explains the core principle covered in this course?</p>',
-                'points' => 50,
-                'options' => [
-                    ['label' => 'The principle balances tradeoffs based on context', 'is_correct' => true],
-                    ['label' => 'The principle has no practical application', 'is_correct' => false],
-                    ['label' => 'The principle was deprecated in the course', 'is_correct' => false],
-                ],
-            ],
-            [
-                'description' => '<p>Solve the following problem using only what you have memorized: which answer is correct?</p>',
-                'points' => 50,
-                'options' => [
-                    ['label' => 'The value obtained by applying the memorized formula directly', 'is_correct' => true],
-                    ['label' => 'The value obtained by guessing', 'is_correct' => false],
-                    ['label' => 'There is no correct answer', 'is_correct' => false],
-                ],
-            ],
-        ];
+        $mcDefinitions = $type === FinalExamType::OpenBook
+            ? $this->finalExamOpenBookMultipleChoiceQuestions()
+            : $this->finalExamClosedBookMultipleChoiceQuestions();
 
-        foreach ($definitions as $order => $definition) {
+        $essayDefinitions = $type === FinalExamType::OpenBook
+            ? $this->finalExamOpenBookEssayQuestions()
+            : $this->finalExamClosedBookEssayQuestions();
+
+        $order = 0;
+
+        foreach ($mcDefinitions as $definition) {
+            $order++;
+
             $question = $quiz->questions()->create([
                 'description' => $definition['description'],
                 'points' => $definition['points'],
                 'question_type' => QuizQuestionType::MultipleChoice,
-                'order' => $order + 1,
+                'order' => $order,
             ]);
 
             foreach ($definition['options'] as $optionOrder => $option) {
@@ -383,7 +356,99 @@ class AssessmentSeeder extends Seeder
             }
         }
 
-        $quiz->update(['total_question' => count($definitions)]);
+        foreach ($essayDefinitions as $definition) {
+            $order++;
+
+            $quiz->questions()->create([
+                'description' => $definition['description'],
+                'points' => $definition['points'],
+                'question_type' => QuizQuestionType::Essay,
+                'order' => $order,
+            ]);
+        }
+
+        $quiz->update(['total_question' => $order]);
+    }
+
+    /**
+     * @return array<int, array{description: string, points: int, options: array<int, array{label: string, is_correct: bool}>}>
+     */
+    private function finalExamOpenBookMultipleChoiceQuestions(): array
+    {
+        return $this->buildMultipleChoiceQuestions(
+            'Using any course materials as reference, which option best solves case study #%d provided?',
+            'Apply the approach covered in Week %d, adapted to the given constraints',
+            'Ignore the case study constraints entirely',
+            'Use a method not covered in this course',
+        );
+    }
+
+    /**
+     * @return array<int, array{description: string, points: int, options: array<int, array{label: string, is_correct: bool}>}>
+     */
+    private function finalExamClosedBookMultipleChoiceQuestions(): array
+    {
+        return $this->buildMultipleChoiceQuestions(
+            'Without referring to any materials, which statement best explains core principle #%d covered in this course?',
+            'The principle balances tradeoffs based on context, as taught in Week %d',
+            'The principle has no practical application',
+            'The principle was deprecated in the course',
+        );
+    }
+
+    /**
+     * @return array<int, array{description: string, points: int, options: array<int, array{label: string, is_correct: bool}>}>
+     */
+    private function buildMultipleChoiceQuestions(string $descriptionTemplate, string $correctTemplate, string $distractorOne, string $distractorTwo): array
+    {
+        $questions = [];
+
+        for ($i = 1; $i <= 15; $i++) {
+            $questions[] = [
+                'description' => '<p>'.sprintf($descriptionTemplate, $i).'</p>',
+                'points' => 4,
+                'options' => [
+                    ['label' => sprintf($correctTemplate, $i), 'is_correct' => true],
+                    ['label' => $distractorOne, 'is_correct' => false],
+                    ['label' => $distractorTwo, 'is_correct' => false],
+                ],
+            ];
+        }
+
+        return $questions;
+    }
+
+    /**
+     * @return array<int, array{description: string, points: int}>
+     */
+    private function finalExamOpenBookEssayQuestions(): array
+    {
+        return $this->buildEssayQuestions('Using any course materials as reference, analyze case study #%d and justify your recommended solution (300-500 words).');
+    }
+
+    /**
+     * @return array<int, array{description: string, points: int}>
+     */
+    private function finalExamClosedBookEssayQuestions(): array
+    {
+        return $this->buildEssayQuestions('Without referring to any materials, explain core principle #%d covered in this course and justify your answer from memory (300-500 words).');
+    }
+
+    /**
+     * @return array<int, array{description: string, points: int}>
+     */
+    private function buildEssayQuestions(string $descriptionTemplate): array
+    {
+        $questions = [];
+
+        for ($i = 1; $i <= 5; $i++) {
+            $questions[] = [
+                'description' => '<p>'.sprintf($descriptionTemplate, $i).'</p>',
+                'points' => 8,
+            ];
+        }
+
+        return $questions;
     }
 
     /**

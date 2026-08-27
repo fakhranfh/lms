@@ -1,10 +1,11 @@
-@props(['id', 'wireModel', 'value' => '', 'disabled' => false])
+@props(['id', 'wireModel', 'value' => '', 'disabled' => false, 'allowAttachments' => true, 'allowLinks' => true])
 
 <div
     wire:ignore
-    x-data="richTextEditor(@js($value), '{{ $wireModel }}', '{{ $id }}', @js((bool) $disabled))"
+    x-data="richTextEditor(@js($value), '{{ $wireModel }}', '{{ $id }}', @js((bool) $disabled), @js((bool) $allowAttachments), @js((bool) $allowLinks))"
     x-on:rich-text-cleared.window="if ($event.detail.id === id) { clear(); }"
     x-on:rich-text-disabled-changed.window="if ($event.detail.id === id) { disabled = $event.detail.disabled; }"
+    x-on:rich-text-set-content.window="if ($event.detail.id === id) { setContent($event.detail.value); }"
     class="bg-surface border border-outline rounded-lg"
     :class="disabled && 'opacity-60'"
 >
@@ -18,9 +19,11 @@
         <button type="button" @click="exec('underline')" :disabled="disabled" :class="active.underline && 'bg-primary/10 text-primary'" class="p-1.5 rounded hover:bg-surface-container disabled:opacity-50 disabled:cursor-not-allowed">
             <span class="material-symbols-outlined text-[18px]">format_underlined</span>
         </button>
-        <button type="button" @click="insertLink()" :disabled="disabled" class="p-1.5 rounded hover:bg-surface-container disabled:opacity-50 disabled:cursor-not-allowed">
-            <span class="material-symbols-outlined text-[18px]">link</span>
-        </button>
+        <template x-if="allowLinks">
+            <button type="button" @click="insertLink()" :disabled="disabled" class="p-1.5 rounded hover:bg-surface-container disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="material-symbols-outlined text-[18px]">link</span>
+            </button>
+        </template>
 
         <span class="w-px h-5 bg-outline-variant mx-1"></span>
 
@@ -87,12 +90,16 @@
             </div>
         </div>
 
-        <span class="w-px h-5 bg-outline-variant mx-1"></span>
+        <template x-if="allowAttachments">
+            <span class="w-px h-5 bg-outline-variant mx-1"></span>
+        </template>
 
-        <button type="button" @click="triggerFilePicker()" :disabled="disabled || uploading" class="p-1.5 rounded hover:bg-surface-container disabled:opacity-50 disabled:cursor-not-allowed">
-            <span class="material-symbols-outlined text-[18px]">attach_file</span>
-        </button>
-        <input type="file" x-ref="fileInput" accept="image/*,.pdf,.zip" class="hidden" :disabled="disabled" @change="uploadFile($event)">
+        <template x-if="allowAttachments">
+            <button type="button" @click="triggerFilePicker()" :disabled="disabled || uploading" class="p-1.5 rounded hover:bg-surface-container disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="material-symbols-outlined text-[18px]">attach_file</span>
+            </button>
+        </template>
+        <input x-show="allowAttachments" x-cloak type="file" x-ref="fileInput" accept="image/*,.pdf,.zip" class="hidden" :disabled="disabled" @change="uploadFile($event)">
     </div>
 
     <div

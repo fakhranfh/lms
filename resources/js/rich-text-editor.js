@@ -1,6 +1,8 @@
-export default (initialValue, wireModel, id, disabled = false) => ({
+export default (initialValue, wireModel, id, disabled = false, allowAttachments = true, allowLinks = true) => ({
     id,
     disabled,
+    allowAttachments,
+    allowLinks,
     uploading: false,
     active: {
         bold: false,
@@ -76,7 +78,7 @@ export default (initialValue, wireModel, id, disabled = false) => ({
     },
 
     insertLink() {
-        if (this.disabled) {
+        if (this.disabled || !this.allowLinks) {
             return;
         }
 
@@ -113,6 +115,12 @@ export default (initialValue, wireModel, id, disabled = false) => ({
         this.$refs.editor.innerHTML = '';
         this.trackedAttachments = [];
         this.$wire.set(wireModel, '', false);
+    },
+
+    setContent(value) {
+        this.$refs.editor.innerHTML = value || '';
+        this.trackedAttachments = this.extractAttachments(this.$refs.editor.innerHTML);
+        this.$wire.set(wireModel, value || '');
     },
 
     onPaste(event) {
@@ -224,7 +232,7 @@ export default (initialValue, wireModel, id, disabled = false) => ({
     },
 
     triggerFilePicker() {
-        if (this.disabled) {
+        if (this.disabled || !this.allowAttachments) {
             return;
         }
 
@@ -234,7 +242,7 @@ export default (initialValue, wireModel, id, disabled = false) => ({
     uploadFile(event) {
         const file = event.target.files[0];
 
-        if (!file || this.disabled) {
+        if (!file || this.disabled || !this.allowAttachments) {
             return;
         }
 

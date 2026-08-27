@@ -12,6 +12,7 @@ use App\Services\ProctorExamAnswersService;
 use App\Services\ProctorSessionService;
 use App\Services\QuizAttemptScoringService;
 use App\Services\QuizService;
+use App\Services\RichTextAttachmentCleanupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -32,6 +33,7 @@ class FinalizeExamSubmissionJob implements ShouldQueue
         AssessmentService $assessmentService,
         GradebookScoringService $gradebookScoringService,
         ProctorExamAnswersService $proctorExamAnswersService,
+        RichTextAttachmentCleanupService $richTextAttachmentCleanupService,
     ): void {
         $attempt = $assessmentAttemptService->find($this->attemptId);
 
@@ -56,7 +58,7 @@ class FinalizeExamSubmissionJob implements ShouldQueue
                 'assessment_attempt_id' => $this->attemptId,
                 'quiz_question_id' => $question->id,
                 'selected_option_id' => $isObjective ? ($value ?: null) : null,
-                'answer_text' => $isObjective ? null : ($value ?: null),
+                'answer_text' => $isObjective ? null : ($value ? $richTextAttachmentCleanupService->promoteTempAttachments($value) : null),
                 'score' => $isObjective ? $quizAttemptScoringService->scoreObjectiveAnswer($question, $value ?: null) : null,
             ]);
         }

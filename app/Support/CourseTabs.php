@@ -21,7 +21,7 @@ class CourseTabs
             'forum' => ['label' => 'Forum', 'route' => 'forum.index', 'icon' => 'forum'],
             'assessment' => ['label' => 'Assessment', 'route' => 'assessments.index', 'icon' => 'assignment'],
             'gradebook' => ['label' => 'Gradebook', 'route' => 'gradebook.index', 'icon' => 'grade'],
-            'people' => ['label' => 'People', 'route' => 'course-tabs.coming-soon', 'icon' => 'groups'],
+            'people' => ['label' => 'People', 'route' => 'people.index', 'icon' => 'groups'],
             'attendance' => ['label' => 'Attendance', 'route' => 'attendance.index', 'icon' => 'fact_check'],
         ];
 

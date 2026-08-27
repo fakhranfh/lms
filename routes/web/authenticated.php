@@ -29,8 +29,8 @@ use App\Livewire\Courses\CoursesIndex;
 use App\Livewire\Courses\ForumIndex;
 use App\Livewire\Courses\ForumThreadShow;
 use App\Livewire\Courses\GradebookIndex;
-use App\Livewire\Courses\GroupsManage;
 use App\Livewire\Courses\HeadMovementTest;
+use App\Livewire\Courses\PeopleIndex;
 use App\Livewire\Courses\ProctorExamShow;
 use App\Livewire\Courses\ProctorPreflightShow;
 use App\Livewire\Courses\ProctorQuizQuestionsForm;
@@ -130,7 +130,7 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/assessments/{assessment}/forum-discussion', AssessmentForumDiscussionShow::class)->middleware('permission:assessment.view')->name('assessments.forum-discussion.show');
         Route::get('/quiz-instructions', QuizInstructionEdit::class)->middleware('permission:assessment.edit')->name('quiz-instructions.edit');
 
-        Route::get('/courses/{course}/groups', GroupsManage::class)->middleware('permission:groups.manage')->name('groups.manage');
+        Route::get('/courses/{course}/people', PeopleIndex::class)->middleware('permission:people.view')->name('people.index');
 
         Route::get('/courses/{course}/attendance', AttendanceIndex::class)->middleware('permission:attendance.view')->name('attendance.index');
         Route::get('/courses/{course}/gradebook', GradebookIndex::class)->middleware('permission:gradebook.view')->name('gradebook.index');

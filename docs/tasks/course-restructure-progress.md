@@ -127,6 +127,15 @@ School Admin UI was explicitly deferred (per user decision) — the tab shell an
 - **Revision**: the Assessment Type accordion's session breakdown is lazy-loaded client-side instead of server-rendered — expanding a row (Alpine `x-data`/`fetch`, skeleton shown while loading) hits a new plain (non-Livewire) JSON endpoint, `GradebookSessionBreakdownController` (route `gradebook.sessions`, `permission:gradebook.view`), so expanding an accordion row doesn't require a full Livewire round-trip re-rendering the whole page. Backed by a new lean `GradebookScoringService::sessionBreakdownForType()` (computes just one type's session rows, not a full `computeForUser()`). Teacher callers may pass `?student_id=` (validated via `CoursePersonService::isEnrolledAsStudent()`, requires `gradebook.manage`); Student callers always get their own data regardless of that param. `GradebookIndex::typeRows()` pre-computes each row's label/expandability/lazy-load URL server-side (Blade may only bind variables, not compute logic, per this repo's convention) and is what the Livewire component now passes to the view instead of raw `$result['types']`.
 - **Fix**: the new gradebook permissions migration must be run (`php artisan migrate`) for existing dev/staging databases — pending migrations aren't auto-applied, so a Student without it re-run first sees a 403 on the Gradebook tab.
 
+### UI — Batch 10: People (Teacher & Student)
+
+- **`PeopleIndex`** (route `people.index`, one shared Teacher/Student component, Attendance-style role branching + `wire:init="loadData"` skeleton pattern): three sub-tabs — **Teachers** (`role_in_course` in teacher/assistant, read-only for everyone), **Students** (Teacher/Admin only, shows each student's Group name or "Unassigned"), **Groups**. `mount()` accepts an optional `?tab=` query param so other pages can deep-link straight into a sub-tab.
+- **Groups sub-tab absorbs `GroupsManage`** (deleted, per batch decision) rather than staying a standalone page: create/rename/delete/assign/remove-student logic carried over unchanged into `PeopleIndex`, still gated by the existing `groups.manage` permission (explicit `abort_unless` guard added per mutating method, since the route itself is now gated by the broader `people.view` instead of `groups.manage`). Student role sees only their own group (read-only, no create/rename/delete/assign controls, an empty-state message if unassigned) instead of the full roster. Assessment page's "Manage Groups" button now links to `route('people.index', [$course, 'tab' => 'groups'])`.
+- `people.view` permission (new, group `People`) — School Admin/Teacher/Student all get it (everyone can see the roster; Student's view is restricted in the UI, not by permission). `groups.manage` (pre-existing, Teacher/Admin) reused as-is for group mutations.
+- `CourseTabs::build()`'s `'people'` entry now points at `people.index`; `CourseComingSoon::$tabLabels` is now empty (People was the last placeholder tab) — the coming-soon route 404s for any tab going forward.
+- **Out of scope for this batch** (tracked separately under School Admin UI): assign/remove Teacher/Assistant is admin-only and not built yet — Teachers sub-tab here is read-only for all roles.
+- 16 Livewire feature tests (`PeopleIndexTest`, replacing the deleted `GroupsManageTest`); `Courses` + `CourseRestructure` folders 357/357 green; Pint clean; Larastan 0 errors.
+
 ---
 
 ## Not Done
@@ -136,7 +145,6 @@ School Admin UI was explicitly deferred (per user decision) — the tab shell an
 - **Assessment** — remaining builders/attempt UIs for:
   - Student file-upload on Personal/Team Assignment submission (deferred from Batch 4, see note above)
   - Grading Queue (Teacher-side manual grading for assignments/essay/take-home)
-- **People** — Teachers/Students/Groups roster tabs, group management (create/assign/move students).
 
 ### School Admin UI (all components)
 

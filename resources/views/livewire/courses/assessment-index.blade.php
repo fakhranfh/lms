@@ -19,7 +19,7 @@
         @unless ($isStudent)
             <div class="flex items-center gap-space-sm">
                 <a
-                    href="{{ route('groups.manage', $course) }}"
+                    href="{{ route('people.index', [$course, 'tab' => 'groups']) }}"
                     class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition inline-flex items-center gap-space-sm"
                 >
                     <span class="material-symbols-outlined">groups</span>

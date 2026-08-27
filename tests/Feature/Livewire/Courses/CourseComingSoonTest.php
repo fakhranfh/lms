@@ -29,13 +29,6 @@ class CourseComingSoonTest extends TestCase
         $this->teacher->givePermissionTo('courses.view');
     }
 
-    public function test_renders_coming_soon_for_known_tab(): void
-    {
-        Livewire::test(CourseComingSoon::class, ['course' => $this->course, 'tab' => 'people'])
-            ->assertStatus(200)
-            ->assertSee('Coming Soon');
-    }
-
     public function test_unknown_tab_returns_404(): void
     {
         Livewire::test(CourseComingSoon::class, ['course' => $this->course, 'tab' => 'not-a-real-tab'])
@@ -60,12 +53,18 @@ class CourseComingSoonTest extends TestCase
             ->assertStatus(404);
     }
 
+    public function test_people_tab_is_no_longer_coming_soon(): void
+    {
+        Livewire::test(CourseComingSoon::class, ['course' => $this->course, 'tab' => 'people'])
+            ->assertStatus(404);
+    }
+
     public function test_user_cannot_view_coming_soon_for_different_school_course(): void
     {
         $otherSchool = School::factory()->create();
         $otherCourse = Course::factory()->for($otherSchool)->create();
 
-        Livewire::test(CourseComingSoon::class, ['course' => $otherCourse, 'tab' => 'people'])
+        Livewire::test(CourseComingSoon::class, ['course' => $otherCourse, 'tab' => 'not-a-real-tab'])
             ->assertStatus(403);
     }
 }

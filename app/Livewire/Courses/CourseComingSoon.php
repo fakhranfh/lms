@@ -18,9 +18,7 @@ class CourseComingSoon extends Component
     public bool $isStudent = false;
 
     /** @var array<string, string> */
-    public array $tabLabels = [
-        'people' => 'People',
-    ];
+    public array $tabLabels = [];
 
     public function mount(CurrentSchool $currentSchool, Course $course, string $tab): void
     {

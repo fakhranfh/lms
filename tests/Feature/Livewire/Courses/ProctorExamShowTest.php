@@ -88,10 +88,21 @@ class ProctorExamShowTest extends TestCase
         QuizQuestionOption::factory()->for($this->mcQuestion, 'question')->create(['is_correct' => false, 'order' => 2]);
     }
 
+    /**
+     * Mirrors ProctorPreflightShow marking all checks passed, which is what
+     * flips the preflight-passed cache flag startAttempt() relies on.
+     */
+    private function passPreflight(?Assessment $assessment = null): void
+    {
+        app(ProctorSessionService::class)->markPreflightPassed(($assessment ?? $this->assessment)->id, $this->student->id);
+    }
+
     public function test_start_attempt_creates_attempt_and_proctor_session(): void
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
+
+        $this->passPreflight();
 
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt');
@@ -104,10 +115,43 @@ class ProctorExamShowTest extends TestCase
         ]);
     }
 
+    public function test_start_attempt_is_blocked_without_preflight(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('assessment_attempts', [
+            'assessment_id' => $this->assessment->id,
+            'user_id' => $this->student->id,
+        ]);
+    }
+
+    public function test_start_attempt_skips_preflight_check_in_local_environment(): void
+    {
+        $this->app['env'] = 'local';
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt');
+
+        $this->assertDatabaseHas('assessment_attempts', [
+            'assessment_id' => $this->assessment->id,
+            'user_id' => $this->student->id,
+        ]);
+    }
+
     public function test_log_proctor_event_persists_event(): void
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
+
+        $this->passPreflight();
 
         $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
@@ -128,6 +172,8 @@ class ProctorExamShowTest extends TestCase
 
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
+
+        $this->passPreflight();
 
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
@@ -157,6 +203,8 @@ class ProctorExamShowTest extends TestCase
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
 
+        $this->passPreflight();
+
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
             ->call('beginSubmission')
@@ -169,6 +217,8 @@ class ProctorExamShowTest extends TestCase
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
+
+        $this->passPreflight();
 
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
@@ -197,6 +247,8 @@ class ProctorExamShowTest extends TestCase
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
 
+        $this->passPreflight();
+
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt');
 
@@ -220,6 +272,8 @@ class ProctorExamShowTest extends TestCase
         $r2Mock = $this->mock(R2StorageService::class);
         $r2Mock->shouldReceive('promoteFromTemp')->once()->with($tempKey, $finalKey);
 
+        $this->passPreflight();
+
         $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
             ->instance();
@@ -242,6 +296,8 @@ class ProctorExamShowTest extends TestCase
         // the client's MediaRecorder flushes its trailing chunk, which
         // triggers one more requestSnapshotUploadUrl() call for a session
         // that's no longer "in progress".
+        $this->passPreflight();
+
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
             ->call('beginSubmission');
@@ -271,6 +327,8 @@ class ProctorExamShowTest extends TestCase
             ->with($tempKey, $finalKey)
             ->andThrow(new \Exception('Failed to promote file from temp: NoSuchKey'));
 
+        $this->passPreflight();
+
         $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
             ->instance();
@@ -294,6 +352,8 @@ class ProctorExamShowTest extends TestCase
 
         $r2Mock = $this->mock(R2StorageService::class);
         $r2Mock->shouldReceive('promoteFromTemp')->once()->with($tempKey, $finalKey);
+
+        $this->passPreflight();
 
         $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
@@ -319,6 +379,8 @@ class ProctorExamShowTest extends TestCase
         $r2Mock = $this->mock(R2StorageService::class);
         $r2Mock->shouldReceive('promoteFromTemp')->once()->with($tempKey, $finalKey);
 
+        $this->passPreflight();
+
         $instance = Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
             ->instance();
@@ -335,6 +397,8 @@ class ProctorExamShowTest extends TestCase
 
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
+
+        $this->passPreflight();
 
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
@@ -361,6 +425,8 @@ class ProctorExamShowTest extends TestCase
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
 
+        $this->passPreflight();
+
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
             ->call('beginDisqualification', 'reading_suspected')
@@ -373,6 +439,8 @@ class ProctorExamShowTest extends TestCase
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
+
+        $this->passPreflight();
 
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt');
@@ -404,6 +472,8 @@ class ProctorExamShowTest extends TestCase
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
 
+        $this->passPreflight();
+
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt');
 
@@ -420,6 +490,8 @@ class ProctorExamShowTest extends TestCase
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
+
+        $this->passPreflight();
 
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
@@ -440,6 +512,8 @@ class ProctorExamShowTest extends TestCase
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
 
+        $this->passPreflight();
+
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
             ->assertSet('examType', FinalExamType::OpenBook)
@@ -452,6 +526,8 @@ class ProctorExamShowTest extends TestCase
 
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
+
+        $this->passPreflight();
 
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
@@ -466,6 +542,8 @@ class ProctorExamShowTest extends TestCase
 
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
+
+        $this->passPreflight();
 
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')
@@ -501,6 +579,8 @@ class ProctorExamShowTest extends TestCase
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
 
+        $this->passPreflight($closedBookAssessment);
+
         Livewire::test(ProctorExamShow::class, ['assessment' => $closedBookAssessment])
             ->call('startAttempt')
             ->assertSet('examType', FinalExamType::ClosedBook)
@@ -533,6 +613,8 @@ class ProctorExamShowTest extends TestCase
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
 
+        $this->passPreflight($closedBookAssessment);
+
         Livewire::test(ProctorExamShow::class, ['assessment' => $closedBookAssessment])
             ->call('startAttempt')
             ->assertSet('examType', FinalExamType::ClosedBook)
@@ -543,6 +625,8 @@ class ProctorExamShowTest extends TestCase
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
+
+        $this->passPreflight();
 
         Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
             ->call('startAttempt')

@@ -10,6 +10,7 @@ use App\Models\Course;
 use App\Models\FinalExam;
 use App\Services\CoursePersonService;
 use App\Services\FinalExamService;
+use App\Services\ProctorSessionService;
 use App\Support\CurrentSchool;
 use Livewire\Component;
 
@@ -40,6 +41,7 @@ class ProctorPreflightShow extends Component
         CurrentSchool $currentSchool,
         CoursePersonService $coursePersonService,
         FinalExamService $finalExamService,
+        ProctorSessionService $proctorSessionService,
         ?Course $course = null,
         ?Assessment $assessment = null,
     ): void {
@@ -65,6 +67,12 @@ class ProctorPreflightShow extends Component
             return;
         }
 
+        if ($proctorSessionService->hasPassedPreflight($assessment->id, auth()->id())) {
+            $this->redirectRoute('assessments.final-exam.proctor.show', $assessment, navigate: true);
+
+            return;
+        }
+
         $this->course = $course;
         $this->assessment = $assessment;
         $this->finalExam = $finalExam;
@@ -74,18 +82,24 @@ class ProctorPreflightShow extends Component
         }
     }
 
-    public function markCheckPassed(string $check): void
+    public function markCheckPassed(string $check, ProctorSessionService $proctorSessionService): void
     {
         abort_unless(array_key_exists($check, $this->checksPassed), 404);
 
         $this->checksPassed[$check] = true;
+
+        if ($this->getAllChecksPassedProperty()) {
+            $proctorSessionService->markPreflightPassed($this->assessment->id, auth()->id());
+        }
     }
 
-    public function markCheckFailed(string $check): void
+    public function markCheckFailed(string $check, ProctorSessionService $proctorSessionService): void
     {
         abort_unless(array_key_exists($check, $this->checksPassed), 404);
 
         $this->checksPassed[$check] = false;
+
+        $proctorSessionService->clearPreflightPassed($this->assessment->id, auth()->id());
     }
 
     public function goToStep(string $step): void

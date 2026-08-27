@@ -160,6 +160,11 @@ class ProctorExamShow extends Component
     {
         abort_unless(auth()->user()->can('assessment.submit'), 403);
 
+        $preflightPassed = $proctorSessionService->hasPassedPreflight($this->assessment->id, auth()->id());
+        abort_unless($preflightPassed || app()->isLocal(), 403);
+
+        $proctorSessionService->clearPreflightPassed($this->assessment->id, auth()->id());
+
         $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, auth()->id());
         $inProgress = $attempts->first(fn ($attempt) => $attempt->submitted_at === null);
 

@@ -16,6 +16,13 @@ class ProctorSessionService
      */
     private const SUBMITTING_TTL_SECONDS = 300;
 
+    /**
+     * TTL for the preflight-passed flag, generous enough to cover the time
+     * between the camera/screen checks succeeding and the student confirming
+     * the "Start Exam?" dialog.
+     */
+    private const PREFLIGHT_TTL_SECONDS = 300;
+
     public function __construct(
         private ProctorSessionRepositoryInterface $proctorSessionRepository,
         private CacheRepositoryInterface $cacheRepository,
@@ -73,5 +80,30 @@ class ProctorSessionService
     private function submittingKey(string $sessionId): string
     {
         return "proctor_session_submitting:{$sessionId}";
+    }
+
+    /**
+     * Flags that a student has passed the camera/screen-share preflight
+     * check for an assessment, so startAttempt() can verify it server-side
+     * instead of trusting a client-supplied flag.
+     */
+    public function markPreflightPassed(string $assessmentId, string $userId): void
+    {
+        $this->cacheRepository->put($this->preflightKey($assessmentId, $userId), '1', self::PREFLIGHT_TTL_SECONDS);
+    }
+
+    public function clearPreflightPassed(string $assessmentId, string $userId): void
+    {
+        $this->cacheRepository->forget($this->preflightKey($assessmentId, $userId));
+    }
+
+    public function hasPassedPreflight(string $assessmentId, string $userId): bool
+    {
+        return $this->cacheRepository->has($this->preflightKey($assessmentId, $userId));
+    }
+
+    private function preflightKey(string $assessmentId, string $userId): string
+    {
+        return "proctor_preflight_passed:{$assessmentId}:{$userId}";
     }
 }

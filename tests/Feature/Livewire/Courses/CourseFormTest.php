@@ -108,21 +108,6 @@ class CourseFormTest extends TestCase
         ]);
     }
 
-    public function test_can_publish_course(): void
-    {
-        $course = Course::factory()
-            ->for($this->school)
-            ->create(['is_published' => false]);
-
-        $this->teacher->givePermissionTo('courses.edit');
-
-        Livewire::test(CourseForm::class, ['course' => $course])
-            ->set('isPublished', true)
-            ->call('save');
-
-        $this->assertTrue($course->fresh()->is_published);
-    }
-
     public function test_required_fields_validation(): void
     {
         $this->teacher->givePermissionTo('courses.create');

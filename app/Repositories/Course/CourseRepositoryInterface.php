@@ -49,14 +49,4 @@ interface CourseRepositoryInterface
      * Delete a course.
      */
     public function delete(string $id): int;
-
-    /**
-     * Publish a course.
-     */
-    public function publish(string $id): void;
-
-    /**
-     * Unpublish a course.
-     */
-    public function unpublish(string $id): void;
 }

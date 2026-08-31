@@ -76,7 +76,6 @@ class CourseRepository implements CourseRepositoryInterface
             'created_by' => $data['created_by'],
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
-            'is_published' => $data['is_published'] ?? false,
         ]);
     }
 
@@ -90,7 +89,6 @@ class CourseRepository implements CourseRepositoryInterface
         $course->update([
             'title' => $data['title'] ?? $course->title,
             'description' => $data['description'] ?? $course->description,
-            'is_published' => $data['is_published'] ?? $course->is_published,
         ]);
 
         return $course;
@@ -99,15 +97,5 @@ class CourseRepository implements CourseRepositoryInterface
     public function delete(string $id): int
     {
         return Course::destroy($id);
-    }
-
-    public function publish(string $id): void
-    {
-        Course::findOrFail($id)->update(['is_published' => true]);
-    }
-
-    public function unpublish(string $id): void
-    {
-        Course::findOrFail($id)->update(['is_published' => false]);
     }
 }

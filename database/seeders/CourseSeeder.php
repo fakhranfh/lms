@@ -45,7 +45,6 @@ class CourseSeeder extends Seeder
                 'created_by' => $teacher->id,
                 'title' => $title,
                 'description' => $courseData['description'],
-                'is_published' => $courseData['is_published'],
             ]);
 
             CoursePerson::create([
@@ -60,7 +59,7 @@ class CourseSeeder extends Seeder
     }
 
     /**
-     * @return array<int, array{title: string, description: string, is_published: bool}>
+     * @return array<int, array{title: string, description: string}>
      */
     private function courseBlueprints(): array
     {
@@ -68,37 +67,30 @@ class CourseSeeder extends Seeder
             [
                 'title' => 'Web Development Fundamentals',
                 'description' => 'Learn the foundations of modern web development. Master HTML, CSS, and JavaScript to build responsive, interactive websites.',
-                'is_published' => true,
             ],
             [
                 'title' => 'Backend Development with Laravel',
                 'description' => 'Build powerful backend applications using Laravel. Learn routing, databases, authentication, and API design patterns.',
-                'is_published' => true,
             ],
             [
                 'title' => 'PHP Development Fundamentals',
                 'description' => 'Master PHP programming from basics to advanced OOP concepts. Learn modern PHP practices, error handling, and best practices for production-ready applications.',
-                'is_published' => true,
             ],
             [
                 'title' => 'Modern Frontend Development',
                 'description' => 'Master modern frontend technologies: HTML5, CSS4, JavaScript ES2024, and responsive design. Build beautiful, performant web interfaces.',
-                'is_published' => true,
             ],
             [
                 'title' => 'Database Design & SQL',
                 'description' => 'Learn relational database design, SQL optimization, and best practices. Design efficient databases that scale.',
-                'is_published' => true,
             ],
             [
                 'title' => 'Building RESTful APIs',
                 'description' => 'Design and build scalable RESTful APIs. Learn REST principles, API design patterns, authentication, versioning, and testing.',
-                'is_published' => true,
             ],
             [
                 'title' => 'Data Structures & Algorithms',
                 'description' => 'Master fundamental data structures and algorithms. Improve problem-solving skills and write efficient code.',
-                'is_published' => false,
             ],
         ];
     }

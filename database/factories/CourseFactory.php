@@ -26,21 +26,6 @@ class CourseFactory extends Factory
             'title' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'created_by' => User::factory(),
-            'is_published' => fake()->boolean(30),
         ];
-    }
-
-    public function published(): static
-    {
-        return $this->state(fn () => [
-            'is_published' => true,
-        ]);
-    }
-
-    public function unpublished(): static
-    {
-        return $this->state(fn () => [
-            'is_published' => false,
-        ]);
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToSchool;
-use App\Models\Concerns\TracksPublishedAt;
 use App\Traits\HasUuid;
 use Database\Factories\CourseFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -13,19 +12,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['school_id', 'created_by', 'title', 'description', 'is_published'])]
+#[Fillable(['school_id', 'created_by', 'title', 'description'])]
 class Course extends Model
 {
     /** @use HasFactory<CourseFactory> */
-    use BelongsToSchool, HasFactory, HasUuid, SoftDeletes, TracksPublishedAt;
-
-    /**
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'is_published' => 'boolean',
-        'published_at' => 'datetime',
-    ];
+    use BelongsToSchool, HasFactory, HasUuid, SoftDeletes;
 
     /**
      * Get the school that owns this course.
@@ -45,16 +36,6 @@ class Course extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function publish(): void
-    {
-        $this->update(['is_published' => true]);
-    }
-
-    public function isPublished(): bool
-    {
-        return $this->is_published;
     }
 
     /**

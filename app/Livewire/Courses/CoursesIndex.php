@@ -79,7 +79,6 @@ class CoursesIndex extends Component
         $filters = ['school_id' => $schoolId, 'search' => $this->search];
 
         if ($this->isStudent) {
-            $filters['is_published'] = true;
             $filters['enrolled_user_id'] = auth()->id();
         }
 

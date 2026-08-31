@@ -153,20 +153,4 @@ class CourseService
     {
         return $this->courseRepository->delete($id);
     }
-
-    /**
-     * Publish a course.
-     */
-    public function publish(string $id): void
-    {
-        $this->courseRepository->publish($id);
-    }
-
-    /**
-     * Unpublish a course.
-     */
-    public function unpublish(string $id): void
-    {
-        $this->courseRepository->unpublish($id);
-    }
 }

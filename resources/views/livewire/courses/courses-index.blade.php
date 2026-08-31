@@ -121,27 +121,7 @@
                                     {{ $course->title }}
                                 </h3>
                             </a>
-                            @unless ($isStudent)
-                                @if ($course->is_published)
-                                    <span
-                                        class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-success/10 border border-success/20 text-success whitespace-nowrap"
-                                        @if ($course->published_at) title="Published on {{ $course->published_at->format('M j, Y') }}" @endif
-                                    >
-                                        Published
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant whitespace-nowrap">
-                                        Draft
-                                    </span>
-                                @endif
-                            @endunless
                         </div>
-
-                        @if (! $isStudent && $course->is_published && $course->published_at)
-                            <p class="text-body-xs text-on-surface-variant mb-space-sm">
-                                Published on {{ $course->published_at->format('M j, Y') }}
-                            </p>
-                        @endif
 
                         @if ($course->description)
                             <p class="text-body-sm text-on-surface-variant line-clamp-2">

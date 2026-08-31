@@ -79,26 +79,6 @@
                 @enderror
             </div>
 
-            <!-- Publish Status -->
-            <div class="flex items-center gap-space-md p-space-lg bg-surface-container rounded-lg">
-                <div>
-                    <input
-                        type="checkbox"
-                        id="isPublished"
-                        wire:model="isPublished"
-                        class="rounded"
-                    />
-                </div>
-                <div class="flex-1">
-                    <label for="isPublished" class="block text-label-md text-on-surface font-label-md cursor-pointer">
-                        Publish Course
-                    </label>
-                    <p class="text-body-sm text-on-surface-variant mt-space-xs">
-                        Published courses are visible to students. Unpublished courses remain in draft mode.
-                    </p>
-                </div>
-            </div>
-
             <!-- Actions -->
             <div class="flex gap-space-md pt-space-lg">
                 <a

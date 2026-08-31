@@ -170,23 +170,6 @@ class CoursesIndexTest extends TestCase
             ->assertSee('0 sessions');
     }
 
-    public function test_displays_published_status(): void
-    {
-        $this->teacher->givePermissionTo('courses.view');
-
-        Course::factory()
-            ->for($this->school)
-            ->create(['title' => 'Published Course', 'is_published' => true]);
-        Course::factory()
-            ->for($this->school)
-            ->create(['title' => 'Draft Course', 'is_published' => false]);
-
-        Livewire::test(CoursesIndex::class)
-            ->call('loadCourses')
-            ->assertSee('Published')
-            ->assertSee('Draft');
-    }
-
     public function test_displays_course_creator(): void
     {
         $this->teacher->givePermissionTo('courses.view');
@@ -292,15 +275,15 @@ class CoursesIndexTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_student_does_not_see_draft_courses_or_published_status(): void
+    public function test_student_only_sees_enrolled_courses(): void
     {
         $student = User::factory()->forSchool($this->school)->create();
         $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
         $student->assignRole($studentRole);
         $student->givePermissionTo('courses.view');
 
-        $enrolledCourse = Course::factory()->for($this->school)->create(['title' => 'Intro to Web Development', 'is_published' => true]);
-        Course::factory()->for($this->school)->create(['title' => 'Unfinished Course', 'is_published' => false]);
+        $enrolledCourse = Course::factory()->for($this->school)->create(['title' => 'Intro to Web Development']);
+        Course::factory()->for($this->school)->create(['title' => 'Not Enrolled Course']);
 
         CoursePerson::factory()->create([
             'course_id' => $enrolledCourse->id,
@@ -314,24 +297,6 @@ class CoursesIndexTest extends TestCase
         Livewire::test(CoursesIndex::class)
             ->call('loadCourses')
             ->assertSee('Intro to Web Development')
-            ->assertDontSee('Unfinished Course')
-            ->assertDontSee('Published')
-            ->assertDontSee('Draft');
-    }
-
-    public function test_student_does_not_see_courses_they_are_not_enrolled_in(): void
-    {
-        $student = User::factory()->forSchool($this->school)->create();
-        $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
-        $student->assignRole($studentRole);
-        $student->givePermissionTo('courses.view');
-
-        Course::factory()->for($this->school)->create(['title' => 'Not Enrolled Course', 'is_published' => true]);
-
-        $this->actingAs($student);
-
-        Livewire::test(CoursesIndex::class)
-            ->call('loadCourses')
             ->assertDontSee('Not Enrolled Course');
     }
 
@@ -342,7 +307,7 @@ class CoursesIndexTest extends TestCase
         $student->assignRole($studentRole);
         $student->givePermissionTo('courses.view');
 
-        $course = Course::factory()->for($this->school)->create(['title' => 'Progress Course', 'is_published' => true]);
+        $course = Course::factory()->for($this->school)->create(['title' => 'Progress Course']);
         $session = Session::factory()->for($course)->create();
         $materialOne = MediaLibraryItem::factory()->for($this->school)->create();
         $materialTwo = MediaLibraryItem::factory()->for($this->school)->create();

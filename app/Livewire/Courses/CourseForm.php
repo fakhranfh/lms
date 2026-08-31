@@ -18,8 +18,6 @@ class CourseForm extends Component
     #[Validate('nullable|string|max:1000')]
     public string $description = '';
 
-    public bool $isPublished = false;
-
     public function mount(?Course $course = null): void
     {
         if ($course) {
@@ -31,7 +29,6 @@ class CourseForm extends Component
             $this->course = $course;
             $this->title = $course->title;
             $this->description = $course->description ?? '';
-            $this->isPublished = $course->is_published;
         } else {
             abort_unless(auth()->user()->can('courses.create'), 403);
         }
@@ -52,7 +49,6 @@ class CourseForm extends Component
                 $courseService->update($this->course->id, [
                     'title' => $this->title,
                     'description' => $this->description,
-                    'is_published' => $this->isPublished,
                 ]);
 
                 return redirect()->route('courses.show', $this->course);
@@ -63,7 +59,6 @@ class CourseForm extends Component
                 'created_by' => auth()->id(),
                 'title' => $this->title,
                 'description' => $this->description,
-                'is_published' => $this->isPublished,
             ]);
 
             return redirect()->route('courses.show', $course);

@@ -18,7 +18,6 @@ test('creating a course via CourseService auto-provisions a single Attendance as
         'title' => 'Physics 101',
         'description' => 'Intro physics',
         'created_by' => $user->id,
-        'is_published' => false,
     ]);
 
     $attendanceAssessments = Assessment::where('course_id', $course->id)->where('type', AssessmentType::Attendance)->get();
@@ -43,7 +42,6 @@ test('creating a course via CourseService auto-provisions a single Forum Discuss
         'title' => 'Physics 102',
         'description' => 'Intro physics 2',
         'created_by' => $user->id,
-        'is_published' => false,
     ]);
 
     $forumDiscussionAssessments = Assessment::where('course_id', $course->id)->where('type', AssessmentType::ForumDiscussion)->get();

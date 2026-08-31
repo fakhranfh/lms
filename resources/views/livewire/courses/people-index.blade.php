@@ -2,7 +2,7 @@
 
 <div
     class="space-y-space-lg"
-    x-data="{ deleteId: null, deleteName: null, deleteType: null, showDeleteModal: false }"
+    x-data="{ deleteId: null, deleteName: null, deleteType: null, showDeleteModal: false, switchingTab: null, enrollingId: null }"
 >
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => null])
 
@@ -17,9 +17,8 @@
         <div class="flex w-full sm:w-1/4 bg-surface border border-outline-variant rounded-lg overflow-hidden divide-x divide-outline-variant">
             <button
                 type="button"
-                wire:click="selectSubTab('students')"
-                wire:loading.attr="disabled"
-                wire:target="selectSubTab('students'), selectSubTab('groups'), selectSubTab('teachers')"
+                @click="switchingTab = 'students'; $wire.selectSubTab('students').then(() => switchingTab = null)"
+                :disabled="switchingTab !== null"
                 class="flex-1 py-space-md text-center font-label-md text-label-md transition disabled:opacity-60 disabled:cursor-not-allowed {{ $activeSubTab === 'students' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container' }}"
             >
                 <span class="block font-headline-sm text-headline-sm">{{ $studentsCount }}</span>
@@ -27,9 +26,8 @@
             </button>
             <button
                 type="button"
-                wire:click="selectSubTab('groups')"
-                wire:loading.attr="disabled"
-                wire:target="selectSubTab('students'), selectSubTab('groups'), selectSubTab('teachers')"
+                @click="switchingTab = 'groups'; $wire.selectSubTab('groups').then(() => switchingTab = null)"
+                :disabled="switchingTab !== null"
                 class="flex-1 py-space-md text-center font-label-md text-label-md transition disabled:opacity-60 disabled:cursor-not-allowed {{ $activeSubTab === 'groups' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container' }}"
             >
                 <span class="block font-headline-sm text-headline-sm">{{ $groupsCount }}</span>
@@ -37,9 +35,8 @@
             </button>
             <button
                 type="button"
-                wire:click="selectSubTab('teachers')"
-                wire:loading.attr="disabled"
-                wire:target="selectSubTab('students'), selectSubTab('groups'), selectSubTab('teachers')"
+                @click="switchingTab = 'teachers'; $wire.selectSubTab('teachers').then(() => switchingTab = null)"
+                :disabled="switchingTab !== null"
                 class="flex-1 py-space-md text-center font-label-md text-label-md transition disabled:opacity-60 disabled:cursor-not-allowed {{ $activeSubTab === 'teachers' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container' }}"
             >
                 <span class="block font-headline-sm text-headline-sm">{{ $teachersCount }}</span>
@@ -48,7 +45,7 @@
         </div>
 
         <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-            <div wire:loading.grid wire:target="selectSubTab('students'), selectSubTab('teachers')" class="hidden grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant animate-pulse">
+            <div x-show="switchingTab === 'students' || switchingTab === 'teachers'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant animate-pulse">
                 @for ($i = 0; $i < 9; $i++)
                     <div class="bg-surface p-space-lg flex flex-col items-center gap-space-sm">
                         <div class="w-12 h-12 rounded-full bg-surface-container"></div>
@@ -57,7 +54,7 @@
                 @endfor
             </div>
 
-            <div wire:loading.block wire:target="selectSubTab('groups')" class="hidden w-full p-space-lg space-y-space-md animate-pulse">
+            <div x-show="switchingTab === 'groups'" x-cloak class="w-full p-space-lg space-y-space-md animate-pulse">
                 <div>
                     <div class="h-5 bg-surface-container rounded w-32"></div>
                 </div>
@@ -76,7 +73,7 @@
                 @endfor
             </div>
 
-            <div wire:loading.remove wire:target="selectSubTab('students'), selectSubTab('teachers'), selectSubTab('groups')">
+            <div x-show="switchingTab === null">
                 @if ($activeSubTab === 'students')
                     @if ($canManageGroups)
                         <div class="p-space-lg border-b border-outline-variant space-y-space-sm" x-data="{ open: false }" @click.outside="open = false">
@@ -98,7 +95,12 @@
                                     </div>
                                     <div wire:loading.remove wire:target="studentSearch">
                                         @forelse ($this->studentSearchResults as $user)
-                                            <button type="button" wire:click="enrollStudent('{{ $user->id }}')" wire:key="student-result-{{ $user->id }}" class="w-full text-left px-space-md py-space-sm hover:bg-surface-container text-body-sm text-on-surface flex items-center justify-between">
+                                            <button
+                                                type="button"
+                                                wire:key="student-result-{{ $user->id }}"
+                                                @click="open = false; enrollingId = '{{ $user->id }}'; $wire.enrollStudent('{{ $user->id }}').finally(() => enrollingId = null)"
+                                                class="w-full text-left px-space-md py-space-sm hover:bg-surface-container text-body-sm text-on-surface flex items-center justify-between"
+                                            >
                                                 <span>{{ $user->name }} <span class="text-on-surface-variant">({{ $user->email }})</span></span>
                                                 <span class="material-symbols-outlined text-[18px] text-primary">person_add</span>
                                             </button>
@@ -111,6 +113,12 @@
                         </div>
                     @endif
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant">
+                        <div x-show="enrollingId !== null" x-cloak class="bg-surface p-space-lg flex flex-col items-center gap-space-sm animate-pulse">
+                            <div class="w-12 h-12 rounded-full bg-surface-container"></div>
+                            <div class="h-4 bg-surface-container rounded w-2/3"></div>
+                        </div>
+                        <div x-show="enrollingId !== null" x-cloak class="bg-surface hidden sm:block"></div>
+                        <div x-show="enrollingId !== null" x-cloak class="bg-surface hidden md:block"></div>
                         @forelse ($students as $coursePerson)
                             <div wire:key="student-{{ $coursePerson->id }}" class="bg-surface p-space-lg">
                                 <div wire:loading.flex wire:target="unenrollStudent('{{ $coursePerson->id }}')" class="hidden flex-col items-center gap-space-sm animate-pulse">
@@ -132,7 +140,7 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">No students enrolled yet.</div>
+                            <div x-show="enrollingId === null" class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">No students enrolled yet.</div>
                         @endforelse
                         @for ($i = 0; $i < (3 - $students->count() % 3) % 3; $i++)
                             <div class="bg-surface hidden md:block"></div>
@@ -161,7 +169,12 @@
                                     </div>
                                     <div wire:loading.remove wire:target="teacherSearch">
                                         @forelse ($this->teacherSearchResults as $user)
-                                            <button type="button" wire:click="enrollTeacher('{{ $user->id }}')" wire:key="teacher-result-{{ $user->id }}" class="w-full text-left px-space-md py-space-sm hover:bg-surface-container text-body-sm text-on-surface flex items-center justify-between">
+                                            <button
+                                                type="button"
+                                                wire:key="teacher-result-{{ $user->id }}"
+                                                @click="open = false; enrollingId = '{{ $user->id }}'; $wire.enrollTeacher('{{ $user->id }}').finally(() => enrollingId = null)"
+                                                class="w-full text-left px-space-md py-space-sm hover:bg-surface-container text-body-sm text-on-surface flex items-center justify-between"
+                                            >
                                                 <span>{{ $user->name }} <span class="text-on-surface-variant">({{ $user->email }})</span></span>
                                                 <span class="material-symbols-outlined text-[18px] text-primary">person_add</span>
                                             </button>
@@ -174,6 +187,12 @@
                         </div>
                     @endif
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant">
+                        <div x-show="enrollingId !== null" x-cloak class="bg-surface p-space-lg flex flex-col items-center gap-space-sm animate-pulse">
+                            <div class="w-12 h-12 rounded-full bg-surface-container"></div>
+                            <div class="h-4 bg-surface-container rounded w-2/3"></div>
+                        </div>
+                        <div x-show="enrollingId !== null" x-cloak class="bg-surface hidden sm:block"></div>
+                        <div x-show="enrollingId !== null" x-cloak class="bg-surface hidden md:block"></div>
                         @forelse ($teachers as $coursePerson)
                             <div wire:key="teacher-{{ $coursePerson->id }}" class="bg-surface p-space-lg">
                                 <div wire:loading.flex wire:target="unenrollTeacher('{{ $coursePerson->id }}')" class="hidden flex-col items-center gap-space-sm animate-pulse">
@@ -200,7 +219,7 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">No teachers assigned yet.</div>
+                            <div x-show="enrollingId === null" class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">No teachers assigned yet.</div>
                         @endforelse
                         @for ($i = 0; $i < (3 - $teachers->count() % 3) % 3; $i++)
                             <div class="bg-surface hidden md:block"></div>

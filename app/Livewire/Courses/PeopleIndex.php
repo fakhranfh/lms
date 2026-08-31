@@ -49,6 +49,8 @@ class PeopleIndex extends Component
 
     public string $studentSearch = '';
 
+    public int $generateStudentCount = 5;
+
     public function mount(CurrentSchool $currentSchool, Course $course): void
     {
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
@@ -282,6 +284,43 @@ class PeopleIndex extends Component
         unset($this->studentSearchResults);
     }
 
+    public function generateStudents(CoursePersonService $coursePersonService, RoleService $roleService): void
+    {
+        abort_unless(app()->environment('local', 'testing') && auth()->user()->can('groups.manage'), 403);
+
+        $this->validate([
+            'generateStudentCount' => 'required|integer|min:1|max:100',
+        ]);
+
+        $studentRoleId = $this->schoolRoleId(RoleName::Student);
+
+        if ($studentRoleId === null) {
+            $this->errorMessage = __('Student role not found for this school.');
+
+            return;
+        }
+
+        $studentRole = $roleService->find($studentRoleId);
+
+        if (! $studentRole instanceof Role) {
+            $this->errorMessage = __('Student role not found for this school.');
+
+            return;
+        }
+
+        $students = User::factory()->forSchool($this->course->school)->count($this->generateStudentCount)->create();
+
+        $students->each(function (User $user) use ($studentRole, $coursePersonService) {
+            $user->assignRole($studentRole);
+
+            $coursePersonService->enroll($this->course->id, $user->id, [
+                'role_in_course' => RoleInCourse::Student,
+                'enrolled_at' => now(),
+                'status' => CourseMembershipStatus::Active,
+            ]);
+        });
+    }
+
     public function unenrollTeacher(string $coursePersonId): void
     {
         abort_unless(auth()->user()->can('groups.manage'), 403);
@@ -319,6 +358,7 @@ class PeopleIndex extends Component
             'isStudent' => $this->isStudent,
             'activeSubTab' => $this->activeSubTab,
             'canManageGroups' => $canManageGroups,
+            'canGenerateStudents' => $canManageGroups && app()->environment('local', 'testing'),
             'courseTabs' => CourseTabs::build($this->course, 'people'),
         ];
 

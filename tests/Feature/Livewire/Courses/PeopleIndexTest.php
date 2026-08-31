@@ -424,4 +424,50 @@ class PeopleIndexTest extends TestCase
 
         $this->assertDatabaseMissing('group_members', ['id' => $member->id]);
     }
+
+    public function test_teacher_can_generate_and_enroll_dummy_students(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $studentsBefore = CoursePerson::where('course_id', $this->course->id)
+            ->where('role_in_course', 'student')
+            ->count();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->set('generateStudentCount', 3)
+            ->call('generateStudents');
+
+        $this->assertSame(
+            $studentsBefore + 3,
+            CoursePerson::where('course_id', $this->course->id)
+                ->where('role_in_course', 'student')
+                ->count()
+        );
+    }
+
+    public function test_generate_students_requires_groups_manage_permission(): void
+    {
+        $this->teacher->givePermissionTo('people.view');
+        $this->actingAs($this->teacher);
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->set('generateStudentCount', 2)
+            ->call('generateStudents')
+            ->assertStatus(403);
+    }
+
+    public function test_generate_students_validates_count(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->set('generateStudentCount', 0)
+            ->call('generateStudents')
+            ->assertHasErrors(['generateStudentCount']);
+    }
 }

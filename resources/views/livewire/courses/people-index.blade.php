@@ -112,6 +112,40 @@
                             </div>
                         </div>
                     @endif
+
+                    @if ($canGenerateStudents)
+                        <div class="p-space-lg border-b border-outline-variant space-y-space-sm bg-secondary/5" x-data="{ generating: false }">
+                            <label class="block font-label-sm text-label-sm text-secondary">Generate Dummy Students (Dev Only)</label>
+                            <form
+                                @submit.prevent="generating = true; $wire.generateStudents().finally(() => generating = false)"
+                                class="flex items-end gap-space-md"
+                            >
+                                <div class="flex-1 max-w-[160px]">
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="100"
+                                        wire:model="generateStudentCount"
+                                        class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    />
+                                    @error('generateStudentCount') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                                </div>
+                                <button
+                                    type="submit"
+                                    :disabled="generating"
+                                    class="px-space-lg py-space-sm bg-secondary text-on-secondary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-space-sm"
+                                >
+                                    <span class="material-symbols-outlined" x-show="!generating">bolt</span>
+                                    <svg x-show="generating" x-cloak class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <span x-text="generating ? 'Generating...' : 'Generate & Enroll'"></span>
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant">
                         <div x-show="enrollingId !== null" x-cloak class="bg-surface p-space-lg flex flex-col items-center gap-space-sm animate-pulse">
                             <div class="w-12 h-12 rounded-full bg-surface-container"></div>

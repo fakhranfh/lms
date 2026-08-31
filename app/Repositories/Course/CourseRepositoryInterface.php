@@ -13,6 +13,7 @@ interface CourseRepositoryInterface
      *
      * @param  array<string, mixed>  $filters
      * @param  array<string>  $with
+     * @return Collection<int, Course>
      */
     public function get(array $filters = [], array $with = []): Collection;
 

@@ -5,6 +5,7 @@ namespace App\Console\Commands\Groups;
 use App\Models\Course;
 use App\Models\Group;
 use App\Services\CoursePersonService;
+use App\Services\CourseService;
 use App\Services\GroupMemberService;
 use App\Services\GroupService;
 use Illuminate\Console\Attributes\Description;
@@ -19,14 +20,13 @@ class AutoAssignUnassignedStudentsCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle(CoursePersonService $coursePersonService, GroupService $groupService, GroupMemberService $groupMemberService): void
+    public function handle(CourseService $courseService, CoursePersonService $coursePersonService, GroupService $groupService, GroupMemberService $groupMemberService): void
     {
-        $courses = Course::query()
-            ->whereHas('sessions')
-            ->get();
+        $courses = $courseService->get([], ['sessions'])
+            ->filter(fn (Course $course) => $course->sessions->isNotEmpty());
 
         foreach ($courses as $course) {
-            $firstSessionStart = $course->sessions()->min('date_start');
+            $firstSessionStart = $course->sessions->min('date_start');
 
             if ($firstSessionStart === null) {
                 continue;

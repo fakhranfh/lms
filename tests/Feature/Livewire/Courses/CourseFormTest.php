@@ -57,7 +57,6 @@ class CourseFormTest extends TestCase
         Livewire::test(CourseForm::class)
             ->set('title', 'PHP Fundamentals')
             ->set('description', 'Learn PHP basics')
-            ->set('slug', 'php-fundamentals')
             ->call('save')
             ->assertRedirect(route('courses.show', ['course' => Course::latest()->first()]));
 
@@ -70,28 +69,42 @@ class CourseFormTest extends TestCase
         ]);
     }
 
-    public function test_auto_generates_slug_from_title(): void
-    {
-        $this->teacher->givePermissionTo('courses.create');
-
-        Livewire::test(CourseForm::class)
-            ->set('title', 'Advanced JavaScript')
-            ->assertSet('slug', 'advanced-javascript');
-    }
-
-    public function test_slug_must_be_unique_per_school(): void
+    public function test_auto_generates_unique_slug_when_title_collides(): void
     {
         $this->teacher->givePermissionTo('courses.create');
 
         Course::factory()
             ->for($this->school)
-            ->create(['slug' => 'duplicate-slug']);
+            ->create(['title' => 'Duplicate Title', 'slug' => 'duplicate-title']);
 
         Livewire::test(CourseForm::class)
-            ->set('title', 'Another Course')
-            ->set('slug', 'duplicate-slug')
-            ->call('save')
-            ->assertHasErrors('slug');
+            ->set('title', 'Duplicate Title')
+            ->call('save');
+
+        $this->assertDatabaseHas('courses', [
+            'title' => 'Duplicate Title',
+            'slug' => 'duplicate-title-2',
+            'school_id' => $this->school->id,
+        ]);
+    }
+
+    public function test_double_submit_does_not_create_duplicate_course(): void
+    {
+        $this->teacher->givePermissionTo('courses.create');
+
+        // Simulates a double-click: two submissions of the same new-course
+        // form before either has a persisted slug to collide against.
+        Livewire::test(CourseForm::class)
+            ->set('title', 'Data Structures')
+            ->call('save');
+
+        Livewire::test(CourseForm::class)
+            ->set('title', 'Data Structures')
+            ->call('save');
+
+        $this->assertSame(2, Course::where('title', 'Data Structures')->count());
+        $this->assertDatabaseHas('courses', ['title' => 'Data Structures', 'slug' => 'data-structures']);
+        $this->assertDatabaseHas('courses', ['title' => 'Data Structures', 'slug' => 'data-structures-2']);
     }
 
     public function test_can_update_course(): void
@@ -148,6 +161,23 @@ class CourseFormTest extends TestCase
             ->set('title', str_repeat('a', 256))
             ->call('save')
             ->assertHasErrors('title');
+    }
+
+    public function test_auto_fill_button_is_visible_in_local_environment(): void
+    {
+        $this->teacher->givePermissionTo('courses.create');
+        $this->app->detectEnvironment(fn () => 'local');
+
+        Livewire::test(CourseForm::class)
+            ->assertSee('Dev: Auto-fill');
+    }
+
+    public function test_auto_fill_button_is_hidden_outside_local_environment(): void
+    {
+        $this->teacher->givePermissionTo('courses.create');
+
+        Livewire::test(CourseForm::class)
+            ->assertDontSee('Dev: Auto-fill');
     }
 
     public function test_user_cannot_access_form_without_permission(): void

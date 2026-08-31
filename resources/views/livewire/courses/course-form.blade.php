@@ -10,10 +10,41 @@
             <p class="text-body-md text-on-surface-variant mt-space-sm">
                 {{ $course ? 'Update course details and settings.' : 'Create a new course for your students.' }}
             </p>
+
+            @if (app()->environment('local'))
+                <button
+                    type="button"
+                    x-data
+                    @click="
+                        const presets = [
+                            { title: 'Introduction to Web Development', description: 'Learn the fundamentals of HTML, CSS, and JavaScript to build responsive, interactive websites from scratch.' },
+                            { title: 'Data Structures and Algorithms', description: 'Master core data structures and algorithmic techniques used to solve real-world programming problems efficiently.' },
+                            { title: 'Database Design and SQL', description: 'Understand relational database concepts, normalization, and how to write effective SQL queries for data management.' },
+                            { title: 'Introduction to Machine Learning', description: 'Explore the basics of supervised and unsupervised learning, model evaluation, and practical applications of ML.' },
+                            { title: 'Mobile App Development with Flutter', description: 'Build cross-platform mobile applications using Flutter and Dart, from UI design to app store deployment.' },
+                            { title: 'Digital Marketing Fundamentals', description: 'Learn SEO, social media marketing, and content strategy to grow an audience and drive engagement online.' },
+                            { title: 'Business Communication Skills', description: 'Develop effective written and verbal communication skills for professional presentations, emails, and meetings.' },
+                            { title: 'Financial Accounting Basics', description: 'Understand core accounting principles, financial statements, and how businesses track and report their finances.' },
+                        ];
+                        const preset = presets[Math.floor(Math.random() * presets.length)];
+                        $wire.title = preset.title;
+                        $wire.description = preset.description;
+                    "
+                    class="mt-space-md px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                >
+                    Dev: Auto-fill
+                </button>
+            @endif
         </div>
 
         <!-- Form -->
-        <form wire:submit="save" class="space-y-space-lg">
+        <form
+            wire:submit="save"
+            x-data="{ submitting: false }"
+            @submit="submitting = true"
+            @course-form-error.window="submitting = false"
+            class="space-y-space-lg"
+        >
             <!-- Title -->
             <div>
                 <label for="title" class="block text-label-md text-on-surface mb-space-sm font-label-md">
@@ -48,24 +79,6 @@
                 @enderror
             </div>
 
-            <!-- Slug -->
-            <div>
-                <label for="slug" class="block text-label-md text-on-surface mb-space-sm font-label-md">
-                    Slug <span class="text-secondary text-body-sm">(auto-generated from title)</span>
-                </label>
-                <input
-                    type="text"
-                    id="slug"
-                    wire:model="slug"
-                    placeholder="e.g., introduction-to-web-development"
-                    class="w-full px-space-lg py-space-md border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 @error('slug') border-error @enderror"
-                />
-                <p class="text-body-sm text-on-surface-variant mt-space-sm">URL-friendly identifier for this course</p>
-                @error('slug')
-                    <p class="text-body-sm text-error mt-space-sm">{{ $message }}</p>
-                @enderror
-            </div>
-
             <!-- Publish Status -->
             <div class="flex items-center gap-space-md p-space-lg bg-surface-container rounded-lg">
                 <div>
@@ -96,9 +109,12 @@
                 </a>
                 <button
                     type="submit"
-                    class="flex-1 px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                    :disabled="submitting"
+                    class="flex-1 px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-60 inline-flex items-center justify-center gap-space-sm"
                 >
-                    {{ $course ? 'Update Course' : 'Create Course' }}
+                    <span wire:loading wire:target="save" class="inline-block animate-spin">⟳</span>
+                    <span wire:loading.remove wire:target="save">{{ $course ? 'Update Course' : 'Create Course' }}</span>
+                    <span wire:loading wire:target="save">Saving...</span>
                 </button>
             </div>
         </form>

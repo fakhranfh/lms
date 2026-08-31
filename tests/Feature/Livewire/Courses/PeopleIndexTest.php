@@ -470,4 +470,75 @@ class PeopleIndexTest extends TestCase
             ->call('generateStudents')
             ->assertHasErrors(['generateStudentCount']);
     }
+
+    public function test_teacher_can_bulk_unenroll_students(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $secondStudent = User::factory()->forSchool($this->school)->create();
+        $secondStudent->assignRole($studentRole);
+        $secondCoursePerson = CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $secondStudent->id]);
+
+        $firstCoursePerson = CoursePerson::where('course_id', $this->course->id)
+            ->where('user_id', $this->student->id)
+            ->firstOrFail();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('bulkUnenrollStudents', [$firstCoursePerson->id, $secondCoursePerson->id]);
+
+        $this->assertDatabaseMissing('course_people', ['id' => $firstCoursePerson->id]);
+        $this->assertDatabaseMissing('course_people', ['id' => $secondCoursePerson->id]);
+    }
+
+    public function test_bulk_unenroll_students_ignores_ids_outside_the_course(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $otherSchool = School::factory()->create();
+        $otherCourse = Course::factory()->for($otherSchool)->create();
+        $otherCoursePerson = CoursePerson::factory()->for($otherCourse)->student()->create();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('bulkUnenrollStudents', [$otherCoursePerson->id]);
+
+        $this->assertDatabaseHas('course_people', ['id' => $otherCoursePerson->id]);
+    }
+
+    public function test_bulk_unenroll_students_requires_groups_manage_permission(): void
+    {
+        $this->teacher->givePermissionTo('people.view');
+        $this->actingAs($this->teacher);
+
+        $coursePerson = CoursePerson::where('course_id', $this->course->id)
+            ->where('user_id', $this->student->id)
+            ->firstOrFail();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('bulkUnenrollStudents', [$coursePerson->id])
+            ->assertStatus(403);
+    }
+
+    public function test_teacher_can_bulk_unenroll_teachers(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $teacherRole = Role::firstOrCreate(['name' => RoleName::Teacher->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $secondTeacher = User::factory()->forSchool($this->school)->create();
+        $secondTeacher->assignRole($teacherRole);
+        $secondCoursePerson = CoursePerson::factory()->for($this->course)->teacher()->create(['user_id' => $secondTeacher->id]);
+
+        $firstCoursePerson = CoursePerson::where('course_id', $this->course->id)
+            ->where('user_id', $this->teacher->id)
+            ->firstOrFail();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('bulkUnenrollTeachers', [$firstCoursePerson->id, $secondCoursePerson->id]);
+
+        $this->assertDatabaseMissing('course_people', ['id' => $firstCoursePerson->id]);
+        $this->assertDatabaseMissing('course_people', ['id' => $secondCoursePerson->id]);
+    }
 }

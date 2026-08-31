@@ -321,6 +321,42 @@ class PeopleIndex extends Component
         });
     }
 
+    /**
+     * @param  array<int, string>  $coursePersonIds
+     */
+    public function bulkUnenrollStudents(array $coursePersonIds): void
+    {
+        abort_unless(auth()->user()->can('groups.manage'), 403);
+
+        $coursePersonService = app(CoursePersonService::class);
+
+        foreach ($coursePersonIds as $coursePersonId) {
+            $coursePerson = $coursePersonService->find($coursePersonId);
+
+            if ($coursePerson && $coursePerson->course_id === $this->course->id && $coursePerson->role_in_course === RoleInCourse::Student) {
+                $coursePersonService->delete($coursePersonId);
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, string>  $coursePersonIds
+     */
+    public function bulkUnenrollTeachers(array $coursePersonIds): void
+    {
+        abort_unless(auth()->user()->can('groups.manage'), 403);
+
+        $coursePersonService = app(CoursePersonService::class);
+
+        foreach ($coursePersonIds as $coursePersonId) {
+            $coursePerson = $coursePersonService->find($coursePersonId);
+
+            if ($coursePerson && $coursePerson->course_id === $this->course->id && $coursePerson->role_in_course === RoleInCourse::Teacher) {
+                $coursePersonService->delete($coursePersonId);
+            }
+        }
+    }
+
     public function unenrollTeacher(string $coursePersonId): void
     {
         abort_unless(auth()->user()->can('groups.manage'), 403);

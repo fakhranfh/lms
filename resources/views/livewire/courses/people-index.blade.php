@@ -2,7 +2,7 @@
 
 <div
     class="space-y-space-lg"
-    x-data="{ deleteId: null, deleteName: null, deleteType: null, showDeleteModal: false, switchingTab: null, enrollingId: null }"
+    x-data="{ deleteId: null, deleteName: null, deleteType: null, showDeleteModal: false, switchingTab: null, enrollingId: null, selectedIds: [], deletingIds: [] }"
 >
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => null])
 
@@ -17,7 +17,7 @@
         <div class="flex w-full sm:w-1/4 bg-surface border border-outline-variant rounded-lg overflow-hidden divide-x divide-outline-variant">
             <button
                 type="button"
-                @click="switchingTab = 'students'; $wire.selectSubTab('students').then(() => switchingTab = null)"
+                @click="selectedIds = []; switchingTab = 'students'; $wire.selectSubTab('students').then(() => switchingTab = null)"
                 :disabled="switchingTab !== null"
                 class="flex-1 py-space-md text-center font-label-md text-label-md transition disabled:opacity-60 disabled:cursor-not-allowed {{ $activeSubTab === 'students' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container' }}"
             >
@@ -26,7 +26,7 @@
             </button>
             <button
                 type="button"
-                @click="switchingTab = 'groups'; $wire.selectSubTab('groups').then(() => switchingTab = null)"
+                @click="selectedIds = []; switchingTab = 'groups'; $wire.selectSubTab('groups').then(() => switchingTab = null)"
                 :disabled="switchingTab !== null"
                 class="flex-1 py-space-md text-center font-label-md text-label-md transition disabled:opacity-60 disabled:cursor-not-allowed {{ $activeSubTab === 'groups' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container' }}"
             >
@@ -35,7 +35,7 @@
             </button>
             <button
                 type="button"
-                @click="switchingTab = 'teachers'; $wire.selectSubTab('teachers').then(() => switchingTab = null)"
+                @click="selectedIds = []; switchingTab = 'teachers'; $wire.selectSubTab('teachers').then(() => switchingTab = null)"
                 :disabled="switchingTab !== null"
                 class="flex-1 py-space-md text-center font-label-md text-label-md transition disabled:opacity-60 disabled:cursor-not-allowed {{ $activeSubTab === 'teachers' ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container' }}"
             >
@@ -146,6 +146,28 @@
                         </div>
                     @endif
 
+                    @if ($canManageGroups && $students->isNotEmpty())
+                        <div wire:key="student-toolbar-{{ $studentsCount }}" class="p-space-md border-b border-outline-variant flex items-center justify-between bg-surface-container/30" x-data="{ allIds: @js($students->pluck('id')) }">
+                            <label class="flex items-center gap-space-sm font-label-sm text-label-sm text-on-surface-variant cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    :checked="allIds.length > 0 && selectedIds.length === allIds.length"
+                                    @change="selectedIds = $event.target.checked ? [...allIds] : []"
+                                    class="w-4 h-4 rounded border-outline text-primary focus:ring-primary/50"
+                                />
+                                <span x-text="selectedIds.length > 0 ? selectedIds.length + ' selected' : 'Select all'"></span>
+                            </label>
+                            <button
+                                type="button"
+                                :disabled="selectedIds.length === 0"
+                                @click="deleteType = 'bulk-students'; deleteName = selectedIds.length + ' selected student' + (selectedIds.length === 1 ? '' : 's'); showDeleteModal = true"
+                                class="px-space-md py-1 text-body-sm text-error hover:bg-error/10 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-space-xs"
+                            >
+                                <span class="material-symbols-outlined text-[18px]">delete</span>
+                                Delete Selected
+                            </button>
+                        </div>
+                    @endif
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant">
                         <div x-show="enrollingId !== null" x-cloak class="bg-surface p-space-lg flex flex-col items-center gap-space-sm animate-pulse">
                             <div class="w-12 h-12 rounded-full bg-surface-container"></div>
@@ -155,12 +177,18 @@
                         <div x-show="enrollingId !== null" x-cloak class="bg-surface hidden md:block"></div>
                         @forelse ($students as $coursePerson)
                             <div wire:key="student-{{ $coursePerson->id }}" class="bg-surface p-space-lg">
-                                <div wire:loading.flex wire:target="unenrollStudent('{{ $coursePerson->id }}')" class="hidden flex-col items-center gap-space-sm animate-pulse">
+                                <div x-show="deletingIds.includes('{{ $coursePerson->id }}')" x-cloak class="flex flex-col items-center gap-space-sm animate-pulse">
                                     <div class="w-12 h-12 rounded-full bg-surface-container"></div>
                                     <div class="h-4 bg-surface-container rounded w-2/3"></div>
                                 </div>
-                                <div wire:loading.remove wire:target="unenrollStudent('{{ $coursePerson->id }}')" class="relative flex flex-col items-center text-center gap-space-sm">
+                                <div x-show="!deletingIds.includes('{{ $coursePerson->id }}')" class="relative flex flex-col items-center text-center gap-space-sm">
                                     @if ($canManageGroups)
+                                        <input
+                                            type="checkbox"
+                                            :checked="selectedIds.includes('{{ $coursePerson->id }}')"
+                                            @change="$event.target.checked ? selectedIds.push('{{ $coursePerson->id }}') : selectedIds = selectedIds.filter(id => id !== '{{ $coursePerson->id }}')"
+                                            class="absolute top-0 left-0 w-4 h-4 rounded border-outline text-primary focus:ring-primary/50"
+                                        />
                                         <button
                                             type="button"
                                             @click="deleteId = '{{ $coursePerson->id }}'; deleteName = @js($coursePerson->user->name); deleteType = 'student'; showDeleteModal = true"
@@ -220,6 +248,28 @@
                             </div>
                         </div>
                     @endif
+                    @if ($canManageGroups && $teachers->isNotEmpty())
+                        <div wire:key="teacher-toolbar-{{ $teachersCount }}" class="p-space-md border-b border-outline-variant flex items-center justify-between bg-surface-container/30" x-data="{ allIds: @js($teachers->pluck('id')) }">
+                            <label class="flex items-center gap-space-sm font-label-sm text-label-sm text-on-surface-variant cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    :checked="allIds.length > 0 && selectedIds.length === allIds.length"
+                                    @change="selectedIds = $event.target.checked ? [...allIds] : []"
+                                    class="w-4 h-4 rounded border-outline text-primary focus:ring-primary/50"
+                                />
+                                <span x-text="selectedIds.length > 0 ? selectedIds.length + ' selected' : 'Select all'"></span>
+                            </label>
+                            <button
+                                type="button"
+                                :disabled="selectedIds.length === 0"
+                                @click="deleteType = 'bulk-teachers'; deleteName = selectedIds.length + ' selected teacher' + (selectedIds.length === 1 ? '' : 's'); showDeleteModal = true"
+                                class="px-space-md py-1 text-body-sm text-error hover:bg-error/10 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-space-xs"
+                            >
+                                <span class="material-symbols-outlined text-[18px]">delete</span>
+                                Delete Selected
+                            </button>
+                        </div>
+                    @endif
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant">
                         <div x-show="enrollingId !== null" x-cloak class="bg-surface p-space-lg flex flex-col items-center gap-space-sm animate-pulse">
                             <div class="w-12 h-12 rounded-full bg-surface-container"></div>
@@ -229,12 +279,18 @@
                         <div x-show="enrollingId !== null" x-cloak class="bg-surface hidden md:block"></div>
                         @forelse ($teachers as $coursePerson)
                             <div wire:key="teacher-{{ $coursePerson->id }}" class="bg-surface p-space-lg">
-                                <div wire:loading.flex wire:target="unenrollTeacher('{{ $coursePerson->id }}')" class="hidden flex-col items-center gap-space-sm animate-pulse">
+                                <div x-show="deletingIds.includes('{{ $coursePerson->id }}')" x-cloak class="flex flex-col items-center gap-space-sm animate-pulse">
                                     <div class="w-12 h-12 rounded-full bg-surface-container"></div>
                                     <div class="h-4 bg-surface-container rounded w-2/3"></div>
                                 </div>
-                                <div wire:loading.remove wire:target="unenrollTeacher('{{ $coursePerson->id }}')" class="relative flex flex-col items-center text-center gap-space-sm">
+                                <div x-show="!deletingIds.includes('{{ $coursePerson->id }}')" class="relative flex flex-col items-center text-center gap-space-sm">
                                     @if ($canManageGroups)
+                                        <input
+                                            type="checkbox"
+                                            :checked="selectedIds.includes('{{ $coursePerson->id }}')"
+                                            @change="$event.target.checked ? selectedIds.push('{{ $coursePerson->id }}') : selectedIds = selectedIds.filter(id => id !== '{{ $coursePerson->id }}')"
+                                            class="absolute top-0 left-0 w-4 h-4 rounded border-outline text-primary focus:ring-primary/50"
+                                        />
                                         <button
                                             type="button"
                                             @click="deleteId = '{{ $coursePerson->id }}'; deleteName = @js($coursePerson->user->name); deleteType = 'teacher'; showDeleteModal = true"
@@ -424,7 +480,22 @@
                             Cancel
                         </button>
                         <button
-                            @click="showDeleteModal = false; deleteType === 'teacher' ? $wire.call('unenrollTeacher', deleteId) : $wire.call('unenrollStudent', deleteId)"
+                            @click="
+                                showDeleteModal = false;
+                                if (deleteType === 'teacher') {
+                                    deletingIds = [deleteId];
+                                    $wire.call('unenrollTeacher', deleteId).finally(() => deletingIds = []);
+                                } else if (deleteType === 'student') {
+                                    deletingIds = [deleteId];
+                                    $wire.call('unenrollStudent', deleteId).finally(() => deletingIds = []);
+                                } else if (deleteType === 'bulk-teachers') {
+                                    deletingIds = [...selectedIds];
+                                    $wire.call('bulkUnenrollTeachers', selectedIds).finally(() => { deletingIds = []; selectedIds = []; });
+                                } else if (deleteType === 'bulk-students') {
+                                    deletingIds = [...selectedIds];
+                                    $wire.call('bulkUnenrollStudents', selectedIds).finally(() => { deletingIds = []; selectedIds = []; });
+                                }
+                            "
                             type="button"
                             class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                         >

@@ -33,6 +33,9 @@ class PeopleIndexTest extends TestCase
         $this->student = User::factory()->forSchool($this->school)->create();
         $this->course = Course::factory()->for($this->school)->create();
 
+        $teacherRole = Role::firstOrCreate(['name' => RoleName::Teacher->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $this->teacher->assignRole($teacherRole);
+
         $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
         $this->student->assignRole($studentRole);
 
@@ -244,6 +247,168 @@ class PeopleIndexTest extends TestCase
 
         $this->assertDatabaseMissing('group_members', ['group_id' => $groupA->id, 'user_id' => $this->student->id]);
         $this->assertDatabaseHas('group_members', ['group_id' => $groupB->id, 'user_id' => $this->student->id]);
+    }
+
+    public function test_student_cannot_enroll_teacher(): void
+    {
+        $this->student->givePermissionTo('people.view');
+        $this->actingAs($this->student);
+
+        $newTeacher = User::factory()->forSchool($this->school)->create();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('enrollTeacher', $newTeacher->id)
+            ->assertStatus(403);
+    }
+
+    public function test_teacher_can_enroll_another_teacher(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $newTeacher = User::factory()->forSchool($this->school)->create();
+        $newTeacher->assignRole(Role::where('name', RoleName::Teacher->value)->where('school_id', $this->school->id)->first());
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('enrollTeacher', $newTeacher->id);
+
+        $this->assertDatabaseHas('course_people', [
+            'course_id' => $this->course->id,
+            'user_id' => $newTeacher->id,
+            'role_in_course' => 'teacher',
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_teacher_can_enroll_a_student(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $newStudent = User::factory()->forSchool($this->school)->create();
+        $newStudent->assignRole(Role::where('name', RoleName::Student->value)->where('school_id', $this->school->id)->first());
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('enrollStudent', $newStudent->id);
+
+        $this->assertDatabaseHas('course_people', [
+            'course_id' => $this->course->id,
+            'user_id' => $newStudent->id,
+            'role_in_course' => 'student',
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_cannot_enroll_a_user_without_the_teacher_role_as_teacher(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $plainUser = User::factory()->forSchool($this->school)->create();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('enrollTeacher', $plainUser->id);
+
+        $this->assertDatabaseMissing('course_people', [
+            'course_id' => $this->course->id,
+            'user_id' => $plainUser->id,
+        ]);
+    }
+
+    public function test_cannot_enroll_a_user_without_the_student_role_as_student(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $plainUser = User::factory()->forSchool($this->school)->create();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('enrollStudent', $plainUser->id);
+
+        $this->assertDatabaseMissing('course_people', [
+            'course_id' => $this->course->id,
+            'user_id' => $plainUser->id,
+        ]);
+    }
+
+    public function test_teacher_search_results_exclude_already_enrolled_teachers(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $matchingButEnrolled = $this->teacher;
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->set('teacherSearch', $matchingButEnrolled->name)
+            ->assertDontSee($matchingButEnrolled->email);
+    }
+
+    public function test_teacher_search_results_exclude_users_without_teacher_role(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $studentOnly = $this->student;
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->set('teacherSearch', $studentOnly->name)
+            ->assertDontSee($studentOnly->email);
+    }
+
+    public function test_student_search_results_exclude_users_without_student_role(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $teacherOnly = $this->teacher;
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->set('studentSearch', $teacherOnly->name)
+            ->assertDontSee($teacherOnly->email);
+    }
+
+    public function test_student_cannot_unenroll_teacher(): void
+    {
+        $this->student->givePermissionTo('people.view');
+        $this->actingAs($this->student);
+
+        $coursePerson = CoursePerson::where('course_id', $this->course->id)
+            ->where('user_id', $this->teacher->id)
+            ->firstOrFail();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('unenrollTeacher', $coursePerson->id)
+            ->assertStatus(403);
+    }
+
+    public function test_teacher_can_unenroll_a_teacher(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $coursePerson = CoursePerson::where('course_id', $this->course->id)
+            ->where('user_id', $this->teacher->id)
+            ->firstOrFail();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('unenrollTeacher', $coursePerson->id);
+
+        $this->assertDatabaseMissing('course_people', ['id' => $coursePerson->id]);
+    }
+
+    public function test_teacher_can_unenroll_a_student(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $coursePerson = CoursePerson::where('course_id', $this->course->id)
+            ->where('user_id', $this->student->id)
+            ->firstOrFail();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('unenrollStudent', $coursePerson->id);
+
+        $this->assertDatabaseMissing('course_people', ['id' => $coursePerson->id]);
     }
 
     public function test_remove_student_from_group(): void

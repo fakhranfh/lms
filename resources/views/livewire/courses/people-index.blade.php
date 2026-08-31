@@ -1,6 +1,9 @@
 @section('title', $course->title)
 
-<div class="space-y-space-lg">
+<div
+    class="space-y-space-lg"
+    x-data="{ deleteId: null, deleteName: null, deleteType: null, showDeleteModal: false }"
+>
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => null])
 
     @if ($errorMessage)
@@ -75,11 +78,58 @@
 
             <div wire:loading.remove wire:target="selectSubTab('students'), selectSubTab('teachers'), selectSubTab('groups')">
                 @if ($activeSubTab === 'students')
+                    @if ($canManageGroups)
+                        <div class="p-space-lg border-b border-outline-variant space-y-space-sm" x-data="{ open: false }" @click.outside="open = false">
+                            <label class="block font-label-sm text-label-sm text-secondary">Enroll Student</label>
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    wire:model.live.debounce.300ms="studentSearch"
+                                    @click="open = true"
+                                    @focus="open = true"
+                                    placeholder="Search by name or email"
+                                    class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                                <div x-show="open" x-cloak class="mt-space-xs border border-outline-variant rounded-lg max-h-48 overflow-y-auto divide-y divide-outline-variant">
+                                    <div wire:loading wire:target="studentSearch" class="p-space-md space-y-space-sm animate-pulse">
+                                        @for ($i = 0; $i < 3; $i++)
+                                            <div class="h-4 bg-surface-container rounded w-3/4"></div>
+                                        @endfor
+                                    </div>
+                                    <div wire:loading.remove wire:target="studentSearch">
+                                        @forelse ($this->studentSearchResults as $user)
+                                            <button type="button" wire:click="enrollStudent('{{ $user->id }}')" wire:key="student-result-{{ $user->id }}" class="w-full text-left px-space-md py-space-sm hover:bg-surface-container text-body-sm text-on-surface flex items-center justify-between">
+                                                <span>{{ $user->name }} <span class="text-on-surface-variant">({{ $user->email }})</span></span>
+                                                <span class="material-symbols-outlined text-[18px] text-primary">person_add</span>
+                                            </button>
+                                        @empty
+                                            <p class="px-space-md py-space-sm text-body-sm text-on-surface-variant">No matching students found.</p>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant">
                         @forelse ($students as $coursePerson)
-                            <div wire:key="student-{{ $coursePerson->id }}" class="bg-surface p-space-lg flex flex-col items-center text-center gap-space-sm">
-                                <x-avatar :user="$coursePerson->user" size="12" />
-                                <p class="font-label-lg text-label-lg text-on-surface uppercase">{{ $coursePerson->user->name }}</p>
+                            <div wire:key="student-{{ $coursePerson->id }}" class="bg-surface p-space-lg">
+                                <div wire:loading.flex wire:target="unenrollStudent('{{ $coursePerson->id }}')" class="hidden flex-col items-center gap-space-sm animate-pulse">
+                                    <div class="w-12 h-12 rounded-full bg-surface-container"></div>
+                                    <div class="h-4 bg-surface-container rounded w-2/3"></div>
+                                </div>
+                                <div wire:loading.remove wire:target="unenrollStudent('{{ $coursePerson->id }}')" class="relative flex flex-col items-center text-center gap-space-sm">
+                                    @if ($canManageGroups)
+                                        <button
+                                            type="button"
+                                            @click="deleteId = '{{ $coursePerson->id }}'; deleteName = @js($coursePerson->user->name); deleteType = 'student'; showDeleteModal = true"
+                                            class="absolute top-0 right-0 p-1 text-on-surface-variant hover:text-error transition"
+                                        >
+                                            <span class="material-symbols-outlined text-[18px]">close</span>
+                                        </button>
+                                    @endif
+                                    <x-avatar :user="$coursePerson->user" size="12" />
+                                    <p class="font-label-lg text-label-lg text-on-surface uppercase">{{ $coursePerson->user->name }}</p>
+                                </div>
                             </div>
                         @empty
                             <div class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">No students enrolled yet.</div>
@@ -91,16 +141,63 @@
                 @endif
 
                 @if ($activeSubTab === 'teachers')
+                    @if ($canManageGroups)
+                        <div class="p-space-lg border-b border-outline-variant space-y-space-sm" x-data="{ open: false }" @click.outside="open = false">
+                            <label class="block font-label-sm text-label-sm text-secondary">Enroll Teacher</label>
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    wire:model.live.debounce.300ms="teacherSearch"
+                                    @click="open = true"
+                                    @focus="open = true"
+                                    placeholder="Search by name or email"
+                                    class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                                <div x-show="open" x-cloak class="mt-space-xs border border-outline-variant rounded-lg max-h-48 overflow-y-auto divide-y divide-outline-variant">
+                                    <div wire:loading wire:target="teacherSearch" class="p-space-md space-y-space-sm animate-pulse">
+                                        @for ($i = 0; $i < 3; $i++)
+                                            <div class="h-4 bg-surface-container rounded w-3/4"></div>
+                                        @endfor
+                                    </div>
+                                    <div wire:loading.remove wire:target="teacherSearch">
+                                        @forelse ($this->teacherSearchResults as $user)
+                                            <button type="button" wire:click="enrollTeacher('{{ $user->id }}')" wire:key="teacher-result-{{ $user->id }}" class="w-full text-left px-space-md py-space-sm hover:bg-surface-container text-body-sm text-on-surface flex items-center justify-between">
+                                                <span>{{ $user->name }} <span class="text-on-surface-variant">({{ $user->email }})</span></span>
+                                                <span class="material-symbols-outlined text-[18px] text-primary">person_add</span>
+                                            </button>
+                                        @empty
+                                            <p class="px-space-md py-space-sm text-body-sm text-on-surface-variant">No matching teachers found.</p>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant">
                         @forelse ($teachers as $coursePerson)
-                            <div wire:key="teacher-{{ $coursePerson->id }}" class="bg-surface p-space-lg flex flex-col items-center text-center gap-space-sm">
-                                <div class="rounded-full ring-2 ring-secondary ring-offset-2">
-                                    <x-avatar :user="$coursePerson->user" size="12" />
+                            <div wire:key="teacher-{{ $coursePerson->id }}" class="bg-surface p-space-lg">
+                                <div wire:loading.flex wire:target="unenrollTeacher('{{ $coursePerson->id }}')" class="hidden flex-col items-center gap-space-sm animate-pulse">
+                                    <div class="w-12 h-12 rounded-full bg-surface-container"></div>
+                                    <div class="h-4 bg-surface-container rounded w-2/3"></div>
                                 </div>
-                                <p class="font-label-lg text-label-lg text-on-surface">{{ $coursePerson->user->name }}</p>
-                                <span class="inline-flex items-center px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-primary/10 text-primary">
-                                    {{ str($coursePerson->role_in_course->value)->title() }}
-                                </span>
+                                <div wire:loading.remove wire:target="unenrollTeacher('{{ $coursePerson->id }}')" class="relative flex flex-col items-center text-center gap-space-sm">
+                                    @if ($canManageGroups)
+                                        <button
+                                            type="button"
+                                            @click="deleteId = '{{ $coursePerson->id }}'; deleteName = @js($coursePerson->user->name); deleteType = 'teacher'; showDeleteModal = true"
+                                            class="absolute top-0 right-0 p-1 text-on-surface-variant hover:text-error transition"
+                                        >
+                                            <span class="material-symbols-outlined text-[18px]">close</span>
+                                        </button>
+                                    @endif
+                                    <div class="rounded-full ring-2 ring-secondary ring-offset-2">
+                                        <x-avatar :user="$coursePerson->user" size="12" />
+                                    </div>
+                                    <p class="font-label-lg text-label-lg text-on-surface">{{ $coursePerson->user->name }}</p>
+                                    <span class="inline-flex items-center px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-primary/10 text-primary">
+                                        {{ str($coursePerson->role_in_course->value)->title() }}
+                                    </span>
+                                </div>
                             </div>
                         @empty
                             <div class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">No teachers assigned yet.</div>
@@ -237,6 +334,51 @@
                         @endif
                     </div>
                 @endif
+            </div>
+        </div>
+    </div>
+
+    <!-- Unenroll Confirmation Modal -->
+    <div x-show="showDeleteModal" x-cloak class="fixed inset-0 z-50">
+        <div
+            @click="showDeleteModal = false"
+            class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        ></div>
+
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+            <div class="bg-surface border border-outline-variant rounded-lg shadow-lg max-w-sm w-full">
+                <div class="p-space-lg space-y-space-lg">
+                    <div class="flex justify-center">
+                        <div class="flex items-center justify-center w-12 h-12 bg-error/10 rounded-full">
+                            <span class="material-symbols-outlined text-error text-[24px]" data-weight="fill">delete</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center space-y-space-sm">
+                        <h3 class="font-headline-sm text-headline-sm text-on-surface">Remove from Course</h3>
+                        <p class="font-body-sm text-body-sm text-on-surface-variant">
+                            Are you sure you want to remove "<span class="font-medium" x-text="deleteName ?? 'this person'"></span>" from this course?
+                            This action cannot be undone.
+                        </p>
+                    </div>
+
+                    <div class="flex gap-space-md pt-space-md">
+                        <button
+                            @click="showDeleteModal = false"
+                            type="button"
+                            class="flex-1 px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            @click="showDeleteModal = false; deleteType === 'teacher' ? $wire.call('unenrollTeacher', deleteId) : $wire.call('unenrollStudent', deleteId)"
+                            type="button"
+                            class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                        >
+                            Remove
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

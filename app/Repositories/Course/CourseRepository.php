@@ -115,6 +115,30 @@ class CourseRepository implements CourseRepositoryInterface
         return $query->exists();
     }
 
+    public function findTrashedBySlugForSchool(string $slug, string $schoolId): ?Course
+    {
+        return Course::onlyTrashed()
+            ->where('slug', $slug)
+            ->where('school_id', $schoolId)
+            ->first();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function restore(Course $course, array $data): Course
+    {
+        $course->fill([
+            'created_by' => $data['created_by'],
+            'title' => $data['title'],
+            'description' => $data['description'] ?? null,
+            'is_published' => $data['is_published'] ?? false,
+        ]);
+        $course->restore();
+
+        return $course;
+    }
+
     public function publish(string $id): void
     {
         Course::findOrFail($id)->update(['is_published' => true]);

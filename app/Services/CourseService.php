@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Enums\AssessmentAssignedTo;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
+use App\Enums\CourseMembershipStatus;
+use App\Enums\RoleInCourse;
 use App\Models\Course;
 use App\Repositories\Course\CourseRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -16,6 +18,7 @@ class CourseService
     public function __construct(
         private CourseRepositoryInterface $courseRepository,
         private AssessmentService $assessmentService,
+        private CoursePersonService $coursePersonService,
     ) {}
 
     /**
@@ -58,10 +61,22 @@ class CourseService
     public function create(array $data): Course
     {
         return DB::transaction(function () use ($data) {
-            $course = $this->courseRepository->create($data);
+            $trashedCourse = $this->courseRepository->findTrashedBySlugForSchool($data['slug'], $data['school_id']);
+
+            $course = $trashedCourse
+                ? $this->courseRepository->restore($trashedCourse, $data)
+                : $this->courseRepository->create($data);
 
             $this->ensureAttendanceAssessment($course);
             $this->ensureForumDiscussionAssessment($course);
+
+            if (! empty($data['created_by'])) {
+                $this->coursePersonService->enroll($course->id, $data['created_by'], [
+                    'role_in_course' => RoleInCourse::Teacher,
+                    'enrolled_at' => now(),
+                    'status' => CourseMembershipStatus::Active,
+                ]);
+            }
 
             return $course;
         });

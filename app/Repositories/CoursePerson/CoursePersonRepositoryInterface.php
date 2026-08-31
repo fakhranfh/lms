@@ -31,4 +31,10 @@ interface CoursePersonRepositoryInterface
     public function teachersForCourse(string $courseId): Collection;
 
     public function isEnrolledAsStudent(string $courseId, string $userId): bool;
+
+    /**
+     * Enroll a user into a course with the given role, or update their
+     * existing membership row if one already exists for that course/user pair.
+     */
+    public function enroll(string $courseId, string $userId, array $data): CoursePerson;
 }

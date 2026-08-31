@@ -69,6 +69,51 @@ class CourseFormTest extends TestCase
         ]);
     }
 
+    public function test_creating_course_adds_creator_as_teacher(): void
+    {
+        $this->teacher->givePermissionTo('courses.create');
+
+        Livewire::test(CourseForm::class)
+            ->set('title', 'PHP Fundamentals')
+            ->set('description', 'Learn PHP basics')
+            ->call('save');
+
+        $course = Course::where('title', 'PHP Fundamentals')->firstOrFail();
+
+        $this->assertDatabaseHas('course_people', [
+            'course_id' => $course->id,
+            'user_id' => $this->teacher->id,
+            'role_in_course' => 'teacher',
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_creating_course_restores_soft_deleted_course_with_same_slug(): void
+    {
+        $this->teacher->givePermissionTo('courses.create');
+
+        $trashed = Course::factory()
+            ->for($this->school)
+            ->create(['title' => 'Old Title', 'slug' => 'php-fundamentals']);
+        $trashedId = $trashed->id;
+        $trashed->delete();
+
+        Livewire::test(CourseForm::class)
+            ->set('title', 'PHP Fundamentals')
+            ->set('description', 'Learn PHP basics')
+            ->call('save');
+
+        $this->assertSame(1, Course::withTrashed()->where('slug', 'php-fundamentals')->count());
+        $this->assertDatabaseHas('courses', [
+            'id' => $trashedId,
+            'title' => 'PHP Fundamentals',
+            'description' => 'Learn PHP basics',
+            'slug' => 'php-fundamentals',
+            'created_by' => $this->teacher->id,
+            'deleted_at' => null,
+        ]);
+    }
+
     public function test_auto_generates_unique_slug_when_title_collides(): void
     {
         $this->teacher->givePermissionTo('courses.create');

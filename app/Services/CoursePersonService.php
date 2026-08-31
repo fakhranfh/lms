@@ -57,4 +57,9 @@ class CoursePersonService
     {
         return $this->coursePersonRepository->isEnrolledAsStudent($courseId, $userId);
     }
+
+    public function enroll(string $courseId, string $userId, array $data): CoursePerson
+    {
+        return $this->coursePersonRepository->enroll($courseId, $userId, $data);
+    }
 }

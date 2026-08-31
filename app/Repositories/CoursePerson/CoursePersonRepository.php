@@ -78,4 +78,12 @@ class CoursePersonRepository implements CoursePersonRepositoryInterface
             ->where('role_in_course', RoleInCourse::Student)
             ->exists();
     }
+
+    public function enroll(string $courseId, string $userId, array $data): CoursePerson
+    {
+        return CoursePerson::updateOrCreate(
+            ['course_id' => $courseId, 'user_id' => $userId],
+            $data,
+        );
+    }
 }

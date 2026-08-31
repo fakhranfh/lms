@@ -2,19 +2,29 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\CourseMembershipStatus;
+use App\Enums\RoleInCourse;
 use App\Enums\RoleName;
 use App\Models\Course;
+use App\Models\Role;
+use App\Models\User;
 use App\Services\CoursePersonService;
 use App\Services\GroupMemberService;
 use App\Services\GroupService;
+use App\Services\RoleService;
+use App\Services\UserService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
+use Illuminate\Database\Eloquent\Collection;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
 class PeopleIndex extends Component
 {
     private const SUB_TABS = ['teachers', 'students', 'groups'];
+
+    private const SUGGESTION_LIMIT = 5;
 
     public Course $course;
 
@@ -34,6 +44,10 @@ class PeopleIndex extends Component
     public ?string $assigningGroupId = null;
 
     public ?string $errorMessage = null;
+
+    public string $teacherSearch = '';
+
+    public string $studentSearch = '';
 
     public function mount(CurrentSchool $currentSchool, Course $course): void
     {
@@ -176,6 +190,124 @@ class PeopleIndex extends Component
         abort_unless(auth()->user()->can('groups.manage'), 403);
 
         $groupMemberService->delete($groupMemberId);
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function teacherSearchResults(): Collection
+    {
+        return $this->searchAvailableUsers($this->teacherSearch, RoleInCourse::Teacher);
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function studentSearchResults(): Collection
+    {
+        return $this->searchAvailableUsers($this->studentSearch, RoleInCourse::Student);
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    private function searchAvailableUsers(string $search, RoleInCourse $role): Collection
+    {
+        $roleName = $role === RoleInCourse::Teacher ? RoleName::Teacher : RoleName::Student;
+        $roleId = $this->schoolRoleId($roleName);
+
+        if ($roleId === null) {
+            return new Collection;
+        }
+
+        $enrolledUserIds = app(CoursePersonService::class)
+            ->get(['course_id' => $this->course->id, 'role_in_course' => $role->value])
+            ->pluck('user_id');
+
+        return app(UserService::class)
+            ->paginate(['search' => $search, 'role_id' => $roleId], [], self::SUGGESTION_LIMIT)
+            ->getCollection()
+            ->reject(fn ($user) => $enrolledUserIds->contains($user->id))
+            ->take(self::SUGGESTION_LIMIT);
+    }
+
+    private function schoolRoleId(RoleName $roleName): ?int
+    {
+        $role = app(RoleService::class)
+            ->get(['name' => $roleName->value, 'school_id' => $this->course->school_id])
+            ->first();
+
+        return $role instanceof Role ? $role->id : null;
+    }
+
+    public function enrollTeacher(string $userId): void
+    {
+        abort_unless(auth()->user()->can('groups.manage'), 403);
+
+        $user = app(UserService::class)->find($userId);
+
+        if (! $user || ! $user->hasRole(RoleName::Teacher)) {
+            return;
+        }
+
+        app(CoursePersonService::class)->enroll($this->course->id, $userId, [
+            'role_in_course' => RoleInCourse::Teacher,
+            'enrolled_at' => now(),
+            'status' => CourseMembershipStatus::Active,
+        ]);
+
+        $this->teacherSearch = '';
+        unset($this->teacherSearchResults);
+    }
+
+    public function enrollStudent(string $userId): void
+    {
+        abort_unless(auth()->user()->can('groups.manage'), 403);
+
+        $user = app(UserService::class)->find($userId);
+
+        if (! $user || ! $user->hasRole(RoleName::Student)) {
+            return;
+        }
+
+        app(CoursePersonService::class)->enroll($this->course->id, $userId, [
+            'role_in_course' => RoleInCourse::Student,
+            'enrolled_at' => now(),
+            'status' => CourseMembershipStatus::Active,
+        ]);
+
+        $this->studentSearch = '';
+        unset($this->studentSearchResults);
+    }
+
+    public function unenrollTeacher(string $coursePersonId): void
+    {
+        abort_unless(auth()->user()->can('groups.manage'), 403);
+
+        $coursePersonService = app(CoursePersonService::class);
+        $coursePerson = $coursePersonService->find($coursePersonId);
+
+        if (! $coursePerson || $coursePerson->course_id !== $this->course->id || $coursePerson->role_in_course !== RoleInCourse::Teacher) {
+            return;
+        }
+
+        $coursePersonService->delete($coursePersonId);
+    }
+
+    public function unenrollStudent(string $coursePersonId): void
+    {
+        abort_unless(auth()->user()->can('groups.manage'), 403);
+
+        $coursePersonService = app(CoursePersonService::class);
+        $coursePerson = $coursePersonService->find($coursePersonId);
+
+        if (! $coursePerson || $coursePerson->course_id !== $this->course->id || $coursePerson->role_in_course !== RoleInCourse::Student) {
+            return;
+        }
+
+        $coursePersonService->delete($coursePersonId);
     }
 
     public function render(CoursePersonService $coursePersonService, GroupService $groupService)

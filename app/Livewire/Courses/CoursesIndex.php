@@ -80,6 +80,7 @@ class CoursesIndex extends Component
 
         if ($this->isStudent) {
             $filters['is_published'] = true;
+            $filters['enrolled_user_id'] = auth()->id();
         }
 
         $courses = $courseService->paginate($filters, ['creator', 'sessions'], 10);

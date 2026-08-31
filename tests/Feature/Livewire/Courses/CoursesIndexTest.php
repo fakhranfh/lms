@@ -2,9 +2,12 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\CourseMembershipStatus;
+use App\Enums\RoleInCourse;
 use App\Enums\RoleName;
 use App\Livewire\Courses\CoursesIndex;
 use App\Models\Course;
+use App\Models\CoursePerson;
 use App\Models\MediaLibraryItem;
 use App\Models\Role;
 use App\Models\School;
@@ -296,8 +299,15 @@ class CoursesIndexTest extends TestCase
         $student->assignRole($studentRole);
         $student->givePermissionTo('courses.view');
 
-        Course::factory()->for($this->school)->create(['title' => 'Intro to Web Development', 'is_published' => true]);
+        $enrolledCourse = Course::factory()->for($this->school)->create(['title' => 'Intro to Web Development', 'is_published' => true]);
         Course::factory()->for($this->school)->create(['title' => 'Unfinished Course', 'is_published' => false]);
+
+        CoursePerson::factory()->create([
+            'course_id' => $enrolledCourse->id,
+            'user_id' => $student->id,
+            'role_in_course' => RoleInCourse::Student,
+            'status' => CourseMembershipStatus::Active,
+        ]);
 
         $this->actingAs($student);
 
@@ -307,6 +317,22 @@ class CoursesIndexTest extends TestCase
             ->assertDontSee('Unfinished Course')
             ->assertDontSee('Published')
             ->assertDontSee('Draft');
+    }
+
+    public function test_student_does_not_see_courses_they_are_not_enrolled_in(): void
+    {
+        $student = User::factory()->forSchool($this->school)->create();
+        $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $student->assignRole($studentRole);
+        $student->givePermissionTo('courses.view');
+
+        Course::factory()->for($this->school)->create(['title' => 'Not Enrolled Course', 'is_published' => true]);
+
+        $this->actingAs($student);
+
+        Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
+            ->assertDontSee('Not Enrolled Course');
     }
 
     public function test_student_sees_course_progress_percentage(): void
@@ -321,6 +347,13 @@ class CoursesIndexTest extends TestCase
         $materialOne = MediaLibraryItem::factory()->for($this->school)->create();
         $materialTwo = MediaLibraryItem::factory()->for($this->school)->create();
         $session->materials()->attach([$materialOne->id => ['order' => 1], $materialTwo->id => ['order' => 2]]);
+
+        CoursePerson::factory()->create([
+            'course_id' => $course->id,
+            'user_id' => $student->id,
+            'role_in_course' => RoleInCourse::Student,
+            'status' => CourseMembershipStatus::Active,
+        ]);
 
         SessionMaterialCompletion::create([
             'session_id' => $session->id,

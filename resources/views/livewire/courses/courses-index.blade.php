@@ -94,7 +94,13 @@
                 </button>
             @else
                 <span class="material-symbols-outlined text-on-surface-variant text-[48px] block mx-auto mb-4">school</span>
-                <p class="text-body-md text-on-surface-variant mb-4">No courses yet. Create your first course to get started.</p>
+                <p class="text-body-md text-on-surface-variant mb-4">
+                    @if ($isStudent)
+                        No courses available yet. Check back later.
+                    @else
+                        No courses yet. Create your first course to get started.
+                    @endif
+                </p>
                 @can('courses.create')
                     <a href="{{ route('courses.create') }}" class="text-primary font-medium hover:underline">
                         Create Your First Course

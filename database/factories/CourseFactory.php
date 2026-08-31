@@ -20,16 +20,13 @@ class CourseFactory extends Factory
      */
     public function definition(): array
     {
-        $title = fake()->sentence(3);
-
         return [
             'id' => (string) Str::uuid(),
             'school_id' => School::factory(),
-            'title' => $title,
+            'title' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'created_by' => User::factory(),
             'is_published' => fake()->boolean(30),
-            'slug' => Str::slug($title),
         ];
     }
 

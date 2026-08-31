@@ -44,7 +44,6 @@ class CourseSeeder extends Seeder
                 'school_id' => $school->id,
                 'created_by' => $teacher->id,
                 'title' => $title,
-                'slug' => Str::slug($title).'-'.Str::random(6),
                 'description' => $courseData['description'],
                 'is_published' => $courseData['is_published'],
             ]);

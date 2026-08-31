@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-#[Fillable(['school_id', 'created_by', 'title', 'description', 'slug', 'is_published'])]
+#[Fillable(['school_id', 'created_by', 'title', 'description', 'is_published'])]
 class Course extends Model
 {
     /** @use HasFactory<CourseFactory> */

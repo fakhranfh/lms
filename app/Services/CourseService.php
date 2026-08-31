@@ -61,11 +61,7 @@ class CourseService
     public function create(array $data): Course
     {
         return DB::transaction(function () use ($data) {
-            $trashedCourse = $this->courseRepository->findTrashedBySlugForSchool($data['slug'], $data['school_id']);
-
-            $course = $trashedCourse
-                ? $this->courseRepository->restore($trashedCourse, $data)
-                : $this->courseRepository->create($data);
+            $course = $this->courseRepository->create($data);
 
             $this->ensureAttendanceAssessment($course);
             $this->ensureForumDiscussionAssessment($course);
@@ -156,14 +152,6 @@ class CourseService
     public function delete(string $id): int
     {
         return $this->courseRepository->delete($id);
-    }
-
-    /**
-     * Check if slug exists for a school.
-     */
-    public function slugExists(string $slug, string $schoolId, ?string $excludeId = null): bool
-    {
-        return $this->courseRepository->slugExistsForSchool($slug, $schoolId, $excludeId);
     }
 
     /**

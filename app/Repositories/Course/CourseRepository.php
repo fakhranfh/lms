@@ -76,7 +76,6 @@ class CourseRepository implements CourseRepositoryInterface
             'created_by' => $data['created_by'],
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
-            'slug' => $data['slug'],
             'is_published' => $data['is_published'] ?? false,
         ]);
     }
@@ -91,7 +90,6 @@ class CourseRepository implements CourseRepositoryInterface
         $course->update([
             'title' => $data['title'] ?? $course->title,
             'description' => $data['description'] ?? $course->description,
-            'slug' => $data['slug'] ?? $course->slug,
             'is_published' => $data['is_published'] ?? $course->is_published,
         ]);
 
@@ -101,42 +99,6 @@ class CourseRepository implements CourseRepositoryInterface
     public function delete(string $id): int
     {
         return Course::destroy($id);
-    }
-
-    public function slugExistsForSchool(string $slug, string $schoolId, ?string $excludeId = null): bool
-    {
-        $query = Course::where('slug', $slug)
-            ->where('school_id', $schoolId);
-
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
-        }
-
-        return $query->exists();
-    }
-
-    public function findTrashedBySlugForSchool(string $slug, string $schoolId): ?Course
-    {
-        return Course::onlyTrashed()
-            ->where('slug', $slug)
-            ->where('school_id', $schoolId)
-            ->first();
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function restore(Course $course, array $data): Course
-    {
-        $course->fill([
-            'created_by' => $data['created_by'],
-            'title' => $data['title'],
-            'description' => $data['description'] ?? null,
-            'is_published' => $data['is_published'] ?? false,
-        ]);
-        $course->restore();
-
-        return $course;
     }
 
     public function publish(string $id): void

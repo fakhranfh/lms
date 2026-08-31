@@ -51,26 +51,6 @@ interface CourseRepositoryInterface
     public function delete(string $id): int;
 
     /**
-     * Check if slug exists for a school.
-     */
-    public function slugExistsForSchool(string $slug, string $schoolId, ?string $excludeId = null): bool;
-
-    /**
-     * Find a soft-deleted course with the given slug in the given school, so
-     * it can be restored instead of colliding with the unique (school_id,
-     * slug) index, which isn't a partial index and still counts trashed rows.
-     */
-    public function findTrashedBySlugForSchool(string $slug, string $schoolId): ?Course;
-
-    /**
-     * Restore a soft-deleted course rather than creating a duplicate, applying
-     * the freshly submitted attributes as if created anew.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    public function restore(Course $course, array $data): Course;
-
-    /**
      * Publish a course.
      */
     public function publish(string $id): void;

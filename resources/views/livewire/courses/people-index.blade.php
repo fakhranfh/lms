@@ -249,7 +249,7 @@
                         </div>
                     @endif
                     @if ($canManageGroups && $teachers->isNotEmpty())
-                        <div wire:key="teacher-toolbar-{{ $teachersCount }}" class="p-space-md border-b border-outline-variant flex items-center justify-between bg-surface-container/30" x-data="{ allIds: @js($teachers->pluck('id')) }">
+                        <div wire:key="teacher-toolbar-{{ $teachersCount }}" class="p-space-md border-b border-outline-variant flex items-center justify-between bg-surface-container/30" x-data="{ allIds: @js($teachers->reject(fn ($coursePerson) => $coursePerson->user_id === auth()->id())->pluck('id')) }">
                             <label class="flex items-center gap-space-sm font-label-sm text-label-sm text-on-surface-variant cursor-pointer">
                                 <input
                                     type="checkbox"
@@ -284,7 +284,7 @@
                                     <div class="h-4 bg-surface-container rounded w-2/3"></div>
                                 </div>
                                 <div x-show="!deletingIds.includes('{{ $coursePerson->id }}')" class="relative flex flex-col items-center text-center gap-space-sm">
-                                    @if ($canManageGroups)
+                                    @if ($canManageGroups && $coursePerson->user_id !== auth()->id())
                                         <input
                                             type="checkbox"
                                             :checked="selectedIds.includes('{{ $coursePerson->id }}')"

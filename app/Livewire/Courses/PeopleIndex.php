@@ -426,7 +426,7 @@ class PeopleIndex extends Component
         foreach ($coursePersonIds as $coursePersonId) {
             $coursePerson = $coursePersonService->find($coursePersonId);
 
-            if ($coursePerson && $coursePerson->course_id === $this->course->id && $coursePerson->role_in_course === RoleInCourse::Teacher) {
+            if ($coursePerson && $coursePerson->course_id === $this->course->id && $coursePerson->role_in_course === RoleInCourse::Teacher && $coursePerson->user_id !== auth()->id()) {
                 $coursePersonService->delete($coursePersonId);
             }
         }
@@ -440,6 +440,12 @@ class PeopleIndex extends Component
         $coursePerson = $coursePersonService->find($coursePersonId);
 
         if (! $coursePerson || $coursePerson->course_id !== $this->course->id || $coursePerson->role_in_course !== RoleInCourse::Teacher) {
+            return;
+        }
+
+        if ($coursePerson->user_id === auth()->id()) {
+            $this->errorMessage = __('You cannot remove yourself from this course.');
+
             return;
         }
 

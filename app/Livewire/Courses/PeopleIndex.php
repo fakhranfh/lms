@@ -6,6 +6,7 @@ use App\Enums\CourseMembershipStatus;
 use App\Enums\RoleInCourse;
 use App\Enums\RoleName;
 use App\Models\Course;
+use App\Models\CoursePerson;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CoursePersonService;
@@ -37,11 +38,11 @@ class PeopleIndex extends Component
 
     public string $newGroupName = '';
 
-    public ?string $renamingGroupId = null;
-
     public string $renameValue = '';
 
-    public ?string $assigningGroupId = null;
+    public string $groupMemberSearch = '';
+
+    public string $groupSearchQuery = '';
 
     public ?string $errorMessage = null;
 
@@ -50,6 +51,8 @@ class PeopleIndex extends Component
     public string $studentSearch = '';
 
     public int $generateStudentCount = 5;
+
+    public int $groupSize = 4;
 
     public function mount(CurrentSchool $currentSchool, Course $course): void
     {
@@ -93,7 +96,51 @@ class PeopleIndex extends Component
         $this->newGroupName = '';
     }
 
-    public function startRename(string $groupId, GroupService $groupService): void
+    public function generateGroups(CoursePersonService $coursePersonService, GroupService $groupService, GroupMemberService $groupMemberService): void
+    {
+        abort_unless(auth()->user()->can('groups.manage'), 403);
+
+        $this->validate([
+            'groupSize' => 'required|integer|min:1|max:100',
+        ]);
+
+        $students = $coursePersonService->studentsForCourse($this->course->id);
+        $groups = $groupService->forCourse($this->course->id);
+        $assignedUserIds = $groups->flatMap(fn ($group) => $group->members->pluck('user_id'))->all();
+
+        $unassignedUserIds = $students
+            ->reject(fn ($coursePerson) => in_array($coursePerson->user_id, $assignedUserIds, true))
+            ->pluck('user_id')
+            ->shuffle()
+            ->values();
+
+        if ($unassignedUserIds->isEmpty()) {
+            return;
+        }
+
+        $nextNumber = $groups->count() + 1;
+
+        foreach ($unassignedUserIds->chunk($this->groupSize) as $chunk) {
+            $group = $groupService->create([
+                'course_id' => $this->course->id,
+                'name' => "Group {$nextNumber}",
+                'created_by' => auth()->id(),
+                'target_size' => $this->groupSize,
+            ]);
+
+            foreach ($chunk as $userId) {
+                $groupMemberService->create([
+                    'group_id' => $group->id,
+                    'user_id' => $userId,
+                    'joined_at' => now(),
+                ]);
+            }
+
+            $nextNumber++;
+        }
+    }
+
+    public function saveRename(string $groupId, string $name, GroupService $groupService): void
     {
         abort_unless(auth()->user()->can('groups.manage'), 403);
 
@@ -103,36 +150,20 @@ class PeopleIndex extends Component
             return;
         }
 
-        $this->renamingGroupId = $groupId;
-        $this->renameValue = $group->name;
-    }
-
-    public function cancelRename(): void
-    {
-        $this->renamingGroupId = null;
-        $this->renameValue = '';
-    }
-
-    public function saveRename(GroupService $groupService): void
-    {
-        abort_unless(auth()->user()->can('groups.manage'), 403);
+        $this->renameValue = $name;
 
         $this->validate([
             'renameValue' => 'required|string|max:255',
         ]);
 
-        abort_unless($this->renamingGroupId !== null, 404);
-
-        $groupService->update($this->renamingGroupId, ['name' => $this->renameValue]);
-
-        $this->cancelRename();
+        $groupService->update($groupId, ['name' => $this->renameValue]);
     }
 
     public function deleteGroup(string $groupId, GroupService $groupService): void
     {
         abort_unless(auth()->user()->can('groups.manage'), 403);
 
-        $group = $groupService->find($groupId, ['members']);
+        $group = $groupService->find($groupId);
 
         if (! $group || $group->course_id !== $this->course->id) {
             $this->errorMessage = __('Group not found.');
@@ -140,28 +171,45 @@ class PeopleIndex extends Component
             return;
         }
 
-        if ($group->members->isNotEmpty()) {
-            $this->errorMessage = __('Remove all members before deleting this group.');
-
-            return;
-        }
-
         $groupService->delete($groupId);
     }
 
-    public function startAssigning(string $groupId): void
+    public function deleteAllGroups(GroupService $groupService): void
     {
         abort_unless(auth()->user()->can('groups.manage'), 403);
 
-        $this->assigningGroupId = $groupId;
-    }
+        $groups = $groupService->forCourse($this->course->id);
 
-    public function cancelAssigning(): void
-    {
-        $this->assigningGroupId = null;
+        foreach ($groups as $group) {
+            $groupService->delete($group->id);
+        }
     }
 
     public function addStudent(string $groupId, string $userId, GroupService $groupService, GroupMemberService $groupMemberService): void
+    {
+        abort_unless(auth()->user()->can('groups.manage'), 403);
+
+        $group = $groupService->find($groupId);
+
+        if (! $group || $group->course_id !== $this->course->id) {
+            return;
+        }
+
+        $alreadyAssignedInCourse = $groupMemberService->get(['user_id' => $userId])
+            ->contains(fn ($member) => $member->group->course_id === $this->course->id);
+
+        if ($alreadyAssignedInCourse) {
+            return;
+        }
+
+        $groupMemberService->create([
+            'group_id' => $groupId,
+            'user_id' => $userId,
+            'joined_at' => now(),
+        ]);
+    }
+
+    public function moveStudent(string $groupId, string $userId, GroupService $groupService, GroupMemberService $groupMemberService): void
     {
         abort_unless(auth()->user()->can('groups.manage'), 403);
 
@@ -183,8 +231,35 @@ class PeopleIndex extends Component
             'user_id' => $userId,
             'joined_at' => now(),
         ]);
+    }
 
-        $this->assigningGroupId = null;
+    /**
+     * @return array{unassigned: Collection<int, CoursePerson>, assignedElsewhere: Collection<int, CoursePerson>}
+     */
+    public function candidateStudentsForGroup(string $groupId): array
+    {
+        $group = app(GroupService::class)->find($groupId, ['members']);
+        $currentMemberUserIds = $group?->members->pluck('user_id')->all() ?? [];
+
+        $students = app(CoursePersonService::class)->studentsForCourse($this->course->id);
+        $groups = app(GroupService::class)->forCourse($this->course->id);
+        $assignedUserIds = $groups->flatMap(fn ($g) => $g->members->pluck('user_id'))->all();
+
+        $search = trim($this->groupMemberSearch);
+
+        $candidates = $students
+            ->reject(fn ($coursePerson) => in_array($coursePerson->user_id, $currentMemberUserIds, true))
+            ->when(
+                $search !== '',
+                fn ($collection) => $collection->filter(
+                    fn ($coursePerson) => str_contains(strtolower($coursePerson->user->name), strtolower($search))
+                )
+            );
+
+        return [
+            'unassigned' => $candidates->reject(fn ($coursePerson) => in_array($coursePerson->user_id, $assignedUserIds, true))->values(),
+            'assignedElsewhere' => $candidates->filter(fn ($coursePerson) => in_array($coursePerson->user_id, $assignedUserIds, true))->values(),
+        ];
     }
 
     public function removeStudent(string $groupMemberId, GroupMemberService $groupMemberService): void
@@ -424,12 +499,28 @@ class PeopleIndex extends Component
             $viewData['groupsCount'] = $groups->count();
             $assignedUserIds = $groups->flatMap(fn ($group) => $group->members->pluck('user_id'))->all();
 
-            $viewData['groups'] = $groups;
-            $viewData['allStudents'] = $students;
-            $viewData['assignedUserIds'] = $assignedUserIds;
-            $viewData['unassignedStudents'] = $students->reject(
+            $unassignedStudents = $students->reject(
                 fn ($coursePerson) => in_array($coursePerson->user_id, $assignedUserIds, true)
             );
+
+            $searchQuery = strtolower(trim($this->groupSearchQuery));
+
+            $viewData['groups'] = $groups;
+            $viewData['visibleGroups'] = $searchQuery === ''
+                ? $groups
+                : $groups->filter(
+                    fn ($group) => str_contains(strtolower($group->name), $searchQuery)
+                        || $group->members->contains(
+                            fn ($member) => str_contains(strtolower($member->user->name), $searchQuery)
+                        )
+                )->values();
+
+            $viewData['unassignedStudents'] = $unassignedStudents;
+            $viewData['visibleUnassignedStudents'] = $searchQuery === ''
+                ? $unassignedStudents
+                : $unassignedStudents->filter(
+                    fn ($coursePerson) => str_contains(strtolower($coursePerson->user->name), $searchQuery)
+                )->values();
         }
 
         return view('livewire.courses.people-index', $viewData)

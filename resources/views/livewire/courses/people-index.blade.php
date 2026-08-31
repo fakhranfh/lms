@@ -2,7 +2,7 @@
 
 <div
     class="space-y-space-lg"
-    x-data="{ deleteId: null, deleteName: null, deleteType: null, showDeleteModal: false, switchingTab: null, enrollingId: null, selectedIds: [], deletingIds: [] }"
+    x-data="{ deleteId: null, deleteName: null, deleteType: null, showDeleteModal: false, switchingTab: null, enrollingId: null, selectedIds: [], deletingIds: [], pendingGroupIds: [] }"
 >
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => null])
 
@@ -342,13 +342,6 @@
                                 <p class="text-body-sm text-on-surface-variant">You are not in a group yet.</p>
                             @endif
                         @else
-                            @if ($unassignedStudents->isNotEmpty())
-                                <div class="bg-surface-container/50 border border-outline-variant rounded-lg p-space-md">
-                                    <p class="font-label-sm text-label-sm text-secondary mb-space-xs">Unassigned Students ({{ $unassignedStudents->count() }})</p>
-                                    <p class="text-body-sm text-on-surface-variant">{{ $unassignedStudents->pluck('user.name')->implode(', ') }}</p>
-                                </div>
-                            @endif
-
                             @if ($canManageGroups)
                                 <form wire:submit="createGroup" class="flex items-end gap-space-md">
                                     <div class="flex-1">
@@ -356,50 +349,197 @@
                                         <input type="text" wire:model="newGroupName" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
                                         @error('newGroupName') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                                     </div>
-                                    <button type="submit" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm">
-                                        <span class="material-symbols-outlined">add</span>
+                                    <button type="submit" wire:loading.attr="disabled" wire:target="createGroup" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-space-sm">
+                                        <span class="material-symbols-outlined" wire:loading.remove wire:target="createGroup">add</span>
+                                        <svg wire:loading wire:target="createGroup" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                        </svg>
                                         Create Group
                                     </button>
                                 </form>
+
+                                @if ($unassignedStudents->isNotEmpty())
+                                    <form wire:submit="generateGroups" class="flex items-end gap-space-md">
+                                        <div class="flex-1 max-w-[160px]">
+                                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Students per Group</label>
+                                            <input type="number" min="1" max="100" wire:model="groupSize" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                                            @error('groupSize') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                                        </div>
+                                        <button type="submit" wire:loading.attr="disabled" wire:target="generateGroups" class="px-space-lg py-space-sm bg-secondary text-on-secondary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-space-sm">
+                                            <span class="material-symbols-outlined" wire:loading.remove wire:target="generateGroups">shuffle</span>
+                                            <svg wire:loading wire:target="generateGroups" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                            </svg>
+                                            Generate Groups
+                                        </button>
+                                    </form>
+                                @endif
                             @endif
 
                             <div class="space-y-space-sm">
-                                @forelse ($groups as $group)
-                                    <div wire:key="group-{{ $group->id }}" x-data="{ open: true }" class="border border-outline-variant rounded-lg overflow-hidden">
-                                        <button type="button" @click="open = !open" class="w-full flex items-center justify-between px-space-lg py-space-md bg-surface-container/30">
-                                            @if ($canManageGroups && $renamingGroupId === $group->id)
-                                                <form wire:submit="saveRename" @click.stop class="flex items-center gap-space-sm flex-1">
-                                                    <input type="text" wire:model="renameValue" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                                                    <button type="submit" class="text-primary text-body-sm font-medium hover:underline">Save</button>
-                                                    <button type="button" wire:click="cancelRename" class="text-on-surface-variant text-body-sm hover:underline">Cancel</button>
-                                                </form>
-                                            @else
+                                <label class="block font-label-sm text-label-sm text-secondary">Find Student's Group</label>
+                                <input
+                                    type="text"
+                                    wire:model.live.debounce.300ms="groupSearchQuery"
+                                    placeholder="Search by student or group name"
+                                    class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                            </div>
+
+                            @if ($canManageGroups)
+                                @if ($groups->isNotEmpty())
+                                    <button
+                                        type="button"
+                                        @click="pendingGroupIds = @js($groups->pluck('id')); deleteId = null; deleteName = 'all groups'; deleteType = 'all-groups'; showDeleteModal = true"
+                                        class="text-error text-body-sm font-medium hover:underline inline-flex items-center gap-space-xs"
+                                    >
+                                        <span class="material-symbols-outlined text-[16px]">delete_sweep</span>
+                                        Delete All Groups
+                                    </button>
+                                @endif
+                            @endif
+
+                            <div wire:loading.block wire:target="groupSearchQuery" class="space-y-space-md animate-pulse">
+                                @for ($i = 0; $i < 2; $i++)
+                                    <div class="border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+                                        <div class="h-4 bg-surface-container rounded w-24"></div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                                            @for ($j = 0; $j < 4; $j++)
+                                                <div class="flex items-center gap-space-sm">
+                                                    <div class="w-8 h-8 rounded-full bg-surface-container flex-shrink-0"></div>
+                                                    <div class="h-4 bg-surface-container rounded w-2/3"></div>
+                                                </div>
+                                            @endfor
+                                        </div>
+                                    </div>
+                                @endfor
+                            </div>
+
+                            <div wire:loading.remove wire:target="groupSearchQuery" class="space-y-space-md">
+                                @if ($visibleUnassignedStudents->isNotEmpty())
+                                    <div class="bg-surface-container/50 border border-outline-variant rounded-lg p-space-md">
+                                        <p class="font-label-sm text-label-sm text-secondary mb-space-md">Unassigned Students ({{ $visibleUnassignedStudents->count() }})</p>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-space-md">
+                                            @foreach ($visibleUnassignedStudents as $coursePerson)
+                                                <div class="flex items-center gap-space-sm">
+                                                    <x-avatar :user="$coursePerson->user" size="8" />
+                                                    <p class="font-label-md text-label-md text-on-surface">{{ $coursePerson->user->name }}</p>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <div class="space-y-space-sm" x-data="{ removingMemberId: null, addingUserId: null, assigningGroupId: null }">
+                                    @forelse ($visibleGroups as $group)
+                                    <div
+                                        wire:key="group-{{ $group->id }}"
+                                        x-data="{ open: true, renaming: false, draftName: @js($group->name), saving: false }"
+                                        class="border border-outline-variant rounded-lg overflow-hidden"
+                                    >
+                                        <div x-show="deletingIds.includes('{{ $group->id }}')" x-cloak class="p-space-lg space-y-space-md animate-pulse">
+                                            <div class="h-5 bg-surface-container rounded w-32"></div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                                                @for ($i = 0; $i < 4; $i++)
+                                                    <div class="flex items-center gap-space-sm">
+                                                        <div class="w-8 h-8 rounded-full bg-surface-container flex-shrink-0"></div>
+                                                        <div class="h-4 bg-surface-container rounded w-2/3"></div>
+                                                    </div>
+                                                @endfor
+                                            </div>
+                                        </div>
+                                        <div x-show="!deletingIds.includes('{{ $group->id }}')">
+                                        <div
+                                            role="button"
+                                            tabindex="0"
+                                            @click="if (!renaming) { open = !open }"
+                                            class="w-full flex items-center justify-between gap-space-md px-space-lg py-space-md bg-surface-container/30"
+                                        >
+                                            <form
+                                                x-show="renaming"
+                                                x-cloak
+                                                @click.stop
+                                                @submit.prevent="saving = true; $wire.call('saveRename', '{{ $group->id }}', draftName).then(() => { renaming = false; saving = false }).catch(() => { saving = false })"
+                                                class="flex items-center gap-space-sm flex-1 flex-nowrap"
+                                            >
+                                                <input
+                                                    type="text"
+                                                    x-model="draftName"
+                                                    x-ref="renameInput"
+                                                    maxlength="255"
+                                                    @keydown.escape="renaming = false"
+                                                    class="flex-1 min-w-0 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                                />
+                                                <button
+                                                    type="submit"
+                                                    :disabled="saving"
+                                                    class="flex-shrink-0 whitespace-nowrap px-space-md py-1.5 bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-space-xs"
+                                                >
+                                                    <span class="material-symbols-outlined text-[16px]" x-show="!saving">check</span>
+                                                    <svg x-show="saving" class="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                                    </svg>
+                                                    Save
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    :disabled="saving"
+                                                    @click="renaming = false"
+                                                    class="flex-shrink-0 whitespace-nowrap px-space-md py-1.5 border border-outline rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:bg-surface-container transition disabled:opacity-60 disabled:cursor-not-allowed"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </form>
+                                            <div x-show="!renaming" class="flex items-center justify-between gap-space-md w-full">
                                                 <span class="font-label-lg text-label-lg text-on-surface">{{ $group->name }}</span>
                                                 <div class="flex items-center gap-space-sm">
                                                     @if ($canManageGroups)
-                                                        <span @click.stop wire:click="startRename('{{ $group->id }}')" class="p-1 hover:bg-surface-container rounded transition text-primary inline-flex">
+                                                        <span
+                                                            @click.stop="draftName = @js($group->name); renaming = true; $nextTick(() => $refs.renameInput?.focus())"
+                                                            class="p-1 hover:bg-surface-container rounded transition text-primary inline-flex cursor-pointer"
+                                                        >
                                                             <span class="material-symbols-outlined text-[18px]">edit</span>
                                                         </span>
-                                                        <span @click.stop wire:click="deleteGroup('{{ $group->id }}')" class="p-1 hover:bg-surface-container rounded transition text-error inline-flex">
+                                                        <span
+                                                            @click.stop="deleteId = '{{ $group->id }}'; deleteName = @js($group->name); deleteType = 'group'; showDeleteModal = true"
+                                                            class="p-1 hover:bg-surface-container rounded transition text-error inline-flex cursor-pointer"
+                                                        >
                                                             <span class="material-symbols-outlined text-[18px]">delete</span>
                                                         </span>
                                                     @endif
                                                     <span class="material-symbols-outlined text-on-surface-variant transition" :class="open ? 'rotate-180' : ''">expand_more</span>
                                                 </div>
-                                            @endif
-                                        </button>
+                                            </div>
+                                        </div>
 
                                         <div x-show="open" x-transition class="p-space-lg space-y-space-md">
                                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
                                                 @forelse ($group->members as $member)
                                                     <div class="flex items-center justify-between gap-space-sm">
-                                                        <div class="flex items-center gap-space-sm">
-                                                            <x-avatar :user="$member->user" size="8" />
-                                                            <p class="font-label-md text-label-md text-on-surface">{{ $member->user->name }}</p>
+                                                        <div x-show="removingMemberId === '{{ $member->id }}'" x-cloak class="flex items-center gap-space-sm animate-pulse">
+                                                            <div class="w-8 h-8 rounded-full bg-surface-container"></div>
+                                                            <div class="h-4 bg-surface-container rounded w-24"></div>
                                                         </div>
-                                                        @if ($canManageGroups)
-                                                            <button type="button" wire:click="removeStudent('{{ $member->id }}')" class="text-error text-[18px] material-symbols-outlined">close</button>
-                                                        @endif
+                                                        <template x-if="removingMemberId !== '{{ $member->id }}'">
+                                                            <div class="flex items-center justify-between gap-space-sm w-full">
+                                                                <div class="flex items-center gap-space-sm">
+                                                                    <x-avatar :user="$member->user" size="8" />
+                                                                    <p class="font-label-md text-label-md text-on-surface">{{ $member->user->name }}</p>
+                                                                </div>
+                                                                @if ($canManageGroups)
+                                                                    <button
+                                                                        type="button"
+                                                                        @click="removingMemberId = '{{ $member->id }}'; $wire.call('removeStudent', '{{ $member->id }}').finally(() => removingMemberId = null)"
+                                                                        class="text-error text-[18px] material-symbols-outlined"
+                                                                    >
+                                                                        close
+                                                                    </button>
+                                                                @endif
+                                                            </div>
+                                                        </template>
                                                     </div>
                                                 @empty
                                                     <p class="text-body-sm text-on-surface-variant">No members yet.</p>
@@ -407,38 +547,83 @@
                                             </div>
 
                                             @if ($canManageGroups)
-                                                @if ($assigningGroupId === $group->id)
-                                                    <div class="border border-outline-variant rounded-lg p-space-md space-y-space-xs max-h-48 overflow-y-auto">
-                                                        @forelse ($allStudents as $coursePerson)
-                                                            <button
-                                                                type="button"
-                                                                wire:click="addStudent('{{ $group->id }}', '{{ $coursePerson->user_id }}')"
-                                                                class="w-full text-left px-space-sm py-space-xs rounded hover:bg-surface-container text-body-sm text-on-surface flex items-center justify-between"
-                                                            >
-                                                                {{ $coursePerson->user->name }}
-                                                                @if (in_array($coursePerson->user_id, $assignedUserIds, true))
-                                                                    <span class="text-body-xs text-on-surface-variant">move here</span>
-                                                                @endif
-                                                            </button>
-                                                        @empty
-                                                            <p class="text-body-sm text-on-surface-variant">No students enrolled.</p>
-                                                        @endforelse
-                                                        <button type="button" wire:click="cancelAssigning" class="text-body-sm text-on-surface-variant hover:underline mt-space-xs">Close</button>
+                                                @php($candidates = $this->candidateStudentsForGroup($group->id))
+                                                <div x-show="assigningGroupId === '{{ $group->id }}'" x-cloak class="border border-outline-variant rounded-lg p-space-md space-y-space-md">
+                                                    <input
+                                                        type="text"
+                                                        wire:model.live.debounce.300ms="groupMemberSearch"
+                                                        placeholder="Search students by name"
+                                                        class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                                    />
+
+                                                    <div class="max-h-48 overflow-y-auto space-y-space-md">
+                                                        <div>
+                                                            <p class="font-label-sm text-label-sm text-secondary mb-space-xs">Add Student</p>
+                                                            <div class="space-y-space-xs">
+                                                                @forelse ($candidates['unassigned'] as $coursePerson)
+                                                                    <button
+                                                                        type="button"
+                                                                        :disabled="addingUserId !== null"
+                                                                        @click="addingUserId = '{{ $coursePerson->user_id }}'; $wire.call('addStudent', '{{ $group->id }}', '{{ $coursePerson->user_id }}').finally(() => addingUserId = null)"
+                                                                        class="w-full text-left px-space-sm py-space-xs rounded hover:bg-surface-container text-body-sm text-on-surface flex items-center justify-between disabled:opacity-60"
+                                                                    >
+                                                                        <span x-text="addingUserId === '{{ $coursePerson->user_id }}' ? 'Adding…' : @js($coursePerson->user->name)"></span>
+                                                                        <span class="material-symbols-outlined text-[16px] text-primary">person_add</span>
+                                                                    </button>
+                                                                @empty
+                                                                    <p class="text-body-sm text-on-surface-variant">No unassigned students found.</p>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
+
+                                                        <div>
+                                                            <p class="font-label-sm text-label-sm text-secondary mb-space-xs">Move from Another Group</p>
+                                                            <div class="space-y-space-xs">
+                                                                @forelse ($candidates['assignedElsewhere'] as $coursePerson)
+                                                                    <button
+                                                                        type="button"
+                                                                        :disabled="addingUserId !== null"
+                                                                        @click="addingUserId = '{{ $coursePerson->user_id }}'; $wire.call('moveStudent', '{{ $group->id }}', '{{ $coursePerson->user_id }}').finally(() => addingUserId = null)"
+                                                                        class="w-full text-left px-space-sm py-space-xs rounded hover:bg-surface-container text-body-sm text-on-surface flex items-center justify-between disabled:opacity-60"
+                                                                    >
+                                                                        <span x-text="addingUserId === '{{ $coursePerson->user_id }}' ? 'Moving…' : @js($coursePerson->user->name)"></span>
+                                                                        <span class="material-symbols-outlined text-[16px] text-secondary">move_up</span>
+                                                                    </button>
+                                                                @empty
+                                                                    <p class="text-body-sm text-on-surface-variant">No students in other groups.</p>
+                                                                @endforelse
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                @else
-                                                    <button type="button" wire:click="startAssigning('{{ $group->id }}')" class="text-primary text-body-sm font-medium hover:underline inline-flex items-center gap-space-xs">
-                                                        <span class="material-symbols-outlined text-[16px]">person_add</span>
-                                                        Add Student
+
+                                                    <button
+                                                        type="button"
+                                                        @click="assigningGroupId = null"
+                                                        class="px-space-md py-1 border border-outline rounded-lg font-label-sm text-label-sm text-on-surface-variant hover:bg-surface-container transition"
+                                                    >
+                                                        Close
                                                     </button>
-                                                @endif
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    x-show="assigningGroupId !== '{{ $group->id }}'"
+                                                    @click="assigningGroupId = '{{ $group->id }}'"
+                                                    class="text-primary text-body-sm font-medium hover:underline inline-flex items-center gap-space-xs"
+                                                >
+                                                    <span class="material-symbols-outlined text-[16px]">person_add</span>
+                                                    Add Student
+                                                </button>
                                             @endif
+                                        </div>
                                         </div>
                                     </div>
                                 @empty
                                     <div class="border border-outline-variant rounded-lg p-8 text-center text-body-sm text-on-surface-variant">
-                                        No groups yet.
+                                        {{ trim($groupSearchQuery) === '' ? 'No groups yet.' : 'No groups match your search.' }}
                                     </div>
                                 @endforelse
+                                </div>
                             </div>
                         @endif
                     </div>
@@ -464,9 +649,17 @@
                     </div>
 
                     <div class="text-center space-y-space-sm">
-                        <h3 class="font-headline-sm text-headline-sm text-on-surface">Remove from Course</h3>
-                        <p class="font-body-sm text-body-sm text-on-surface-variant">
+                        <h3 class="font-headline-sm text-headline-sm text-on-surface" x-text="deleteType === 'group' ? 'Delete Group' : (deleteType === 'all-groups' ? 'Delete All Groups' : 'Remove from Course')"></h3>
+                        <p class="font-body-sm text-body-sm text-on-surface-variant" x-show="deleteType !== 'group' && deleteType !== 'all-groups'">
                             Are you sure you want to remove "<span class="font-medium" x-text="deleteName ?? 'this person'"></span>" from this course?
+                            This action cannot be undone.
+                        </p>
+                        <p class="font-body-sm text-body-sm text-on-surface-variant" x-show="deleteType === 'group'">
+                            Are you sure you want to delete "<span class="font-medium" x-text="deleteName ?? 'this group'"></span>"? Its members will also be removed.
+                            This action cannot be undone.
+                        </p>
+                        <p class="font-body-sm text-body-sm text-on-surface-variant" x-show="deleteType === 'all-groups'">
+                            Are you sure you want to delete all groups in this course? All group memberships will also be removed.
                             This action cannot be undone.
                         </p>
                     </div>
@@ -494,6 +687,12 @@
                                 } else if (deleteType === 'bulk-students') {
                                     deletingIds = [...selectedIds];
                                     $wire.call('bulkUnenrollStudents', selectedIds).finally(() => { deletingIds = []; selectedIds = []; });
+                                } else if (deleteType === 'group') {
+                                    deletingIds = [deleteId];
+                                    $wire.call('deleteGroup', deleteId).finally(() => deletingIds = []);
+                                } else if (deleteType === 'all-groups') {
+                                    deletingIds = [...pendingGroupIds];
+                                    $wire.call('deleteAllGroups').finally(() => { deletingIds = []; pendingGroupIds = []; });
                                 }
                             "
                             type="button"

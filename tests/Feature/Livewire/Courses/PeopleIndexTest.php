@@ -184,11 +184,35 @@ class PeopleIndexTest extends TestCase
         $group = Group::factory()->for($this->course)->create(['name' => 'Old Name']);
 
         Livewire::test(PeopleIndex::class, ['course' => $this->course])
-            ->call('startRename', $group->id)
-            ->set('renameValue', 'New Name')
-            ->call('saveRename');
+            ->call('saveRename', $group->id, 'New Name');
 
         $this->assertDatabaseHas('groups', ['id' => $group->id, 'name' => 'New Name']);
+    }
+
+    public function test_rename_group_requires_groups_manage_permission(): void
+    {
+        $this->student->givePermissionTo('people.view');
+        $this->actingAs($this->student);
+
+        $group = Group::factory()->for($this->course)->create(['name' => 'Old Name']);
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('saveRename', $group->id, 'New Name')
+            ->assertStatus(403);
+    }
+
+    public function test_rename_group_validates_name(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $group = Group::factory()->for($this->course)->create(['name' => 'Old Name']);
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('saveRename', $group->id, '')
+            ->assertHasErrors(['renameValue']);
+
+        $this->assertDatabaseHas('groups', ['id' => $group->id, 'name' => 'Old Name']);
     }
 
     public function test_teacher_can_delete_empty_group(): void
@@ -204,20 +228,131 @@ class PeopleIndexTest extends TestCase
         $this->assertDatabaseMissing('groups', ['id' => $group->id]);
     }
 
-    public function test_delete_blocked_when_group_has_members(): void
+    public function test_deleting_group_with_members_also_removes_its_members(): void
     {
         $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
         $this->actingAs($this->teacher);
 
         $group = Group::factory()->for($this->course)->create();
-        GroupMember::factory()->for($group)->create(['user_id' => $this->student->id]);
+        $member = GroupMember::factory()->for($group)->create(['user_id' => $this->student->id]);
 
         Livewire::test(PeopleIndex::class, ['course' => $this->course])
             ->call('loadData')
-            ->call('deleteGroup', $group->id)
-            ->assertSee('Remove all members');
+            ->call('deleteGroup', $group->id);
 
-        $this->assertDatabaseHas('groups', ['id' => $group->id]);
+        $this->assertDatabaseMissing('groups', ['id' => $group->id]);
+        $this->assertDatabaseMissing('group_members', ['id' => $member->id]);
+    }
+
+    public function test_teacher_can_delete_all_groups(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $groupA = Group::factory()->for($this->course)->create();
+        $groupB = Group::factory()->for($this->course)->create();
+        $member = GroupMember::factory()->for($groupA)->create(['user_id' => $this->student->id]);
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->call('deleteAllGroups');
+
+        $this->assertDatabaseMissing('groups', ['id' => $groupA->id]);
+        $this->assertDatabaseMissing('groups', ['id' => $groupB->id]);
+        $this->assertDatabaseMissing('group_members', ['id' => $member->id]);
+    }
+
+    public function test_delete_all_groups_requires_groups_manage_permission(): void
+    {
+        $this->student->givePermissionTo('people.view');
+        $this->actingAs($this->student);
+
+        Group::factory()->for($this->course)->create();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('deleteAllGroups')
+            ->assertStatus(403);
+    }
+
+    public function test_delete_all_groups_does_not_affect_other_courses(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $otherSchool = School::factory()->create();
+        $otherCourse = Course::factory()->for($otherSchool)->create();
+        $otherGroup = Group::factory()->for($otherCourse)->create();
+
+        Group::factory()->for($this->course)->create();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->call('deleteAllGroups');
+
+        $this->assertDatabaseHas('groups', ['id' => $otherGroup->id]);
+    }
+
+    public function test_group_search_only_shows_the_group_a_student_belongs_to(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $groupWithStudent = Group::factory()->for($this->course)->create(['name' => 'Team Alpha']);
+        $otherGroup = Group::factory()->for($this->course)->create(['name' => 'Team Beta']);
+        GroupMember::factory()->for($groupWithStudent)->create(['user_id' => $this->student->id]);
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course, 'activeSubTab' => 'groups'])
+            ->call('loadData')
+            ->set('groupSearchQuery', $this->student->name)
+            ->assertViewHas('visibleGroups', function ($groups) use ($groupWithStudent) {
+                return $groups->count() === 1 && $groups->first()->id === $groupWithStudent->id;
+            })
+            ->assertSee('Team Alpha')
+            ->assertDontSee('Team Beta');
+    }
+
+    public function test_group_search_shows_unassigned_students_matching_query(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->set('groupSearchQuery', $this->student->name)
+            ->assertViewHas('visibleUnassignedStudents', function ($students) {
+                return $students->count() === 1 && $students->first()->user_id === $this->student->id;
+            });
+    }
+
+    public function test_group_search_blank_query_shows_everything(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        Group::factory()->for($this->course)->count(2)->create();
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->set('groupSearchQuery', '')
+            ->assertViewHas('visibleGroups', fn ($groups) => $groups->count() === 2);
+    }
+
+    public function test_group_search_matches_by_group_name(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $groupA = Group::factory()->for($this->course)->create(['name' => 'Team Alpha']);
+        $groupB = Group::factory()->for($this->course)->create(['name' => 'Team Beta']);
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course, 'activeSubTab' => 'groups'])
+            ->call('loadData')
+            ->set('groupSearchQuery', 'Alpha')
+            ->assertViewHas('visibleGroups', function ($groups) use ($groupA) {
+                return $groups->count() === 1 && $groups->first()->id === $groupA->id;
+            })
+            ->assertSee('Team Alpha')
+            ->assertDontSee('Team Beta');
     }
 
     public function test_add_student_assigns_to_group(): void
@@ -243,10 +378,49 @@ class PeopleIndexTest extends TestCase
         GroupMember::factory()->for($groupA)->create(['user_id' => $this->student->id]);
 
         Livewire::test(PeopleIndex::class, ['course' => $this->course])
-            ->call('addStudent', $groupB->id, $this->student->id);
+            ->call('moveStudent', $groupB->id, $this->student->id);
 
         $this->assertDatabaseMissing('group_members', ['group_id' => $groupA->id, 'user_id' => $this->student->id]);
         $this->assertDatabaseHas('group_members', ['group_id' => $groupB->id, 'user_id' => $this->student->id]);
+    }
+
+    public function test_add_student_does_nothing_when_already_assigned_elsewhere(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $groupA = Group::factory()->for($this->course)->create(['name' => 'Group A']);
+        $groupB = Group::factory()->for($this->course)->create(['name' => 'Group B']);
+        GroupMember::factory()->for($groupA)->create(['user_id' => $this->student->id]);
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('addStudent', $groupB->id, $this->student->id);
+
+        $this->assertDatabaseHas('group_members', ['group_id' => $groupA->id, 'user_id' => $this->student->id]);
+        $this->assertDatabaseMissing('group_members', ['group_id' => $groupB->id, 'user_id' => $this->student->id]);
+    }
+
+    public function test_candidate_students_split_unassigned_and_assigned_elsewhere(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $unassignedStudent = User::factory()->forSchool($this->school)->create();
+        $unassignedStudent->assignRole($studentRole);
+        CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $unassignedStudent->id]);
+
+        $groupA = Group::factory()->for($this->course)->create(['name' => 'Group A']);
+        $groupB = Group::factory()->for($this->course)->create(['name' => 'Group B']);
+        GroupMember::factory()->for($groupA)->create(['user_id' => $this->student->id]);
+
+        $component = Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData');
+
+        $candidates = $component->instance()->candidateStudentsForGroup($groupB->id);
+
+        $this->assertTrue($candidates['unassigned']->contains('user_id', $unassignedStudent->id));
+        $this->assertTrue($candidates['assignedElsewhere']->contains('user_id', $this->student->id));
     }
 
     public function test_student_cannot_enroll_teacher(): void
@@ -519,6 +693,56 @@ class PeopleIndexTest extends TestCase
         Livewire::test(PeopleIndex::class, ['course' => $this->course])
             ->call('bulkUnenrollStudents', [$coursePerson->id])
             ->assertStatus(403);
+    }
+
+    public function test_teacher_can_generate_groups_from_unassigned_students(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $students = User::factory()->forSchool($this->school)->count(5)->create();
+        foreach ($students as $student) {
+            $student->assignRole($studentRole);
+            CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $student->id]);
+        }
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->set('groupSize', 2)
+            ->call('generateGroups');
+
+        // 6 students total (1 from setUp + 5 new), groupSize 2 => 3 groups
+        $this->assertSame(3, Group::where('course_id', $this->course->id)->count());
+        $this->assertSame(6, GroupMember::whereIn('group_id', Group::where('course_id', $this->course->id)->pluck('id'))->count());
+    }
+
+    public function test_generate_groups_requires_groups_manage_permission(): void
+    {
+        $this->teacher->givePermissionTo('people.view');
+        $this->actingAs($this->teacher);
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->set('groupSize', 2)
+            ->call('generateGroups')
+            ->assertStatus(403);
+    }
+
+    public function test_generate_groups_does_nothing_when_no_unassigned_students(): void
+    {
+        $this->teacher->givePermissionTo(['people.view', 'groups.manage']);
+        $this->actingAs($this->teacher);
+
+        $group = Group::factory()->for($this->course)->create();
+        GroupMember::factory()->for($group)->create(['user_id' => $this->student->id]);
+
+        Livewire::test(PeopleIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->set('groupSize', 2)
+            ->call('generateGroups');
+
+        $this->assertSame(1, Group::where('course_id', $this->course->id)->count());
     }
 
     public function test_teacher_can_bulk_unenroll_teachers(): void

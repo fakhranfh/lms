@@ -10,11 +10,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['course_id', 'name', 'created_by'])]
+#[Fillable(['course_id', 'name', 'created_by', 'target_size'])]
 class Group extends Model
 {
     /** @use HasFactory<GroupFactory> */
     use HasFactory, HasUuid;
+
+    /**
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'target_size' => 'integer',
+    ];
 
     /**
      * @return BelongsTo<Course, $this>

@@ -14,3 +14,5 @@ Schedule::job(new CalculateStorageUsageJob)->hourly();
 Schedule::command('audit-logs:cleanup')->monthly();
 
 Schedule::command('horizon:snapshot')->everyFiveMinutes();
+
+Schedule::command('groups:auto-assign')->daily();

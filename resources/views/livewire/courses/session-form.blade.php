@@ -173,6 +173,7 @@
                     initialSelected: @js($selectedMediaItems->map(fn ($item) => ['id' => (string) $item->id, 'title' => $item->title, 'type' => $item->type->value])->values()),
                     extensionTypeMap: @js($extensionTypeMap),
                 })"
+                @materials-autofill-requested.window="autofillMaterial($event.detail)"
             >
                 <label class="block text-label-md text-on-surface mb-space-sm font-label-md">Learning Material</label>
 
@@ -372,6 +373,7 @@
         <script>
             function autofillSessionFormDev(wire) {
                 const deliveryModes = @json(array_column($deliveryModes, 'value'));
+                const mediaItems = @json($mediaItems->map(fn ($item) => ['id' => (string) $item->id, 'title' => $item->title, 'type' => $item->type->value])->values());
                 const now = new Date();
                 const start = new Date(now.getTime() + 24 * 60 * 60 * 1000);
                 const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
@@ -389,6 +391,8 @@
                 const subtopics = ['Introduction', 'Core Concepts', 'Practice Exercise'];
                 wire.set('subtopics', subtopics, false);
                 window.dispatchEvent(new CustomEvent('subtopics-autofilled', { detail: subtopics }));
+
+                window.dispatchEvent(new CustomEvent('materials-autofill-requested', { detail: mediaItems }));
             }
         </script>
     @endpush
@@ -405,6 +409,7 @@
                 progress: 0,
                 statusText: '',
                 clientError: null,
+                dummyMaterial: null,
 
                 get selectedIds() {
                     return this.selectedItems.map((item) => item.id);
@@ -429,6 +434,37 @@
 
                 sync() {
                     this.$wire.set('selectedMaterialIds', this.selectedIds, false);
+                },
+
+                async autofillMaterial(existingItems) {
+                    const dummyMaterial = this.dummyMaterial
+                        || existingItems.find((item) => item.title === 'dummy-material');
+
+                    if (dummyMaterial) {
+                        this.dummyMaterial = dummyMaterial;
+                        this.selectedItems = [dummyMaterial];
+                        this.sync();
+
+                        return;
+                    }
+
+                    if (existingItems.length > 0) {
+                        this.selectedItems = [existingItems[0]];
+                        this.sync();
+
+                        return;
+                    }
+
+                    const pdfContent = '%PDF-1.4\n'
+                        + '1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n'
+                        + '2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n'
+                        + '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]/Resources<<>>>>endobj\n'
+                        + 'trailer<</Size 4/Root 1 0 R>>\n'
+                        + '%%EOF';
+                    const blob = new Blob([pdfContent], { type: 'application/pdf' });
+                    await this.upload([new File([blob], 'dummy-material.pdf', { type: 'application/pdf' })]);
+
+                    this.dummyMaterial = this.selectedItems.find((item) => item.title === 'dummy-material') || null;
                 },
 
                 async upload(files) {

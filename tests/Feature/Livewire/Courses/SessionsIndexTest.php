@@ -7,7 +7,9 @@ use App\Models\Course;
 use App\Models\School;
 use App\Models\Session;
 use App\Models\User;
+use App\Services\R2StorageService;
 use Livewire\Livewire;
+use Mockery;
 use Tests\TestCase;
 
 class SessionsIndexTest extends TestCase
@@ -136,12 +138,22 @@ class SessionsIndexTest extends TestCase
     {
         $this->teacher->givePermissionTo(['sessions.view', 'sessions.create']);
 
+        $r2Mock = Mockery::mock(R2StorageService::class);
+        $r2Mock->shouldReceive('uploadRawContent')->times(4)->andReturn('https://example.test/dummy.pdf');
+        $this->app->instance(R2StorageService::class, $r2Mock);
+
         Livewire::test(SessionsIndex::class, ['course' => $this->course])
             ->set('generateCount', 4)
             ->call('devGenerateSessions')
             ->assertSet('successMessage', '4 sessions generated.');
 
         $this->assertDatabaseCount('course_sessions', 4);
+        $this->assertDatabaseCount('media_library_items', 4);
+
+        Session::all()->each(function (Session $session) {
+            $this->assertGreaterThanOrEqual(2, $session->subtopics()->count());
+            $this->assertSame(1, $session->materials()->count());
+        });
     }
 
     public function test_user_cannot_access_index_without_permission(): void

@@ -97,6 +97,29 @@ class MediaLibraryService
     }
 
     /**
+     * Upload raw file content directly to R2 (no presigned/temp flow) and
+     * create its MediaLibraryItem. Used for dev/test tooling that generates
+     * material files server-side rather than through a real user upload.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createFromRawContent(string $schoolId, ?string $uploadedBy, string $key, string $content, string $contentType, array $data): MediaLibraryItem
+    {
+        $this->r2Service->uploadRawContent($key, $content, $contentType);
+
+        return $this->repository->create([
+            'school_id' => $schoolId,
+            'uploaded_by' => $uploadedBy,
+            'type' => $data['type'],
+            'title' => $data['title'] ?? 'Untitled',
+            'description' => $data['description'] ?? '',
+            'file_path' => $key,
+            'file_size' => strlen($content),
+            'mime_type' => $contentType,
+        ]);
+    }
+
+    /**
      * Update a media library item's metadata (title/description only).
      *
      * @param  array<string, mixed>  $data

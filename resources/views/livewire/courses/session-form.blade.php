@@ -419,37 +419,52 @@
                     this.$wire.set('selectedMaterialIds', this.selectedIds, false);
                 },
 
-                async upload(file) {
-                    if (! file) return;
+                async upload(files) {
+                    const fileList = Array.from(files || []);
+                    if (fileList.length === 0) return;
 
                     this.clientError = null;
+                    this.uploading = true;
+
+                    try {
+                        for (let i = 0; i < fileList.length; i++) {
+                            await this.uploadOne(fileList[i], i + 1, fileList.length);
+                        }
+                    } finally {
+                        this.uploading = false;
+                        this.progress = 0;
+                        this.statusText = '';
+                    }
+                },
+
+                async uploadOne(file, index, total) {
+                    const label = total > 1 ? ` (${index}/${total})` : '';
 
                     const extension = file.name.split('.').pop().toLowerCase();
                     const materialType = this.extensionTypeMap[extension];
 
                     if (! materialType) {
-                        this.clientError = 'Unsupported file type: .' + extension;
+                        this.clientError = `Unsupported file type: .${extension} (${file.name})`;
 
                         return;
                     }
 
-                    this.uploading = true;
                     this.progress = 0;
-                    this.statusText = 'Preparing upload...';
+                    this.statusText = `Preparing upload...${label}`;
 
                     try {
                         const result = await this.$wire.generateMaterialUploadUrl(file.name, materialType);
 
                         if (result.error) {
-                            this.clientError = result.error;
+                            this.clientError = `${file.name}: ${result.error}`;
 
                             return;
                         }
 
-                        this.statusText = 'Uploading...';
+                        this.statusText = `Uploading...${label}`;
                         await this.putFile(result.url, file);
 
-                        this.statusText = 'Finalizing...';
+                        this.statusText = `Finalizing...${label}`;
                         const finalizeResult = await this.$wire.finalizeMaterialUpload({
                             type: materialType,
                             temp_key: result.key,
@@ -458,7 +473,7 @@
                         });
 
                         if (finalizeResult?.error) {
-                            this.clientError = finalizeResult.error;
+                            this.clientError = `${file.name}: ${finalizeResult.error}`;
 
                             return;
                         }
@@ -469,10 +484,7 @@
                             type: finalizeResult.type,
                         });
                     } catch (error) {
-                        this.clientError = error.message || 'Upload failed';
-                    } finally {
-                        this.uploading = false;
-                        this.progress = 0;
+                        this.clientError = `${file.name}: ${error.message || 'Upload failed'}`;
                     }
                 },
 

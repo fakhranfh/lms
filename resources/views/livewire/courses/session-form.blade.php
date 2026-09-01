@@ -27,6 +27,19 @@
             </a>
         </div>
 
+        @if (app()->isLocal())
+            <div class="mb-space-lg flex justify-end">
+                <button
+                    type="button"
+                    x-data
+                    @click="autofillSessionFormDev($wire)"
+                    class="px-space-md py-space-xs rounded-lg bg-secondary text-on-secondary font-label-sm text-label-sm hover:opacity-90 transition-opacity"
+                >
+                    Autofill (Dev)
+                </button>
+            </div>
+        @endif
+
         <form wire:submit="save" class="space-y-space-lg">
             <!-- Title -->
             <div>
@@ -347,6 +360,30 @@
         </form>
     </div>
 </div>
+
+@if (app()->isLocal())
+    @push('scripts')
+        <script>
+            function autofillSessionFormDev(wire) {
+                const deliveryModes = @json(array_column($deliveryModes, 'value'));
+                const now = new Date();
+                const start = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+                const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+                const toLocalInput = (date) => {
+                    const pad = (n) => String(n).padStart(2, '0');
+                    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+                };
+
+                wire.set('title', `Session ${Math.floor(Math.random() * 20) + 1}: Dummy Topic`);
+                wire.set('learningOutcome', 'Students will be able to explain and apply the concepts covered in this session.');
+                wire.set('dateStart', toLocalInput(start));
+                wire.set('dateEnd', toLocalInput(end));
+                wire.set('deliveryMode', deliveryModes[Math.floor(Math.random() * deliveryModes.length)]);
+                wire.set('subtopics', ['Introduction', 'Core Concepts', 'Practice Exercise']);
+            }
+        </script>
+    @endpush
+@endif
 
 @push('scripts')
     <script>

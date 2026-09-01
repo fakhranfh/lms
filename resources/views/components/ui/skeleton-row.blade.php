@@ -8,8 +8,8 @@
     <x-ui.skeleton-box class="w-4 h-4 flex-shrink-0" />
     <x-ui.skeleton-box class="w-9 h-9 flex-shrink-0" />
     <div class="flex-1 space-y-space-xs">
-        <x-ui.skeleton-box class="h-4 w-1/3" />
-        <x-ui.skeleton-box class="h-3 w-1/4" />
+        <x-ui.skeleton-box class="h-4 w-full" />
+        <x-ui.skeleton-box class="h-3 w-full" />
     </div>
     <x-ui.skeleton-box class="w-7 h-7 flex-shrink-0" />
     <x-ui.skeleton-box class="w-7 h-7 flex-shrink-0" />

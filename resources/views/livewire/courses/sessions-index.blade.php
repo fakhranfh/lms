@@ -8,15 +8,46 @@
         showDeleteModal: false,
         deleteMode: 'single',
         dragId: null,
-        order: @js($sessions->pluck('id')),
+        currentOrder() {
+            return Array.from(this.$refs.sessionList.children).map(el => el.dataset.row);
+        },
+        // The Session N label marks a position in the list, not the
+        // session sitting in it — moving a row must not drag its old
+        // number along, so relabel every row from the new DOM order.
+        relabelRows() {
+            Array.from(this.$refs.sessionList.children).forEach((row, index) => {
+                const label = row.querySelector('[data-session-label]');
+                if (label) label.textContent = `Session ${index + 1}`;
+            });
+        },
         onDrop(targetId) {
-            if (! this.dragId || this.dragId === targetId) return;
-            const from = this.order.indexOf(this.dragId);
-            const to = this.order.indexOf(targetId);
-            this.order.splice(from, 1);
-            this.order.splice(to, 0, this.dragId);
+            const list = this.$refs.sessionList;
+            const dragEl = this.dragId ? list.querySelector(`[data-row='${this.dragId}']`) : null;
+            const targetEl = list.querySelector(`[data-row='${targetId}']`);
             this.dragId = null;
-            $wire.call('reorderSessions', this.order);
+            if (! dragEl || ! targetEl || dragEl === targetEl) return;
+
+            // Move the actual DOM node immediately so the reorder feels
+            // instant; the wire:call below just persists it in the background.
+            const rows = Array.from(list.children);
+            rows.indexOf(dragEl) < rows.indexOf(targetEl) ? targetEl.after(dragEl) : targetEl.before(dragEl);
+            this.relabelRows();
+
+            $wire.call('reorderSessions', this.currentOrder());
+        },
+        moveRow(id, direction) {
+            const list = this.$refs.sessionList;
+            const rows = Array.from(list.children);
+            const index = rows.findIndex(el => el.dataset.row === id);
+            const swapWith = index + direction;
+            if (index === -1 || swapWith < 0 || swapWith >= rows.length) return;
+
+            direction === -1
+                ? rows[index].parentNode.insertBefore(rows[index], rows[swapWith])
+                : rows[index].parentNode.insertBefore(rows[swapWith], rows[index]);
+            this.relabelRows();
+
+            $wire.call(direction === -1 ? 'moveSessionUp' : 'moveSessionDown', id);
         },
     }"
 >
@@ -76,8 +107,8 @@
         </div>
     @endif
 
-    @unless ($isStudent)
-        <div class="flex items-center justify-between" x-show="order.length">
+    @unless ($isStudent || $sessions->isEmpty())
+        <div class="flex items-center justify-between">
             <p class="font-body-sm text-body-sm text-on-surface-variant">
                 <span x-text="$wire.selectedSessionIds.length"></span> selected
             </p>
@@ -106,11 +137,11 @@
     @endunless
 
     <!-- Sessions List -->
-    <div wire:loading wire:target="devGenerateSessions,confirmDelete,bulkDelete,deleteAll">
+    <div wire:loading.block wire:target="devGenerateSessions,bulkDelete,deleteAll" class="w-full">
         <x-ui.skeleton-list :rows="max($sessions->count(), 3)" />
     </div>
 
-    <div wire:loading.remove wire:target="devGenerateSessions,confirmDelete,bulkDelete,deleteAll">
+    <div wire:loading.remove wire:target="devGenerateSessions,bulkDelete,deleteAll">
     @if ($sessions->isEmpty())
         <div class="bg-surface border border-outline-variant rounded-lg p-8 text-center">
             <span class="material-symbols-outlined text-on-surface-variant text-[48px] block mx-auto mb-4">calendar_month</span>
@@ -123,10 +154,11 @@
         </div>
     @else
         <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-            <div class="space-y-0">
+            <div class="space-y-0" x-ref="sessionList">
                 @foreach ($sessions as $sessionIndex => $session)
                     <div
                         wire:key="session-{{ $session->id }}"
+                        data-row="{{ $session->id }}"
                         class="border-b border-outline-variant last:border-0"
                         x-data="{ open: @js($expandedSessions[$session->id] ?? false) }"
                         @unless ($isStudent)
@@ -136,6 +168,11 @@
                             @drop.prevent="onDrop(@js($session->id))"
                         @endunless
                     >
+                        <div wire:loading.block wire:target="confirmDelete('{{ $session->id }}')" class="w-full">
+                            <x-ui.skeleton-row />
+                        </div>
+
+                        <div wire:loading.remove wire:target="confirmDelete('{{ $session->id }}')">
                         <!-- Session Header -->
                         <div class="p-space-lg">
                             <div class="flex items-center justify-between">
@@ -161,7 +198,7 @@
                                     </button>
 
                                     <div class="flex-1">
-                                        <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $sessionIndex + 1 }}</p>
+                                        <p class="font-label-xs text-label-xs text-on-surface-variant" data-session-label>Session {{ $sessionIndex + 1 }}</p>
                                         <div class="flex items-center gap-space-md">
                                             <h3 class="font-label-lg text-label-lg text-on-surface">{{ $session->title }}</h3>
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant">
@@ -179,7 +216,7 @@
                                         <div class="flex flex-col">
                                             <button
                                                 type="button"
-                                                wire:click="moveSessionUp('{{ $session->id }}')"
+                                                @click="moveRow(@js($session->id), -1)"
                                                 @if ($sessionIndex === 0) disabled @endif
                                                 class="p-1 hover:bg-surface-container rounded transition text-on-surface-variant disabled:opacity-30 disabled:cursor-not-allowed"
                                                 title="Move up"
@@ -188,7 +225,7 @@
                                             </button>
                                             <button
                                                 type="button"
-                                                wire:click="moveSessionDown('{{ $session->id }}')"
+                                                @click="moveRow(@js($session->id), 1)"
                                                 @if ($sessionIndex === $sessions->count() - 1) disabled @endif
                                                 class="p-1 hover:bg-surface-container rounded transition text-on-surface-variant disabled:opacity-30 disabled:cursor-not-allowed"
                                                 title="Move down"
@@ -277,6 +314,7 @@
                             @if (! $session->learning_outcome && $session->subtopics->isEmpty() && $session->materials->isEmpty() && $session->videoConferences->isEmpty())
                                 <p class="text-body-sm text-on-surface-variant">No additional details for this session.</p>
                             @endif
+                        </div>
                         </div>
                     </div>
                 @endforeach

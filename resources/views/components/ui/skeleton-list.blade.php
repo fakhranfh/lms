@@ -5,7 +5,7 @@
 --}}
 @props(['rows' => 4])
 
-<div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
+<div class="w-full bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
     @for ($i = 0; $i < $rows; $i++)
         <x-ui.skeleton-row />
     @endfor

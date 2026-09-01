@@ -1,6 +1,25 @@
 @section('title', $course->title)
 
-<div class="space-y-space-lg" x-data="{ deleteId: null, deleteName: null, showDeleteModal: false, deleteConfirmText: '' }">
+<div
+    class="space-y-space-lg"
+    x-data="{
+        deleteId: null,
+        deleteName: null,
+        showDeleteModal: false,
+        deleteMode: 'single',
+        dragId: null,
+        order: @js($sessions->pluck('id')),
+        onDrop(targetId) {
+            if (! this.dragId || this.dragId === targetId) return;
+            const from = this.order.indexOf(this.dragId);
+            const to = this.order.indexOf(targetId);
+            this.order.splice(from, 1);
+            this.order.splice(to, 0, this.dragId);
+            this.dragId = null;
+            $wire.call('reorderSessions', this.order);
+        },
+    }"
+>
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => $teacher])
 
     @if ($successMessage)
@@ -35,7 +54,63 @@
         @endunless
     </div>
 
+    @if (app()->isLocal() && ! $isStudent)
+        <div class="px-gutter py-space-md bg-secondary/10 border border-secondary/20 rounded-lg flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-secondary text-[20px]">science</span>
+            <p class="font-body-sm text-body-sm text-secondary flex-1">Dev only: generate dummy sessions for this course.</p>
+            <input
+                type="number"
+                min="1"
+                max="50"
+                wire:model="generateCount"
+                class="w-20 px-space-sm py-space-xs border border-outline rounded-lg font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary/50"
+            />
+            <button
+                type="button"
+                wire:click="devGenerateSessions"
+                wire:loading.attr="disabled"
+                class="px-space-md py-space-xs rounded-lg bg-secondary text-on-secondary font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+                Generate
+            </button>
+        </div>
+    @endif
+
+    @unless ($isStudent)
+        <div class="flex items-center justify-between" x-show="order.length">
+            <p class="font-body-sm text-body-sm text-on-surface-variant">
+                <span x-text="$wire.selectedSessionIds.length"></span> selected
+            </p>
+            <div class="flex gap-space-sm">
+                <button
+                    type="button"
+                    x-show="$wire.selectedSessionIds.length"
+                    @click="deleteMode = 'bulk'; showDeleteModal = true"
+                    wire:loading.attr="disabled"
+                    wire:target="devGenerateSessions,confirmDelete,bulkDelete,deleteAll"
+                    class="px-space-md py-space-xs rounded-lg border border-error text-error font-label-sm text-label-sm hover:bg-error/10 transition disabled:opacity-50"
+                >
+                    Delete Selected
+                </button>
+                <button
+                    type="button"
+                    @click="deleteMode = 'all'; showDeleteModal = true"
+                    wire:loading.attr="disabled"
+                    wire:target="devGenerateSessions,confirmDelete,bulkDelete,deleteAll"
+                    class="px-space-md py-space-xs rounded-lg border border-error text-error font-label-sm text-label-sm hover:bg-error/10 transition disabled:opacity-50"
+                >
+                    Delete All
+                </button>
+            </div>
+        </div>
+    @endunless
+
     <!-- Sessions List -->
+    <div wire:loading wire:target="devGenerateSessions,confirmDelete,bulkDelete,deleteAll">
+        <x-ui.skeleton-list :rows="max($sessions->count(), 3)" />
+    </div>
+
+    <div wire:loading.remove wire:target="devGenerateSessions,confirmDelete,bulkDelete,deleteAll">
     @if ($sessions->isEmpty())
         <div class="bg-surface border border-outline-variant rounded-lg p-8 text-center">
             <span class="material-symbols-outlined text-on-surface-variant text-[48px] block mx-auto mb-4">calendar_month</span>
@@ -50,11 +125,31 @@
         <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
             <div class="space-y-0">
                 @foreach ($sessions as $sessionIndex => $session)
-                    <div wire:key="session-{{ $session->id }}" class="border-b border-outline-variant last:border-0" x-data="{ open: @js($expandedSessions[$session->id] ?? false) }">
+                    <div
+                        wire:key="session-{{ $session->id }}"
+                        class="border-b border-outline-variant last:border-0"
+                        x-data="{ open: @js($expandedSessions[$session->id] ?? false) }"
+                        @unless ($isStudent)
+                            draggable="true"
+                            @dragstart="dragId = @js($session->id)"
+                            @dragover.prevent
+                            @drop.prevent="onDrop(@js($session->id))"
+                        @endunless
+                    >
                         <!-- Session Header -->
                         <div class="p-space-lg">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-space-md flex-1">
+                                    @unless ($isStudent)
+                                        <span class="material-symbols-outlined text-on-surface-variant cursor-grab select-none" title="Drag to reorder">drag_indicator</span>
+                                        <input
+                                            type="checkbox"
+                                            wire:model="selectedSessionIds"
+                                            value="{{ $session->id }}"
+                                            class="w-4 h-4 rounded border-outline text-primary focus:ring-primary/50"
+                                        />
+                                    @endunless
+
                                     <button
                                         type="button"
                                         @click="open = !open; $wire.call('toggleSession', '{{ $session->id }}')"
@@ -80,7 +175,28 @@
                                 </div>
 
                                 @unless ($isStudent)
-                                    <div class="flex gap-space-sm ml-auto">
+                                    <div class="flex items-center gap-space-sm ml-auto">
+                                        <div class="flex flex-col">
+                                            <button
+                                                type="button"
+                                                wire:click="moveSessionUp('{{ $session->id }}')"
+                                                @if ($sessionIndex === 0) disabled @endif
+                                                class="p-1 hover:bg-surface-container rounded transition text-on-surface-variant disabled:opacity-30 disabled:cursor-not-allowed"
+                                                title="Move up"
+                                            >
+                                                <span class="material-symbols-outlined text-[18px]">keyboard_arrow_up</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                wire:click="moveSessionDown('{{ $session->id }}')"
+                                                @if ($sessionIndex === $sessions->count() - 1) disabled @endif
+                                                class="p-1 hover:bg-surface-container rounded transition text-on-surface-variant disabled:opacity-30 disabled:cursor-not-allowed"
+                                                title="Move down"
+                                            >
+                                                <span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+                                            </button>
+                                        </div>
+
                                         <a
                                             href="{{ route('sessions.edit', $session) }}"
                                             class="p-2 hover:bg-surface-container rounded transition text-primary inline-flex"
@@ -91,7 +207,7 @@
 
                                         <button
                                             type="button"
-                                            @click="deleteId = @js($session->id); deleteName = @js($session->title); deleteConfirmText = ''; showDeleteModal = true"
+                                            @click="deleteId = @js($session->id); deleteName = @js($session->title); deleteMode = 'single'; showDeleteModal = true"
                                             class="p-2 hover:bg-surface-container rounded transition text-error"
                                         >
                                             <span class="material-symbols-outlined">delete</span>
@@ -167,6 +283,7 @@
             </div>
         </div>
     @endif
+    </div>
 
     <!-- Delete Confirmation Modal -->
     <div x-show="showDeleteModal" x-cloak class="fixed inset-0 z-50">
@@ -200,22 +317,24 @@
 
                     <div class="text-center space-y-space-sm">
                         <h3 class="font-headline-sm text-headline-sm text-on-surface">Delete Confirmation</h3>
-                        <p class="font-body-sm text-body-sm text-on-surface-variant">
-                            Are you sure you want to delete "<span class="font-medium" x-text="deleteName ?? 'this session'"></span>"?
-                            This action cannot be undone.
-                        </p>
-                    </div>
-
-                    <div class="text-left">
-                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
-                            Type <span class="font-medium" x-text="deleteName"></span> to confirm
-                        </label>
-                        <input
-                            type="text"
-                            x-model="deleteConfirmText"
-                            autocomplete="off"
-                            class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        />
+                        <template x-if="deleteMode === 'single'">
+                            <p class="font-body-sm text-body-sm text-on-surface-variant">
+                                Are you sure you want to delete "<span class="font-medium" x-text="deleteName ?? 'this session'"></span>"?
+                                This action cannot be undone.
+                            </p>
+                        </template>
+                        <template x-if="deleteMode === 'bulk'">
+                            <p class="font-body-sm text-body-sm text-on-surface-variant">
+                                Are you sure you want to delete <span class="font-medium" x-text="$wire.selectedSessionIds.length"></span> selected session(s)?
+                                This action cannot be undone.
+                            </p>
+                        </template>
+                        <template x-if="deleteMode === 'all'">
+                            <p class="font-body-sm text-body-sm text-on-surface-variant">
+                                Are you sure you want to delete <span class="font-medium">all sessions</span> in this course?
+                                This action cannot be undone.
+                            </p>
+                        </template>
                     </div>
 
                     <div class="flex gap-space-md pt-space-md">
@@ -227,11 +346,16 @@
                             Cancel
                         </button>
                         <button
-                            :disabled="deleteConfirmText !== deleteName"
-                            :class="deleteConfirmText !== deleteName ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'"
-                            @click="showDeleteModal = false; $wire.call('confirmDelete', deleteId)"
+                            @click="
+                                showDeleteModal = false;
+                                if (deleteMode === 'single') { $wire.call('confirmDelete', deleteId); }
+                                else if (deleteMode === 'bulk') { $wire.call('bulkDelete'); }
+                                else { $wire.call('deleteAll'); }
+                            "
+                            wire:loading.attr="disabled"
+                            wire:target="devGenerateSessions,confirmDelete,bulkDelete,deleteAll"
                             type="button"
-                            class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md transition-opacity"
+                            class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
                         >
                             Delete
                         </button>

@@ -16,7 +16,7 @@ use Illuminate\Support\Carbon;
  * @property-read Carbon $date_start_display
  * @property-read Carbon $date_end_display
  */
-#[Fillable(['course_id', 'title', 'learning_outcome', 'date_start', 'date_end', 'delivery_mode', 'required_forum_posts'])]
+#[Fillable(['course_id', 'title', 'learning_outcome', 'date_start', 'date_end', 'delivery_mode', 'required_forum_posts', 'order'])]
 class Session extends Model
 {
     /** @use HasFactory<SessionFactory> */
@@ -32,6 +32,7 @@ class Session extends Model
         'date_end' => 'datetime',
         'delivery_mode' => DeliveryMode::class,
         'required_forum_posts' => 'integer',
+        'order' => 'integer',
     ];
 
     /**

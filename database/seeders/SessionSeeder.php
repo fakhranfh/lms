@@ -52,6 +52,7 @@ class SessionSeeder extends Seeder
                 'date_start' => $dateStart,
                 'date_end' => $dateEnd,
                 'delivery_mode' => $blueprint['delivery_mode'],
+                'order' => $index + 1,
             ]);
 
             foreach ($blueprint['subtopics'] as $order => $subtopic) {

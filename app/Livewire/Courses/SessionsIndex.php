@@ -64,6 +64,11 @@ class SessionsIndex extends Component
 
     public int $forumPage = 1;
 
+    /** @var array<int, string> */
+    public array $selectedSessionIds = [];
+
+    public int $generateCount = 5;
+
     /**
      * Sessions are queried lazily via wire:init (loadSessions), so the initial
      * page render is a cheap skeleton instead of blocking on the query.
@@ -207,7 +212,116 @@ class SessionsIndex extends Component
         }
 
         $sessionService->delete($sessionId);
+        $this->selectedSessionIds = array_values(array_diff($this->selectedSessionIds, [$sessionId]));
         $this->successMessage = __('Session deleted successfully.');
+    }
+
+    /**
+     * Bulk-deletes the currently checked sessions.
+     */
+    public function bulkDelete(SessionService $sessionService): void
+    {
+        abort_unless(auth()->user()->can('sessions.delete'), 403);
+
+        $ids = array_values(array_intersect(
+            $this->selectedSessionIds,
+            $sessionService->forCourse($this->course->id)->pluck('id')->all()
+        ));
+
+        if (empty($ids)) {
+            $this->errorMessage = __('No sessions selected.');
+
+            return;
+        }
+
+        $sessionService->deleteMany($ids);
+        $this->selectedSessionIds = [];
+        $this->successMessage = __('Selected sessions deleted successfully.');
+    }
+
+    /**
+     * Deletes every session belonging to the current course.
+     */
+    public function deleteAll(SessionService $sessionService): void
+    {
+        abort_unless(auth()->user()->can('sessions.delete'), 403);
+
+        $sessionService->deleteAllForCourse($this->course->id);
+        $this->selectedSessionIds = [];
+        $this->successMessage = __('All sessions deleted successfully.');
+    }
+
+    /**
+     * Persists the drag-and-drop reordering of sessions.
+     *
+     * @param  array<int, string>  $orderedIds
+     */
+    public function reorderSessions(array $orderedIds, SessionService $sessionService): void
+    {
+        abort_unless(auth()->user()->can('sessions.edit'), 403);
+
+        $sessionService->reorder($this->course->id, $orderedIds);
+    }
+
+    public function moveSessionUp(string $sessionId, SessionService $sessionService): void
+    {
+        $this->swapSessionOrder($sessionId, -1, $sessionService);
+    }
+
+    public function moveSessionDown(string $sessionId, SessionService $sessionService): void
+    {
+        $this->swapSessionOrder($sessionId, 1, $sessionService);
+    }
+
+    /**
+     * Swaps the given session with its immediate neighbor in the current
+     * ordering, one position up (-1) or down (+1).
+     */
+    private function swapSessionOrder(string $sessionId, int $direction, SessionService $sessionService): void
+    {
+        abort_unless(auth()->user()->can('sessions.edit'), 403);
+
+        $orderedIds = $sessionService->forCourse($this->course->id)->pluck('id')->all();
+        $index = array_search($sessionId, $orderedIds, true);
+        $swapWith = $index + $direction;
+
+        if ($index === false || $swapWith < 0 || $swapWith >= count($orderedIds)) {
+            return;
+        }
+
+        [$orderedIds[$index], $orderedIds[$swapWith]] = [$orderedIds[$swapWith], $orderedIds[$index]];
+
+        $sessionService->reorder($this->course->id, $orderedIds);
+    }
+
+    /**
+     * Dev-only: bulk-generates dummy sessions for the current course so the
+     * UI can be exercised without manually filling in the create form.
+     */
+    public function devGenerateSessions(SessionService $sessionService): void
+    {
+        abort_unless(app()->environment(['local', 'testing']), 403);
+        abort_unless(auth()->user()->can('sessions.create'), 403);
+
+        $count = max(1, min(50, $this->generateCount));
+        $nextOrder = $sessionService->forCourse($this->course->id)->max(fn ($session) => $session->order) ?? 0;
+        $start = now()->addDay();
+
+        for ($i = 1; $i <= $count; $i++) {
+            $dateStart = (clone $start)->addDays(($i - 1) * 7);
+
+            $sessionService->create([
+                'course_id' => $this->course->id,
+                'title' => fake()->sentence(4),
+                'learning_outcome' => fake()->paragraph(),
+                'date_start' => $dateStart,
+                'date_end' => (clone $dateStart)->addDays(6),
+                'delivery_mode' => DeliveryMode::cases()[array_rand(DeliveryMode::cases())]->value,
+                'order' => $nextOrder + $i,
+            ]);
+        }
+
+        $this->successMessage = __(':count sessions generated.', ['count' => $count]);
     }
 
     /**

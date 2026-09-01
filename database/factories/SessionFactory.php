@@ -30,6 +30,7 @@ class SessionFactory extends Factory
             'date_start' => $start,
             'date_end' => (clone $start)->modify('+7 days'),
             'delivery_mode' => fake()->randomElement(DeliveryMode::cases()),
+            'order' => fake()->unique()->numberBetween(1, 1000),
         ];
     }
 }

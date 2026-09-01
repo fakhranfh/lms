@@ -45,8 +45,36 @@ class SessionRepository implements SessionRepositoryInterface
         return Session::destroy($id);
     }
 
+    public function deleteMany(array $ids): int
+    {
+        return Session::destroy($ids);
+    }
+
+    public function deleteForCourse(string $courseId): int
+    {
+        return Session::where('course_id', $courseId)->delete();
+    }
+
+    public function nextOrder(string $courseId): int
+    {
+        return (int) Session::where('course_id', $courseId)->max('order') + 1;
+    }
+
+    public function reorder(string $courseId, array $orderedIds): void
+    {
+        // Two passes avoid unique(course_id, order) collisions while shifting rows;
+        // `order` is unsigned, so the temp pass uses a high offset instead of negatives.
+        foreach ($orderedIds as $index => $id) {
+            Session::where('id', $id)->where('course_id', $courseId)->update(['order' => 1_000_000 + $index]);
+        }
+
+        foreach ($orderedIds as $index => $id) {
+            Session::where('id', $id)->where('course_id', $courseId)->update(['order' => $index + 1]);
+        }
+    }
+
     public function forCourse(string $courseId, array $with = []): Collection
     {
-        return Session::where('course_id', $courseId)->with($with)->orderBy('date_start')->get();
+        return Session::where('course_id', $courseId)->with($with)->orderBy('order')->get();
     }
 }

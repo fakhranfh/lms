@@ -31,6 +31,20 @@ interface SessionRepositoryInterface
     public function delete(string $id): int;
 
     /**
+     * @param  array<string>  $ids
+     */
+    public function deleteMany(array $ids): int;
+
+    public function deleteForCourse(string $courseId): int;
+
+    public function nextOrder(string $courseId): int;
+
+    /**
+     * @param  array<string>  $orderedIds
+     */
+    public function reorder(string $courseId, array $orderedIds): void;
+
+    /**
      * @param  array<string>  $with
      * @return Collection<int, Session>
      */

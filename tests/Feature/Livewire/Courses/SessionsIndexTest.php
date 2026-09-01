@@ -54,6 +54,96 @@ class SessionsIndexTest extends TestCase
         $this->assertDatabaseMissing('course_sessions', ['id' => $session->id]);
     }
 
+    public function test_teacher_can_bulk_delete_sessions(): void
+    {
+        $this->teacher->givePermissionTo(['sessions.view', 'sessions.delete']);
+
+        $sessions = Session::factory()->for($this->course)->count(3)->create();
+        $keep = Session::factory()->for($this->course)->create();
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->set('selectedSessionIds', $sessions->pluck('id')->all())
+            ->call('bulkDelete')
+            ->assertSet('successMessage', 'Selected sessions deleted successfully.');
+
+        foreach ($sessions as $session) {
+            $this->assertDatabaseMissing('course_sessions', ['id' => $session->id]);
+        }
+        $this->assertDatabaseHas('course_sessions', ['id' => $keep->id]);
+    }
+
+    public function test_teacher_can_delete_all_sessions(): void
+    {
+        $this->teacher->givePermissionTo(['sessions.view', 'sessions.delete']);
+
+        Session::factory()->for($this->course)->count(3)->create();
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('deleteAll')
+            ->assertSet('successMessage', 'All sessions deleted successfully.');
+
+        $this->assertDatabaseCount('course_sessions', 0);
+    }
+
+    public function test_teacher_can_reorder_sessions(): void
+    {
+        $this->teacher->givePermissionTo(['sessions.view', 'sessions.edit']);
+
+        $first = Session::factory()->for($this->course)->create(['order' => 1]);
+        $second = Session::factory()->for($this->course)->create(['order' => 2]);
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('reorderSessions', [$second->id, $first->id]);
+
+        $this->assertSame(1, $second->fresh()->order);
+        $this->assertSame(2, $first->fresh()->order);
+    }
+
+    public function test_teacher_can_move_session_up_and_down(): void
+    {
+        $this->teacher->givePermissionTo(['sessions.view', 'sessions.edit']);
+
+        $first = Session::factory()->for($this->course)->create(['order' => 1]);
+        $second = Session::factory()->for($this->course)->create(['order' => 2]);
+        $third = Session::factory()->for($this->course)->create(['order' => 3]);
+
+        $component = Livewire::test(SessionsIndex::class, ['course' => $this->course]);
+
+        $component->call('moveSessionDown', $first->id);
+        $this->assertSame(2, $first->fresh()->order);
+        $this->assertSame(1, $second->fresh()->order);
+
+        $component->call('moveSessionUp', $third->id);
+        $this->assertSame(2, $third->fresh()->order);
+        $this->assertSame(3, $first->fresh()->order);
+    }
+
+    public function test_move_session_up_is_a_noop_at_the_boundary(): void
+    {
+        $this->teacher->givePermissionTo(['sessions.view', 'sessions.edit']);
+
+        $first = Session::factory()->for($this->course)->create(['order' => 1]);
+        $second = Session::factory()->for($this->course)->create(['order' => 2]);
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->call('moveSessionUp', $first->id);
+
+        $this->assertSame(1, $first->fresh()->order);
+        $this->assertSame(2, $second->fresh()->order);
+    }
+
+    public function test_dev_generate_sessions_creates_dummy_sessions(): void
+    {
+        $this->teacher->givePermissionTo(['sessions.view', 'sessions.create']);
+
+        Livewire::test(SessionsIndex::class, ['course' => $this->course])
+            ->set('generateCount', 4)
+            ->call('devGenerateSessions')
+            ->assertSet('successMessage', '4 sessions generated.');
+
+        $this->assertDatabaseCount('course_sessions', 4);
+    }
+
     public function test_user_cannot_access_index_without_permission(): void
     {
         Livewire::test(SessionsIndex::class, ['course' => $this->course])

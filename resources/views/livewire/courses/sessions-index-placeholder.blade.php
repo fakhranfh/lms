@@ -81,19 +81,7 @@
         </div>
 
         <!-- Accordion rows skeleton -->
-        <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
-            @for ($i = 0; $i < 4; $i++)
-                <div class="p-space-lg flex items-center gap-space-md">
-                    <div class="w-9 h-9 bg-surface-container rounded flex-shrink-0"></div>
-                    <div class="flex-1 space-y-space-xs">
-                        <div class="h-4 bg-surface-container rounded w-1/3"></div>
-                        <div class="h-3 bg-surface-container rounded w-1/4"></div>
-                    </div>
-                    <div class="w-9 h-9 bg-surface-container rounded flex-shrink-0"></div>
-                    <div class="w-9 h-9 bg-surface-container rounded flex-shrink-0"></div>
-                </div>
-            @endfor
-        </div>
+        <x-ui.skeleton-list :rows="4" />
     @endif
     </div>
 </div>

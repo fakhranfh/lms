@@ -124,33 +124,41 @@
             </div>
 
             <!-- Subtopics -->
-            <div>
+            <div
+                x-data="{
+                    subtopics: @js($subtopics),
+                    sync() { this.$wire.set('subtopics', this.subtopics, false); },
+                    add() { this.subtopics.push(''); this.sync(); },
+                    remove(index) { this.subtopics.splice(index, 1); this.sync(); },
+                }"
+            >
                 <label class="block text-label-md text-on-surface mb-space-sm font-label-md">Subtopics</label>
                 <div class="space-y-space-sm">
-                    @foreach ($subtopics as $index => $subtopic)
-                        <div class="flex gap-space-sm" wire:key="subtopic-{{ $index }}">
+                    <template x-for="(subtopic, index) in subtopics" :key="index">
+                        <div class="flex gap-space-sm">
                             <input
                                 type="text"
-                                wire:model="subtopics.{{ $index }}"
+                                x-model="subtopics[index]"
+                                @input="sync()"
                                 placeholder="Subtopic"
                                 class="flex-1 px-space-lg py-space-sm border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                             />
                             <button
                                 type="button"
-                                wire:click="removeSubtopic({{ $index }})"
+                                @click="remove(index)"
                                 class="p-2 hover:bg-surface-container rounded transition text-error"
                             >
                                 <span class="material-symbols-outlined">close</span>
                             </button>
                         </div>
-                        @error("subtopics.{$index}")
-                            <p class="text-body-sm text-error">{{ $message }}</p>
-                        @enderror
-                    @endforeach
+                    </template>
                 </div>
+                @if ($errors->has('subtopics.*'))
+                    <p class="text-body-sm text-error mt-space-sm">{{ $errors->first('subtopics.*') }}</p>
+                @endif
                 <button
                     type="button"
-                    wire:click="addSubtopic"
+                    @click="add()"
                     class="mt-space-sm text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs"
                 >
                     <span class="material-symbols-outlined text-[18px]">add</span>

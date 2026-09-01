@@ -128,17 +128,6 @@ class SessionForm extends Component
         }
     }
 
-    public function addSubtopic(): void
-    {
-        $this->subtopics[] = '';
-    }
-
-    public function removeSubtopic(int $index): void
-    {
-        unset($this->subtopics[$index]);
-        $this->subtopics = array_values($this->subtopics);
-    }
-
     public function addVideoConference(): void
     {
         $this->videoConferences[] = [

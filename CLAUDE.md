@@ -59,6 +59,10 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - You must only create documentation files if explicitly requested by the user.
 
+## Browser Verification
+
+- After finishing any codebase change related to UI/tampilan, always check the result in the browser using "@browser:new_tab".
+
 ## Replies
 
 - Be concise in your explanations - focus on what's important rather than explaining obvious details.

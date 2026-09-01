@@ -43,15 +43,7 @@
             </div>
 
             <div class="px-space-lg py-space-md border-b border-outline-variant">
-                <div class="relative">
-                    <span class="material-symbols-outlined absolute left-space-md top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
-                    <input
-                        type="text"
-                        wire:model.live.debounce.300ms="materialSearch"
-                        placeholder="Search media..."
-                        class="w-full pl-10 pr-space-md py-space-sm border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                </div>
+                <x-ui.search-input wire-model="materialSearch" placeholder="Search media..." compact />
             </div>
 
             <div class="flex-1 overflow-y-auto p-space-lg">

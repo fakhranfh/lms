@@ -725,15 +725,7 @@
                         </div>
 
                         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-md px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">
-                            <div class="flex-1 h-9 flex items-center gap-space-sm px-space-md border border-outline rounded-lg focus-within:ring-2 focus-within:ring-primary/50">
-                                <span class="material-symbols-outlined text-[18px] leading-none text-secondary">search</span>
-                                <input
-                                    type="text"
-                                    x-model="materialSearch"
-                                    placeholder="Search materials..."
-                                    class="w-full border-0 bg-transparent font-body-sm text-body-sm focus:outline-none focus:ring-0"
-                                />
-                            </div>
+                            <x-ui.search-input x-model="materialSearch" placeholder="Search materials..." compact class="flex-1" />
 
                             <select
                                 x-model="materialSessionFilter"
@@ -793,15 +785,7 @@
                         </div>
 
                         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-md px-space-lg py-space-md border-b border-outline-variant flex-shrink-0">
-                            <div class="flex-1 h-9 flex items-center gap-space-sm px-space-md border border-outline rounded-lg focus-within:ring-2 focus-within:ring-primary/50">
-                                <span class="material-symbols-outlined text-[18px] leading-none text-secondary">search</span>
-                                <input
-                                    type="text"
-                                    x-model="referenceSearch"
-                                    placeholder="Search reference files..."
-                                    class="w-full border-0 bg-transparent font-body-sm text-body-sm focus:outline-none focus:ring-0"
-                                />
-                            </div>
+                            <x-ui.search-input x-model="referenceSearch" placeholder="Search reference files..." compact class="flex-1" />
 
                             <select
                                 x-model="referenceTypeFilter"

@@ -81,15 +81,7 @@
 
     <!-- Filters -->
     <div class="flex gap-space-md">
-        <div class="flex-1 relative">
-            <span class="material-symbols-outlined absolute left-space-lg top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-            <input
-                type="text"
-                wire:model.live.debounce.300ms="search"
-                placeholder="Search media..."
-                class="w-full pl-12 pr-space-lg py-space-md border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-        </div>
+        <x-ui.search-input wire-model="search" placeholder="Search media..." class="flex-1" />
         <select
             wire:model.live="typeFilter"
             class="px-space-lg py-space-md border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"

@@ -41,42 +41,9 @@
         @endif
     </div>
 
-    <template x-if="clientError">
-        <div class="px-gutter py-space-md bg-error/10 border border-error/20 rounded-lg text-body-sm text-error" x-text="clientError"></div>
-    </template>
-
     <!-- Upload -->
     @can('media.create')
-        <div class="p-space-lg bg-surface-container rounded-lg border-2 border-dashed border-outline">
-            <div class="text-center">
-                <input
-                    type="file"
-                    id="mediaFile"
-                    x-ref="mediaFile"
-                    accept="{{ $acceptedExtensions }}"
-                    @change="upload($refs.mediaFile.files[0])"
-                    :disabled="uploading"
-                    class="hidden"
-                />
-                <button
-                    type="button"
-                    @click="$refs.mediaFile.click()"
-                    :disabled="uploading"
-                    class="text-body-md text-primary font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <span x-show="! uploading">Upload Media</span>
-                    <span x-show="uploading" x-cloak x-text="statusText + (statusText === 'Uploading...' ? ' (' + progress + '%)' : '')"></span>
-                </button>
-
-                <template x-if="uploading">
-                    <div class="mt-space-md space-y-space-sm">
-                        <div class="w-full h-2 bg-surface rounded-full overflow-hidden">
-                            <div class="h-full bg-primary transition-all duration-150" :style="`width: ${progress}%`"></div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
+        <x-ui.file-upload ref-name="mediaFile" :accept="$acceptedExtensions" label="Upload Media" />
     @endcan
 
     <!-- Filters -->

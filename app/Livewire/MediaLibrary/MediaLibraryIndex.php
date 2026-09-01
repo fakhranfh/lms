@@ -209,21 +209,6 @@ class MediaLibraryIndex extends Component
     }
 
     /**
-     * @return array<string, string>
-     */
-    private function getExtensionToTypeMap(): array
-    {
-        $map = [];
-        foreach (MaterialType::cases() as $type) {
-            foreach ($type->allowedExtensions() as $extension) {
-                $map[$extension] = $type->value;
-            }
-        }
-
-        return $map;
-    }
-
-    /**
      * @return array<int, int>
      */
     public function getPerPageOptions(): array
@@ -239,7 +224,7 @@ class MediaLibraryIndex extends Component
             ->list($this->getSchoolId(), $this->typeFilter, $this->search)
             ->paginate($perPage);
 
-        $extensionTypeMap = $this->getExtensionToTypeMap();
+        $extensionTypeMap = MaterialType::extensionTypeMap();
 
         return view('livewire.media-library.media-library-index', [
             'items' => $items,

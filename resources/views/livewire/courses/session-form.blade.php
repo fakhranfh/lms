@@ -162,18 +162,23 @@
             <div
                 x-data="materialPicker({
                     initialSelected: @js($selectedMediaItems->map(fn ($item) => ['id' => (string) $item->id, 'title' => $item->title, 'type' => $item->type->value])->values()),
+                    extensionTypeMap: @js($extensionTypeMap),
                 })"
             >
                 <label class="block text-label-md text-on-surface mb-space-sm font-label-md">Learning Material</label>
 
-                <button
-                    type="button"
-                    @click="open = true"
-                    class="w-full flex items-center justify-center gap-space-sm px-space-lg py-space-md border border-dashed border-outline rounded-lg text-body-sm text-primary font-medium hover:bg-surface-container/50 transition-colors"
-                >
-                    <span class="material-symbols-outlined text-[18px]">perm_media</span>
-                    Choose Material from Media Library
-                </button>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+                    <button
+                        type="button"
+                        @click="open = true"
+                        class="flex items-center justify-center gap-space-sm px-space-lg py-space-md border border-dashed border-outline rounded-lg text-body-sm text-primary font-medium hover:bg-surface-container/50 transition-colors"
+                    >
+                        <span class="material-symbols-outlined text-[18px]">perm_media</span>
+                        Choose from Media Library
+                    </button>
+
+                    <x-ui.file-upload ref-name="sessionMaterialFile" :accept="$acceptedExtensions" label="Upload New Material" />
+                </div>
 
                 <!-- Selected materials -->
                 <div class="mt-space-sm space-y-space-xs" x-show="selectedItems.length > 0">
@@ -383,6 +388,11 @@
             Alpine.data('materialPicker', (config) => ({
                 open: false,
                 selectedItems: config.initialSelected || [],
+                extensionTypeMap: config.extensionTypeMap || {},
+                uploading: false,
+                progress: 0,
+                statusText: '',
+                clientError: null,
 
                 get selectedIds() {
                     return this.selectedItems.map((item) => item.id);
@@ -407,6 +417,89 @@
 
                 sync() {
                     this.$wire.set('selectedMaterialIds', this.selectedIds, false);
+                },
+
+                async upload(file) {
+                    if (! file) return;
+
+                    this.clientError = null;
+
+                    const extension = file.name.split('.').pop().toLowerCase();
+                    const materialType = this.extensionTypeMap[extension];
+
+                    if (! materialType) {
+                        this.clientError = 'Unsupported file type: .' + extension;
+
+                        return;
+                    }
+
+                    this.uploading = true;
+                    this.progress = 0;
+                    this.statusText = 'Preparing upload...';
+
+                    try {
+                        const result = await this.$wire.generateMaterialUploadUrl(file.name, materialType);
+
+                        if (result.error) {
+                            this.clientError = result.error;
+
+                            return;
+                        }
+
+                        this.statusText = 'Uploading...';
+                        await this.putFile(result.url, file);
+
+                        this.statusText = 'Finalizing...';
+                        const finalizeResult = await this.$wire.finalizeMaterialUpload({
+                            type: materialType,
+                            temp_key: result.key,
+                            title: file.name.replace(/\.[^/.]+$/, ''),
+                            description: '',
+                        });
+
+                        if (finalizeResult?.error) {
+                            this.clientError = finalizeResult.error;
+
+                            return;
+                        }
+
+                        this.selectedItems.push({
+                            id: finalizeResult.id,
+                            title: finalizeResult.title,
+                            type: finalizeResult.type,
+                        });
+                    } catch (error) {
+                        this.clientError = error.message || 'Upload failed';
+                    } finally {
+                        this.uploading = false;
+                        this.progress = 0;
+                    }
+                },
+
+                putFile(url, file) {
+                    return new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('PUT', url, true);
+                        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+                        xhr.upload.addEventListener('progress', (event) => {
+                            if (event.lengthComputable) {
+                                this.progress = Math.round((event.loaded / event.total) * 100);
+                            }
+                        });
+
+                        xhr.addEventListener('load', () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                resolve();
+                            } else {
+                                reject(new Error('Upload failed with status ' + xhr.status));
+                            }
+                        });
+
+                        xhr.addEventListener('error', () => reject(new Error('Network error during upload')));
+
+                        xhr.send(file);
+                    });
                 },
             }));
         });

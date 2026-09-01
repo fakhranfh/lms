@@ -73,6 +73,23 @@ enum MaterialType: string
     }
 
     /**
+     * Map of file extension => material type value, e.g. ['pdf' => 'PDF', 'mp4' => 'Video'].
+     *
+     * @return array<string, string>
+     */
+    public static function extensionTypeMap(): array
+    {
+        $map = [];
+        foreach (self::cases() as $type) {
+            foreach ($type->allowedExtensions() as $extension) {
+                $map[$extension] = $type->value;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
      * Get magic bytes (file signatures) for content validation
      * Returns hex strings that should appear at the start of the file
      *

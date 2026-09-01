@@ -3,6 +3,7 @@
 namespace App\Livewire\Courses;
 
 use App\Enums\DeliveryMode;
+use App\Enums\MaterialType;
 use App\Models\Course;
 use App\Models\MediaLibraryItem;
 use App\Models\Session;
@@ -79,6 +80,51 @@ class SessionForm extends Component
                 'meeting_url' => $videoConference->meeting_url ?? '',
                 'required_duration_minutes' => (string) ($videoConference->required_duration_minutes ?? ''),
             ])->all();
+        }
+    }
+
+    /**
+     * @return array{url?: string, key?: string, error?: string}
+     */
+    public function generateMaterialUploadUrl(string $filename, string $materialType, MediaLibraryService $mediaLibraryService): array
+    {
+        abort_unless(auth()->user()->can('media.create'), 403);
+
+        try {
+            $type = MaterialType::tryFrom($materialType);
+            if (! $type) {
+                return ['error' => 'Invalid material type'];
+            }
+
+            return $mediaLibraryService->generatePresignedUploadUrl($this->course->school_id, $filename, $materialType);
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Finalizes a material uploaded directly from the session form (rather
+     * than picked from the media library) and adds it to the selection.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{id?: string, title?: string, type?: string, error?: string}
+     */
+    public function finalizeMaterialUpload(array $data, MediaLibraryService $mediaLibraryService): array
+    {
+        abort_unless(auth()->user()->can('media.create'), 403);
+
+        try {
+            $item = $mediaLibraryService->finalizeUpload($this->course->school_id, auth()->id(), $data);
+
+            $this->selectedMaterialIds[] = $item->id;
+
+            return [
+                'id' => $item->id,
+                'title' => $item->title,
+                'type' => $item->type->value,
+            ];
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
         }
     }
 
@@ -183,6 +229,7 @@ class SessionForm extends Component
     public function render(MediaLibraryService $mediaLibraryService)
     {
         $schoolId = $this->course->school_id;
+        $extensionTypeMap = MaterialType::extensionTypeMap();
 
         return view('livewire.courses.session-form', [
             'pageTitle' => $this->session ? 'Edit Session' : 'Create Session',
@@ -191,6 +238,8 @@ class SessionForm extends Component
             'selectedMediaItems' => $this->selectedMaterialIds === []
                 ? Collection::make()
                 : MediaLibraryItem::whereIn('id', $this->selectedMaterialIds)->get(),
+            'extensionTypeMap' => $extensionTypeMap,
+            'acceptedExtensions' => implode(',', array_map(fn (string $ext) => ".{$ext}", array_keys($extensionTypeMap))),
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->session ? 'Edit Session' : 'Create Session'])
             ->section('app-content');

@@ -8,7 +8,9 @@ use App\Models\MediaLibraryItem;
 use App\Models\School;
 use App\Models\Session;
 use App\Models\User;
+use App\Services\MediaLibraryService;
 use Livewire\Livewire;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class SessionFormTest extends TestCase
@@ -105,6 +107,90 @@ class SessionFormTest extends TestCase
         $session = Session::where('title', 'Session with material')->firstOrFail();
 
         $this->assertTrue($session->materials()->where('media_library_items.id', $mediaItem->id)->exists());
+    }
+
+    public function test_can_upload_material_directly_and_add_to_selection(): void
+    {
+        $this->teacher->givePermissionTo(['sessions.create', 'media.create']);
+
+        $uploadedItem = MediaLibraryItem::factory()->for($this->school)->create(['title' => 'Uploaded Slides']);
+
+        $this->mock(MediaLibraryService::class, function ($mock) use ($uploadedItem) {
+            $mock->shouldReceive('finalizeUpload')->once()->andReturn($uploadedItem);
+            $mock->shouldReceive('list')->andReturn(MediaLibraryItem::query()->where('school_id', $this->school->id));
+        });
+
+        $component = Livewire::test(SessionForm::class, ['course' => $this->course]);
+
+        $result = $component->instance()->finalizeMaterialUpload([
+            'type' => 'PDF',
+            'temp_key' => 'temp/media/fake.pdf',
+        ], app(MediaLibraryService::class));
+
+        expect($result)->toMatchArray([
+            'id' => $uploadedItem->id,
+            'title' => 'Uploaded Slides',
+        ]);
+
+        $component->assertSet('selectedMaterialIds', [$uploadedItem->id]);
+    }
+
+    public function test_uploaded_material_is_persisted_when_session_is_saved(): void
+    {
+        $this->teacher->givePermissionTo(['sessions.create', 'media.create']);
+
+        $uploadedItem = MediaLibraryItem::factory()->for($this->school)->create();
+
+        $this->mock(MediaLibraryService::class, function ($mock) use ($uploadedItem) {
+            $mock->shouldReceive('finalizeUpload')->once()->andReturn($uploadedItem);
+            $mock->shouldReceive('list')->andReturn(MediaLibraryItem::query()->where('school_id', $this->school->id));
+        });
+
+        Livewire::test(SessionForm::class, ['course' => $this->course])
+            ->set('title', 'Session with uploaded material')
+            ->set('dateStart', '2026-09-01T09:00')
+            ->set('dateEnd', '2026-09-08T09:00')
+            ->call('finalizeMaterialUpload', [
+                'type' => 'PDF',
+                'temp_key' => 'temp/media/fake.pdf',
+            ])
+            ->call('save');
+
+        $session = Session::where('title', 'Session with uploaded material')->firstOrFail();
+
+        $this->assertTrue($session->materials()->where('media_library_items.id', $uploadedItem->id)->exists());
+    }
+
+    public function test_finalize_material_upload_returns_error_when_validation_fails(): void
+    {
+        $this->teacher->givePermissionTo(['sessions.create', 'media.create']);
+
+        $this->mock(MediaLibraryService::class, function ($mock) {
+            $mock->shouldReceive('finalizeUpload')
+                ->andThrow(new \Exception('File content does not match PDF format.'));
+            $mock->shouldReceive('list')->andReturn(MediaLibraryItem::query()->where('school_id', $this->school->id));
+        });
+
+        $component = Livewire::test(SessionForm::class, ['course' => $this->course]);
+
+        $result = $component->instance()->finalizeMaterialUpload([
+            'type' => 'PDF',
+            'temp_key' => 'temp/media/fake.pdf',
+        ], app(MediaLibraryService::class));
+
+        expect($result)->toHaveKey('error');
+        expect($result['error'])->toBe('File content does not match PDF format.');
+        $component->assertSet('selectedMaterialIds', []);
+    }
+
+    public function test_user_without_media_create_cannot_upload_material(): void
+    {
+        $this->teacher->givePermissionTo('sessions.create');
+
+        $component = Livewire::test(SessionForm::class, ['course' => $this->course]);
+
+        expect(fn () => $component->instance()->generateMaterialUploadUrl('notes.pdf', 'PDF', app(MediaLibraryService::class)))
+            ->toThrow(HttpException::class);
     }
 
     public function test_can_update_session(): void

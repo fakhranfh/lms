@@ -150,6 +150,20 @@ class SessionForm extends Component
         SessionSubtopicService $sessionSubtopicService,
         VideoConferenceService $videoConferenceService,
     ) {
+        try {
+            return $this->persist($sessionService, $sessionSubtopicService, $videoConferenceService);
+        } catch (\Throwable $exception) {
+            $this->dispatch('sessionform-error');
+
+            throw $exception;
+        }
+    }
+
+    private function persist(
+        SessionService $sessionService,
+        SessionSubtopicService $sessionSubtopicService,
+        VideoConferenceService $videoConferenceService,
+    ) {
         $this->validate();
 
         $data = [

@@ -40,7 +40,13 @@
             </div>
         @endif
 
-        <form wire:submit="save" class="space-y-space-lg">
+        <form
+            wire:submit="save"
+            x-data="{ submitting: false }"
+            @submit="submitting = true"
+            @sessionform-error.window="submitting = false"
+            class="space-y-space-lg"
+        >
             <!-- Title -->
             <div>
                 <label for="title" class="block text-label-md text-on-surface mb-space-sm font-label-md">
@@ -353,16 +359,7 @@
                 >
                     Cancel
                 </a>
-                <button
-                    type="submit"
-                    wire:loading.attr="disabled"
-                    wire:target="save"
-                    class="flex-1 px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-60 inline-flex items-center justify-center gap-space-sm"
-                >
-                    <span wire:loading wire:target="save" class="inline-block animate-spin">⟳</span>
-                    <span wire:loading.remove wire:target="save">{{ $session ? 'Update Session' : 'Create Session' }}</span>
-                    <span wire:loading wire:target="save">Saving...</span>
-                </button>
+                <x-ui.submit-button :label="$session ? 'Update Session' : 'Create Session'" />
             </div>
         </form>
     </div>
@@ -382,7 +379,7 @@
                     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
                 };
 
-                wire.set('title', `Session ${Math.floor(Math.random() * 20) + 1}: Dummy Topic`);
+                wire.set('title', 'Dummy Topic');
                 wire.set('learningOutcome', 'Students will be able to explain and apply the concepts covered in this session.');
                 wire.set('dateStart', toLocalInput(start));
                 wire.set('dateEnd', toLocalInput(end));

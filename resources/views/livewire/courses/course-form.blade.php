@@ -87,15 +87,7 @@
                 >
                     Cancel
                 </a>
-                <button
-                    type="submit"
-                    :disabled="submitting"
-                    class="flex-1 px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-60 inline-flex items-center justify-center gap-space-sm"
-                >
-                    <span wire:loading wire:target="save" class="inline-block animate-spin">⟳</span>
-                    <span wire:loading.remove wire:target="save">{{ $course ? 'Update Course' : 'Create Course' }}</span>
-                    <span wire:loading wire:target="save">Saving...</span>
-                </button>
+                <x-ui.submit-button :label="$course ? 'Update Course' : 'Create Course'" />
             </div>
         </form>
     </div>

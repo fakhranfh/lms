@@ -131,6 +131,7 @@
                     add() { this.subtopics.push(''); this.sync(); },
                     remove(index) { this.subtopics.splice(index, 1); this.sync(); },
                 }"
+                @subtopics-autofilled.window="subtopics = $event.detail"
             >
                 <label class="block text-label-md text-on-surface mb-space-sm font-label-md">Subtopics</label>
                 <div class="space-y-space-sm">
@@ -384,7 +385,10 @@
                 wire.set('dateStart', toLocalInput(start));
                 wire.set('dateEnd', toLocalInput(end));
                 wire.set('deliveryMode', deliveryModes[Math.floor(Math.random() * deliveryModes.length)]);
-                wire.set('subtopics', ['Introduction', 'Core Concepts', 'Practice Exercise']);
+
+                const subtopics = ['Introduction', 'Core Concepts', 'Practice Exercise'];
+                wire.set('subtopics', subtopics, false);
+                window.dispatchEvent(new CustomEvent('subtopics-autofilled', { detail: subtopics }));
             }
         </script>
     @endpush

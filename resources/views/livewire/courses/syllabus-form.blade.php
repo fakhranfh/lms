@@ -1,7 +1,7 @@
 @section('title', $pageTitle)
 
 <div
-    class="min-h-screen bg-background py-space-xl px-gutter"
+    class="space-y-space-lg"
     x-data="{
         active: 'course_description',
         goTo(key) {
@@ -15,30 +15,12 @@
         },
     }"
 >
-    <div class="max-w-4xl mx-auto">
-        <!-- Breadcrumb -->
-        <div class="mb-space-lg">
-            <nav class="flex items-center gap-space-sm text-body-sm text-on-surface-variant">
-                <a href="{{ route('courses.index') }}" class="hover:text-on-surface transition">Courses</a>
-                <span>/</span>
-                <a href="{{ route('syllabus.index', $course) }}" class="hover:text-on-surface transition">{{ $course->title }}</a>
-                <span>/</span>
-                <span class="text-on-surface font-medium">{{ $pageTitle }}</span>
-            </nav>
-        </div>
+    <div>
+        @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => null])
 
         <!-- Header -->
-        <div class="mb-space-xl flex items-center justify-between">
-            <div>
-                <h1 class="font-headline-md text-headline-md text-on-surface">{{ $pageTitle }}</h1>
-                <p class="text-body-md text-on-surface-variant mt-space-sm">in <strong>{{ $course->title }}</strong></p>
-            </div>
-            <a
-                href="{{ route('syllabus.index', $course) }}"
-                class="px-space-md py-space-xs rounded-lg bg-outline-variant text-on-surface font-label-sm text-label-sm hover:bg-outline transition-colors flex-shrink-0"
-            >
-                Back to Syllabus
-            </a>
+        <div class="mt-space-xl mb-space-xl">
+            <h1 class="font-headline-md text-headline-md text-on-surface">{{ $pageTitle }}</h1>
         </div>
 
         <!-- Section nav -->
@@ -67,16 +49,11 @@
             @endforeach
         </nav>
 
-        <form wire:submit="save" class="space-y-space-2xl">
+        <form wire:submit="save" class="space-y-16">
             <!-- 1. Course Description -->
             <section id="section-course_description" class="space-y-space-sm">
-                <h2 class="font-label-lg text-label-lg text-on-surface">Course Description</h2>
-                <textarea
-                    wire:model="courseDescription"
-                    rows="4"
-                    class="w-full px-space-lg py-space-md border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    placeholder="Describe the course..."
-                ></textarea>
+                <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Course Description</h2>
+                <x-rich-text-editor id="course-description" wire-model="courseDescription" :value="$courseDescription" :allow-attachments="false" />
                 @error('courseDescription') <p class="text-body-sm text-error mt-space-sm">{{ $message }}</p> @enderror
 
                 @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'course_description', 'label' => 'Course Description'])
@@ -84,7 +61,7 @@
 
             <!-- 2. Class Policies -->
             <section id="section-class_policies" class="space-y-space-sm">
-                <h2 class="font-label-lg text-label-lg text-on-surface">Class Policies</h2>
+                <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Class Policies</h2>
                 <div class="space-y-space-sm">
                     @foreach ($classPolicies as $index => $policy)
                         <div wire:key="class-policy-{{ $index }}" class="flex gap-space-sm items-start">
@@ -93,12 +70,9 @@
                                     <option value="{{ $scope->value }}">{{ str($scope->value)->replace('_', ' ')->title() }}</option>
                                 @endforeach
                             </select>
-                            <textarea
-                                wire:model="classPolicies.{{ $index }}.content"
-                                rows="2"
-                                placeholder="Policy content"
-                                class="flex-1 px-space-md py-space-sm border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            ></textarea>
+                            <div class="flex-1">
+                                <x-rich-text-editor id="class-policy-{{ $index }}" wire-model="classPolicies.{{ $index }}.content" :value="$policy['content']" :allow-attachments="false" />
+                            </div>
                             <button type="button" wire:click="removeClassPolicy({{ $index }})" class="p-2 hover:bg-surface-container rounded transition text-error">
                                 <span class="material-symbols-outlined">close</span>
                             </button>
@@ -115,31 +89,23 @@
 
             <!-- 3. Submission & Collection -->
             <section id="section-submission_and_collection" class="space-y-space-sm">
-                <h2 class="font-label-lg text-label-lg text-on-surface">Submission & Collection</h2>
-                <textarea
-                    wire:model="submissionAndCollection"
-                    rows="4"
-                    class="w-full px-space-lg py-space-md border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                ></textarea>
+                <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Submission & Collection</h2>
+                <x-rich-text-editor id="submission-and-collection" wire-model="submissionAndCollection" :value="$submissionAndCollection" :allow-attachments="false" />
 
                 @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'submission_and_collection', 'label' => 'Submission & Collection'])
             </section>
 
             <!-- 4. Tutorial Activity Plan -->
             <section id="section-tutorial_activity_plan" class="space-y-space-sm">
-                <h2 class="font-label-lg text-label-lg text-on-surface">Tutorial Activity Plan</h2>
-                <textarea
-                    wire:model="tutorialActivityPlan"
-                    rows="4"
-                    class="w-full px-space-lg py-space-md border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                ></textarea>
+                <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Tutorial Activity Plan</h2>
+                <x-rich-text-editor id="tutorial-activity-plan" wire-model="tutorialActivityPlan" :value="$tutorialActivityPlan" :allow-attachments="false" />
 
                 @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'tutorial_activity_plan', 'label' => 'Tutorial Activity Plan'])
             </section>
 
             <!-- 5. Learning Outcomes -->
             <section id="section-learning_outcomes" class="space-y-space-sm">
-                <h2 class="font-label-lg text-label-lg text-on-surface">Learning Outcomes</h2>
+                <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Learning Outcomes</h2>
                 @error('learningOutcomes') <p class="text-body-sm text-error">{{ $message }}</p> @enderror
                 <div class="space-y-space-sm">
                     @foreach ($learningOutcomes as $index => $lo)
@@ -150,12 +116,9 @@
                                 placeholder="Code (e.g. LO1)"
                                 class="w-32 flex-shrink-0 px-space-md py-space-sm border border-outline rounded-lg"
                             />
-                            <textarea
-                                wire:model="learningOutcomes.{{ $index }}.description"
-                                rows="2"
-                                placeholder="Description"
-                                class="flex-1 px-space-md py-space-sm border border-outline rounded-lg"
-                            ></textarea>
+                            <div class="flex-1">
+                                <x-rich-text-editor id="learning-outcome-{{ $index }}" wire-model="learningOutcomes.{{ $index }}.description" :value="$lo['description']" :allow-attachments="false" />
+                            </div>
                             <button type="button" wire:click="removeLearningOutcome({{ $index }})" class="p-2 hover:bg-surface-container rounded transition text-error">
                                 <span class="material-symbols-outlined">close</span>
                             </button>
@@ -171,7 +134,7 @@
 
             <!-- 6. Evaluation -->
             <section id="section-evaluation" class="space-y-space-md">
-                <h2 class="font-label-lg text-label-lg text-on-surface">Evaluation</h2>
+                <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Evaluation</h2>
                 @foreach ($evaluations as $groupIndex => $group)
                     <div wire:key="evaluation-group-{{ $groupIndex }}" class="p-space-lg border border-outline-variant rounded-lg space-y-space-sm">
                         <div class="flex items-center gap-space-sm">
@@ -236,7 +199,7 @@
 
             <!-- 7. Assessment Rubric -->
             <section id="section-assessment_rubric" class="space-y-space-md">
-                <h2 class="font-label-lg text-label-lg text-on-surface">Assessment Rubric</h2>
+                <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Assessment Rubric</h2>
 
                 <div>
                     <p class="font-label-sm text-label-sm text-on-surface-variant mb-space-sm">Proficiency Levels</p>
@@ -278,11 +241,7 @@
                                 @foreach ($rubricProficiencyLevels as $plIndex => $level)
                                     <div>
                                         <label class="text-body-xs text-on-surface-variant">{{ $level['label'] }}</label>
-                                        <textarea
-                                            wire:model="rubricCells.{{ $index }}.{{ $plIndex }}"
-                                            rows="2"
-                                            class="w-full px-space-sm py-space-xs border border-outline rounded-lg text-body-sm"
-                                        ></textarea>
+                                        <x-rich-text-editor id="rubric-cell-{{ $index }}-{{ $plIndex }}" wire-model="rubricCells.{{ $index }}.{{ $plIndex }}" :value="$rubricCells[$index][$plIndex] ?? ''" :allow-attachments="false" />
                                     </div>
                                 @endforeach
                             </div>
@@ -298,44 +257,45 @@
 
             <!-- 8. Teaching & Learning Strategies -->
             <section id="section-teaching_learning_strategies" class="space-y-space-sm">
-                <h2 class="font-label-lg text-label-lg text-on-surface">Teaching & Learning Strategies</h2>
-                <textarea wire:model="teachingLearningStrategies" rows="4" class="w-full px-space-lg py-space-md border border-outline rounded-lg"></textarea>
+                <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Teaching & Learning Strategies</h2>
+                <x-rich-text-editor id="teaching-learning-strategies" wire-model="teachingLearningStrategies" :value="$teachingLearningStrategies" :allow-attachments="false" />
 
                 @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'teaching_learning_strategies', 'label' => 'Teaching & Learning Strategies'])
             </section>
 
             <!-- 9. Textbooks -->
             <section id="section-textbooks" class="space-y-space-sm">
-                <h2 class="font-label-lg text-label-lg text-on-surface">Textbooks</h2>
-                <textarea wire:model="textbooks" rows="4" class="w-full px-space-lg py-space-md border border-outline rounded-lg"></textarea>
+                <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Textbooks</h2>
+                <x-rich-text-editor id="textbooks" wire-model="textbooks" :value="$textbooks" :allow-attachments="false" />
 
                 @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'textbooks', 'label' => 'Textbooks'])
             </section>
 
             <!-- 10. Competency Map -->
             <section id="section-competency_map" class="space-y-space-sm">
-                <h2 class="font-label-lg text-label-lg text-on-surface">Competency Map</h2>
-                <textarea wire:model="competencyMap" rows="4" class="w-full px-space-lg py-space-md border border-outline rounded-lg"></textarea>
+                <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Competency Map</h2>
+                <x-rich-text-editor id="competency-map" wire-model="competencyMap" :value="$competencyMap" :allow-attachments="false" />
 
                 @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'competency_map', 'label' => 'Competency Map'])
             </section>
 
             <!-- 11. Video Overview -->
             <section id="section-video_overview" class="space-y-space-sm">
-                <h2 class="font-label-lg text-label-lg text-on-surface">Video Overview</h2>
-                <textarea wire:model="videoOverview" rows="4" class="w-full px-space-lg py-space-md border border-outline rounded-lg"></textarea>
+                <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Video Overview</h2>
+                <x-rich-text-editor id="video-overview" wire-model="videoOverview" :value="$videoOverview" :allow-attachments="false" />
 
                 @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'video_overview', 'label' => 'Video Overview'])
             </section>
 
             <!-- Actions -->
             <div class="flex gap-space-md pt-space-lg">
-                <a
-                    href="{{ route('syllabus.index', $course) }}"
+                <button
+                    type="button"
+                    wire:click="cancelEdit"
                     class="flex-1 px-space-lg py-space-md border border-outline rounded-lg font-label-md text-label-md text-on-surface text-center hover:bg-surface-container transition"
                 >
                     Cancel
-                </a>
+                </button>
                 <button
                     type="submit"
                     wire:loading.attr="disabled"
@@ -343,47 +303,10 @@
                     class="flex-1 px-space-lg py-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-60 inline-flex items-center justify-center gap-space-sm"
                 >
                     <span wire:loading wire:target="save" class="inline-block animate-spin">⟳</span>
-                    <span wire:loading.remove wire:target="save">{{ $syllabus ? 'Update Syllabus' : 'Create Syllabus' }}</span>
+                    <span wire:loading.remove wire:target="save">Update Syllabus</span>
                     <span wire:loading wire:target="save">Saving...</span>
                 </button>
             </div>
         </form>
     </div>
 </div>
-
-@push('scripts')
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('materialPicker', (config) => ({
-                open: false,
-                selectedItems: config.initialSelected || [],
-                property: config.property || 'selectedMaterialIds',
-
-                get selectedIds() {
-                    return this.selectedItems.map((item) => item.id);
-                },
-
-                toggle(item) {
-                    const index = this.selectedItems.findIndex((selected) => selected.id === item.id);
-
-                    if (index >= 0) {
-                        this.selectedItems.splice(index, 1);
-                    } else {
-                        this.selectedItems.push(item);
-                    }
-
-                    this.sync();
-                },
-
-                remove(id) {
-                    this.selectedItems = this.selectedItems.filter((item) => item.id !== id);
-                    this.sync();
-                },
-
-                sync() {
-                    this.$wire.set(this.property, this.selectedIds, false);
-                },
-            }));
-        });
-    </script>
-@endpush

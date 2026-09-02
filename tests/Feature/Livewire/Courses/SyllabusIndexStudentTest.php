@@ -3,7 +3,6 @@
 namespace Tests\Feature\Livewire\Courses;
 
 use App\Enums\RoleName;
-use App\Livewire\Courses\SyllabusForm;
 use App\Livewire\Courses\SyllabusIndex;
 use App\Models\Course;
 use App\Models\Role;
@@ -63,11 +62,13 @@ class SyllabusIndexStudentTest extends TestCase
             ->assertDontSee('Create Syllabus');
     }
 
-    public function test_student_cannot_access_syllabus_edit_route(): void
+    public function test_student_cannot_enter_syllabus_edit_mode(): void
     {
         $this->student->givePermissionTo('syllabus.view');
 
-        Livewire::test(SyllabusForm::class, ['course' => $this->course])
+        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
+            ->call('loadSyllabus')
+            ->call('edit')
             ->assertStatus(403);
     }
 }

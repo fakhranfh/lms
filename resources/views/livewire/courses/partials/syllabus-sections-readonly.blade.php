@@ -43,7 +43,11 @@
     <!-- Course Description -->
     <div id="readonly-section-course_description" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
         <h3 class="font-label-lg text-label-lg text-on-surface">Course Description</h3>
-        <p class="text-body-md text-on-surface-variant whitespace-pre-line">{{ $syllabus->course_description ?: 'Not provided yet.' }}</p>
+        @if ($syllabus->course_description)
+            <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->course_description !!}</div>
+        @else
+            <p class="text-body-md text-on-surface-variant">Not provided yet.</p>
+        @endif
     </div>
 
     <!-- Class Policies -->
@@ -69,7 +73,7 @@
                                 @else
                                     <ul class="list-disc pl-space-lg space-y-space-xs">
                                         @foreach ($classPoliciesByScope['f2f_video'] as $policy)
-                                            <li class="text-body-sm text-on-surface whitespace-pre-line">{{ $policy->content }}</li>
+                                            <li class="rte-content text-body-sm text-on-surface">{!! $policy->content !!}</li>
                                         @endforeach
                                     </ul>
                                 @endif
@@ -80,7 +84,7 @@
                                 @else
                                     <ul class="list-disc pl-space-lg space-y-space-xs">
                                         @foreach ($classPoliciesByScope['online'] as $policy)
-                                            <li class="text-body-sm text-on-surface whitespace-pre-line">{{ $policy->content }}</li>
+                                            <li class="rte-content text-body-sm text-on-surface">{!! $policy->content !!}</li>
                                         @endforeach
                                     </ul>
                                 @endif
@@ -90,7 +94,7 @@
                             <tr class="{{ ! $loop->last ? 'border-b border-outline-variant' : '' }}">
                                 <td colspan="2" class="px-space-lg py-space-md">
                                     <ul class="list-disc pl-space-lg">
-                                        <li class="text-body-sm text-on-surface whitespace-pre-line">{{ $policy->content }}</li>
+                                        <li class="rte-content text-body-sm text-on-surface">{!! $policy->content !!}</li>
                                     </ul>
                                 </td>
                             </tr>
@@ -104,21 +108,21 @@
     <!-- Submission & Collection -->
     <div id="readonly-section-submission_and_collection" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
         <h3 class="font-label-lg text-label-lg text-on-surface">Submission & Collection</h3>
-        @if (empty($submissionPoints))
-            <p class="text-body-sm text-on-surface-variant">Not provided yet.</p>
+        @if ($syllabus->submission_and_collection)
+            <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->submission_and_collection !!}</div>
         @else
-            <ul class="list-disc pl-space-lg space-y-space-xs">
-                @foreach ($submissionPoints as $point)
-                    <li class="text-body-md text-on-surface-variant">{{ $point }}</li>
-                @endforeach
-            </ul>
+            <p class="text-body-sm text-on-surface-variant">Not provided yet.</p>
         @endif
     </div>
 
     <!-- Tutorial Activity Plan -->
     <div id="readonly-section-tutorial_activity_plan" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
         <h3 class="font-label-lg text-label-lg text-on-surface">Tutorial Activity Plan</h3>
-        <p class="text-body-md text-on-surface-variant whitespace-pre-line">{{ $syllabus->tutorial_activity_plan ?: 'Not provided yet.' }}</p>
+        @if ($syllabus->tutorial_activity_plan)
+            <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->tutorial_activity_plan !!}</div>
+        @else
+            <p class="text-body-md text-on-surface-variant">Not provided yet.</p>
+        @endif
     </div>
 
     <!-- Learning Outcomes -->
@@ -127,7 +131,7 @@
         @forelse ($syllabus->learningOutcomes as $outcome)
             <div class="flex items-start gap-space-sm">
                 <span class="font-label-sm text-label-sm text-primary flex-shrink-0">{{ $outcome->code }}</span>
-                <span class="text-body-sm text-on-surface">{{ $outcome->description }}</span>
+                <span class="rte-content text-body-sm text-on-surface">{!! $outcome->description !!}</span>
             </div>
         @empty
             <p class="text-body-sm text-on-surface-variant">Not provided yet.</p>
@@ -192,8 +196,8 @@
                                         {{ $indicator->code }}. {{ $indicator->description }}
                                     </td>
                                     @foreach ($syllabus->rubricProficiencyLevels as $level)
-                                        <td class="px-space-lg py-space-md text-body-sm text-on-surface-variant">
-                                            {{ $indicator->cells->firstWhere('rubric_proficiency_level_id', $level->id)?->description ?: '—' }}
+                                        <td class="rte-content px-space-lg py-space-md text-body-sm text-on-surface-variant">
+                                            {!! $indicator->cells->firstWhere('rubric_proficiency_level_id', $level->id)?->description ?: '—' !!}
                                         </td>
                                     @endforeach
                                 </tr>
@@ -217,41 +221,41 @@
     <!-- Teaching & Learning Strategies -->
     <div id="readonly-section-teaching_learning_strategies" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
         <h3 class="font-label-lg text-label-lg text-on-surface">Teaching & Learning Strategies</h3>
-        @if (empty($teachingLearningStrategyPoints))
-            <p class="text-body-sm text-on-surface-variant">Not provided yet.</p>
+        @if ($syllabus->teaching_learning_strategies)
+            <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->teaching_learning_strategies !!}</div>
         @else
-            <ul class="list-disc pl-space-lg space-y-space-xs">
-                @foreach ($teachingLearningStrategyPoints as $point)
-                    <li class="text-body-md text-on-surface-variant">{{ $point }}</li>
-                @endforeach
-            </ul>
+            <p class="text-body-sm text-on-surface-variant">Not provided yet.</p>
         @endif
     </div>
 
     <!-- Textbooks -->
     <div id="readonly-section-textbooks" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
         <h3 class="font-label-lg text-label-lg text-on-surface">Textbooks</h3>
-        @if (empty($textbookPoints))
-            <p class="text-body-sm text-on-surface-variant">Not provided yet.</p>
+        @if ($syllabus->textbooks)
+            <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->textbooks !!}</div>
         @else
-            <ul class="list-disc pl-space-lg space-y-space-xs">
-                @foreach ($textbookPoints as $point)
-                    <li class="text-body-md text-on-surface-variant">{{ $point }}</li>
-                @endforeach
-            </ul>
+            <p class="text-body-sm text-on-surface-variant">Not provided yet.</p>
         @endif
     </div>
 
     <!-- Competency Map -->
     <div id="readonly-section-competency_map" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
         <h3 class="font-label-lg text-label-lg text-on-surface">Competency Map</h3>
-        <p class="text-body-md text-on-surface-variant whitespace-pre-line">{{ $syllabus->competency_map ?: 'Not provided yet.' }}</p>
+        @if ($syllabus->competency_map)
+            <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->competency_map !!}</div>
+        @else
+            <p class="text-body-md text-on-surface-variant">Not provided yet.</p>
+        @endif
     </div>
 
     <!-- Video Overview -->
     <div id="readonly-section-video_overview" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
         <h3 class="font-label-lg text-label-lg text-on-surface">Video Overview</h3>
-        <p class="text-body-md text-on-surface-variant whitespace-pre-line">{{ $syllabus->video_overview ?: 'Not provided yet.' }}</p>
+        @if ($syllabus->video_overview)
+            <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->video_overview !!}</div>
+        @else
+            <p class="text-body-md text-on-surface-variant">Not provided yet.</p>
+        @endif
     </div>
 
     <!-- Materials -->

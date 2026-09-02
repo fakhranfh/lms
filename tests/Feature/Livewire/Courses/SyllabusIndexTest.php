@@ -38,14 +38,25 @@ class SyllabusIndexTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_shows_empty_state_cta_when_no_syllabus(): void
+    public function test_shows_empty_state_when_no_syllabus_and_cannot_edit(): void
+    {
+        $this->teacher->givePermissionTo('syllabus.view');
+
+        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
+            ->call('loadSyllabus')
+            ->assertSee('No syllabus has been created')
+            ->assertDontSee('Add Policy');
+    }
+
+    public function test_shows_create_form_directly_when_no_syllabus_and_can_edit(): void
     {
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
 
         Livewire::test(SyllabusIndex::class, ['course' => $this->course])
             ->call('loadSyllabus')
-            ->assertSee('No syllabus has been created')
-            ->assertSee('Create Syllabus');
+            ->assertSet('editing', true)
+            ->assertSee('Add Policy')
+            ->assertDontSee('No syllabus has been created');
     }
 
     public function test_renders_full_syllabus_with_class_policies_and_evaluation_totals(): void

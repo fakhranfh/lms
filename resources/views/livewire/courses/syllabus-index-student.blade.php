@@ -13,9 +13,6 @@
             'syllabus' => $syllabus,
             'classPoliciesByScope' => $classPoliciesByScope,
             'evaluationsWithTotals' => $evaluationsWithTotals,
-            'submissionPoints' => $submissionPoints,
-            'teachingLearningStrategyPoints' => $teachingLearningStrategyPoints,
-            'textbookPoints' => $textbookPoints,
         ])
     @endif
 </div>

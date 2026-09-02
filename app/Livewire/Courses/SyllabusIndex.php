@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\MaterialType;
 use App\Enums\RoleName;
 use App\Enums\SyllabusMaterialSection;
 use App\Enums\SyllabusPolicyScope;
@@ -23,6 +24,7 @@ use App\Support\CurrentSchool;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -46,7 +48,13 @@ class SyllabusIndex extends Component
     #[Validate('nullable|string')]
     public string $courseDescription = '';
 
-    /** @var array<int, array{scope: string, content: string, order: int}> */
+    /**
+     * A slot is set to null (not spliced out) when its row is removed
+     * client-side, so element types stay nullable until pruneRemovedRows()
+     * filters them out just before validation/persistence.
+     *
+     * @var array<int, array{scope: string, content: string, order: int}|null>
+     */
     public array $classPolicies = [];
 
     #[Validate('nullable|string')]
@@ -55,18 +63,18 @@ class SyllabusIndex extends Component
     #[Validate('nullable|string')]
     public string $tutorialActivityPlan = '';
 
-    /** @var array<int, array{code: string, description: string, order: int}> */
+    /** @var array<int, array{code: string, description: string, order: int}|null> */
     public array $learningOutcomes = [];
 
     /**
-     * @var array<int, array{class_type: string, activities: array<int, array{activity: string, weight: string, order: int, learning_outcome_indices: array<int, int>}>}>
+     * @var array<int, array{class_type: string, activities: array<int, array{activity: string, weight: string, order: int, learning_outcome_indices: array<int, int>}|null>}|null>
      */
     public array $evaluations = [];
 
-    /** @var array<int, array{label: string, score_min: string, score_max: string, order: int}> */
+    /** @var array<int, array{label: string, score_min: string, score_max: string, order: int}|null> */
     public array $rubricProficiencyLevels = [];
 
-    /** @var array<int, array{learning_outcome_index: string, code: string, description: string, order: int}> */
+    /** @var array<int, array{learning_outcome_index: string, code: string, description: string, order: int}|null> */
     public array $rubricKeyIndicators = [];
 
     /** @var array<int, array<int, string>> */
@@ -91,7 +99,7 @@ class SyllabusIndex extends Component
 
     public string $activeSection = 'course_description';
 
-    public function mount(CurrentSchool $currentSchool, Course $course): void
+    public function mount(CurrentSchool $currentSchool, Course $course, SyllabusService $syllabusService, bool $startInEditMode = false): void
     {
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
         abort_unless(auth()->user()->can('syllabus.view') && $course->school_id === $schoolId, 403);
@@ -102,30 +110,197 @@ class SyllabusIndex extends Component
         foreach (SyllabusMaterialSection::cases() as $section) {
             $this->selectedMaterialIds[$section->value] = [];
         }
-    }
 
-    public function loadSyllabus(SyllabusService $syllabusService): void
-    {
-        $this->syllabusLoaded = true;
+        if ($startInEditMode) {
+            abort_unless(auth()->user()->can('syllabus.edit'), 403);
 
-        if (auth()->user()->can('syllabus.edit') && ! $syllabusService->findByCourse($this->course->id)) {
+            $this->loadFormData($syllabusService);
+            $this->syllabusLoaded = true;
             $this->editing = true;
         }
     }
 
-    public function edit(SyllabusService $syllabusService): void
+    /**
+     * Preview and edit live on separate routes, so a course with no syllabus
+     * yet sends editors straight to the edit page instead of an empty state.
+     */
+    public function loadSyllabus(SyllabusService $syllabusService)
     {
-        abort_unless(auth()->user()->can('syllabus.edit'), 403);
-
-        $this->loadFormData($syllabusService);
         $this->syllabusLoaded = true;
-        $this->editing = true;
+
+        if (auth()->user()->can('syllabus.edit') && ! $syllabusService->findByCourse($this->course->id)) {
+            return $this->redirect(route('syllabus.edit', $this->course));
+        }
     }
 
-    public function cancelEdit(): void
+    /**
+     * Dev-only: fills the form with fake data (including attached materials)
+     * so the UI can be exercised without manually typing every field.
+     */
+    public function devAutofill(MediaLibraryService $mediaLibraryService): void
     {
-        $this->editing = false;
-        $this->resetErrorBag();
+        abort_unless(app()->environment(['local', 'testing']), 403);
+        abort_unless(auth()->user()->can('syllabus.edit'), 403);
+
+        $this->courseDescription = '<p>This course introduces students to the core concepts, tools, and practices of the subject, '
+            .'combining lectures, hands-on exercises, and real-world case studies to build both theoretical understanding and '
+            .'practical skill.</p>';
+
+        $policyContent = [
+            'f2f_video' => 'Attendance is mandatory for all face-to-face and video conference sessions. Students arriving more than 15 minutes late will be marked absent.',
+            'online' => 'Online session materials must be reviewed before the scheduled class. Cameras should remain on during discussions unless prior arrangements are made.',
+            'general' => 'Academic honesty is expected at all times. Any form of plagiarism or cheating will result in disciplinary action per institutional policy.',
+        ];
+
+        $this->classPolicies = collect(SyllabusPolicyScope::cases())->values()->map(fn ($scope, $index) => [
+            'scope' => $scope->value,
+            'content' => '<p>'.$policyContent[$scope->value].'</p>',
+            'order' => $index + 1,
+        ])->all();
+
+        $this->submissionAndCollection = '<p>All assignments must be submitted through the course portal before the stated deadline. '
+            .'Late submissions will be penalized 10% per day unless an extension has been approved in advance.</p>';
+        $this->tutorialActivityPlan = '<p>Each tutorial session begins with a short recap of the previous lecture, followed by guided '
+            .'problem-solving in small groups and a class-wide discussion of solutions.</p>';
+
+        $learningOutcomeContent = [
+            'Explain the fundamental concepts and terminology covered in this course.',
+            'Apply core techniques to solve practical, real-world problems.',
+            'Evaluate different approaches and justify the choice of method for a given scenario.',
+        ];
+
+        $this->learningOutcomes = collect(range(1, 3))->map(fn ($index) => [
+            'code' => 'LO'.$index,
+            'description' => '<p>'.$learningOutcomeContent[$index - 1].'</p>',
+            'order' => $index,
+        ])->all();
+
+        $this->evaluations = [[
+            'class_type' => 'Quiz',
+            'activities' => [
+                ['activity' => 'Quiz 1', 'weight' => '50', 'order' => 1, 'learning_outcome_indices' => [0]],
+                ['activity' => 'Quiz 2', 'weight' => '50', 'order' => 2, 'learning_outcome_indices' => [1, 2]],
+            ],
+        ]];
+
+        $this->rubricProficiencyLevels = [
+            ['label' => 'Excellent', 'score_min' => '80', 'score_max' => '100', 'order' => 1],
+            ['label' => 'Good', 'score_min' => '60', 'score_max' => '79', 'order' => 2],
+            ['label' => 'Needs Improvement', 'score_min' => '0', 'score_max' => '59', 'order' => 3],
+        ];
+
+        $keyIndicatorContent = [
+            'Correctly defines and explains key terminology.',
+            'Applies the appropriate technique to solve the given problem.',
+            'Justifies the chosen approach with sound reasoning.',
+        ];
+
+        $this->rubricKeyIndicators = collect(range(1, 3))->map(fn ($index) => [
+            'learning_outcome_index' => (string) ($index - 1),
+            'code' => '1.'.$index,
+            'description' => $keyIndicatorContent[$index - 1],
+            'order' => $index,
+        ])->all();
+
+        $rubricCellContent = [
+            'Consistently meets this indicator with clear, well-organized work.',
+            'Mostly meets this indicator with minor gaps.',
+            'Rarely meets this indicator; significant gaps remain.',
+        ];
+
+        $this->rubricCells = collect(range(0, 2))->mapWithKeys(fn ($kiIndex) => [
+            $kiIndex => collect(range(0, 2))->mapWithKeys(fn ($plIndex) => [
+                $plIndex => '<p>'.$rubricCellContent[$plIndex].'</p>',
+            ])->all(),
+        ])->all();
+
+        $this->teachingLearningStrategies = '<p>This course uses a blended approach combining interactive lectures, collaborative '
+            .'group work, and self-paced online modules to accommodate different learning styles.</p>';
+        $this->textbooks = '<p>Primary textbook to be announced by the instructor at the start of the term. Supplementary readings '
+            .'will be provided through the course portal.</p>';
+        $this->competencyMap = '<p>This course contributes to the program\'s core competencies in analytical thinking, technical '
+            .'proficiency, and effective communication.</p>';
+        $this->videoOverview = '<p>A short video introducing the course goals, structure, and instructor will be shared before the '
+            .'first session.</p>';
+
+        $this->devAutofillMaterials($mediaLibraryService);
+
+        // Rich-text editors run wire:ignore, so their DOM is silent to property
+        // changes; they only refresh when told to via this browser event.
+        $this->dispatch('rich-text-set-content', id: 'course-description', value: $this->courseDescription);
+        foreach ($this->classPolicies as $index => $policy) {
+            $this->dispatch('rich-text-set-content', id: "class-policy-{$index}", value: $policy['content']);
+        }
+        $this->dispatch('rich-text-set-content', id: 'submission-and-collection', value: $this->submissionAndCollection);
+        $this->dispatch('rich-text-set-content', id: 'tutorial-activity-plan', value: $this->tutorialActivityPlan);
+        foreach ($this->learningOutcomes as $index => $lo) {
+            $this->dispatch('rich-text-set-content', id: "learning-outcome-{$index}", value: $lo['description']);
+        }
+        foreach ($this->rubricCells as $kiIndex => $row) {
+            foreach ($row as $plIndex => $description) {
+                $this->dispatch('rich-text-set-content', id: "rubric-cell-{$kiIndex}-{$plIndex}", value: $description);
+            }
+        }
+        $this->dispatch('rich-text-set-content', id: 'teaching-learning-strategies', value: $this->teachingLearningStrategies);
+        $this->dispatch('rich-text-set-content', id: 'textbooks', value: $this->textbooks);
+        $this->dispatch('rich-text-set-content', id: 'competency-map', value: $this->competencyMap);
+        $this->dispatch('rich-text-set-content', id: 'video-overview', value: $this->videoOverview);
+    }
+
+    private function devAutofillMaterials(MediaLibraryService $mediaLibraryService): void
+    {
+        $sections = SyllabusMaterialSection::cases();
+
+        // Every material input gets its own attached file, so existing media
+        // is topped up with freshly generated dummy PDFs when there aren't
+        // enough items to cover all sections.
+        $items = $mediaLibraryService->list($this->course->school_id)->limit(count($sections))->get()->values();
+
+        while ($items->count() < count($sections)) {
+            $items->push($this->devGenerateDummyMaterial($mediaLibraryService, $sections[$items->count()]->name));
+        }
+
+        foreach ($sections as $index => $section) {
+            $item = $items[$index];
+            $this->selectedMaterialIds[$section->value][] = (string) $item->id;
+
+            // The picker's Alpine state is seeded once at mount and untouched
+            // by further Livewire morphs, so it needs telling explicitly to
+            // reflect the material just attached above.
+            $this->dispatch('syllabus-material-set', section: $section->value, items: [[
+                'id' => (string) $item->id,
+                'title' => $item->title,
+                'type' => $item->type->value,
+            ]]);
+        }
+    }
+
+    private function devGenerateDummyMaterial(MediaLibraryService $mediaLibraryService, string $label): MediaLibraryItem
+    {
+        $content = "%PDF-1.4\n"
+            .'1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj'."\n"
+            .'2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj'."\n"
+            .'3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]/Resources<<>>/Contents 4 0 R>>endobj'."\n"
+            .'4 0 obj<</Length 44>>stream'."\n"
+            .'BT /F1 18 Tf 20 100 Td (Syllabus Material) Tj ET'
+            ."\nendstream endobj\n"
+            .'trailer<</Size 5/Root 1 0 R>>'."\n"
+            .'%%EOF';
+
+        $key = "media/{$this->course->school_id}/dev-generated/syllabus-".Str::uuid().'.pdf';
+
+        return $mediaLibraryService->createFromRawContent(
+            $this->course->school_id,
+            auth()->id(),
+            $key,
+            $content,
+            'application/pdf',
+            [
+                'type' => MaterialType::PDF->value,
+                'title' => "Material - {$label}",
+                'description' => 'Dev-generated dummy PDF material.',
+            ],
+        );
     }
 
     private function loadFormData(SyllabusService $syllabusService): void
@@ -231,99 +406,60 @@ class SyllabusIndex extends Component
         }
     }
 
-    public function addClassPolicy(string $scope = 'general'): void
+    /**
+     * Rows are removed purely client-side (see resources/js/syllabus-form.js):
+     * the row's slot is set to null and its DOM node deleted, with no
+     * request round trip. Reindexing survivors here instead of in the
+     * browser would desync their already-bound wire:model/index-baked
+     * handlers, so the null holes are only cleaned up now, right before
+     * validation and persistence.
+     */
+    private function pruneRemovedRows(): void
     {
-        $this->classPolicies[] = [
-            'scope' => $scope,
-            'content' => '',
-            'order' => count($this->classPolicies) + 1,
-        ];
+        $this->classPolicies = $this->withoutNullRows($this->classPolicies);
+        $this->learningOutcomes = $this->withoutNullRows($this->learningOutcomes);
+        $this->rubricProficiencyLevels = $this->withoutNullRows($this->rubricProficiencyLevels);
+
+        $evaluations = [];
+        foreach ($this->evaluations as $group) {
+            if ($group === null) {
+                continue;
+            }
+
+            $group['activities'] = $this->withoutNullRows($group['activities']);
+            $evaluations[] = $group;
+        }
+        $this->evaluations = $evaluations;
+
+        $keyIndicators = [];
+        $cells = [];
+        foreach ($this->rubricKeyIndicators as $index => $keyIndicator) {
+            if ($keyIndicator === null) {
+                continue;
+            }
+
+            $keyIndicators[] = $keyIndicator;
+            $cells[] = $this->rubricCells[$index] ?? [];
+        }
+        $this->rubricKeyIndicators = $keyIndicators;
+        $this->rubricCells = $cells;
     }
 
-    public function removeClassPolicy(int $index): void
+    /**
+     * @param  array<int, array<string, mixed>|null>  $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private function withoutNullRows(array $rows): array
     {
-        unset($this->classPolicies[$index]);
-        $this->classPolicies = array_values($this->classPolicies);
-    }
+        $result = [];
 
-    public function addLearningOutcome(): void
-    {
-        $this->learningOutcomes[] = [
-            'code' => '',
-            'description' => '',
-            'order' => count($this->learningOutcomes) + 1,
-        ];
-    }
+        foreach ($rows as $row) {
+            if ($row !== null) {
+                $result[] = $row;
+            }
+        }
 
-    public function removeLearningOutcome(int $index): void
-    {
-        unset($this->learningOutcomes[$index]);
-        $this->learningOutcomes = array_values($this->learningOutcomes);
-    }
-
-    public function addEvaluationGroup(): void
-    {
-        $this->evaluations[] = [
-            'class_type' => '',
-            'activities' => [],
-        ];
-    }
-
-    public function removeEvaluationGroup(int $index): void
-    {
-        unset($this->evaluations[$index]);
-        $this->evaluations = array_values($this->evaluations);
-    }
-
-    public function addEvaluationActivity(int $groupIndex): void
-    {
-        $this->evaluations[$groupIndex]['activities'][] = [
-            'activity' => '',
-            'weight' => '',
-            'order' => count($this->evaluations[$groupIndex]['activities']) + 1,
-            'learning_outcome_indices' => [],
-        ];
-    }
-
-    public function removeEvaluationActivity(int $groupIndex, int $activityIndex): void
-    {
-        unset($this->evaluations[$groupIndex]['activities'][$activityIndex]);
-        $this->evaluations[$groupIndex]['activities'] = array_values($this->evaluations[$groupIndex]['activities']);
-    }
-
-    public function addProficiencyLevel(): void
-    {
-        $this->rubricProficiencyLevels[] = [
-            'label' => '',
-            'score_min' => '',
-            'score_max' => '',
-            'order' => count($this->rubricProficiencyLevels) + 1,
-        ];
-    }
-
-    public function removeProficiencyLevel(int $index): void
-    {
-        unset($this->rubricProficiencyLevels[$index]);
-        $this->rubricProficiencyLevels = array_values($this->rubricProficiencyLevels);
-    }
-
-    public function addKeyIndicator(): void
-    {
-        $this->rubricKeyIndicators[] = [
-            'learning_outcome_index' => '',
-            'code' => '',
-            'description' => '',
-            'order' => count($this->rubricKeyIndicators) + 1,
-        ];
-    }
-
-    public function removeKeyIndicator(int $index): void
-    {
-        unset($this->rubricKeyIndicators[$index]);
-        $this->rubricKeyIndicators = array_values($this->rubricKeyIndicators);
-
-        unset($this->rubricCells[$index]);
-        $this->rubricCells = array_values($this->rubricCells);
+        return $result;
     }
 
     /**
@@ -405,9 +541,10 @@ class SyllabusIndex extends Component
         SyllabusRubricKeyIndicatorService $keyIndicatorService,
         SyllabusRubricProficiencyLevelService $proficiencyLevelService,
         SyllabusRubricCellService $rubricCellService,
-    ): void {
+    ) {
         abort_unless(auth()->user()->can('syllabus.edit'), 403);
 
+        $this->pruneRemovedRows();
         $this->validate();
         $this->runCustomValidation();
 
@@ -552,9 +689,9 @@ class SyllabusIndex extends Component
             $syllabusService->replaceMaterials($syllabus->id, $this->selectedMaterialIds);
         });
 
-        $this->editing = false;
-
         $this->dispatch('syllabus-updated');
+
+        return $this->redirect(route('syllabus.index', $this->course));
     }
 
     public function render(SyllabusService $syllabusService, CoursePersonService $coursePersonService, MediaLibraryService $mediaLibraryService)

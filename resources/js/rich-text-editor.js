@@ -22,6 +22,15 @@ export default (initialValue, wireModel, id, disabled = false, allowAttachments 
         this.trackedAttachments = this.extractAttachments(this.$refs.editor.innerHTML);
 
         this.$wire.$watch(wireModel, (value) => {
+            // The watch callback can fire after the row containing this
+            // editor has already been removed from the DOM (e.g. a syllabus
+            // "remove row" button nulls the whole item client-side, which
+            // this editor's own path is nested under) — bail out rather
+            // than dereference a $ref that no longer exists.
+            if (!this.$refs.editor) {
+                return;
+            }
+
             if (!value && document.activeElement !== this.$refs.editor) {
                 this.$refs.editor.innerHTML = '';
                 this.trackedAttachments = [];

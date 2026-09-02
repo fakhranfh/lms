@@ -66,9 +66,7 @@ class SyllabusIndexStudentTest extends TestCase
     {
         $this->student->givePermissionTo('syllabus.view');
 
-        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
-            ->call('loadSyllabus')
-            ->call('edit')
+        Livewire::test(SyllabusIndex::class, ['course' => $this->course, 'startInEditMode' => true])
             ->assertStatus(403);
     }
 }

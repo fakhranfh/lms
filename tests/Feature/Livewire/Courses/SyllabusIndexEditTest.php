@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\SyllabusMaterialSection;
 use App\Livewire\Courses\SyllabusIndex;
 use App\Models\Course;
 use App\Models\MediaLibraryItem;
@@ -13,7 +14,9 @@ use App\Models\SyllabusLearningOutcome;
 use App\Models\SyllabusRubricKeyIndicator;
 use App\Models\SyllabusRubricProficiencyLevel;
 use App\Models\User;
+use App\Services\R2StorageService;
 use Livewire\Livewire;
+use Mockery;
 use Tests\TestCase;
 
 class SyllabusIndexEditTest extends TestCase
@@ -35,14 +38,16 @@ class SyllabusIndexEditTest extends TestCase
         $this->actingAs($this->teacher);
     }
 
+    private function editComponent()
+    {
+        return Livewire::test(SyllabusIndex::class, ['course' => $this->course, 'startInEditMode' => true]);
+    }
+
     public function test_user_cannot_enter_edit_mode_without_permission(): void
     {
         $this->teacher->givePermissionTo('syllabus.view');
 
-        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
-            ->call('loadSyllabus')
-            ->call('edit')
-            ->assertStatus(403);
+        $this->editComponent()->assertStatus(403);
     }
 
     public function test_user_cannot_edit_syllabus_for_different_school_course(): void
@@ -52,7 +57,7 @@ class SyllabusIndexEditTest extends TestCase
 
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
 
-        Livewire::test(SyllabusIndex::class, ['course' => $otherCourse])
+        Livewire::test(SyllabusIndex::class, ['course' => $otherCourse, 'startInEditMode' => true])
             ->assertStatus(403);
     }
 
@@ -60,24 +65,17 @@ class SyllabusIndexEditTest extends TestCase
     {
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
 
-        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
-            ->call('loadSyllabus')
-            ->call('edit')
+        // Add/remove happen purely client-side now (see resources/js/syllabus-form.js);
+        // tests exercise the resulting state directly via ->set(), the same way the
+        // JS writes new rows into the component via $wire.set(path, value, false).
+        $this->editComponent()
             ->set('courseDescription', 'Intro to testing')
-            ->call('addClassPolicy')
-            ->set('classPolicies.0.scope', 'general')
-            ->set('classPolicies.0.content', 'Be on time')
-            ->call('addLearningOutcome')
-            ->set('learningOutcomes.0.code', 'LO1')
-            ->set('learningOutcomes.0.description', 'Understand basics')
-            ->call('addEvaluationGroup')
-            ->set('evaluations.0.class_type', 'LEC')
-            ->call('addEvaluationActivity', 0)
-            ->set('evaluations.0.activities.0.activity', 'Quiz 1')
-            ->set('evaluations.0.activities.0.weight', 100)
-            ->set('evaluations.0.activities.0.learning_outcome_indices', [0])
+            ->set('classPolicies.0', ['scope' => 'general', 'content' => 'Be on time', 'order' => 1])
+            ->set('learningOutcomes.0', ['code' => 'LO1', 'description' => 'Understand basics', 'order' => 1])
+            ->set('evaluations.0', ['class_type' => 'LEC', 'activities' => []])
+            ->set('evaluations.0.activities.0', ['activity' => 'Quiz 1', 'weight' => 100, 'learning_outcome_indices' => [0], 'order' => 1])
             ->call('save')
-            ->assertSet('editing', false);
+            ->assertRedirect(route('syllabus.index', $this->course));
 
         $syllabus = Syllabus::where('course_id', $this->course->id)->firstOrFail();
 
@@ -96,18 +94,16 @@ class SyllabusIndexEditTest extends TestCase
 
         $syllabus = Syllabus::factory()->for($this->course)->create();
         SyllabusClassPolicy::factory()->for($syllabus)->create(['content' => 'Old policy']);
-        $lo = SyllabusLearningOutcome::factory()->for($syllabus)->create(['code' => 'OLD1']);
+        SyllabusLearningOutcome::factory()->for($syllabus)->create(['code' => 'OLD1']);
 
-        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
-            ->call('loadSyllabus')
-            ->call('edit')
+        // Removal nulls the slot rather than splicing it out (see
+        // resources/js/syllabus-form.js) — save() prunes the null holes.
+        $this->editComponent()
             ->assertSet('classPolicies.0.content', 'Old policy')
-            ->call('removeClassPolicy', 0)
-            ->call('addClassPolicy')
-            ->set('classPolicies.0.scope', 'general')
-            ->set('classPolicies.0.content', 'New policy')
+            ->set('classPolicies.0', null)
+            ->set('classPolicies.1', ['scope' => 'general', 'content' => 'New policy', 'order' => 2])
             ->call('save')
-            ->assertSet('editing', false);
+            ->assertRedirect(route('syllabus.index', $this->course));
 
         $this->assertDatabaseMissing('syllabus_class_policies', ['content' => 'Old policy']);
         $this->assertDatabaseHas('syllabus_class_policies', ['syllabus_id' => $syllabus->id, 'content' => 'New policy']);
@@ -118,15 +114,9 @@ class SyllabusIndexEditTest extends TestCase
     {
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
 
-        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
-            ->call('loadSyllabus')
-            ->call('edit')
-            ->call('addLearningOutcome')
-            ->set('learningOutcomes.0.code', 'LO1')
-            ->set('learningOutcomes.0.description', 'First')
-            ->call('addLearningOutcome')
-            ->set('learningOutcomes.1.code', 'LO1')
-            ->set('learningOutcomes.1.description', 'Second')
+        $this->editComponent()
+            ->set('learningOutcomes.0', ['code' => 'LO1', 'description' => 'First', 'order' => 1])
+            ->set('learningOutcomes.1', ['code' => 'LO1', 'description' => 'Second', 'order' => 2])
             ->call('save')
             ->assertHasErrors(['learningOutcomes']);
     }
@@ -135,14 +125,9 @@ class SyllabusIndexEditTest extends TestCase
     {
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
 
-        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
-            ->call('loadSyllabus')
-            ->call('edit')
-            ->call('addEvaluationGroup')
-            ->set('evaluations.0.class_type', 'LEC')
-            ->call('addEvaluationActivity', 0)
-            ->set('evaluations.0.activities.0.activity', 'Quiz 1')
-            ->set('evaluations.0.activities.0.weight', 90)
+        $this->editComponent()
+            ->set('evaluations.0', ['class_type' => 'LEC', 'activities' => []])
+            ->set('evaluations.0.activities.0', ['activity' => 'Quiz 1', 'weight' => 90, 'learning_outcome_indices' => [], 'order' => 1])
             ->call('save')
             ->assertHasErrors(['evaluations.0.activities']);
     }
@@ -151,20 +136,11 @@ class SyllabusIndexEditTest extends TestCase
     {
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
 
-        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
-            ->call('loadSyllabus')
-            ->call('edit')
-            ->call('addEvaluationGroup')
-            ->set('evaluations.0.class_type', 'LEC')
-            ->call('addEvaluationActivity', 0)
-            ->set('evaluations.0.activities.0.activity', 'A')
-            ->set('evaluations.0.activities.0.weight', 33.33)
-            ->call('addEvaluationActivity', 0)
-            ->set('evaluations.0.activities.1.activity', 'B')
-            ->set('evaluations.0.activities.1.weight', 33.33)
-            ->call('addEvaluationActivity', 0)
-            ->set('evaluations.0.activities.2.activity', 'C')
-            ->set('evaluations.0.activities.2.weight', 33.34)
+        $this->editComponent()
+            ->set('evaluations.0', ['class_type' => 'LEC', 'activities' => []])
+            ->set('evaluations.0.activities.0', ['activity' => 'A', 'weight' => 33.33, 'learning_outcome_indices' => [], 'order' => 1])
+            ->set('evaluations.0.activities.1', ['activity' => 'B', 'weight' => 33.33, 'learning_outcome_indices' => [], 'order' => 2])
+            ->set('evaluations.0.activities.2', ['activity' => 'C', 'weight' => 33.34, 'learning_outcome_indices' => [], 'order' => 3])
             ->call('save')
             ->assertHasNoErrors(['evaluations.0.activities']);
     }
@@ -173,23 +149,13 @@ class SyllabusIndexEditTest extends TestCase
     {
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
 
-        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
-            ->call('loadSyllabus')
-            ->call('edit')
-            ->call('addLearningOutcome')
-            ->set('learningOutcomes.0.code', 'LO1')
-            ->set('learningOutcomes.0.description', 'Outcome one')
-            ->call('addProficiencyLevel')
-            ->set('rubricProficiencyLevels.0.label', 'Excellent')
-            ->set('rubricProficiencyLevels.0.score_min', 80)
-            ->set('rubricProficiencyLevels.0.score_max', 100)
-            ->call('addKeyIndicator')
-            ->set('rubricKeyIndicators.0.learning_outcome_index', 0)
-            ->set('rubricKeyIndicators.0.code', '1.1')
-            ->set('rubricKeyIndicators.0.description', 'Demonstrates mastery')
+        $this->editComponent()
+            ->set('learningOutcomes.0', ['code' => 'LO1', 'description' => 'Outcome one', 'order' => 1])
+            ->set('rubricProficiencyLevels.0', ['label' => 'Excellent', 'score_min' => 80, 'score_max' => 100, 'order' => 1])
+            ->set('rubricKeyIndicators.0', ['learning_outcome_index' => 0, 'code' => '1.1', 'description' => 'Demonstrates mastery', 'order' => 1])
             ->set('rubricCells.0.0', 'Achieves excellent mastery')
             ->call('save')
-            ->assertSet('editing', false);
+            ->assertRedirect(route('syllabus.index', $this->course));
 
         $keyIndicator = SyllabusRubricKeyIndicator::where('code', '1.1')->firstOrFail();
         $proficiencyLevel = SyllabusRubricProficiencyLevel::where('label', 'Excellent')->firstOrFail();
@@ -208,13 +174,11 @@ class SyllabusIndexEditTest extends TestCase
         $itemA = MediaLibraryItem::factory()->for($this->school)->create();
         $itemB = MediaLibraryItem::factory()->for($this->school)->create();
 
-        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
-            ->call('loadSyllabus')
-            ->call('edit')
+        $this->editComponent()
             ->set('selectedMaterialIds.course_description', [$itemA->id])
             ->set('selectedMaterialIds.video_overview', [$itemB->id])
             ->call('save')
-            ->assertSet('editing', false);
+            ->assertRedirect(route('syllabus.index', $this->course));
 
         $syllabus = Syllabus::where('course_id', $this->course->id)->firstOrFail();
 
@@ -241,13 +205,11 @@ class SyllabusIndexEditTest extends TestCase
 
         $item = MediaLibraryItem::factory()->for($this->school)->create();
 
-        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
-            ->call('loadSyllabus')
-            ->call('edit')
+        $this->editComponent()
             ->set('selectedMaterialIds.course_description', [$item->id])
             ->set('selectedMaterialIds.video_overview', [$item->id])
             ->call('save')
-            ->assertSet('editing', false);
+            ->assertRedirect(route('syllabus.index', $this->course));
 
         $syllabus = Syllabus::where('course_id', $this->course->id)->firstOrFail();
 
@@ -268,21 +230,11 @@ class SyllabusIndexEditTest extends TestCase
     {
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
 
-        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
-            ->call('loadSyllabus')
-            ->call('edit')
-            ->call('addLearningOutcome')
-            ->set('learningOutcomes.0.code', 'LO1')
-            ->set('learningOutcomes.0.description', 'First outcome')
-            ->call('addLearningOutcome')
-            ->set('learningOutcomes.1.code', 'LO2')
-            ->set('learningOutcomes.1.description', 'Second outcome')
-            ->call('addEvaluationGroup')
-            ->set('evaluations.0.class_type', 'LEC')
-            ->call('addEvaluationActivity', 0)
-            ->set('evaluations.0.activities.0.activity', 'Quiz')
-            ->set('evaluations.0.activities.0.weight', 100)
-            ->set('evaluations.0.activities.0.learning_outcome_indices', [1])
+        $this->editComponent()
+            ->set('learningOutcomes.0', ['code' => 'LO1', 'description' => 'First outcome', 'order' => 1])
+            ->set('learningOutcomes.1', ['code' => 'LO2', 'description' => 'Second outcome', 'order' => 2])
+            ->set('evaluations.0', ['class_type' => 'LEC', 'activities' => []])
+            ->set('evaluations.0.activities.0', ['activity' => 'Quiz', 'weight' => 100, 'learning_outcome_indices' => [1], 'order' => 1])
             ->call('save');
 
         $activity = SyllabusEvaluationActivity::where('activity', 'Quiz')->firstOrFail();
@@ -301,30 +253,77 @@ class SyllabusIndexEditTest extends TestCase
         SyllabusLearningOutcome::factory()->for($syllabus)->create(['code' => 'LO1']);
         SyllabusLearningOutcome::factory()->for($syllabus)->create(['code' => 'LO2']);
 
-        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
-            ->call('loadSyllabus')
-            ->call('edit')
+        $this->editComponent()
             ->assertCount('learningOutcomes', 2)
-            ->call('removeLearningOutcome', 1)
+            ->set('learningOutcomes.1', null)
             ->call('save')
-            ->assertSet('editing', false);
+            ->assertRedirect(route('syllabus.index', $this->course));
 
         $this->assertDatabaseMissing('syllabus_learning_outcomes', ['code' => 'LO2']);
         $this->assertDatabaseHas('syllabus_learning_outcomes', ['code' => 'LO1']);
         $this->assertDatabaseCount('syllabus_learning_outcomes', 1);
     }
 
-    public function test_cancel_edit_exits_edit_mode_without_saving(): void
+    public function test_visiting_index_redirects_to_edit_when_no_syllabus_and_can_edit(): void
     {
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
 
         Livewire::test(SyllabusIndex::class, ['course' => $this->course])
             ->call('loadSyllabus')
-            ->call('edit')
-            ->assertSet('editing', true)
-            ->call('cancelEdit')
-            ->assertSet('editing', false);
+            ->assertRedirect(route('syllabus.edit', $this->course));
 
         $this->assertDatabaseCount('syllabuses', 0);
+    }
+
+    public function test_visiting_index_does_not_redirect_when_cannot_edit(): void
+    {
+        $this->teacher->givePermissionTo('syllabus.view');
+
+        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
+            ->call('loadSyllabus')
+            ->assertNoRedirect();
+    }
+
+    public function test_dev_autofill_fills_fields_and_attaches_materials(): void
+    {
+        $sectionCount = count(SyllabusMaterialSection::cases());
+
+        $r2Mock = Mockery::mock(R2StorageService::class);
+        $r2Mock->shouldReceive('uploadRawContent')->times($sectionCount)->andReturn('https://example.test/dummy.pdf');
+        $this->app->instance(R2StorageService::class, $r2Mock);
+
+        $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
+
+        $this->editComponent()
+            ->call('devAutofill')
+            ->assertSet('courseDescription', fn (string $value) => $value !== '')
+            ->assertCount('classPolicies', 3)
+            ->assertCount('learningOutcomes', 3)
+            ->assertCount('rubricProficiencyLevels', 3)
+            ->assertCount('rubricKeyIndicators', 3)
+            ->assertCount('evaluations', 1)
+            ->call('save')
+            ->assertRedirect(route('syllabus.index', $this->course));
+
+        $syllabus = Syllabus::where('course_id', $this->course->id)->firstOrFail();
+
+        $this->assertNotEmpty($syllabus->course_description);
+        $this->assertDatabaseCount('syllabus_class_policies', 3);
+        $this->assertDatabaseCount('syllabus_learning_outcomes', 3);
+        $this->assertDatabaseCount('syllabus_rubric_proficiency_levels', 3);
+        $this->assertDatabaseCount('syllabus_rubric_key_indicators', 3);
+        $this->assertDatabaseCount('media_library_items', $sectionCount);
+        $this->assertDatabaseCount('syllabus_materials', $sectionCount);
+        $this->assertDatabaseHas('syllabus_materials', ['syllabus_id' => $syllabus->id]);
+    }
+
+    public function test_dev_autofill_requires_edit_permission(): void
+    {
+        $this->teacher->givePermissionTo('syllabus.view');
+
+        Livewire::test(SyllabusIndex::class, ['course' => $this->course])
+            ->call('loadSyllabus')
+            ->call('devAutofill')
+            ->assertStatus(403);
     }
 }

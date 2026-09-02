@@ -4,16 +4,16 @@
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => $teacher])
 
     <div class="flex items-start justify-between">
-        <h2 class="font-label-lg text-label-lg text-on-surface">Syllabus</h2>
+        <h1 class="font-headline-md text-headline-md text-on-surface">Syllabus</h1>
 
         @if ($canEdit && $syllabus)
-            <button
-                type="button"
-                wire:click="edit"
+            <a
+                href="{{ route('syllabus.edit', $course) }}"
+                wire:navigate
                 class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity flex-shrink-0"
             >
                 Edit Syllabus
-            </button>
+            </a>
         @endif
     </div>
 

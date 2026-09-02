@@ -102,6 +102,7 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/sessions/{session}/edit', SessionForm::class)->middleware('permission:sessions.edit')->name('sessions.edit');
 
         Route::get('/courses/{course}/syllabus', SyllabusIndex::class)->middleware('permission:syllabus.view')->name('syllabus.index');
+        Route::get('/courses/{course}/syllabus/edit', SyllabusIndex::class)->defaults('startInEditMode', true)->middleware('permission:syllabus.edit')->name('syllabus.edit');
 
         Route::get('/courses/{course}/forum', ForumIndex::class)->middleware('permission:forum.view')->name('forum.index');
         Route::get('/courses/{course}/forum/threads/{thread}', ForumThreadShow::class)->middleware('permission:forum.view')->name('forum.thread.show');

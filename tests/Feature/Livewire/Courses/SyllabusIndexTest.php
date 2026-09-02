@@ -48,15 +48,13 @@ class SyllabusIndexTest extends TestCase
             ->assertDontSee('Add Policy');
     }
 
-    public function test_shows_create_form_directly_when_no_syllabus_and_can_edit(): void
+    public function test_redirects_to_edit_route_when_no_syllabus_and_can_edit(): void
     {
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
 
         Livewire::test(SyllabusIndex::class, ['course' => $this->course])
             ->call('loadSyllabus')
-            ->assertSet('editing', true)
-            ->assertSee('Add Policy')
-            ->assertDontSee('No syllabus has been created');
+            ->assertRedirect(route('syllabus.edit', $this->course));
     }
 
     public function test_renders_full_syllabus_with_class_policies_and_evaluation_totals(): void

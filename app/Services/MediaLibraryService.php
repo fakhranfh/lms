@@ -143,6 +143,9 @@ class MediaLibraryService
         return $this->repository->delete($id);
     }
 
+    /**
+     * @return Builder<MediaLibraryItem>
+     */
     public function list(string $schoolId, ?string $type = null, ?string $search = null): Builder
     {
         return $this->repository->filteredQuery($schoolId, $type, $search);

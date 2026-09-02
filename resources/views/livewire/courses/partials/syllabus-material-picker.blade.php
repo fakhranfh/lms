@@ -3,6 +3,7 @@
         property: 'selectedMaterialIds.{{ $section }}',
         initialSelected: @js($selectedMediaItemsBySection[$section]->map(fn ($item) => ['id' => (string) $item->id, 'title' => $item->title, 'type' => $item->type->value])->values()),
     })"
+    x-on:syllabus-material-set.window="if ($event.detail.section === '{{ $section }}') { setItems($event.detail.items); }"
     class="mt-space-sm"
 >
     <button

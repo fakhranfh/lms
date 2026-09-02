@@ -1,21 +1,8 @@
-<div
-    class="space-y-space-lg"
-    x-data="{
-        active: 'course_description',
-        goTo(key) {
-            this.active = key;
-            const target = document.getElementById('readonly-section-' + key);
-            const scrollContainer = this.$el.closest('main');
-            if (! target || ! scrollContainer) { return; }
-            const navBottom = this.$refs.sectionNav.getBoundingClientRect().bottom;
-            const targetTop = target.getBoundingClientRect().top + scrollContainer.scrollTop - navBottom - 16;
-            scrollContainer.scrollTo({ top: targetTop, behavior: 'smooth' });
-        },
-    }"
->
+<div class="space-y-space-lg">
     <!-- Section shortcuts -->
-    <nav x-ref="sectionNav" class="relative sticky top-0 z-10 bg-background flex flex-wrap gap-space-sm pt-space-xxs pb-space-xs border-b border-outline-variant before:content-[''] before:absolute before:left-0 before:right-0 before:-top-space-lg before:h-space-lg before:bg-background before:-z-10">
-        @foreach ([
+    <x-syllabus.section-nav
+        id-prefix="readonly-section-"
+        :sections="[
             'course_description' => 'Course Description',
             'class_policies' => 'Class Policies',
             'submission_and_collection' => 'Submission and Collection of Assignment',
@@ -27,22 +14,13 @@
             'textbooks' => 'Textbooks',
             'competency_map' => 'Competency Map',
             'video_overview' => 'Video Overview',
-        ] as $sectionKey => $sectionLabel)
-            <a
-                href="#readonly-section-{{ $sectionKey }}"
-                @click.prevent="goTo('{{ $sectionKey }}')"
-                class="px-space-md py-space-xs rounded-lg font-label-sm text-label-sm whitespace-nowrap transition-colors"
-                :class="active === '{{ $sectionKey }}' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:text-on-surface'"
-            >
-                {{ $sectionLabel }}
-            </a>
-        @endforeach
-    </nav>
+        ]"
+    />
 
     <div class="space-y-space-md">
     <!-- Course Description -->
     <div id="readonly-section-course_description" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
-        <h3 class="font-label-lg text-label-lg text-on-surface">Course Description</h3>
+        <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Course Description</h3>
         @if ($syllabus->course_description)
             <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->course_description !!}</div>
         @else
@@ -52,7 +30,7 @@
 
     <!-- Class Policies -->
     <div id="readonly-section-class_policies" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
-        <h3 class="font-label-lg text-label-lg text-on-surface">Class Policies</h3>
+        <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Class Policies</h3>
 
         @if ($classPoliciesByScope['f2f_video']->isEmpty() && $classPoliciesByScope['online']->isEmpty() && $classPoliciesByScope['general']->isEmpty())
             <p class="text-body-sm text-on-surface-variant">Not provided yet.</p>
@@ -107,7 +85,7 @@
 
     <!-- Submission & Collection -->
     <div id="readonly-section-submission_and_collection" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
-        <h3 class="font-label-lg text-label-lg text-on-surface">Submission & Collection</h3>
+        <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Submission & Collection</h3>
         @if ($syllabus->submission_and_collection)
             <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->submission_and_collection !!}</div>
         @else
@@ -117,7 +95,7 @@
 
     <!-- Tutorial Activity Plan -->
     <div id="readonly-section-tutorial_activity_plan" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
-        <h3 class="font-label-lg text-label-lg text-on-surface">Tutorial Activity Plan</h3>
+        <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Tutorial Activity Plan</h3>
         @if ($syllabus->tutorial_activity_plan)
             <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->tutorial_activity_plan !!}</div>
         @else
@@ -127,7 +105,7 @@
 
     <!-- Learning Outcomes -->
     <div id="readonly-section-learning_outcomes" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
-        <h3 class="font-label-lg text-label-lg text-on-surface">Learning Outcomes</h3>
+        <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Learning Outcomes</h3>
         @forelse ($syllabus->learningOutcomes as $outcome)
             <div class="flex items-start gap-space-sm">
                 <span class="font-label-sm text-label-sm text-primary flex-shrink-0">{{ $outcome->code }}</span>
@@ -140,7 +118,7 @@
 
     <!-- Evaluation -->
     <div id="readonly-section-evaluation" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
-        <h3 class="font-label-lg text-label-lg text-on-surface">Evaluation</h3>
+        <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Evaluation</h3>
         @forelse ($evaluationsWithTotals as $group)
             <div class="border border-outline-variant rounded-lg p-space-md space-y-space-xs">
                 <div class="flex items-center justify-between">
@@ -161,7 +139,7 @@
 
     <!-- Assessment Rubric -->
     <div id="readonly-section-assessment_rubric" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
-        <h3 class="font-label-lg text-label-lg text-on-surface">Assessment Rubric</h3>
+        <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Assessment Rubric</h3>
 
         @if ($syllabus->learningOutcomes->isEmpty() || $syllabus->rubricProficiencyLevels->isEmpty())
             <p class="text-body-sm text-on-surface-variant">Not provided yet.</p>
@@ -188,8 +166,8 @@
                             @forelse ($outcome->rubricKeyIndicators as $kiIndex => $indicator)
                                 <tr class="border-b border-outline-variant align-top {{ $loIndex % 2 === 1 ? 'bg-surface-container' : '' }}">
                                     @if ($kiIndex === 0)
-                                        <td rowspan="{{ $outcome->rubricKeyIndicators->count() }}" class="px-space-lg py-space-md text-body-sm text-on-surface border-r border-outline-variant">
-                                            <strong>{{ $outcome->code }}:</strong> {{ $outcome->description }}
+                                        <td rowspan="{{ $outcome->rubricKeyIndicators->count() }}" class="rte-content px-space-lg py-space-md text-body-sm text-on-surface border-r border-outline-variant">
+                                            <strong>{{ $outcome->code }}:</strong> {!! $outcome->description !!}
                                         </td>
                                     @endif
                                     <td class="px-space-lg py-space-md text-body-sm text-on-surface border-r border-outline-variant">
@@ -203,8 +181,8 @@
                                 </tr>
                             @empty
                                 <tr class="border-b border-outline-variant {{ $loIndex % 2 === 1 ? 'bg-surface-container' : '' }}">
-                                    <td class="px-space-lg py-space-md text-body-sm text-on-surface border-r border-outline-variant">
-                                        <strong>{{ $outcome->code }}:</strong> {{ $outcome->description }}
+                                    <td class="rte-content px-space-lg py-space-md text-body-sm text-on-surface border-r border-outline-variant">
+                                        <strong>{{ $outcome->code }}:</strong> {!! $outcome->description !!}
                                     </td>
                                     <td colspan="{{ $syllabus->rubricProficiencyLevels->count() + 1 }}" class="px-space-lg py-space-md text-body-sm text-on-surface-variant">
                                         No key indicators yet.
@@ -220,7 +198,7 @@
 
     <!-- Teaching & Learning Strategies -->
     <div id="readonly-section-teaching_learning_strategies" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
-        <h3 class="font-label-lg text-label-lg text-on-surface">Teaching & Learning Strategies</h3>
+        <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Teaching & Learning Strategies</h3>
         @if ($syllabus->teaching_learning_strategies)
             <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->teaching_learning_strategies !!}</div>
         @else
@@ -230,7 +208,7 @@
 
     <!-- Textbooks -->
     <div id="readonly-section-textbooks" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
-        <h3 class="font-label-lg text-label-lg text-on-surface">Textbooks</h3>
+        <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Textbooks</h3>
         @if ($syllabus->textbooks)
             <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->textbooks !!}</div>
         @else
@@ -240,7 +218,7 @@
 
     <!-- Competency Map -->
     <div id="readonly-section-competency_map" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
-        <h3 class="font-label-lg text-label-lg text-on-surface">Competency Map</h3>
+        <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Competency Map</h3>
         @if ($syllabus->competency_map)
             <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->competency_map !!}</div>
         @else
@@ -250,7 +228,7 @@
 
     <!-- Video Overview -->
     <div id="readonly-section-video_overview" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
-        <h3 class="font-label-lg text-label-lg text-on-surface">Video Overview</h3>
+        <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Video Overview</h3>
         @if ($syllabus->video_overview)
             <div class="rte-content text-body-md text-on-surface-variant">{!! $syllabus->video_overview !!}</div>
         @else
@@ -261,7 +239,7 @@
     <!-- Materials -->
     @if ($syllabus->materials->isNotEmpty())
         <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
-            <h3 class="font-label-lg text-label-lg text-on-surface">Attached Materials</h3>
+            <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Attached Materials</h3>
             @foreach ($syllabus->materials as $material)
                 <div class="flex items-center gap-space-sm text-body-sm">
                     <span class="material-symbols-outlined text-on-surface-variant text-[18px]">description</span>

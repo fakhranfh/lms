@@ -24,6 +24,11 @@ export default (config) => ({
         this.sync();
     },
 
+    setItems(items) {
+        this.selectedItems = items || [];
+        this.sync();
+    },
+
     sync() {
         this.$wire.set(this.property, this.selectedIds, false);
     },

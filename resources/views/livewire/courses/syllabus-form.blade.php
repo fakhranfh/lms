@@ -1,20 +1,6 @@
 @section('title', $pageTitle)
 
-<div
-    class="space-y-space-lg"
-    x-data="{
-        active: 'course_description',
-        goTo(key) {
-            this.active = key;
-            const target = document.getElementById('section-' + key);
-            const scrollContainer = this.$el.closest('main');
-            if (! target || ! scrollContainer) { return; }
-            const navBottom = this.$refs.sectionNav.getBoundingClientRect().bottom;
-            const targetTop = target.getBoundingClientRect().top + scrollContainer.scrollTop - navBottom - 16;
-            scrollContainer.scrollTo({ top: targetTop, behavior: 'smooth' });
-        },
-    }"
->
+<div class="space-y-space-lg">
     <div>
         @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => null])
 
@@ -23,9 +9,26 @@
             <h1 class="font-headline-md text-headline-md text-on-surface">{{ $pageTitle }}</h1>
         </div>
 
+        @if (app()->isLocal())
+            <div class="mb-space-lg px-gutter py-space-md bg-secondary/10 border border-secondary/20 rounded-lg flex items-center gap-space-md">
+                <span class="material-symbols-outlined text-secondary text-[20px]">science</span>
+                <p class="font-body-sm text-body-sm text-secondary flex-1">Dev only: autofill the syllabus with fake data, including attached materials.</p>
+                <button
+                    type="button"
+                    wire:click="devAutofill"
+                    wire:loading.attr="disabled"
+                    wire:target="devAutofill"
+                    class="px-space-md py-space-xs rounded-lg bg-secondary text-on-secondary font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                    Autofill
+                </button>
+            </div>
+        @endif
+
         <!-- Section nav -->
-        <nav x-ref="sectionNav" class="relative sticky top-0 z-10 bg-background flex gap-space-sm overflow-x-auto pt-space-xxs pb-space-xs mb-space-lg border-b border-outline-variant before:content-[''] before:absolute before:left-0 before:right-0 before:-top-space-lg before:h-space-lg before:bg-background before:-z-10">
-            @foreach ([
+        <x-syllabus.section-nav
+            id-prefix="section-"
+            :sections="[
                 'course_description' => 'Course Description',
                 'class_policies' => 'Class Policies',
                 'submission_and_collection' => 'Submission & Collection',
@@ -37,17 +40,8 @@
                 'textbooks' => 'Textbooks',
                 'competency_map' => 'Competency Map',
                 'video_overview' => 'Video Overview',
-            ] as $sectionKey => $sectionLabel)
-                <a
-                    href="#section-{{ $sectionKey }}"
-                    @click.prevent="goTo('{{ $sectionKey }}')"
-                    class="px-space-md py-space-xs rounded-lg font-label-sm text-label-sm whitespace-nowrap transition-colors"
-                    :class="active === '{{ $sectionKey }}' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:text-on-surface'"
-                >
-                    {{ $sectionLabel }}
-                </a>
-            @endforeach
-        </nav>
+            ]"
+        />
 
         <form wire:submit="save" class="space-y-16">
             <!-- 1. Course Description -->
@@ -64,7 +58,8 @@
                 <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Class Policies</h2>
                 <div class="space-y-space-sm">
                     @foreach ($classPolicies as $index => $policy)
-                        <div wire:key="class-policy-{{ $index }}" class="flex gap-space-sm items-start">
+                        @continue($policy === null)
+                        <div wire:key="class-policy-{{ $index }}" data-row class="flex gap-space-sm items-start">
                             <select wire:model="classPolicies.{{ $index }}.scope" class="w-40 flex-shrink-0 px-space-md py-space-sm border border-outline rounded-lg">
                                 @foreach ($policyScopes as $scope)
                                     <option value="{{ $scope->value }}">{{ str($scope->value)->replace('_', ' ')->title() }}</option>
@@ -73,14 +68,33 @@
                             <div class="flex-1">
                                 <x-rich-text-editor id="class-policy-{{ $index }}" wire-model="classPolicies.{{ $index }}.content" :value="$policy['content']" :allow-attachments="false" />
                             </div>
-                            <button type="button" wire:click="removeClassPolicy({{ $index }})" class="p-2 hover:bg-surface-container rounded transition text-error">
+                            <button type="button" @click="window.removeSyllabusRow($wire, 'classPolicies.{{ $index }}', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
                                 <span class="material-symbols-outlined">close</span>
                             </button>
                         </div>
                         @error("classPolicies.{$index}.content") <p class="text-body-sm text-error">{{ $message }}</p> @enderror
                     @endforeach
+                    <template id="class-policy-template">
+                        <div data-row class="flex gap-space-sm items-start">
+                            <select @change="$wire.set('classPolicies.__NEW__.scope', $event.target.value, false)" class="w-40 flex-shrink-0 px-space-md py-space-sm border border-outline rounded-lg">
+                                @foreach ($policyScopes as $scope)
+                                    <option value="{{ $scope->value }}" @selected($scope->value === 'general')>{{ str($scope->value)->replace('_', ' ')->title() }}</option>
+                                @endforeach
+                            </select>
+                            <div class="flex-1">
+                                <x-rich-text-editor id="class-policy-__NEW__" wire-model="classPolicies.__NEW__.content" :allow-attachments="false" />
+                            </div>
+                            <button type="button" @click="window.removeSyllabusRow($wire, 'classPolicies.__NEW__', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                    </template>
                 </div>
-                <button type="button" wire:click="addClassPolicy" class="mt-space-sm text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs">
+                <button
+                    type="button"
+                    @click="window.addSyllabusRow($wire, 'class-policy-template', 'classPolicies', { scope: 'general', content: '' })"
+                    class="mt-space-sm text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs"
+                >
                     <span class="material-symbols-outlined text-[18px]">add</span> Add Policy
                 </button>
 
@@ -109,7 +123,8 @@
                 @error('learningOutcomes') <p class="text-body-sm text-error">{{ $message }}</p> @enderror
                 <div class="space-y-space-sm">
                     @foreach ($learningOutcomes as $index => $lo)
-                        <div wire:key="learning-outcome-{{ $index }}" class="flex gap-space-sm items-start">
+                        @continue($lo === null)
+                        <div wire:key="learning-outcome-{{ $index }}" data-row class="flex gap-space-sm items-start">
                             <input
                                 type="text"
                                 wire:model="learningOutcomes.{{ $index }}.code"
@@ -119,15 +134,35 @@
                             <div class="flex-1">
                                 <x-rich-text-editor id="learning-outcome-{{ $index }}" wire-model="learningOutcomes.{{ $index }}.description" :value="$lo['description']" :allow-attachments="false" />
                             </div>
-                            <button type="button" wire:click="removeLearningOutcome({{ $index }})" class="p-2 hover:bg-surface-container rounded transition text-error">
+                            <button type="button" @click="window.removeSyllabusRow($wire, 'learningOutcomes.{{ $index }}', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
                                 <span class="material-symbols-outlined">close</span>
                             </button>
                         </div>
                         @error("learningOutcomes.{$index}.code") <p class="text-body-sm text-error">{{ $message }}</p> @enderror
                         @error("learningOutcomes.{$index}.description") <p class="text-body-sm text-error">{{ $message }}</p> @enderror
                     @endforeach
+                    <template id="learning-outcome-template">
+                        <div data-row class="flex gap-space-sm items-start">
+                            <input
+                                type="text"
+                                @input="$wire.set('learningOutcomes.__NEW__.code', $event.target.value, false)"
+                                placeholder="Code (e.g. LO1)"
+                                class="w-32 flex-shrink-0 px-space-md py-space-sm border border-outline rounded-lg"
+                            />
+                            <div class="flex-1">
+                                <x-rich-text-editor id="learning-outcome-__NEW__" wire-model="learningOutcomes.__NEW__.description" :allow-attachments="false" />
+                            </div>
+                            <button type="button" @click="window.removeSyllabusRow($wire, 'learningOutcomes.__NEW__', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                    </template>
                 </div>
-                <button type="button" wire:click="addLearningOutcome" class="mt-space-sm text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs">
+                <button
+                    type="button"
+                    @click="window.addSyllabusRow($wire, 'learning-outcome-template', 'learningOutcomes', { code: '', description: '' })"
+                    class="mt-space-sm text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs"
+                >
                     <span class="material-symbols-outlined text-[18px]">add</span> Add Learning Outcome
                 </button>
             </section>
@@ -136,7 +171,8 @@
             <section id="section-evaluation" class="space-y-space-md">
                 <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Evaluation</h2>
                 @foreach ($evaluations as $groupIndex => $group)
-                    <div wire:key="evaluation-group-{{ $groupIndex }}" class="p-space-lg border border-outline-variant rounded-lg space-y-space-sm">
+                    @continue($group === null)
+                    <div wire:key="evaluation-group-{{ $groupIndex }}" data-row class="p-space-lg border border-outline-variant rounded-lg space-y-space-sm">
                         <div class="flex items-center gap-space-sm">
                             <input
                                 type="text"
@@ -144,14 +180,15 @@
                                 placeholder="Class type (e.g. Quiz)"
                                 class="flex-1 px-space-md py-space-sm border border-outline rounded-lg"
                             />
-                            <button type="button" wire:click="removeEvaluationGroup({{ $groupIndex }})" class="p-2 hover:bg-surface-container rounded transition text-error">
+                            <button type="button" @click="window.removeSyllabusRow($wire, 'evaluations.{{ $groupIndex }}', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
                                 <span class="material-symbols-outlined">close</span>
                             </button>
                         </div>
                         @error("evaluations.{$groupIndex}.activities") <p class="text-body-sm text-error">{{ $message }}</p> @enderror
 
                         @foreach ($group['activities'] as $activityIndex => $activity)
-                            <div wire:key="evaluation-activity-{{ $groupIndex }}-{{ $activityIndex }}" class="flex gap-space-sm items-start pl-space-lg">
+                            @continue($activity === null)
+                            <div wire:key="evaluation-activity-{{ $groupIndex }}-{{ $activityIndex }}" data-row class="flex gap-space-sm items-start pl-space-lg">
                                 <input
                                     type="text"
                                     wire:model="evaluations.{{ $groupIndex }}.activities.{{ $activityIndex }}.activity"
@@ -167,6 +204,7 @@
                                 />
                                 <div class="flex-1 flex flex-wrap gap-space-sm">
                                     @foreach ($learningOutcomes as $loIndex => $lo)
+                                        @continue($lo === null)
                                         <label class="inline-flex items-center gap-space-xs text-body-xs">
                                             <input
                                                 type="checkbox"
@@ -177,22 +215,117 @@
                                         </label>
                                     @endforeach
                                 </div>
-                                <button type="button" wire:click="removeEvaluationActivity({{ $groupIndex }}, {{ $activityIndex }})" class="p-2 hover:bg-surface-container rounded transition text-error">
+                                <button type="button" @click="window.removeSyllabusRow($wire, 'evaluations.{{ $groupIndex }}.activities.{{ $activityIndex }}', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
                                     <span class="material-symbols-outlined text-[18px]">close</span>
                                 </button>
                             </div>
                         @endforeach
 
+                        <template id="evaluation-activity-template-{{ $groupIndex }}">
+                            <div data-row class="flex gap-space-sm items-start pl-space-lg">
+                                <input
+                                    type="text"
+                                    @input="$wire.set('evaluations.{{ $groupIndex }}.activities.__NEW__.activity', $event.target.value, false)"
+                                    placeholder="Activity"
+                                    class="flex-1 px-space-md py-space-sm border border-outline rounded-lg"
+                                />
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    @input="$wire.set('evaluations.{{ $groupIndex }}.activities.__NEW__.weight', $event.target.value, false)"
+                                    placeholder="Weight %"
+                                    class="w-28 flex-shrink-0 px-space-md py-space-sm border border-outline rounded-lg"
+                                />
+                                <div class="flex-1 flex flex-wrap gap-space-sm">
+                                    @foreach ($learningOutcomes as $loIndex => $lo)
+                                        @continue($lo === null)
+                                        <label class="inline-flex items-center gap-space-xs text-body-xs">
+                                            <input
+                                                type="checkbox"
+                                                @change="window.toggleWireArrayValue($wire, 'evaluations.{{ $groupIndex }}.activities.__NEW__.learning_outcome_indices', {{ $loIndex }})"
+                                            />
+                                            {{ $lo['code'] }}
+                                        </label>
+                                    @endforeach
+                                </div>
+                                <button type="button" @click="window.removeSyllabusRow($wire, 'evaluations.{{ $groupIndex }}.activities.__NEW__', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
+                                    <span class="material-symbols-outlined text-[18px]">close</span>
+                                </button>
+                            </div>
+                        </template>
+
                         <button
                             type="button"
-                            wire:click="addEvaluationActivity({{ $groupIndex }})"
+                            @click="window.addSyllabusRow($wire, 'evaluation-activity-template-{{ $groupIndex }}', 'evaluations.{{ $groupIndex }}.activities', { activity: '', weight: '', learning_outcome_indices: [] })"
                             class="ml-space-lg text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs"
                         >
                             <span class="material-symbols-outlined text-[18px]">add</span> Add Activity
                         </button>
                     </div>
                 @endforeach
-                <button type="button" wire:click="addEvaluationGroup" class="text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs">
+
+                <template id="evaluation-group-template">
+                    <div data-row class="p-space-lg border border-outline-variant rounded-lg space-y-space-sm">
+                        <div class="flex items-center gap-space-sm">
+                            <input
+                                type="text"
+                                @input="$wire.set('evaluations.__NEW__.class_type', $event.target.value, false)"
+                                placeholder="Class type (e.g. Quiz)"
+                                class="flex-1 px-space-md py-space-sm border border-outline rounded-lg"
+                            />
+                            <button type="button" @click="window.removeSyllabusRow($wire, 'evaluations.__NEW__', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+
+                        <template id="evaluation-activity-template-__GROUP__">
+                            <div data-row class="flex gap-space-sm items-start pl-space-lg">
+                                <input
+                                    type="text"
+                                    @input="$wire.set('evaluations.__GROUP__.activities.__ACTIVITY__.activity', $event.target.value, false)"
+                                    placeholder="Activity"
+                                    class="flex-1 px-space-md py-space-sm border border-outline rounded-lg"
+                                />
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    @input="$wire.set('evaluations.__GROUP__.activities.__ACTIVITY__.weight', $event.target.value, false)"
+                                    placeholder="Weight %"
+                                    class="w-28 flex-shrink-0 px-space-md py-space-sm border border-outline rounded-lg"
+                                />
+                                <div class="flex-1 flex flex-wrap gap-space-sm">
+                                    @foreach ($learningOutcomes as $loIndex => $lo)
+                                        @continue($lo === null)
+                                        <label class="inline-flex items-center gap-space-xs text-body-xs">
+                                            <input
+                                                type="checkbox"
+                                                @change="window.toggleWireArrayValue($wire, 'evaluations.__GROUP__.activities.__ACTIVITY__.learning_outcome_indices', {{ $loIndex }})"
+                                            />
+                                            {{ $lo['code'] }}
+                                        </label>
+                                    @endforeach
+                                </div>
+                                <button type="button" @click="window.removeSyllabusRow($wire, 'evaluations.__GROUP__.activities.__ACTIVITY__', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
+                                    <span class="material-symbols-outlined text-[18px]">close</span>
+                                </button>
+                            </div>
+                        </template>
+
+                        <button
+                            type="button"
+                            @click="window.addSyllabusRow($wire, 'evaluation-activity-template-__GROUP__', 'evaluations.__GROUP__.activities', { activity: '', weight: '', learning_outcome_indices: [] })"
+                            class="ml-space-lg text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs"
+                        >
+                            <span class="material-symbols-outlined text-[18px]">add</span> Add Activity
+                        </button>
+                    </div>
+                </template>
+
+                <button
+                    type="button"
+                    @click="window.addSyllabusRow($wire, 'evaluation-group-template', 'evaluations', { class_type: '', activities: [] })"
+                    class="text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs"
+                >
                     <span class="material-symbols-outlined text-[18px]">add</span> Add Evaluation Group
                 </button>
             </section>
@@ -204,16 +337,31 @@
                 <div>
                     <p class="font-label-sm text-label-sm text-on-surface-variant mb-space-sm">Proficiency Levels</p>
                     @foreach ($rubricProficiencyLevels as $index => $level)
-                        <div wire:key="proficiency-level-{{ $index }}" class="flex gap-space-sm items-start mb-space-sm">
+                        @continue($level === null)
+                        <div wire:key="proficiency-level-{{ $index }}" data-row class="flex gap-space-sm items-start mb-space-sm">
                             <input type="text" wire:model="rubricProficiencyLevels.{{ $index }}.label" placeholder="Label" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg" />
                             <input type="number" wire:model="rubricProficiencyLevels.{{ $index }}.score_min" placeholder="Min" class="w-24 px-space-md py-space-sm border border-outline rounded-lg" />
                             <input type="number" wire:model="rubricProficiencyLevels.{{ $index }}.score_max" placeholder="Max" class="w-24 px-space-md py-space-sm border border-outline rounded-lg" />
-                            <button type="button" wire:click="removeProficiencyLevel({{ $index }})" class="p-2 hover:bg-surface-container rounded transition text-error">
+                            <button type="button" @click="window.removeSyllabusRow($wire, 'rubricProficiencyLevels.{{ $index }}', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
                                 <span class="material-symbols-outlined text-[18px]">close</span>
                             </button>
                         </div>
                     @endforeach
-                    <button type="button" wire:click="addProficiencyLevel" class="text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs">
+                    <template id="proficiency-level-template">
+                        <div data-row class="flex gap-space-sm items-start mb-space-sm">
+                            <input type="text" @input="$wire.set('rubricProficiencyLevels.__NEW__.label', $event.target.value, false)" placeholder="Label" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg" />
+                            <input type="number" @input="$wire.set('rubricProficiencyLevels.__NEW__.score_min', $event.target.value, false)" placeholder="Min" class="w-24 px-space-md py-space-sm border border-outline rounded-lg" />
+                            <input type="number" @input="$wire.set('rubricProficiencyLevels.__NEW__.score_max', $event.target.value, false)" placeholder="Max" class="w-24 px-space-md py-space-sm border border-outline rounded-lg" />
+                            <button type="button" @click="window.removeSyllabusRow($wire, 'rubricProficiencyLevels.__NEW__', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
+                                <span class="material-symbols-outlined text-[18px]">close</span>
+                            </button>
+                        </div>
+                    </template>
+                    <button
+                        type="button"
+                        @click="window.addSyllabusRow($wire, 'proficiency-level-template', 'rubricProficiencyLevels', { label: '', score_min: '', score_max: '' })"
+                        class="text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs"
+                    >
                         <span class="material-symbols-outlined text-[18px]">add</span> Add Proficiency Level
                     </button>
                 </div>
@@ -221,24 +369,27 @@
                 <div>
                     <p class="font-label-sm text-label-sm text-on-surface-variant mb-space-sm">Key Indicators</p>
                     @foreach ($rubricKeyIndicators as $index => $ki)
-                        <div wire:key="key-indicator-{{ $index }}" class="p-space-md border border-outline-variant rounded-lg space-y-space-sm mb-space-sm">
+                        @continue($ki === null)
+                        <div wire:key="key-indicator-{{ $index }}" data-row class="p-space-md border border-outline-variant rounded-lg space-y-space-sm mb-space-sm">
                             <div class="flex gap-space-sm items-start">
                                 <select wire:model="rubricKeyIndicators.{{ $index }}.learning_outcome_index" class="w-40 flex-shrink-0 px-space-md py-space-sm border border-outline rounded-lg">
                                     <option value="">Select LO</option>
                                     @foreach ($learningOutcomes as $loIndex => $lo)
+                                        @continue($lo === null)
                                         <option value="{{ $loIndex }}">{{ $lo['code'] }}</option>
                                     @endforeach
                                 </select>
                                 <input type="text" wire:model="rubricKeyIndicators.{{ $index }}.code" placeholder="Code" class="w-32 px-space-md py-space-sm border border-outline rounded-lg" />
                                 <input type="text" wire:model="rubricKeyIndicators.{{ $index }}.description" placeholder="Description" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg" />
-                                <button type="button" wire:click="removeKeyIndicator({{ $index }})" class="p-2 hover:bg-surface-container rounded transition text-error">
+                                <button type="button" @click="window.removeSyllabusRow($wire, ['rubricKeyIndicators.{{ $index }}', 'rubricCells.{{ $index }}'], $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
                                     <span class="material-symbols-outlined text-[18px]">close</span>
                                 </button>
                             </div>
                             @error("rubricKeyIndicators.{$index}.learning_outcome_index") <p class="text-body-sm text-error">{{ $message }}</p> @enderror
 
-                            <div class="grid gap-space-sm" style="grid-template-columns: repeat({{ max(count($rubricProficiencyLevels), 1) }}, minmax(0, 1fr));">
+                            <div class="space-y-space-sm">
                                 @foreach ($rubricProficiencyLevels as $plIndex => $level)
+                                    @continue($level === null)
                                     <div>
                                         <label class="text-body-xs text-on-surface-variant">{{ $level['label'] }}</label>
                                         <x-rich-text-editor id="rubric-cell-{{ $index }}-{{ $plIndex }}" wire-model="rubricCells.{{ $index }}.{{ $plIndex }}" :value="$rubricCells[$index][$plIndex] ?? ''" :allow-attachments="false" />
@@ -247,7 +398,39 @@
                             </div>
                         </div>
                     @endforeach
-                    <button type="button" wire:click="addKeyIndicator" class="text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs">
+                    <template id="key-indicator-template">
+                        <div data-row class="p-space-md border border-outline-variant rounded-lg space-y-space-sm mb-space-sm">
+                            <div class="flex gap-space-sm items-start">
+                                <select @change="$wire.set('rubricKeyIndicators.__NEW__.learning_outcome_index', $event.target.value, false)" class="w-40 flex-shrink-0 px-space-md py-space-sm border border-outline rounded-lg">
+                                    <option value="">Select LO</option>
+                                    @foreach ($learningOutcomes as $loIndex => $lo)
+                                        @continue($lo === null)
+                                        <option value="{{ $loIndex }}">{{ $lo['code'] }}</option>
+                                    @endforeach
+                                </select>
+                                <input type="text" @input="$wire.set('rubricKeyIndicators.__NEW__.code', $event.target.value, false)" placeholder="Code" class="w-32 px-space-md py-space-sm border border-outline rounded-lg" />
+                                <input type="text" @input="$wire.set('rubricKeyIndicators.__NEW__.description', $event.target.value, false)" placeholder="Description" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg" />
+                                <button type="button" @click="window.removeSyllabusRow($wire, ['rubricKeyIndicators.__NEW__', 'rubricCells.__NEW__'], $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
+                                    <span class="material-symbols-outlined text-[18px]">close</span>
+                                </button>
+                            </div>
+
+                            <div class="space-y-space-sm">
+                                @foreach ($rubricProficiencyLevels as $plIndex => $level)
+                                    @continue($level === null)
+                                    <div>
+                                        <label class="text-body-xs text-on-surface-variant">{{ $level['label'] }}</label>
+                                        <x-rich-text-editor id="rubric-cell-__NEW__-{{ $plIndex }}" wire-model="rubricCells.__NEW__.{{ $plIndex }}" :allow-attachments="false" />
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </template>
+                    <button
+                        type="button"
+                        @click="window.addSyllabusRow($wire, 'key-indicator-template', 'rubricKeyIndicators', { learning_outcome_index: '', code: '', description: '' })"
+                        class="text-primary font-medium text-body-sm hover:underline inline-flex items-center gap-space-xs"
+                    >
                         <span class="material-symbols-outlined text-[18px]">add</span> Add Key Indicator
                     </button>
                 </div>
@@ -289,13 +472,13 @@
 
             <!-- Actions -->
             <div class="flex gap-space-md pt-space-lg">
-                <button
-                    type="button"
-                    wire:click="cancelEdit"
+                <a
+                    href="{{ route('syllabus.index', $course) }}"
+                    wire:navigate
                     class="flex-1 px-space-lg py-space-md border border-outline rounded-lg font-label-md text-label-md text-on-surface text-center hover:bg-surface-container transition"
                 >
                     Cancel
-                </button>
+                </a>
                 <button
                     type="submit"
                     wire:loading.attr="disabled"

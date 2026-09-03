@@ -63,33 +63,70 @@ class AssessmentIndex extends Component
     {
         abort_unless(auth()->user()->can('assessment.delete'), 403);
 
-        $assessment = $assessmentService->find($assessmentId, ['attempts']);
+        $this->errorMessage = null;
 
-        if (! $assessment || $assessment->course_id !== $this->course->id) {
-            $this->errorMessage = __('Assessment not found.');
+        $error = $this->deletableError($assessmentId, $assessmentService);
 
-            return;
-        }
-
-        if ($assessment->type === AssessmentType::Attendance) {
-            $this->errorMessage = __('The Attendance assessment is auto-provisioned and cannot be deleted.');
-
-            return;
-        }
-
-        if ($assessment->type === AssessmentType::ForumDiscussion) {
-            $this->errorMessage = __('The Forum Discussion assessment is auto-provisioned and cannot be deleted.');
-
-            return;
-        }
-
-        if ($assessment->attempts->isNotEmpty()) {
-            $this->errorMessage = __('This assessment already has submissions and cannot be deleted.');
+        if ($error) {
+            $this->errorMessage = $error;
 
             return;
         }
 
         $assessmentService->delete($assessmentId);
+    }
+
+    /**
+     * @param  array<int, string>  $assessmentIds
+     */
+    public function deleteSelected(array $assessmentIds, AssessmentService $assessmentService): void
+    {
+        abort_unless(auth()->user()->can('assessment.delete'), 403);
+
+        $this->errorMessage = null;
+
+        if (empty($assessmentIds)) {
+            return;
+        }
+
+        $skipped = 0;
+
+        foreach ($assessmentIds as $assessmentId) {
+            if ($this->deletableError($assessmentId, $assessmentService)) {
+                $skipped++;
+
+                continue;
+            }
+
+            $assessmentService->delete($assessmentId);
+        }
+
+        if ($skipped > 0) {
+            $this->errorMessage = __('Some selected assessments could not be deleted because they are auto-provisioned or already have submissions.');
+        }
+    }
+
+    private function deletableError(string $assessmentId, AssessmentService $assessmentService): ?string
+    {
+        $assessment = $assessmentService->find($assessmentId, ['attempts']);
+
+        if (! $assessment || $assessment->course_id !== $this->course->id) {
+            return __('Assessment not found.');
+        }
+
+        if ($assessment->type === AssessmentType::Attendance) {
+            return __('The Attendance assessment is auto-provisioned and cannot be deleted.');
+        }
+
+        if ($assessment->type === AssessmentType::ForumDiscussion) {
+            return __('The Forum Discussion assessment is auto-provisioned and cannot be deleted.');
+        }
+
+        if ($assessment->attempts->isNotEmpty()) {
+            return __('This assessment already has submissions and cannot be deleted.');
+        }
+
+        return null;
     }
 
     public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, AttendanceDerivationService $attendanceDerivationService, ForumDiscussionScoringService $forumDiscussionScoringService, ProctorSessionService $proctorSessionService)

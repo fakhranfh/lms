@@ -150,6 +150,47 @@ class AssessmentIndexTest extends TestCase
         $this->assertDatabaseMissing('assessments', ['id' => $assessment->id]);
     }
 
+    public function test_bulk_delete_removes_selected_assessments(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.delete']);
+        $this->actingAs($this->teacher);
+
+        $first = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+        ]);
+        $second = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->call('deleteSelected', [$first->id, $second->id]);
+
+        $this->assertDatabaseMissing('assessments', ['id' => $first->id]);
+        $this->assertDatabaseMissing('assessments', ['id' => $second->id]);
+    }
+
+    public function test_bulk_delete_skips_protected_assessments_and_reports_error(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.delete']);
+        $this->actingAs($this->teacher);
+
+        $deletable = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+        ]);
+        $attendance = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::Attendance,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->call('deleteSelected', [$deletable->id, $attendance->id])
+            ->assertSee('could not be deleted');
+
+        $this->assertDatabaseMissing('assessments', ['id' => $deletable->id]);
+        $this->assertDatabaseHas('assessments', ['id' => $attendance->id]);
+    }
+
     public function test_student_sees_per_session_attendance_table(): void
     {
         $this->student->givePermissionTo('assessment.view');

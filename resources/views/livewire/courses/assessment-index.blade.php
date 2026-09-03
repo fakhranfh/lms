@@ -57,7 +57,30 @@
     </div>
 
     <!-- Grouped Collapsible Tables -->
-    <div class="space-y-space-lg" x-data="{ deleteId: null, deleteName: null, showDeleteModal: false, deleteConfirmText: '' }">
+    <div class="space-y-space-lg" x-data="{ deleteId: null, deleteMode: 'single', showDeleteModal: false, selectedIds: [], deletingIds: [] }">
+        @unless ($isStudent)
+            <div x-show="selectedIds.length > 0" x-cloak class="flex items-center justify-between px-space-lg py-space-sm bg-surface-container border border-outline-variant rounded-lg">
+                <p class="font-label-md text-label-md text-on-surface"><span x-text="selectedIds.length"></span> selected</p>
+                <div class="flex items-center gap-space-sm">
+                    <button
+                        type="button"
+                        @click="selectedIds = []"
+                        class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface transition"
+                    >
+                        Clear
+                    </button>
+                    <button
+                        type="button"
+                        @click="deleteMode = 'bulk'; showDeleteModal = true"
+                        class="px-space-md py-space-xs bg-error text-on-error rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity inline-flex items-center gap-space-xs"
+                    >
+                        <span class="material-symbols-outlined text-[16px]">delete</span>
+                        Delete Selected
+                    </button>
+                </div>
+            </div>
+        @endunless
+
         @foreach ($groupedAssessments as $index => $group)
             <div x-data="{ open: true }">
                 @if ($group['assessments']->isNotEmpty())
@@ -207,6 +230,17 @@
                             <table class="w-full">
                                 <thead>
                                     <tr class="border-b border-outline-variant bg-surface-container/50">
+                                        @unless ($isStudent)
+                                            <th class="px-space-lg py-space-md w-10">
+                                                <input
+                                                    type="checkbox"
+                                                    x-data="{ groupIds: @js($group['assessments']->filter(fn ($item) => $item['row']['route'] && ! in_array($item['data']->type, [\App\Enums\AssessmentType::Attendance, \App\Enums\AssessmentType::ForumDiscussion], true))->pluck('data.id')->values()) }"
+                                                    :checked="groupIds.length > 0 && groupIds.every(id => selectedIds.includes(id))"
+                                                    @change="selectedIds = $event.target.checked ? [...new Set([...selectedIds, ...groupIds])] : selectedIds.filter(id => ! groupIds.includes(id))"
+                                                    class="w-4 h-4 rounded border-outline"
+                                                />
+                                            </th>
+                                        @endunless
                                         <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Title</th>
                                         <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Assigned to</th>
                                         <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Start Date</th>
@@ -222,7 +256,17 @@
                                 <tbody class="divide-y divide-outline-variant">
                                     @foreach ($group['assessments'] as $item)
                                         <tr
+                                            wire:key="assessment-skeleton-{{ $item['data']->id }}"
+                                            x-show="deletingIds.includes(@js((string) $item['data']->id))"
+                                            x-cloak
+                                        >
+                                            <td colspan="{{ $isStudent ? 7 : 9 }}" class="px-space-lg py-space-md">
+                                                <div class="h-5 w-full rounded bg-surface-container animate-pulse"></div>
+                                            </td>
+                                        </tr>
+                                        <tr
                                             wire:key="assessment-{{ $item['data']->id }}"
+                                            x-show="! deletingIds.includes(@js((string) $item['data']->id))"
                                             @if ($item['row']['route'])
                                                 @click="window.location = '{{ $item['row']['route'] }}'"
                                                 class="hover:bg-surface-container/30 transition cursor-pointer"
@@ -230,6 +274,18 @@
                                                 class="hover:bg-surface-container/30 transition"
                                             @endif
                                         >
+                                            @unless ($isStudent)
+                                                <td class="px-space-lg py-space-md" @click.stop>
+                                                    @if ($item['row']['route'] && ! in_array($item['data']->type, [\App\Enums\AssessmentType::Attendance, \App\Enums\AssessmentType::ForumDiscussion], true))
+                                                        <input
+                                                            type="checkbox"
+                                                            x-model="selectedIds"
+                                                            value="{{ $item['data']->id }}"
+                                                            class="w-4 h-4 rounded border-outline"
+                                                        />
+                                                    @endif
+                                                </td>
+                                            @endunless
                                             <td class="px-space-lg py-space-md">
                                                 @if ($item['sessionPosition'])
                                                     <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $item['sessionPosition'] }}</p>
@@ -308,7 +364,7 @@
                                                             @if (! in_array($item['data']->type, [\App\Enums\AssessmentType::Attendance, \App\Enums\AssessmentType::ForumDiscussion], true))
                                                                 <button
                                                                     type="button"
-                                                                    @click.stop="deleteId = @js($item['data']->id); deleteName = @js($item['data']->title); deleteConfirmText = ''; showDeleteModal = true"
+                                                                    @click.stop="deleteId = @js($item['data']->id); deleteMode = 'single'; showDeleteModal = true"
                                                                     class="p-2 hover:bg-surface-container rounded transition text-error"
                                                                 >
                                                                     <span class="material-symbols-outlined">delete</span>
@@ -351,22 +407,12 @@
 
                         <div class="text-center space-y-space-sm">
                             <h3 class="font-headline-sm text-headline-sm text-on-surface">Delete Confirmation</h3>
-                            <p class="font-body-sm text-body-sm text-on-surface-variant">
-                                Are you sure you want to delete "<span class="font-medium" x-text="deleteName ?? 'this assessment'"></span>"?
-                                This action cannot be undone.
+                            <p class="font-body-sm text-body-sm text-on-surface-variant" x-show="deleteMode === 'single'">
+                                Are you sure you want to delete this assessment? This action cannot be undone.
                             </p>
-                        </div>
-
-                        <div class="text-left">
-                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
-                                Type <span class="font-medium" x-text="deleteName"></span> to confirm
-                            </label>
-                            <input
-                                type="text"
-                                x-model="deleteConfirmText"
-                                autocomplete="off"
-                                class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            />
+                            <p class="font-body-sm text-body-sm text-on-surface-variant" x-show="deleteMode === 'bulk'">
+                                Are you sure you want to delete <span x-text="selectedIds.length"></span> selected assessment(s)? This action cannot be undone.
+                            </p>
                         </div>
 
                         <div class="flex gap-space-md pt-space-md">
@@ -378,11 +424,18 @@
                                 Cancel
                             </button>
                             <button
-                                :disabled="deleteConfirmText !== deleteName"
-                                :class="deleteConfirmText !== deleteName ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'"
-                                @click="showDeleteModal = false; $wire.call('deleteAssessment', deleteId)"
+                                @click="
+                                    showDeleteModal = false;
+                                    if (deleteMode === 'bulk') {
+                                        deletingIds = [...selectedIds];
+                                        $wire.call('deleteSelected', selectedIds).then(() => { selectedIds = []; deletingIds = []; });
+                                    } else {
+                                        deletingIds = [deleteId];
+                                        $wire.call('deleteAssessment', deleteId).then(() => { deletingIds = []; });
+                                    }
+                                "
                                 type="button"
-                                class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md transition-opacity"
+                                class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                             >
                                 Delete
                             </button>

@@ -9,7 +9,6 @@ use App\Enums\MaterialType;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
-use App\Models\MediaLibraryItem;
 use App\Services\AssessmentQuestionService;
 use App\Services\AssessmentService;
 use App\Services\MediaLibraryService;
@@ -124,7 +123,7 @@ class AssessmentForm extends Component
         abort_unless(app()->environment(['local', 'testing']), 403);
         abort_unless(auth()->user()->can('assessment.create') || auth()->user()->can('assessment.edit'), 403);
 
-        $this->title = AssessmentTypeLabel::forType($this->assessmentType).' - '.fake()->sentence(4);
+        $this->title = AssessmentTypeLabel::forType($this->assessmentType).' - Week '.random_int(1, 14).' Practice';
         $this->weight = (string) $this->assessmentType->defaultWeight();
         $this->startDate = now()->format('Y-m-d\TH:i');
         $this->endDate = now()->addWeek()->format('Y-m-d\TH:i');
@@ -136,10 +135,16 @@ class AssessmentForm extends Component
 
         $materialIds = $this->devAutofillMaterialIds($mediaLibraryService, $r2StorageService);
 
-        $this->questions = collect(range(1, 3))->map(fn ($index) => [
+        $questionContent = [
+            'Explain the main concept covered in this week\'s lecture and give one real-world example of it in use.',
+            'Compare and contrast two approaches discussed in class, and justify which one you would choose for a given scenario.',
+            'Given the sample dataset provided in the course materials, describe the steps you would take to solve the problem.',
+        ];
+
+        $this->questions = collect($questionContent)->values()->map(fn ($description, $index) => [
             'id' => null,
-            'description' => '<p>'.fake()->sentence(12).'</p>',
-            'points' => (string) ($index * 10),
+            'description' => '<p>'.$description.'</p>',
+            'points' => (string) (($index + 1) * 10),
             'selectedMaterialIds' => $materialIds,
             'materialSearch' => '',
         ])->all();
@@ -155,7 +160,9 @@ class AssessmentForm extends Component
     /**
      * Reuses up to two of the school's existing media library items so
      * autofill exercises the attachment flow; generates a throwaway PDF
-     * item when the library is empty so attachments are never left blank.
+     * item when the library is empty so the checkboxes are never left
+     * unticked. The picker's pill summary stays hidden regardless (see
+     * assessment-form.blade.php) — only the checkboxes reflect selection.
      *
      * @return array<int, string>
      */
@@ -189,18 +196,6 @@ class AssessmentForm extends Component
         return [$item->id];
     }
 
-    public function toggleQuestionMaterial(int $index, string $materialId): void
-    {
-        $selected = $this->questions[$index]['selectedMaterialIds'];
-
-        if (in_array($materialId, $selected, true)) {
-            $this->questions[$index]['selectedMaterialIds'] = array_values(array_diff($selected, [$materialId]));
-        } else {
-            $selected[] = $materialId;
-            $this->questions[$index]['selectedMaterialIds'] = $selected;
-        }
-    }
-
     /**
      * Questions removed client-side (see resources/js/syllabus-form.js's
      * removeSyllabusRow, reused here) are left as null holes in the array
@@ -214,6 +209,17 @@ class AssessmentForm extends Component
     }
 
     public function save(AssessmentService $assessmentService, AssessmentQuestionService $assessmentQuestionService): mixed
+    {
+        try {
+            return $this->persist($assessmentService, $assessmentQuestionService);
+        } catch (\Throwable $exception) {
+            $this->dispatch('assessmentform-error');
+
+            throw $exception;
+        }
+    }
+
+    private function persist(AssessmentService $assessmentService, AssessmentQuestionService $assessmentQuestionService): mixed
     {
         $this->pruneRemovedQuestions();
 
@@ -293,7 +299,6 @@ class AssessmentForm extends Component
         $schoolId = $this->course->school_id;
 
         $mediaByRow = [];
-        $selectedMediaByRow = [];
 
         foreach ($this->questions as $index => $question) {
             if ($question === null) {
@@ -301,9 +306,6 @@ class AssessmentForm extends Component
             }
 
             $mediaByRow[$index] = Collection::make($mediaLibraryService->list($schoolId, null, $question['materialSearch'] ?: null)->get());
-            $selectedMediaByRow[$index] = $question['selectedMaterialIds'] === []
-                ? Collection::make()
-                : MediaLibraryItem::whereIn('id', $question['selectedMaterialIds'])->get();
         }
 
         return view('livewire.courses.assessment-form', [
@@ -311,7 +313,6 @@ class AssessmentForm extends Component
             'sessions' => $sessionService->forCourse($this->course->id),
             'statuses' => AssessmentStatus::cases(),
             'mediaByRow' => $mediaByRow,
-            'selectedMediaByRow' => $selectedMediaByRow,
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->assessment ? 'Edit Assessment' : 'Create Assessment'])
             ->section('app-content');

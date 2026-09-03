@@ -1,6 +1,6 @@
 @section('title', $pageTitle)
 
-<div class="max-w-3xl space-y-space-lg">
+<div class="space-y-space-lg">
     <div>
         <a href="{{ route('assessments.index', $course) }}" class="text-body-sm text-primary hover:underline inline-flex items-center gap-space-xs">
             <span class="material-symbols-outlined text-[16px]">arrow_back</span>
@@ -25,7 +25,13 @@
         </div>
     @endif
 
-    <form wire:submit="save" class="space-y-space-lg">
+    <form
+        wire:submit="save"
+        x-data="{ submitting: false }"
+        @submit="submitting = true"
+        @assessmentform-error.window="submitting = false"
+        class="space-y-space-lg"
+    >
         <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
             <div>
                 <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Title</label>
@@ -114,17 +120,6 @@
                     <div>
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Attachments</label>
 
-                        @if ($selectedMediaByRow[$index]->isNotEmpty())
-                            <div class="flex flex-wrap gap-space-xs mb-space-sm">
-                                @foreach ($selectedMediaByRow[$index] as $material)
-                                    <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container text-body-xs text-on-surface">
-                                        {{ $material->title }}
-                                        <button type="button" wire:click="toggleQuestionMaterial({{ $index }}, '{{ $material->id }}')" class="text-error">&times;</button>
-                                    </span>
-                                @endforeach
-                            </div>
-                        @endif
-
                         <input
                             type="text"
                             wire:model.live.debounce.400ms="questions.{{ $index }}.materialSearch"
@@ -151,7 +146,7 @@
                                     <input
                                         type="checkbox"
                                         @checked(in_array($material->id, $question['selectedMaterialIds']))
-                                        wire:click="toggleQuestionMaterial({{ $index }}, '{{ $material->id }}')"
+                                        @change="window.toggleWireArrayValue($wire, 'questions.{{ $index }}.selectedMaterialIds', '{{ $material->id }}')"
                                     />
                                     {{ $material->title }}
                                 </label>
@@ -193,18 +188,10 @@
         @endif
 
         <div class="flex gap-space-md">
-            <a href="{{ route('assessments.index', $course) }}" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
+            <a href="{{ route('assessments.index', $course) }}" class="flex-1 text-center px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
                 Cancel
             </a>
-            <button
-                type="submit"
-                wire:loading.attr="disabled"
-                wire:target="save"
-                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
-            >
-                <span wire:loading wire:target="save" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-                Save
-            </button>
+            <x-ui.submit-button label="Save" loadingLabel="Saving..." target="save" />
         </div>
     </form>
 </div>

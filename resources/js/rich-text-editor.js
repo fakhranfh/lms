@@ -6,6 +6,8 @@ export default (initialValue, wireModel, id, disabled = false, allowAttachments 
     allowVideo,
     uploading: false,
     videoPreviewUrl: null,
+    filePreviewUrl: null,
+    filePreviewName: null,
     active: {
         bold: false,
         italic: false,
@@ -135,11 +137,32 @@ export default (initialValue, wireModel, id, disabled = false, allowAttachments 
     },
 
     onContentClick(event) {
-        const chip = event.target.closest('[data-video-preview]');
+        const videoChip = event.target.closest('[data-video-preview]');
 
-        if (chip) {
+        if (videoChip) {
             event.preventDefault();
-            this.openVideoPreview(chip.dataset.videoPreview);
+            this.openVideoPreview(videoChip.dataset.videoPreview);
+
+            return;
+        }
+
+        const fileChip = event.target.closest('[data-file-preview]');
+
+        if (fileChip) {
+            event.preventDefault();
+            this.openFilePreview(fileChip.dataset.filePreview, fileChip.dataset.filePreviewName);
+
+            return;
+        }
+
+        // Chips saved before file previews existed still carry a plain
+        // href + target="_blank" instead of data-file-preview.
+        const legacyChip = event.target.closest('a.rte-file-chip');
+
+        if (legacyChip && legacyChip.href) {
+            event.preventDefault();
+            const name = legacyChip.querySelector('.rte-file-chip-name')?.textContent || '';
+            this.openFilePreview(legacyChip.href, name);
         }
     },
 
@@ -149,6 +172,16 @@ export default (initialValue, wireModel, id, disabled = false, allowAttachments 
 
     closeVideoPreview() {
         this.videoPreviewUrl = null;
+    },
+
+    openFilePreview(url, name) {
+        this.filePreviewUrl = url;
+        this.filePreviewName = name;
+    },
+
+    closeFilePreview() {
+        this.filePreviewUrl = null;
+        this.filePreviewName = null;
     },
 
     onPaste(event) {
@@ -251,12 +284,12 @@ export default (initialValue, wireModel, id, disabled = false, allowAttachments 
         const size = this.formatFileSize(file.size);
         const name = this.escapeHtml(uploadedName);
 
-        // Video chips open a preview modal instead of navigating away, so
+        // File chips open a preview modal instead of navigating away, so
         // they skip target="_blank" in favor of a data attribute the
         // editor's click handler (onContentClick) picks up.
         const linkAttrs = isVideo
             ? `href="#" data-video-preview="${this.escapeHtml(url)}"`
-            : `href="${url}" target="_blank" rel="noopener"`;
+            : `href="#" data-file-preview="${this.escapeHtml(url)}" data-file-preview-name="${name}"`;
 
         return `<a ${linkAttrs} contenteditable="false" class="rte-file-chip">`
             + `<span class="rte-file-chip-icon rte-file-chip-icon--${badge.type}">${badge.label}</span>`

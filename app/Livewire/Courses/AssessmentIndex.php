@@ -2,23 +2,30 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\AssessmentAssignedTo;
+use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\DeliveryMode;
 use App\Enums\ProctorReviewDecision;
 use App\Enums\RoleName;
+use App\Livewire\Concerns\WithDevMaterialAttachments;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\GroupMember;
 use App\Models\Session;
 use App\Services\AssessmentAttemptService;
+use App\Services\AssessmentQuestionService;
 use App\Services\AssessmentService;
 use App\Services\AttendanceDerivationService;
 use App\Services\AttendanceScoringService;
 use App\Services\CoursePersonService;
 use App\Services\ForumDiscussionScoringService;
 use App\Services\GroupMemberService;
+use App\Services\MediaLibraryService;
 use App\Services\ProctorSessionService;
 use App\Services\QuizAttemptScoringService;
+use App\Services\R2StorageService;
+use App\Support\AssessmentTypeLabel;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use Illuminate\Support\Collection;
@@ -26,6 +33,8 @@ use Livewire\Component;
 
 class AssessmentIndex extends Component
 {
+    use WithDevMaterialAttachments;
+
     public Course $course;
 
     public bool $isStudent = false;
@@ -35,6 +44,8 @@ class AssessmentIndex extends Component
     public ?string $errorMessage = null;
 
     public array $expandedSections = [];
+
+    public string $generateCount = '5';
 
     public function mount(CurrentSchool $currentSchool, Course $course): void
     {
@@ -127,6 +138,63 @@ class AssessmentIndex extends Component
         }
 
         return null;
+    }
+
+    /**
+     * Dev-only: bulk-creates draft personal assignments, each seeded with
+     * the same number of questions as devAutofill (see AssessmentForm) so
+     * generated rows are realistic, but with its own wording so the two
+     * dev tools don't produce identical-looking content.
+     */
+    public function generatePersonalAssignments(AssessmentService $assessmentService, AssessmentQuestionService $assessmentQuestionService, MediaLibraryService $mediaLibraryService, R2StorageService $r2StorageService): void
+    {
+        abort_unless(app()->environment(['local', 'testing']), 403);
+        abort_unless(auth()->user()->can('assessment.create'), 403);
+
+        $this->errorMessage = null;
+
+        $this->validate([
+            'generateCount' => 'required|integer|min:1|max:50',
+        ]);
+
+        $count = (int) $this->generateCount;
+
+        $questionContent = [
+            'Summarize the key takeaway from this week\'s reading and explain why it matters for the course topic.',
+            'Identify a potential limitation of the method covered this week and propose how it could be addressed.',
+            'Walk through how you would apply this week\'s technique to a problem outside the examples shown in class.',
+        ];
+
+        $materialIds = $this->devMaterialIds($this->course->school_id, $mediaLibraryService, $r2StorageService);
+
+        for ($i = 0; $i < $count; $i++) {
+            $assessment = $assessmentService->create([
+                'course_id' => $this->course->id,
+                'session_id' => null,
+                'type' => AssessmentType::TheoryPersonalAssignment,
+                'title' => AssessmentTypeLabel::forType(AssessmentType::TheoryPersonalAssignment).' - Week '.random_int(1, 14).' Practice',
+                'weight' => AssessmentType::TheoryPersonalAssignment->defaultWeight(),
+                'assigned_to' => AssessmentAssignedTo::Individual,
+                'start_date' => now(),
+                'end_date' => now()->addWeek(),
+                'status' => AssessmentStatus::Draft,
+            ]);
+
+            foreach ($questionContent as $index => $description) {
+                $question = $assessmentQuestionService->create([
+                    'assessment_id' => $assessment->id,
+                    'description' => '<p>'.$description.'</p>',
+                    'points' => ($index + 1) * 10,
+                    'order' => $index + 1,
+                ]);
+
+                $materialSync = [];
+                foreach (array_values($materialIds) as $order => $materialId) {
+                    $materialSync[$materialId] = ['order' => $order + 1];
+                }
+                $question->files()->sync($materialSync);
+            }
+        }
     }
 
     public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, AttendanceDerivationService $attendanceDerivationService, ForumDiscussionScoringService $forumDiscussionScoringService, ProctorSessionService $proctorSessionService)

@@ -21,7 +21,9 @@ use App\Models\Role;
 use App\Models\School;
 use App\Models\Session;
 use App\Models\User;
+use App\Services\R2StorageService;
 use Livewire\Livewire;
+use Mockery;
 use Tests\TestCase;
 
 class AssessmentIndexTest extends TestCase
@@ -189,6 +191,53 @@ class AssessmentIndexTest extends TestCase
 
         $this->assertDatabaseMissing('assessments', ['id' => $deletable->id]);
         $this->assertDatabaseHas('assessments', ['id' => $attendance->id]);
+    }
+
+    public function test_generate_personal_assignments_creates_requested_count(): void
+    {
+        $r2Mock = Mockery::mock(R2StorageService::class);
+        $r2Mock->shouldReceive('schoolPrefix')->andReturn('');
+        $r2Mock->shouldReceive('uploadRawContent')->once()->andReturn('https://example.test/dummy.pdf');
+        $this->app->instance(R2StorageService::class, $r2Mock);
+
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.create']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->set('generateCount', '3')
+            ->call('generatePersonalAssignments');
+
+        $assessments = Assessment::query()
+            ->where('course_id', $this->course->id)
+            ->where('type', AssessmentType::TheoryPersonalAssignment)
+            ->with('questions')
+            ->get();
+
+        $this->assertCount(3, $assessments);
+
+        foreach ($assessments as $assessment) {
+            $this->assertCount(3, $assessment->questions);
+            $this->assertStringNotContainsString('lorem', strtolower($assessment->questions->first()->description));
+
+            foreach ($assessment->questions as $question) {
+                $this->assertNotEmpty($question->files);
+            }
+        }
+    }
+
+    public function test_generate_personal_assignments_validates_count(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.create']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->set('generateCount', '0')
+            ->call('generatePersonalAssignments')
+            ->assertHasErrors(['generateCount']);
+
+        $this->assertDatabaseMissing('assessments', ['course_id' => $this->course->id]);
     }
 
     public function test_student_sees_per_session_attendance_table(): void

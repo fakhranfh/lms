@@ -2,10 +2,8 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
-use App\Enums\SyllabusMaterialSection;
 use App\Livewire\Courses\SyllabusIndex;
 use App\Models\Course;
-use App\Models\MediaLibraryItem;
 use App\Models\School;
 use App\Models\Syllabus;
 use App\Models\SyllabusClassPolicy;
@@ -14,9 +12,7 @@ use App\Models\SyllabusLearningOutcome;
 use App\Models\SyllabusRubricKeyIndicator;
 use App\Models\SyllabusRubricProficiencyLevel;
 use App\Models\User;
-use App\Services\R2StorageService;
 use Livewire\Livewire;
-use Mockery;
 use Tests\TestCase;
 
 class SyllabusIndexEditTest extends TestCase
@@ -167,65 +163,6 @@ class SyllabusIndexEditTest extends TestCase
         ]);
     }
 
-    public function test_media_can_attach_to_different_sections_without_leakage(): void
-    {
-        $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
-
-        $itemA = MediaLibraryItem::factory()->for($this->school)->create();
-        $itemB = MediaLibraryItem::factory()->for($this->school)->create();
-
-        $this->editComponent()
-            ->set('selectedMaterialIds.course_description', [$itemA->id])
-            ->set('selectedMaterialIds.video_overview', [$itemB->id])
-            ->call('save')
-            ->assertRedirect(route('syllabus.index', $this->course));
-
-        $syllabus = Syllabus::where('course_id', $this->course->id)->firstOrFail();
-
-        $this->assertDatabaseHas('syllabus_materials', [
-            'syllabus_id' => $syllabus->id,
-            'section' => 'course_description',
-            'media_library_item_id' => $itemA->id,
-        ]);
-        $this->assertDatabaseHas('syllabus_materials', [
-            'syllabus_id' => $syllabus->id,
-            'section' => 'video_overview',
-            'media_library_item_id' => $itemB->id,
-        ]);
-        $this->assertDatabaseMissing('syllabus_materials', [
-            'syllabus_id' => $syllabus->id,
-            'section' => 'video_overview',
-            'media_library_item_id' => $itemA->id,
-        ]);
-    }
-
-    public function test_same_media_item_can_attach_to_two_sections(): void
-    {
-        $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
-
-        $item = MediaLibraryItem::factory()->for($this->school)->create();
-
-        $this->editComponent()
-            ->set('selectedMaterialIds.course_description', [$item->id])
-            ->set('selectedMaterialIds.video_overview', [$item->id])
-            ->call('save')
-            ->assertRedirect(route('syllabus.index', $this->course));
-
-        $syllabus = Syllabus::where('course_id', $this->course->id)->firstOrFail();
-
-        $this->assertDatabaseHas('syllabus_materials', [
-            'syllabus_id' => $syllabus->id,
-            'section' => 'course_description',
-            'media_library_item_id' => $item->id,
-        ]);
-        $this->assertDatabaseHas('syllabus_materials', [
-            'syllabus_id' => $syllabus->id,
-            'section' => 'video_overview',
-            'media_library_item_id' => $item->id,
-        ]);
-        $this->assertDatabaseCount('syllabus_materials', 2);
-    }
-
     public function test_evaluation_activity_learning_outcome_pivot_matches_submitted_checkboxes(): void
     {
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
@@ -284,14 +221,8 @@ class SyllabusIndexEditTest extends TestCase
             ->assertNoRedirect();
     }
 
-    public function test_dev_autofill_fills_fields_and_attaches_materials(): void
+    public function test_dev_autofill_fills_fields(): void
     {
-        $sectionCount = count(SyllabusMaterialSection::cases());
-
-        $r2Mock = Mockery::mock(R2StorageService::class);
-        $r2Mock->shouldReceive('uploadRawContent')->times($sectionCount)->andReturn('https://example.test/dummy.pdf');
-        $this->app->instance(R2StorageService::class, $r2Mock);
-
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
 
         $this->editComponent()
@@ -312,9 +243,6 @@ class SyllabusIndexEditTest extends TestCase
         $this->assertDatabaseCount('syllabus_learning_outcomes', 3);
         $this->assertDatabaseCount('syllabus_rubric_proficiency_levels', 3);
         $this->assertDatabaseCount('syllabus_rubric_key_indicators', 3);
-        $this->assertDatabaseCount('media_library_items', $sectionCount);
-        $this->assertDatabaseCount('syllabus_materials', $sectionCount);
-        $this->assertDatabaseHas('syllabus_materials', ['syllabus_id' => $syllabus->id]);
     }
 
     public function test_dev_autofill_requires_edit_permission(): void

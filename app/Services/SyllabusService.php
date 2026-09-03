@@ -41,12 +41,4 @@ class SyllabusService
     {
         return $this->syllabusRepository->findByCourse($courseId, $with);
     }
-
-    /**
-     * @param  array<string, array<int, string>>  $selectedMaterialIdsBySection
-     */
-    public function replaceMaterials(string $syllabusId, array $selectedMaterialIdsBySection): void
-    {
-        $this->syllabusRepository->replaceMaterials($syllabusId, $selectedMaterialIdsBySection);
-    }
 }

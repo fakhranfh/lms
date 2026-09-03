@@ -12,7 +12,7 @@
         @if (app()->isLocal())
             <div class="mb-space-lg px-gutter py-space-md bg-secondary/10 border border-secondary/20 rounded-lg flex items-center gap-space-md">
                 <span class="material-symbols-outlined text-secondary text-[20px]">science</span>
-                <p class="font-body-sm text-body-sm text-secondary flex-1">Dev only: autofill the syllabus with fake data, including attached materials.</p>
+                <p class="font-body-sm text-body-sm text-secondary flex-1">Dev only: autofill the syllabus with fake data.</p>
                 <button
                     type="button"
                     wire:click="devAutofill"
@@ -47,10 +47,8 @@
             <!-- 1. Course Description -->
             <section id="section-course_description" class="space-y-space-sm">
                 <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Course Description</h2>
-                <x-rich-text-editor id="course-description" wire-model="courseDescription" :value="$courseDescription" :allow-attachments="false" />
+                <x-rich-text-editor id="course-description" wire-model="courseDescription" :value="$courseDescription" />
                 @error('courseDescription') <p class="text-body-sm text-error mt-space-sm">{{ $message }}</p> @enderror
-
-                @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'course_description', 'label' => 'Course Description'])
             </section>
 
             <!-- 2. Class Policies -->
@@ -66,7 +64,7 @@
                                 @endforeach
                             </select>
                             <div class="flex-1">
-                                <x-rich-text-editor id="class-policy-{{ $index }}" wire-model="classPolicies.{{ $index }}.content" :value="$policy['content']" :allow-attachments="false" />
+                                <x-rich-text-editor id="class-policy-{{ $index }}" wire-model="classPolicies.{{ $index }}.content" :value="$policy['content']" />
                             </div>
                             <button type="button" @click="window.removeSyllabusRow($wire, 'classPolicies.{{ $index }}', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
                                 <span class="material-symbols-outlined">close</span>
@@ -82,7 +80,7 @@
                                 @endforeach
                             </select>
                             <div class="flex-1">
-                                <x-rich-text-editor id="class-policy-__NEW__" wire-model="classPolicies.__NEW__.content" :allow-attachments="false" />
+                                <x-rich-text-editor id="class-policy-__NEW__" wire-model="classPolicies.__NEW__.content" />
                             </div>
                             <button type="button" @click="window.removeSyllabusRow($wire, 'classPolicies.__NEW__', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
                                 <span class="material-symbols-outlined">close</span>
@@ -97,24 +95,18 @@
                 >
                     <span class="material-symbols-outlined text-[18px]">add</span> Add Policy
                 </button>
-
-                @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'class_policies', 'label' => 'Class Policies'])
             </section>
 
             <!-- 3. Submission & Collection -->
             <section id="section-submission_and_collection" class="space-y-space-sm">
                 <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Submission & Collection</h2>
-                <x-rich-text-editor id="submission-and-collection" wire-model="submissionAndCollection" :value="$submissionAndCollection" :allow-attachments="false" />
-
-                @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'submission_and_collection', 'label' => 'Submission & Collection'])
+                <x-rich-text-editor id="submission-and-collection" wire-model="submissionAndCollection" :value="$submissionAndCollection" />
             </section>
 
             <!-- 4. Tutorial Activity Plan -->
             <section id="section-tutorial_activity_plan" class="space-y-space-sm">
                 <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Tutorial Activity Plan</h2>
-                <x-rich-text-editor id="tutorial-activity-plan" wire-model="tutorialActivityPlan" :value="$tutorialActivityPlan" :allow-attachments="false" />
-
-                @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'tutorial_activity_plan', 'label' => 'Tutorial Activity Plan'])
+                <x-rich-text-editor id="tutorial-activity-plan" wire-model="tutorialActivityPlan" :value="$tutorialActivityPlan" />
             </section>
 
             <!-- 5. Learning Outcomes -->
@@ -132,7 +124,7 @@
                                 class="w-32 flex-shrink-0 px-space-md py-space-sm border border-outline rounded-lg"
                             />
                             <div class="flex-1">
-                                <x-rich-text-editor id="learning-outcome-{{ $index }}" wire-model="learningOutcomes.{{ $index }}.description" :value="$lo['description']" :allow-attachments="false" />
+                                <x-rich-text-editor id="learning-outcome-{{ $index }}" wire-model="learningOutcomes.{{ $index }}.description" :value="$lo['description']" />
                             </div>
                             <button type="button" @click="window.removeSyllabusRow($wire, 'learningOutcomes.{{ $index }}', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
                                 <span class="material-symbols-outlined">close</span>
@@ -150,7 +142,7 @@
                                 class="w-32 flex-shrink-0 px-space-md py-space-sm border border-outline rounded-lg"
                             />
                             <div class="flex-1">
-                                <x-rich-text-editor id="learning-outcome-__NEW__" wire-model="learningOutcomes.__NEW__.description" :allow-attachments="false" />
+                                <x-rich-text-editor id="learning-outcome-__NEW__" wire-model="learningOutcomes.__NEW__.description" />
                             </div>
                             <button type="button" @click="window.removeSyllabusRow($wire, 'learningOutcomes.__NEW__', $el)" class="p-2 hover:bg-surface-container rounded transition text-error">
                                 <span class="material-symbols-outlined">close</span>
@@ -392,7 +384,7 @@
                                     @continue($level === null)
                                     <div>
                                         <label class="text-body-xs text-on-surface-variant">{{ $level['label'] }}</label>
-                                        <x-rich-text-editor id="rubric-cell-{{ $index }}-{{ $plIndex }}" wire-model="rubricCells.{{ $index }}.{{ $plIndex }}" :value="$rubricCells[$index][$plIndex] ?? ''" :allow-attachments="false" />
+                                        <x-rich-text-editor id="rubric-cell-{{ $index }}-{{ $plIndex }}" wire-model="rubricCells.{{ $index }}.{{ $plIndex }}" :value="$rubricCells[$index][$plIndex] ?? ''" />
                                     </div>
                                 @endforeach
                             </div>
@@ -420,7 +412,7 @@
                                     @continue($level === null)
                                     <div>
                                         <label class="text-body-xs text-on-surface-variant">{{ $level['label'] }}</label>
-                                        <x-rich-text-editor id="rubric-cell-__NEW__-{{ $plIndex }}" wire-model="rubricCells.__NEW__.{{ $plIndex }}" :allow-attachments="false" />
+                                        <x-rich-text-editor id="rubric-cell-__NEW__-{{ $plIndex }}" wire-model="rubricCells.__NEW__.{{ $plIndex }}" />
                                     </div>
                                 @endforeach
                             </div>
@@ -434,40 +426,30 @@
                         <span class="material-symbols-outlined text-[18px]">add</span> Add Key Indicator
                     </button>
                 </div>
-
-                @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'assessment_rubric', 'label' => 'Assessment Rubric'])
             </section>
 
             <!-- 8. Teaching & Learning Strategies -->
             <section id="section-teaching_learning_strategies" class="space-y-space-sm">
                 <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Teaching & Learning Strategies</h2>
-                <x-rich-text-editor id="teaching-learning-strategies" wire-model="teachingLearningStrategies" :value="$teachingLearningStrategies" :allow-attachments="false" />
-
-                @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'teaching_learning_strategies', 'label' => 'Teaching & Learning Strategies'])
+                <x-rich-text-editor id="teaching-learning-strategies" wire-model="teachingLearningStrategies" :value="$teachingLearningStrategies" />
             </section>
 
             <!-- 9. Textbooks -->
             <section id="section-textbooks" class="space-y-space-sm">
                 <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Textbooks</h2>
-                <x-rich-text-editor id="textbooks" wire-model="textbooks" :value="$textbooks" :allow-attachments="false" />
-
-                @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'textbooks', 'label' => 'Textbooks'])
+                <x-rich-text-editor id="textbooks" wire-model="textbooks" :value="$textbooks" />
             </section>
 
             <!-- 10. Competency Map -->
             <section id="section-competency_map" class="space-y-space-sm">
                 <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Competency Map</h2>
-                <x-rich-text-editor id="competency-map" wire-model="competencyMap" :value="$competencyMap" :allow-attachments="false" />
-
-                @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'competency_map', 'label' => 'Competency Map'])
+                <x-rich-text-editor id="competency-map" wire-model="competencyMap" :value="$competencyMap" />
             </section>
 
             <!-- 11. Video Overview -->
             <section id="section-video_overview" class="space-y-space-sm">
                 <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Video Overview</h2>
-                <x-rich-text-editor id="video-overview" wire-model="videoOverview" :value="$videoOverview" :allow-attachments="false" />
-
-                @include('livewire.courses.partials.syllabus-material-picker', ['section' => 'video_overview', 'label' => 'Video Overview'])
+                <x-rich-text-editor id="video-overview" wire-model="videoOverview" :value="$videoOverview" />
             </section>
 
             <!-- Actions -->

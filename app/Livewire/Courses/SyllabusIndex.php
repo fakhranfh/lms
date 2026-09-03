@@ -2,15 +2,12 @@
 
 namespace App\Livewire\Courses;
 
-use App\Enums\MaterialType;
 use App\Enums\RoleName;
-use App\Enums\SyllabusMaterialSection;
 use App\Enums\SyllabusPolicyScope;
+use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Course;
-use App\Models\MediaLibraryItem;
 use App\Models\Syllabus;
 use App\Services\CoursePersonService;
-use App\Services\MediaLibraryService;
 use App\Services\SyllabusClassPolicyService;
 use App\Services\SyllabusEvaluationActivityService;
 use App\Services\SyllabusEvaluationService;
@@ -21,16 +18,16 @@ use App\Services\SyllabusRubricProficiencyLevelService;
 use App\Services\SyllabusService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Support\Collection;
+use App\Support\HtmlSanitizer;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
 class SyllabusIndex extends Component
 {
+    use WithRichTextEditor;
+
     public Course $course;
 
     public bool $isStudent = false;
@@ -92,11 +89,6 @@ class SyllabusIndex extends Component
     #[Validate('nullable|string')]
     public string $videoOverview = '';
 
-    /** @var array<string, array<int, string>> */
-    public array $selectedMaterialIds = [];
-
-    public string $materialSearch = '';
-
     public string $activeSection = 'course_description';
 
     public function mount(CurrentSchool $currentSchool, Course $course, SyllabusService $syllabusService, bool $startInEditMode = false): void
@@ -106,10 +98,6 @@ class SyllabusIndex extends Component
 
         $this->course = $course;
         $this->isStudent = auth()->user()->hasRole(RoleName::Student);
-
-        foreach (SyllabusMaterialSection::cases() as $section) {
-            $this->selectedMaterialIds[$section->value] = [];
-        }
 
         if ($startInEditMode) {
             abort_unless(auth()->user()->can('syllabus.edit'), 403);
@@ -134,10 +122,10 @@ class SyllabusIndex extends Component
     }
 
     /**
-     * Dev-only: fills the form with fake data (including attached materials)
-     * so the UI can be exercised without manually typing every field.
+     * Dev-only: fills the form with fake data so the UI can be exercised
+     * without manually typing every field.
      */
-    public function devAutofill(MediaLibraryService $mediaLibraryService): void
+    public function devAutofill(): void
     {
         abort_unless(app()->environment(['local', 'testing']), 403);
         abort_unless(auth()->user()->can('syllabus.edit'), 403);
@@ -223,8 +211,6 @@ class SyllabusIndex extends Component
         $this->videoOverview = '<p>A short video introducing the course goals, structure, and instructor will be shared before the '
             .'first session.</p>';
 
-        $this->devAutofillMaterials($mediaLibraryService);
-
         // Rich-text editors run wire:ignore, so their DOM is silent to property
         // changes; they only refresh when told to via this browser event.
         $this->dispatch('rich-text-set-content', id: 'course-description', value: $this->courseDescription);
@@ -247,74 +233,13 @@ class SyllabusIndex extends Component
         $this->dispatch('rich-text-set-content', id: 'video-overview', value: $this->videoOverview);
     }
 
-    private function devAutofillMaterials(MediaLibraryService $mediaLibraryService): void
-    {
-        $sections = SyllabusMaterialSection::cases();
-
-        // Every material input gets its own attached file, so existing media
-        // is topped up with freshly generated dummy PDFs when there aren't
-        // enough items to cover all sections.
-        $items = $mediaLibraryService->list($this->course->school_id)->limit(count($sections))->get()->values();
-
-        while ($items->count() < count($sections)) {
-            $items->push($this->devGenerateDummyMaterial($mediaLibraryService, $sections[$items->count()]->name));
-        }
-
-        foreach ($sections as $index => $section) {
-            $item = $items[$index];
-            $this->selectedMaterialIds[$section->value][] = (string) $item->id;
-
-            // The picker's Alpine state is seeded once at mount and untouched
-            // by further Livewire morphs, so it needs telling explicitly to
-            // reflect the material just attached above.
-            $this->dispatch('syllabus-material-set', section: $section->value, items: [[
-                'id' => (string) $item->id,
-                'title' => $item->title,
-                'type' => $item->type->value,
-            ]]);
-        }
-    }
-
-    private function devGenerateDummyMaterial(MediaLibraryService $mediaLibraryService, string $label): MediaLibraryItem
-    {
-        $content = "%PDF-1.4\n"
-            .'1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj'."\n"
-            .'2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj'."\n"
-            .'3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]/Resources<<>>/Contents 4 0 R>>endobj'."\n"
-            .'4 0 obj<</Length 44>>stream'."\n"
-            .'BT /F1 18 Tf 20 100 Td (Syllabus Material) Tj ET'
-            ."\nendstream endobj\n"
-            .'trailer<</Size 5/Root 1 0 R>>'."\n"
-            .'%%EOF';
-
-        $key = "media/{$this->course->school_id}/dev-generated/syllabus-".Str::uuid().'.pdf';
-
-        return $mediaLibraryService->createFromRawContent(
-            $this->course->school_id,
-            auth()->id(),
-            $key,
-            $content,
-            'application/pdf',
-            [
-                'type' => MaterialType::PDF->value,
-                'title' => "Material - {$label}",
-                'description' => 'Dev-generated dummy PDF material.',
-            ],
-        );
-    }
-
     private function loadFormData(SyllabusService $syllabusService): void
     {
-        foreach (SyllabusMaterialSection::cases() as $section) {
-            $this->selectedMaterialIds[$section->value] = [];
-        }
-
         $syllabus = $syllabusService->findByCourse($this->course->id, [
             'classPolicies',
             'learningOutcomes.rubricKeyIndicators.cells',
             'evaluations.activities.learningOutcomes',
             'rubricProficiencyLevels',
-            'materials',
         ]);
 
         $this->editingSyllabus = $syllabus;
@@ -396,14 +321,6 @@ class SyllabusIndex extends Component
                 $keyIndicatorIndex++;
             }
         }
-
-        $this->selectedMaterialIds = $syllabus->materials->groupBy('pivot.section')
-            ->map(fn ($items) => $items->sortBy('pivot.order')->pluck('id')->map(fn ($id) => (string) $id)->values()->all())
-            ->toArray();
-
-        foreach (SyllabusMaterialSection::cases() as $section) {
-            $this->selectedMaterialIds[$section->value] ??= [];
-        }
     }
 
     /**
@@ -460,6 +377,15 @@ class SyllabusIndex extends Component
         }
 
         return $result;
+    }
+
+    private function promoteRichText(?string $html): ?string
+    {
+        if (! $html) {
+            return null;
+        }
+
+        return HtmlSanitizer::forum($this->promoteRichTextAttachments($html));
     }
 
     /**
@@ -550,13 +476,13 @@ class SyllabusIndex extends Component
 
         $data = [
             'course_id' => $this->course->id,
-            'course_description' => $this->courseDescription ?: null,
-            'submission_and_collection' => $this->submissionAndCollection ?: null,
-            'tutorial_activity_plan' => $this->tutorialActivityPlan ?: null,
-            'teaching_learning_strategies' => $this->teachingLearningStrategies ?: null,
-            'textbooks' => $this->textbooks ?: null,
-            'competency_map' => $this->competencyMap ?: null,
-            'video_overview' => $this->videoOverview ?: null,
+            'course_description' => $this->promoteRichText($this->courseDescription),
+            'submission_and_collection' => $this->promoteRichText($this->submissionAndCollection),
+            'tutorial_activity_plan' => $this->promoteRichText($this->tutorialActivityPlan),
+            'teaching_learning_strategies' => $this->promoteRichText($this->teachingLearningStrategies),
+            'textbooks' => $this->promoteRichText($this->textbooks),
+            'competency_map' => $this->promoteRichText($this->competencyMap),
+            'video_overview' => $this->promoteRichText($this->videoOverview),
         ];
 
         if ($this->editingSyllabus) {
@@ -569,7 +495,6 @@ class SyllabusIndex extends Component
 
         DB::transaction(function () use (
             $syllabus,
-            $syllabusService,
             $classPolicyService,
             $learningOutcomeService,
             $evaluationService,
@@ -585,7 +510,7 @@ class SyllabusIndex extends Component
                 $classPolicyService->create([
                     'syllabus_id' => $syllabus->id,
                     'scope' => $policy['scope'],
-                    'content' => $policy['content'],
+                    'content' => $this->promoteRichText($policy['content']),
                     'order' => $index + 1,
                 ]);
             }
@@ -598,7 +523,7 @@ class SyllabusIndex extends Component
                 $created = $learningOutcomeService->create([
                     'syllabus_id' => $syllabus->id,
                     'code' => $lo['code'],
-                    'description' => $lo['description'],
+                    'description' => $this->promoteRichText($lo['description']),
                     'order' => $index + 1,
                 ]);
                 $learningOutcomeIdsByIndex[$index] = $created->id;
@@ -681,12 +606,10 @@ class SyllabusIndex extends Component
                     $rubricCellService->create([
                         'rubric_key_indicator_id' => $keyIndicatorId,
                         'rubric_proficiency_level_id' => $proficiencyLevelId,
-                        'description' => $description,
+                        'description' => $this->promoteRichText($description),
                     ]);
                 }
             }
-
-            $syllabusService->replaceMaterials($syllabus->id, $this->selectedMaterialIds);
         });
 
         $this->dispatch('syllabus-updated');
@@ -694,7 +617,7 @@ class SyllabusIndex extends Component
         return $this->redirect(route('syllabus.index', $this->course));
     }
 
-    public function render(SyllabusService $syllabusService, CoursePersonService $coursePersonService, MediaLibraryService $mediaLibraryService)
+    public function render(SyllabusService $syllabusService, CoursePersonService $coursePersonService)
     {
         if (! $this->syllabusLoaded) {
             return view('livewire.courses.syllabus-index-placeholder', [
@@ -710,19 +633,12 @@ class SyllabusIndex extends Component
         }
 
         if ($this->editing) {
-            $schoolId = $this->course->school_id;
-
             return view('livewire.courses.syllabus-form', [
                 'pageTitle' => $this->editingSyllabus ? 'Edit Syllabus' : 'Syllabus',
                 'course' => $this->course,
                 'courseTabs' => CourseTabs::build($this->course, 'syllabus'),
                 'syllabus' => $this->editingSyllabus,
                 'policyScopes' => SyllabusPolicyScope::cases(),
-                'materialSections' => SyllabusMaterialSection::cases(),
-                'mediaItems' => Collection::make($mediaLibraryService->list($schoolId, null, $this->materialSearch ?: null)->get()),
-                'selectedMediaItemsBySection' => collect($this->selectedMaterialIds)->mapWithKeys(
-                    fn ($ids, $section) => [$section => $ids === [] ? new EloquentCollection : MediaLibraryItem::whereIn('id', $ids)->get()]
-                ),
             ])
                 ->extends('layouts.app', ['topbarTitle' => $this->editingSyllabus ? 'Edit Syllabus' : 'Syllabus'])
                 ->section('app-content');
@@ -733,7 +649,6 @@ class SyllabusIndex extends Component
             'learningOutcomes.rubricKeyIndicators.cells.proficiencyLevel',
             'evaluations.activities.learningOutcomes',
             'rubricProficiencyLevels',
-            'materials',
         ]);
 
         $classPoliciesByScope = collect(SyllabusPolicyScope::cases())->mapWithKeys(

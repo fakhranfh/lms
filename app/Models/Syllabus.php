@@ -7,7 +7,6 @@ use Database\Factories\SyllabusFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
@@ -65,15 +64,5 @@ class Syllabus extends Model
     public function rubricProficiencyLevels(): HasMany
     {
         return $this->hasMany(SyllabusRubricProficiencyLevel::class)->orderBy('order');
-    }
-
-    /**
-     * @return BelongsToMany<MediaLibraryItem, $this>
-     */
-    public function materials(): BelongsToMany
-    {
-        return $this->belongsToMany(MediaLibraryItem::class, 'syllabus_materials', 'syllabus_id', 'media_library_item_id')
-            ->withPivot(['section', 'order'])
-            ->withTimestamps();
     }
 }

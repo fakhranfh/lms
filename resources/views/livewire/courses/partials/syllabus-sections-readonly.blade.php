@@ -236,18 +236,5 @@
         @endif
     </div>
 
-    <!-- Materials -->
-    @if ($syllabus->materials->isNotEmpty())
-        <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
-            <h3 class="font-label-lg text-label-lg font-bold text-on-surface">Attached Materials</h3>
-            @foreach ($syllabus->materials as $material)
-                <div class="flex items-center gap-space-sm text-body-sm">
-                    <span class="material-symbols-outlined text-on-surface-variant text-[18px]">description</span>
-                    <span class="text-on-surface">{{ $material->title }}</span>
-                    <span class="text-on-surface-variant text-body-xs">({{ $material->pivot->section }})</span>
-                </div>
-            @endforeach
-        </div>
-    @endif
     </div>
 </div>

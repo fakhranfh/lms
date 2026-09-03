@@ -12,7 +12,9 @@ use App\Models\SyllabusLearningOutcome;
 use App\Models\SyllabusRubricKeyIndicator;
 use App\Models\SyllabusRubricProficiencyLevel;
 use App\Models\User;
+use App\Services\R2StorageService;
 use Livewire\Livewire;
+use Mockery;
 use Tests\TestCase;
 
 class SyllabusIndexEditTest extends TestCase
@@ -221,13 +223,19 @@ class SyllabusIndexEditTest extends TestCase
             ->assertNoRedirect();
     }
 
-    public function test_dev_autofill_fills_fields(): void
+    public function test_dev_autofill_fills_fields_and_attaches_a_file(): void
     {
+        $r2Mock = Mockery::mock(R2StorageService::class);
+        $r2Mock->shouldReceive('schoolPrefix')->andReturn('');
+        $r2Mock->shouldReceive('uploadRawContent')->once()->andReturn('https://example.test/dummy.pdf');
+        $r2Mock->shouldReceive('isManagedUrl')->andReturn(false);
+        $this->app->instance(R2StorageService::class, $r2Mock);
+
         $this->teacher->givePermissionTo(['syllabus.view', 'syllabus.edit']);
 
         $this->editComponent()
             ->call('devAutofill')
-            ->assertSet('courseDescription', fn (string $value) => $value !== '')
+            ->assertSet('courseDescription', fn (string $value) => str_contains($value, 'rte-file-chip') && str_contains($value, 'https://example.test/dummy.pdf'))
             ->assertCount('classPolicies', 3)
             ->assertCount('learningOutcomes', 3)
             ->assertCount('rubricProficiencyLevels', 3)

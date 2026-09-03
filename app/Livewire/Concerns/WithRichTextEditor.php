@@ -15,7 +15,7 @@ trait WithRichTextEditor
     public function insertRichTextFile(R2StorageService $r2StorageService): string
     {
         $this->validate([
-            'pendingRichTextFile' => 'required|file|mimes:jpg,jpeg,png,gif,webp,pdf,zip|max:10240',
+            'pendingRichTextFile' => 'required|file|mimes:jpg,jpeg,png,gif,webp,pdf,zip,mp4,webm,mov,avi|max:51200',
         ]);
 
         $url = $r2StorageService->uploadPublicFile($this->pendingRichTextFile, 'temp/forum-attachments');

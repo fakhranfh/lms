@@ -108,6 +108,10 @@
     background-color: #8d6e63;
 }
 
+.rte-content :where(.rte-file-chip-icon--video) {
+    background-color: #6a1b9a;
+}
+
 .rte-content :where(.rte-file-chip-info) {
     display: flex;
     flex-direction: column;

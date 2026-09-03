@@ -1,4 +1,4 @@
-<div class="space-y-space-lg">
+<div class="space-y-space-lg" x-data="rteVideoPreview()" @click="onContentClick($event)">
     <!-- Section shortcuts -->
     <x-syllabus.section-nav
         id-prefix="readonly-section-"
@@ -237,4 +237,11 @@
     </div>
 
     </div>
+
+    <x-ui.modal show="videoPreviewUrl" onClose="closeVideoPreview()" max-width="max-w-3xl" backdrop="bg-black/80">
+        <button type="button" @click="closeVideoPreview()" class="absolute -top-10 right-0 text-white hover:text-white/80">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <video x-show="videoPreviewUrl" :src="videoPreviewUrl" controls autoplay class="w-full max-h-[80vh] rounded-lg bg-black"></video>
+    </x-ui.modal>
 </div>

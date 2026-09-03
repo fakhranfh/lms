@@ -36,8 +36,17 @@ class RichTextAttachments
         foreach ($document->getElementsByTagName('a') as $anchor) {
             $href = $anchor->getAttribute('href');
 
-            if ($href !== '') {
+            if ($href !== '' && $href !== '#') {
                 $urls[] = $href;
+            }
+
+            // Video chips (see rich-text-editor.js buildFileChip) keep their
+            // real URL here instead of href, which is left as "#" so the
+            // browser doesn't navigate away when the chip is clicked.
+            $videoPreviewUrl = $anchor->getAttribute('data-video-preview');
+
+            if ($videoPreviewUrl !== '') {
+                $urls[] = $videoPreviewUrl;
             }
         }
 

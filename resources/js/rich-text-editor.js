@@ -1,9 +1,11 @@
-export default (initialValue, wireModel, id, disabled = false, allowAttachments = true, allowLinks = true) => ({
+export default (initialValue, wireModel, id, disabled = false, allowAttachments = true, allowLinks = true, allowVideo = false) => ({
     id,
     disabled,
     allowAttachments,
     allowLinks,
+    allowVideo,
     uploading: false,
+    videoPreviewUrl: null,
     active: {
         bold: false,
         italic: false,
@@ -132,6 +134,23 @@ export default (initialValue, wireModel, id, disabled = false, allowAttachments 
         this.$wire.set(wireModel, value || '');
     },
 
+    onContentClick(event) {
+        const chip = event.target.closest('[data-video-preview]');
+
+        if (chip) {
+            event.preventDefault();
+            this.openVideoPreview(chip.dataset.videoPreview);
+        }
+    },
+
+    openVideoPreview(url) {
+        this.videoPreviewUrl = url;
+    },
+
+    closeVideoPreview() {
+        this.videoPreviewUrl = null;
+    },
+
     onPaste(event) {
         event.preventDefault();
 
@@ -227,11 +246,19 @@ export default (initialValue, wireModel, id, disabled = false, allowAttachments 
 
     buildFileChip(url, file) {
         const uploadedName = decodeURIComponent(url.split('/').pop().split('?')[0]);
-        const badge = this.badgeForFile(uploadedName);
+        const isVideo = file.type.startsWith('video/');
+        const badge = isVideo ? { label: 'VID', type: 'video' } : this.badgeForFile(uploadedName);
         const size = this.formatFileSize(file.size);
         const name = this.escapeHtml(uploadedName);
 
-        return `<a href="${url}" target="_blank" rel="noopener" contenteditable="false" class="rte-file-chip">`
+        // Video chips open a preview modal instead of navigating away, so
+        // they skip target="_blank" in favor of a data attribute the
+        // editor's click handler (onContentClick) picks up.
+        const linkAttrs = isVideo
+            ? `href="#" data-video-preview="${this.escapeHtml(url)}"`
+            : `href="${url}" target="_blank" rel="noopener"`;
+
+        return `<a ${linkAttrs} contenteditable="false" class="rte-file-chip">`
             + `<span class="rte-file-chip-icon rte-file-chip-icon--${badge.type}">${badge.label}</span>`
             + '<span class="rte-file-chip-info">'
             + `<span class="rte-file-chip-name">${name}</span>`
@@ -252,6 +279,15 @@ export default (initialValue, wireModel, id, disabled = false, allowAttachments 
         const file = event.target.files[0];
 
         if (!file || this.disabled || !this.allowAttachments) {
+            return;
+        }
+
+        // The file input's accept attribute already keeps video out of the
+        // native picker here; this only guards against a file dragged in or
+        // otherwise selected outside that picker.
+        if (file.type.startsWith('video/') && !this.allowVideo) {
+            event.target.value = '';
+
             return;
         }
 

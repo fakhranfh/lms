@@ -449,7 +449,7 @@
             <!-- 11. Video Overview -->
             <section id="section-video_overview" class="space-y-space-sm">
                 <h2 class="font-label-lg text-label-lg text-lg font-bold text-on-surface">Video Overview</h2>
-                <x-rich-text-editor id="video-overview" wire-model="videoOverview" :value="$videoOverview" />
+                <x-rich-text-editor id="video-overview" wire-model="videoOverview" :value="$videoOverview" :allow-video="true" />
             </section>
 
             <!-- Actions -->

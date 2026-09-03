@@ -9,6 +9,22 @@
         <h1 class="font-headline-md text-headline-md text-on-surface mt-space-sm">{{ $pageTitle }}</h1>
     </div>
 
+    @if (app()->isLocal())
+        <div class="bg-tertiary-container border border-outline-variant rounded-lg p-space-md flex items-center justify-between">
+            <p class="font-body-sm text-body-sm text-on-tertiary-container">Dev tools</p>
+            <button
+                type="button"
+                wire:click="devAutofill"
+                wire:loading.attr="disabled"
+                wire:target="devAutofill"
+                class="px-space-md py-space-xs bg-tertiary text-on-tertiary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
+            >
+                <span wire:loading wire:target="devAutofill" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                Autofill
+            </button>
+        </div>
+    @endif
+
     <form wire:submit="save" class="space-y-space-lg">
         <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
             <div>
@@ -64,7 +80,11 @@
         <div class="space-y-space-md">
             <div class="flex items-center justify-between">
                 <h2 class="font-label-lg text-label-lg text-on-surface">Questions</h2>
-                <button type="button" wire:click="addQuestion" class="text-primary text-body-sm font-medium hover:underline inline-flex items-center gap-space-xs">
+                <button
+                    type="button"
+                    @click="window.addSyllabusRow($wire, 'question-template', 'questions', { id: null, description: '', points: '', selectedMaterialIds: [], materialSearch: '' })"
+                    class="text-primary text-body-sm font-medium hover:underline inline-flex items-center gap-space-xs"
+                >
                     <span class="material-symbols-outlined text-[16px]">add</span>
                     Add Question
                 </button>
@@ -72,12 +92,11 @@
             @error('questions') <p class="text-body-xs text-error">{{ $message }}</p> @enderror
 
             @foreach ($questions as $index => $question)
-                <div wire:key="question-{{ $index }}" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+                @continue($question === null)
+                <div wire:key="question-{{ $index }}" data-row class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
                     <div class="flex items-start justify-between gap-space-md">
                         <p class="font-label-md text-label-md text-on-surface">Question {{ $index + 1 }}</p>
-                        @if (count($questions) > 1)
-                            <button type="button" wire:click="removeQuestion({{ $index }})" class="text-error text-body-sm hover:underline">Remove</button>
-                        @endif
+                        <button type="button" @click="window.removeSyllabusRow($wire, 'questions.{{ $index }}', $el)" class="text-error text-body-sm hover:underline">Remove</button>
                     </div>
 
                     <div>
@@ -113,7 +132,20 @@
                             class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mb-space-xs"
                         />
 
-                        <div class="max-h-40 overflow-y-auto border border-outline-variant rounded-lg divide-y divide-outline-variant">
+                        <div
+                            wire:loading.delay.class.remove="hidden"
+                            wire:target="questions.{{ $index }}.materialSearch"
+                            class="hidden max-h-40 overflow-y-auto border border-outline-variant rounded-lg divide-y divide-outline-variant animate-pulse"
+                        >
+                            @for ($i = 0; $i < 3; $i++)
+                                <div class="flex items-center gap-space-sm px-space-md py-space-sm">
+                                    <div class="w-4 h-4 rounded bg-surface-container"></div>
+                                    <div class="h-3 bg-surface-container rounded w-1/2"></div>
+                                </div>
+                            @endfor
+                        </div>
+
+                        <div wire:loading.remove wire:target="questions.{{ $index }}.materialSearch" class="max-h-40 overflow-y-auto border border-outline-variant rounded-lg divide-y divide-outline-variant">
                             @forelse ($mediaByRow[$index] as $material)
                                 <label class="flex items-center gap-space-sm px-space-md py-space-sm text-body-sm cursor-pointer hover:bg-surface-container">
                                     <input
@@ -130,6 +162,33 @@
                     </div>
                 </div>
             @endforeach
+
+            <template id="question-template">
+                <div data-row class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+                    <div class="flex items-start justify-between gap-space-md">
+                        <p class="font-label-md text-label-md text-on-surface">New question</p>
+                        <button type="button" @click="window.removeSyllabusRow($wire, 'questions.__NEW__', $el)" class="text-error text-body-sm hover:underline">Remove</button>
+                    </div>
+
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Description</label>
+                        <x-rich-text-editor id="question-__NEW__" wire-model="questions.__NEW__.description" />
+                    </div>
+
+                    <div class="w-40">
+                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Points</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            @input="$wire.set('questions.__NEW__.points', $event.target.value, false)"
+                            class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                    </div>
+
+                    <p class="font-body-xs text-body-xs text-on-surface-variant">Save the assessment to attach materials to this question.</p>
+                </div>
+            </template>
         </div>
         @endif
 

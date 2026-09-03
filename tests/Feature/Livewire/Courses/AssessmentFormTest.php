@@ -11,7 +11,9 @@ use App\Models\Course;
 use App\Models\MediaLibraryItem;
 use App\Models\School;
 use App\Models\User;
+use App\Services\R2StorageService;
 use Livewire\Livewire;
+use Mockery;
 use Tests\TestCase;
 
 class AssessmentFormTest extends TestCase
@@ -50,16 +52,59 @@ class AssessmentFormTest extends TestCase
             ->assertSet('weight', (string) AssessmentType::TheoryTeamAssignment->defaultWeight());
     }
 
-    public function test_question_repeater_add_and_remove(): void
+    public function test_dev_autofill_fills_fields_and_question_attachments(): void
+    {
+        $r2Mock = Mockery::mock(R2StorageService::class);
+        $r2Mock->shouldReceive('schoolPrefix')->andReturn('');
+        $r2Mock->shouldReceive('uploadRawContent')->once()->andReturn('https://example.test/dummy.pdf');
+        $this->app->instance(R2StorageService::class, $r2Mock);
+
+        $this->teacher->givePermissionTo('assessment.create');
+
+        $component = Livewire::test(AssessmentForm::class, ['course' => $this->course, 'type' => 'personal'])
+            ->call('devAutofill')
+            ->assertCount('questions', 3);
+
+        $questions = $component->get('questions');
+        foreach ($questions as $question) {
+            $this->assertNotEmpty($question['selectedMaterialIds']);
+        }
+
+        $this->assertDatabaseCount('media_library_items', 1);
+    }
+
+    public function test_question_repeater_add_appends_a_row(): void
     {
         $this->teacher->givePermissionTo('assessment.create');
 
+        // "Add Question" is client-side (see resources/js/syllabus-form.js's
+        // addSyllabusRow, reused for questions) — a $wire.set on the next
+        // array slot, asserted here directly.
         Livewire::test(AssessmentForm::class, ['course' => $this->course, 'type' => 'personal'])
             ->assertCount('questions', 1)
-            ->call('addQuestion')
-            ->assertCount('questions', 2)
-            ->call('removeQuestion', 0)
-            ->assertCount('questions', 1);
+            ->set('questions.1', ['id' => null, 'description' => '', 'points' => '', 'selectedMaterialIds' => [], 'materialSearch' => ''])
+            ->assertCount('questions', 2);
+    }
+
+    public function test_question_repeater_remove_nulls_the_slot_and_save_prunes_it(): void
+    {
+        $this->teacher->givePermissionTo('assessment.create');
+
+        // "Remove" nulls the slot client-side rather than splicing it out
+        // (see resources/js/syllabus-form.js's removeSyllabusRow); save()
+        // prunes the null holes before persisting.
+        Livewire::test(AssessmentForm::class, ['course' => $this->course, 'type' => 'personal'])
+            ->set('title', 'Essay Assignment')
+            ->set('weight', '25')
+            ->set('startDate', now()->format('Y-m-d\TH:i'))
+            ->set('endDate', now()->addWeek()->format('Y-m-d\TH:i'))
+            ->set('questions.1', ['id' => null, 'description' => 'Second question.', 'points' => '50', 'selectedMaterialIds' => [], 'materialSearch' => ''])
+            ->set('questions.0', null)
+            ->call('save')
+            ->assertRedirect(route('assessments.index', $this->course));
+
+        $this->assertDatabaseCount('assessment_questions', 1);
+        $this->assertDatabaseHas('assessment_questions', ['description' => 'Second question.']);
     }
 
     public function test_creates_personal_assignment_with_questions(): void

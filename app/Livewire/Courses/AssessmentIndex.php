@@ -310,7 +310,7 @@ class AssessmentIndex extends Component
             ];
         }
 
-        if ($score) {
+        if ($score !== null) {
             $isProctoredFinalExam = $type === AssessmentType::TheoryFinalExam
                 && in_array($assessment->finalExam?->exam_type?->value, ['open_book', 'closed_book'], true);
 

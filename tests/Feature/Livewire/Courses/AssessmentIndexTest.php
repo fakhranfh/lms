@@ -268,6 +268,25 @@ class AssessmentIndexTest extends TestCase
             ->assertSee('87.5');
     }
 
+    public function test_graded_assignment_with_zero_score_shows_graded_not_submitted(): void
+    {
+        $this->student->givePermissionTo('assessment.view');
+
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+        ]);
+
+        $attempt = AssessmentAttempt::factory()->for($assessment)->create(['user_id' => $this->student->id]);
+        AssessmentScore::factory()->for($attempt, 'attempt')->create(['score' => 0]);
+
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->assertSee('Graded')
+            ->assertDontSee('Submitted');
+    }
+
     public function test_final_exam_shows_in_progress_when_attempt_not_yet_submitted(): void
     {
         CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);

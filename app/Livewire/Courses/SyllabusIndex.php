@@ -265,7 +265,7 @@ class SyllabusIndex extends Component
         // this single chip gets reused across every rich-text field below —
         // promoteRichTextAttachments() would otherwise try to promote the same
         // already-moved temp file more than once and fail with a stale key.
-        $key = $r2StorageService->schoolPrefix().'forum-attachments/dev-generated/syllabus-'.Str::uuid().'.pdf';
+        $key = $r2StorageService->schoolPrefix().$this->richTextAttachmentFolder().'/dev-generated/syllabus-'.Str::uuid().'.pdf';
         $url = $r2StorageService->uploadRawContent($key, $content, 'application/pdf');
 
         return '<p>'
@@ -423,6 +423,11 @@ class SyllabusIndex extends Component
         }
 
         return $result;
+    }
+
+    protected function richTextAttachmentFolder(): string
+    {
+        return 'syllabus';
     }
 
     private function promoteRichText(?string $html): ?string

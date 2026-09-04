@@ -418,35 +418,20 @@
     <!-- Teacher: Submissions List -->
     @if (!$isStudent)
         <div class="space-y-space-md">
-            <div class="flex items-center justify-between gap-space-md flex-wrap">
-                <h2 class="font-label-lg text-label-lg text-on-surface font-bold">Student Submissions</h2>
-                <div class="flex items-center gap-space-md flex-wrap">
-                    <x-ui.search-input wireModel="studentSearch" placeholder="Search by name" compact class="w-56" />
-                    <div class="flex items-center gap-space-sm">
-                        <label class="text-body-sm text-on-surface-variant" for="assessment-personal-per-page">Per page</label>
-                        <select
-                            id="assessment-personal-per-page"
-                            wire:model.live="perPage"
-                            class="h-[36px] px-space-sm rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none"
-                        >
-                            <option value="6">6</option>
-                            <option value="12">12</option>
-                            <option value="24">24</option>
-                            <option value="48">48</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            @if ($studentRows->hasPages())
-                <div wire:loading.remove wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch">
-                    {{ $studentRows->links() }}
-                </div>
-            @endif
+            <h2 class="font-label-lg text-label-lg text-on-surface font-bold">Student Submissions</h2>
 
             <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
+                <x-ui.pagination-links
+                    :paginator="$studentRows"
+                    perPageModel="perPage"
+                    searchModel="studentSearch"
+                    searchPlaceholder="Search by name"
+                    :search="$studentSearch"
+                    class="p-space-md border-b border-outline-variant"
+                />
+
                 <x-ui.person-grid-skeleton
-                    :rows="$studentRows->count()"
+                    :rows="9"
                     wire:loading.grid
                     wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch"
                 />
@@ -528,11 +513,10 @@
                     <x-ui.person-grid-filler :count="$studentRows->count()" />
                 </x-ui.person-grid>
 
-                @if ($studentRows->hasPages())
-                    <div class="p-space-md border-t border-outline-variant">
-                        {{ $studentRows->links() }}
-                    </div>
-                @endif
+                <x-ui.pagination-links
+                    :paginator="$studentRows"
+                    class="p-space-md border-t border-outline-variant"
+                />
             </div>
         </div>
     @endif

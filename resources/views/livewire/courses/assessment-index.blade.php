@@ -84,7 +84,7 @@
     </div>
 
     <!-- Grouped Collapsible Tables -->
-    <div class="space-y-space-lg" x-data="{ deleteId: null, deleteMode: 'single', showDeleteModal: false, selectedIds: [], deletingIds: [] }">
+    <div class="space-y-space-lg" x-data="{ deleteId: null, deleteMode: 'single', showDeleteModal: false, selectedIds: [], deletingIds: [], bulkDeleting: false }">
         @unless ($isStudent)
             <div x-show="selectedIds.length > 0" x-cloak class="flex items-center justify-between px-space-lg py-space-sm bg-surface-container border border-outline-variant rounded-lg">
                 <p class="font-label-md text-label-md text-on-surface"><span x-text="selectedIds.length"></span> selected</p>
@@ -98,11 +98,13 @@
                     </button>
                     <button
                         type="button"
+                        :disabled="bulkDeleting"
                         @click="deleteMode = 'bulk'; showDeleteModal = true"
-                        class="px-space-md py-space-xs bg-error text-on-error rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity inline-flex items-center gap-space-xs"
+                        class="px-space-md py-space-xs bg-error text-on-error rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity inline-flex items-center gap-space-xs disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <span class="material-symbols-outlined text-[16px]">delete</span>
-                        Delete Selected
+                        <span x-show="!bulkDeleting" class="material-symbols-outlined text-[16px]">delete</span>
+                        <span x-show="bulkDeleting" class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
+                        <span x-text="bulkDeleting ? 'Deleting...' : 'Delete Selected'"></span>
                     </button>
                 </div>
             </div>
@@ -547,7 +549,8 @@
                             <button
                                 @click="showDeleteModal = false"
                                 type="button"
-                                class="flex-1 px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition"
+                                :disabled="bulkDeleting"
+                                class="flex-1 px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Cancel
                             </button>
@@ -555,15 +558,17 @@
                                 @click="
                                     showDeleteModal = false;
                                     if (deleteMode === 'bulk') {
+                                        bulkDeleting = true;
                                         deletingIds = [...selectedIds];
-                                        $wire.call('deleteSelected', selectedIds).then(() => { selectedIds = []; deletingIds = []; });
+                                        $wire.call('deleteSelected', selectedIds).then(() => { selectedIds = []; deletingIds = []; bulkDeleting = false; });
                                     } else {
                                         deletingIds = [deleteId];
                                         $wire.call('deleteAssessment', deleteId).then(() => { deletingIds = []; });
                                     }
                                 "
                                 type="button"
-                                class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                                :disabled="bulkDeleting"
+                                class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Delete
                             </button>

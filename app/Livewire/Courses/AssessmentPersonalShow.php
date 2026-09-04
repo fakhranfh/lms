@@ -17,11 +17,13 @@ use App\Services\GradebookScoringService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class AssessmentPersonalShow extends Component
 {
-    use WithRichTextEditor;
+    use WithPagination, WithRichTextEditor;
 
     public Course $course;
 
@@ -42,6 +44,17 @@ class AssessmentPersonalShow extends Component
     public ?string $successMessage = null;
 
     public array $gradeQuestionScores = [];
+
+    public int $perPage = 12;
+
+    public string $studentSearch = '';
+
+    public function updating(string $property): void
+    {
+        if (in_array($property, ['perPage', 'studentSearch'], true)) {
+            $this->resetPage();
+        }
+    }
 
     public function mount(CurrentSchool $currentSchool, CoursePersonService $coursePersonService, ?Course $course = null, ?Assessment $assessment = null): void
     {
@@ -269,6 +282,13 @@ class AssessmentPersonalShow extends Component
         } else {
             $students = $coursePersonService->studentsForCourse($this->course->id);
 
+            $search = trim($this->studentSearch);
+            if ($search !== '') {
+                $students = $students->filter(
+                    fn ($coursePerson) => str_contains(strtolower($coursePerson->user->name), strtolower($search))
+                )->values();
+            }
+
             $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentAnswerService, $assessmentScoreService, $assessmentQuestionScoreService) {
                 $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $coursePerson->user_id);
                 $latest = $attempts->last();
@@ -285,7 +305,15 @@ class AssessmentPersonalShow extends Component
                 ];
             })->values();
 
-            $viewData['studentRows'] = $rows;
+            $page = $this->getPage();
+
+            $viewData['studentRows'] = new LengthAwarePaginator(
+                $rows->forPage($page, $this->perPage)->values(),
+                $rows->count(),
+                $this->perPage,
+                $page,
+                ['path' => request()->url(), 'pageName' => 'page']
+            );
         }
 
         return view('livewire.courses.assessment-personal-show', $viewData)

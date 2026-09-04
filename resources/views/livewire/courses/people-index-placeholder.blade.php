@@ -34,14 +34,7 @@
                     @endfor
                 </div>
             @else
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant">
-                    @for ($i = 0; $i < 9; $i++)
-                        <div class="bg-surface p-space-lg flex flex-col items-center gap-space-sm">
-                            <div class="w-12 h-12 rounded-full bg-surface-container"></div>
-                            <div class="h-4 bg-surface-container rounded w-2/3"></div>
-                        </div>
-                    @endfor
-                </div>
+                <x-ui.person-grid-skeleton :rows="9" />
             @endif
         </div>
     </div>

@@ -108,16 +108,12 @@
                 <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Total Question</p>
                 <p class="text-body-sm text-on-surface font-medium">{{ $assessment->questions->count() }}</p>
             </div>
-            <div>
-                <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Total Attempts</p>
-                <p class="text-body-sm text-on-surface font-medium">
-                    @if ($isStudent)
-                        {{ $attemptsUsed }} of {{ $attemptLimit }} Attempts
-                    @else
-                        —
-                    @endif
-                </p>
-            </div>
+            @if ($isStudent)
+                <div>
+                    <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Total Attempts</p>
+                    <p class="text-body-sm text-on-surface font-medium">{{ $attemptsUsed }} of {{ $attemptLimit }} Attempts</p>
+                </div>
+            @endif
             <div>
                 <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Scoring Method</p>
                 <p class="text-body-sm text-on-surface font-medium">Latest Score</p>
@@ -302,7 +298,7 @@
     @if (!$isStudent)
         <!-- Question List (teacher view, read-only) -->
         <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
-            <h2 class="font-label-lg text-label-lg text-on-surface">Questions</h2>
+            <h2 class="font-label-lg text-label-lg text-on-surface font-bold">Questions</h2>
             <div class="divide-y divide-outline-variant">
                 @foreach ($assessment->questions as $question)
                     <div class="space-y-space-md {{ $loop->first ? '' : 'pt-space-lg' }} {{ $loop->last ? '' : 'pb-space-lg' }}">
@@ -422,82 +418,122 @@
     <!-- Teacher: Submissions List -->
     @if (!$isStudent)
         <div class="space-y-space-md">
-            <h2 class="font-label-lg text-label-lg text-on-surface">Student Submissions</h2>
-            <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
-                @forelse ($studentRows as $row)
-                    <div wire:key="student-{{ $row['user']->id }}" class="p-space-lg">
-                        <div class="flex items-center justify-between gap-space-md mb-space-md">
-                            <div class="flex-1 min-w-0">
-                                <p class="font-label-md text-label-md text-on-surface">{{ $row['user']->name }}</p>
-                                <p class="text-body-sm text-on-surface-variant mt-1">
+            <div class="flex items-center justify-between gap-space-md flex-wrap">
+                <h2 class="font-label-lg text-label-lg text-on-surface font-bold">Student Submissions</h2>
+                <div class="flex items-center gap-space-md flex-wrap">
+                    <x-ui.search-input wireModel="studentSearch" placeholder="Search by name" compact class="w-56" />
+                    <div class="flex items-center gap-space-sm">
+                        <label class="text-body-sm text-on-surface-variant" for="assessment-personal-per-page">Per page</label>
+                        <select
+                            id="assessment-personal-per-page"
+                            wire:model.live="perPage"
+                            class="h-[36px] px-space-sm rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none"
+                        >
+                            <option value="6">6</option>
+                            <option value="12">12</option>
+                            <option value="24">24</option>
+                            <option value="48">48</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            @if ($studentRows->hasPages())
+                <div wire:loading.remove wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch">
+                    {{ $studentRows->links() }}
+                </div>
+            @endif
+
+            <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
+                <x-ui.person-grid-skeleton
+                    :rows="$studentRows->count()"
+                    wire:loading.grid
+                    wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch"
+                />
+
+                <x-ui.person-grid wire:loading.remove wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch">
+                    @forelse ($studentRows as $row)
+                        <div wire:key="student-{{ $row['user']->id }}" class="bg-surface p-space-lg {{ $gradingUserId === $row['user']->id ? 'md:col-span-3' : '' }}">
+                            <div class="flex flex-col items-center text-center gap-space-sm">
+                                <x-avatar :user="$row['user']" size="12" />
+                                <p class="font-label-lg text-label-lg text-on-surface">{{ $row['user']->name }}</p>
+                                <p class="text-body-sm text-on-surface-variant">
                                     @if ($row['attempt'])
                                         Attempt {{ $row['attempt']->attempt_number }} &middot; submitted {{ $row['attempt']->submitted_at_display?->format('M j, Y H:i') }}
                                     @else
                                         Not submitted
                                     @endif
                                 </p>
+
+                                <span class="inline-flex items-center px-space-md py-space-xs rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant">
+                                    {{ $row['score'] ? 'Score: '.rtrim(rtrim(number_format($row['score']->score, 2), '0'), '.') : ($row['attempt'] ? 'Ungraded' : 'Not submitted') }}
+                                </span>
+
+                                @if ($canGrade && $row['attempt'])
+                                    <button
+                                        type="button"
+                                        wire:click="openGrading('{{ $row['user']->id }}')"
+                                        class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                                    >
+                                        Grade
+                                    </button>
+                                @endif
                             </div>
 
-                            <span class="inline-flex items-center px-space-md py-space-xs rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant flex-shrink-0">
-                                {{ $row['score'] ? 'Score: '.rtrim(rtrim(number_format($row['score']->score, 2), '0'), '.') : ($row['attempt'] ? 'Ungraded' : 'Not submitted') }}
-                            </span>
+                            @if ($gradingUserId === $row['user']->id)
+                                <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md text-left">
+                                    <div class="rte-content text-body-sm text-on-surface-variant">{!! $row['answer']?->answer_text !!}</div>
 
-                            @if ($canGrade && $row['attempt'])
-                                <button
-                                    type="button"
-                                    wire:click="openGrading('{{ $row['user']->id }}')"
-                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition flex-shrink-0"
-                                >
-                                    Grade
-                                </button>
+                                    <form wire:submit="submitGrade" class="space-y-space-md">
+                                        <div class="space-y-space-md">
+                                            <h4 class="font-label-md text-label-md text-on-surface">Question Scores</h4>
+                                            @foreach ($assessment->questions as $question)
+                                                <div>
+                                                    <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
+                                                        Question {{ $loop->iteration }} ({{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts)
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        max="{{ $question->points }}"
+                                                        wire:model="gradeQuestionScores.{{ $question->id }}"
+                                                        class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                                    />
+                                                    @error("gradeQuestionScores.{$question->id}") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                                                </div>
+                                            @endforeach
+                                        </div>
+
+                                        <div>
+                                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Feedback</label>
+                                            <textarea wire:model="gradeFeedback" rows="3" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"></textarea>
+                                        </div>
+
+                                        <div class="flex gap-space-md">
+                                            <button type="button" wire:click="cancelGrading" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
+                                                Cancel
+                                            </button>
+                                            <button type="submit" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
+                                                Save Grade
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
                             @endif
                         </div>
+                    @empty
+                        <div class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">
+                            {{ trim($studentSearch) !== '' ? 'No students match your search.' : 'No students enrolled.' }}
+                        </div>
+                    @endforelse
+                </x-ui.person-grid>
 
-                        @if ($gradingUserId === $row['user']->id)
-                            <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md">
-                                <div class="rte-content text-body-sm text-on-surface-variant">{!! $row['answer']?->answer_text !!}</div>
-
-                                <form wire:submit="submitGrade" class="space-y-space-md">
-                                    <div class="space-y-space-md">
-                                        <h4 class="font-label-md text-label-md text-on-surface">Question Scores</h4>
-                                        @foreach ($assessment->questions as $question)
-                                            <div>
-                                                <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
-                                                    Question {{ $loop->iteration }} ({{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts)
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0"
-                                                    max="{{ $question->points }}"
-                                                    wire:model="gradeQuestionScores.{{ $question->id }}"
-                                                    class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                                />
-                                                @error("gradeQuestionScores.{$question->id}") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
-                                            </div>
-                                        @endforeach
-                                    </div>
-
-                                    <div>
-                                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Feedback</label>
-                                        <textarea wire:model="gradeFeedback" rows="3" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"></textarea>
-                                    </div>
-
-                                    <div class="flex gap-space-md">
-                                        <button type="button" wire:click="cancelGrading" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
-                                            Cancel
-                                        </button>
-                                        <button type="submit" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
-                                            Save Grade
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        @endif
+                @if ($studentRows->hasPages())
+                    <div class="p-space-md border-t border-outline-variant">
+                        {{ $studentRows->links() }}
                     </div>
-                @empty
-                    <div class="p-space-lg text-center text-body-sm text-on-surface-variant">No students enrolled.</div>
-                @endforelse
+                @endif
             </div>
         </div>
     @endif

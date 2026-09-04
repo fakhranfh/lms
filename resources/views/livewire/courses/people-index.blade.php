@@ -45,14 +45,7 @@
         </div>
 
         <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-            <div x-show="switchingTab === 'students' || switchingTab === 'teachers'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant animate-pulse">
-                @for ($i = 0; $i < 9; $i++)
-                    <div class="bg-surface p-space-lg flex flex-col items-center gap-space-sm">
-                        <div class="w-12 h-12 rounded-full bg-surface-container"></div>
-                        <div class="h-4 bg-surface-container rounded w-2/3"></div>
-                    </div>
-                @endfor
-            </div>
+            <x-ui.person-grid-skeleton :rows="9" x-show="switchingTab === 'students' || switchingTab === 'teachers'" x-cloak />
 
             <div x-show="switchingTab === 'groups'" x-cloak class="w-full p-space-lg space-y-space-md animate-pulse">
                 <div>
@@ -168,19 +161,13 @@
                             </button>
                         </div>
                     @endif
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant">
-                        <div x-show="enrollingId !== null" x-cloak class="bg-surface p-space-lg flex flex-col items-center gap-space-sm animate-pulse">
-                            <div class="w-12 h-12 rounded-full bg-surface-container"></div>
-                            <div class="h-4 bg-surface-container rounded w-2/3"></div>
-                        </div>
+                    <x-ui.person-grid>
+                        <x-ui.person-card-skeleton x-show="enrollingId !== null" x-cloak class="animate-pulse" />
                         <div x-show="enrollingId !== null" x-cloak class="bg-surface hidden sm:block"></div>
                         <div x-show="enrollingId !== null" x-cloak class="bg-surface hidden md:block"></div>
                         @forelse ($students as $coursePerson)
                             <div wire:key="student-{{ $coursePerson->id }}" class="bg-surface p-space-lg">
-                                <div x-show="deletingIds.includes('{{ $coursePerson->id }}')" x-cloak class="flex flex-col items-center gap-space-sm animate-pulse">
-                                    <div class="w-12 h-12 rounded-full bg-surface-container"></div>
-                                    <div class="h-4 bg-surface-container rounded w-2/3"></div>
-                                </div>
+                                <x-ui.person-card-skeleton x-show="deletingIds.includes('{{ $coursePerson->id }}')" x-cloak class="!p-0 animate-pulse" />
                                 <div x-show="!deletingIds.includes('{{ $coursePerson->id }}')" class="relative flex flex-col items-center text-center gap-space-sm">
                                     @if ($canManageGroups)
                                         <input
@@ -207,7 +194,7 @@
                         @for ($i = 0; $i < (3 - $students->count() % 3) % 3; $i++)
                             <div class="bg-surface hidden md:block"></div>
                         @endfor
-                    </div>
+                    </x-ui.person-grid>
                 @endif
 
                 @if ($activeSubTab === 'teachers')
@@ -270,19 +257,13 @@
                             </button>
                         </div>
                     @endif
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-outline-variant">
-                        <div x-show="enrollingId !== null" x-cloak class="bg-surface p-space-lg flex flex-col items-center gap-space-sm animate-pulse">
-                            <div class="w-12 h-12 rounded-full bg-surface-container"></div>
-                            <div class="h-4 bg-surface-container rounded w-2/3"></div>
-                        </div>
+                    <x-ui.person-grid>
+                        <x-ui.person-card-skeleton x-show="enrollingId !== null" x-cloak class="animate-pulse" />
                         <div x-show="enrollingId !== null" x-cloak class="bg-surface hidden sm:block"></div>
                         <div x-show="enrollingId !== null" x-cloak class="bg-surface hidden md:block"></div>
                         @forelse ($teachers as $coursePerson)
                             <div wire:key="teacher-{{ $coursePerson->id }}" class="bg-surface p-space-lg">
-                                <div x-show="deletingIds.includes('{{ $coursePerson->id }}')" x-cloak class="flex flex-col items-center gap-space-sm animate-pulse">
-                                    <div class="w-12 h-12 rounded-full bg-surface-container"></div>
-                                    <div class="h-4 bg-surface-container rounded w-2/3"></div>
-                                </div>
+                                <x-ui.person-card-skeleton x-show="deletingIds.includes('{{ $coursePerson->id }}')" x-cloak class="!p-0 animate-pulse" />
                                 <div x-show="!deletingIds.includes('{{ $coursePerson->id }}')" class="relative flex flex-col items-center text-center gap-space-sm">
                                     @if ($canManageGroups && $coursePerson->user_id !== auth()->id())
                                         <input
@@ -314,7 +295,7 @@
                         @for ($i = 0; $i < (3 - $teachers->count() % 3) % 3; $i++)
                             <div class="bg-surface hidden md:block"></div>
                         @endfor
-                    </div>
+                    </x-ui.person-grid>
                 @endif
 
                 @if ($activeSubTab === 'groups')

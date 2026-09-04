@@ -208,14 +208,7 @@
                                             <p class="text-body-xs text-on-surface-variant mb-space-sm">Question {{ $loop->iteration }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
                                             <div class="rte-content prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
                                             @if ($question->files->isNotEmpty())
-                                                <div class="mt-space-md space-y-space-xs">
-                                                    @foreach ($question->files as $file)
-                                                        <div class="flex items-center gap-space-xs text-body-sm text-on-surface-variant">
-                                                            <span class="material-symbols-outlined text-[16px]">description</span>
-                                                            {{ $file->title }}
-                                                        </div>
-                                                    @endforeach
-                                                </div>
+                                                <x-ui.material-list :files="$question->files" class="mt-space-md" />
                                             @endif
                                         </div>
                                     @endforeach
@@ -305,14 +298,7 @@
                         <p class="text-body-xs text-on-surface-variant mb-space-sm">Question {{ $loop->iteration }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
                         <div class="rte-content prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
                         @if ($question->files->isNotEmpty())
-                            <div class="mt-space-md space-y-space-xs">
-                                @foreach ($question->files as $file)
-                                    <div class="flex items-center gap-space-xs text-body-sm text-on-surface-variant">
-                                        <span class="material-symbols-outlined text-[16px]">description</span>
-                                        {{ $file->title }}
-                                    </div>
-                                @endforeach
-                            </div>
+                            <x-ui.material-list :files="$question->files" class="mt-space-md" />
                         @endif
                     </div>
                 @endforeach

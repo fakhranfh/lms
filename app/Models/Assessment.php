@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'status',
     'required_posts_per_session',
     'attempt_limit',
+    'order',
 ])]
 class Assessment extends Model
 {

@@ -253,7 +253,70 @@
                                 </table>
                             </div>
                         @else
-                        <div class="overflow-x-auto">
+                        <div
+                            class="overflow-x-auto"
+                            x-data="{
+                                dragId: null,
+                                currentOrder() {
+                                    return Array.from(this.$refs.assessmentList.querySelectorAll('[data-row]')).map(el => el.dataset.row);
+                                },
+                                onDrop(targetId) {
+                                    const list = this.$refs.assessmentList;
+                                    const dragEl = this.dragId ? list.querySelector(`[data-row='${this.dragId}']`) : null;
+                                    const targetEl = list.querySelector(`[data-row='${targetId}']`);
+                                    this.dragId = null;
+                                    if (! dragEl || ! targetEl || dragEl === targetEl) return;
+
+                                    const previousOrder = this.currentOrder();
+
+                                    const rows = Array.from(list.querySelectorAll('[data-row]'));
+                                    rows.indexOf(dragEl) < rows.indexOf(targetEl) ? targetEl.after(dragEl) : targetEl.before(dragEl);
+                                    this.updateMoveButtons();
+
+                                    $wire.call('reorderAssessments', @js($group['type']->value), this.currentOrder())
+                                        .catch(() => this.restoreOrder(previousOrder));
+                                },
+                                moveRow(id, direction) {
+                                    const rows = Array.from(this.$refs.assessmentList.querySelectorAll('[data-row]'));
+                                    const index = rows.findIndex(el => el.dataset.row === id);
+                                    const swapWith = index + direction;
+                                    if (index === -1 || swapWith < 0 || swapWith >= rows.length) return;
+
+                                    const previousOrder = this.currentOrder();
+
+                                    direction === -1
+                                        ? rows[index].parentNode.insertBefore(rows[index], rows[swapWith])
+                                        : rows[index].parentNode.insertBefore(rows[swapWith], rows[index]);
+                                    this.updateMoveButtons();
+
+                                    $wire.call('moveAssessment', id, direction === -1 ? 'up' : 'down')
+                                        .catch(() => this.restoreOrder(previousOrder));
+                                },
+                                // Puts rows back in a previously captured order, used to undo
+                                // the optimistic DOM move when the server-side reorder fails.
+                                restoreOrder(orderedIds) {
+                                    const list = this.$refs.assessmentList;
+                                    orderedIds.forEach(id => {
+                                        const row = list.querySelector(`[data-row='${id}']`);
+                                        if (row) list.appendChild(row);
+                                    });
+                                    this.updateMoveButtons();
+                                },
+                                // The disabled state on the up/down buttons marks a row's
+                                // position, not the row itself — after a drag or move it must
+                                // be recomputed from the new DOM order rather than waiting for
+                                // the wire:call round trip to re-render it.
+                                updateMoveButtons() {
+                                    const rows = Array.from(this.$refs.assessmentList.querySelectorAll('[data-row]'));
+                                    rows.forEach((row, index) => {
+                                        const upButton = row.querySelector('[data-move-up]');
+                                        const downButton = row.querySelector('[data-move-down]');
+                                        if (upButton) upButton.disabled = index === 0;
+                                        if (downButton) downButton.disabled = index === rows.length - 1;
+                                    });
+                                },
+                            }"
+                        >
                             <table class="w-full">
                                 <thead>
                                     <tr class="border-b border-outline-variant bg-surface-container/50">
@@ -280,7 +343,7 @@
                                         @endunless
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-outline-variant">
+                                <tbody class="divide-y divide-outline-variant" x-ref="assessmentList">
                                     @foreach ($group['assessments'] as $item)
                                         <tr
                                             wire:key="assessment-skeleton-{{ $item['data']->id }}"
@@ -293,7 +356,14 @@
                                         </tr>
                                         <tr
                                             wire:key="assessment-{{ $item['data']->id }}"
+                                            data-row="{{ $item['data']->id }}"
                                             x-show="! deletingIds.includes(@js((string) $item['data']->id))"
+                                            @if ($item['isReorderable'])
+                                                draggable="true"
+                                                @dragstart="dragId = @js((string) $item['data']->id)"
+                                                @dragover.prevent
+                                                @drop.prevent="onDrop(@js((string) $item['data']->id))"
+                                            @endif
                                             @if ($item['row']['route'])
                                                 @click="window.location = '{{ $item['row']['route'] }}'"
                                                 class="hover:bg-surface-container/30 transition cursor-pointer"
@@ -303,14 +373,19 @@
                                         >
                                             @unless ($isStudent)
                                                 <td class="px-space-lg py-space-md" @click.stop>
-                                                    @if ($item['row']['route'] && ! in_array($item['data']->type, [\App\Enums\AssessmentType::Attendance, \App\Enums\AssessmentType::ForumDiscussion], true))
-                                                        <input
-                                                            type="checkbox"
-                                                            x-model="selectedIds"
-                                                            value="{{ $item['data']->id }}"
-                                                            class="w-4 h-4 rounded border-outline"
-                                                        />
-                                                    @endif
+                                                    <div class="flex items-center gap-space-xs">
+                                                        @if ($item['isReorderable'])
+                                                            <span class="material-symbols-outlined text-on-surface-variant cursor-grab select-none" title="Drag to reorder">drag_indicator</span>
+                                                        @endif
+                                                        @if ($item['row']['route'] && ! in_array($item['data']->type, [\App\Enums\AssessmentType::Attendance, \App\Enums\AssessmentType::ForumDiscussion], true))
+                                                            <input
+                                                                type="checkbox"
+                                                                x-model="selectedIds"
+                                                                value="{{ $item['data']->id }}"
+                                                                class="w-4 h-4 rounded border-outline"
+                                                            />
+                                                        @endif
+                                                    </div>
                                                 </td>
                                             @endunless
                                             <td class="px-space-lg py-space-md">
@@ -379,6 +454,29 @@
                                             @unless ($isStudent)
                                                 <td class="px-space-lg py-space-md" @click.stop>
                                                     <div class="flex gap-space-sm">
+                                                        @if (! in_array($item['data']->type, [\App\Enums\AssessmentType::Attendance, \App\Enums\AssessmentType::ForumDiscussion], true))
+                                                            <button
+                                                                type="button"
+                                                                data-move-up
+                                                                @click="moveRow(@js((string) $item['data']->id), -1)"
+                                                                @disabled($loop->first)
+                                                                class="p-2 hover:bg-surface-container rounded transition text-on-surface-variant disabled:opacity-30 disabled:pointer-events-none"
+                                                                title="Move up"
+                                                            >
+                                                                <span class="material-symbols-outlined">arrow_upward</span>
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                data-move-down
+                                                                @click="moveRow(@js((string) $item['data']->id), 1)"
+                                                                @disabled($loop->last)
+                                                                class="p-2 hover:bg-surface-container rounded transition text-on-surface-variant disabled:opacity-30 disabled:pointer-events-none"
+                                                                title="Move down"
+                                                            >
+                                                                <span class="material-symbols-outlined">arrow_downward</span>
+                                                            </button>
+                                                        @endif
+
                                                         @if ($item['row']['route'])
                                                             <a
                                                                 href="{{ $this->editRoute($item['data']) }}"

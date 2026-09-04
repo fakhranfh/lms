@@ -117,6 +117,29 @@ class AssessmentIndex extends Component
         }
     }
 
+    public function moveAssessment(string $assessmentId, string $direction, AssessmentService $assessmentService): void
+    {
+        abort_unless(auth()->user()->can('assessment.edit'), 403);
+
+        if (! in_array($direction, ['up', 'down'], true)) {
+            return;
+        }
+
+        $assessmentService->moveOrder($assessmentId, $direction);
+    }
+
+    /**
+     * Persists the drag-and-drop reordering of a type group's assessments.
+     *
+     * @param  array<int, string>  $orderedIds
+     */
+    public function reorderAssessments(string $type, array $orderedIds, AssessmentService $assessmentService): void
+    {
+        abort_unless(auth()->user()->can('assessment.edit'), 403);
+
+        $assessmentService->reorder($this->course->id, $type, $orderedIds);
+    }
+
     private function deletableError(string $assessmentId, AssessmentService $assessmentService): ?string
     {
         $assessment = $assessmentService->find($assessmentId, ['attempts']);
@@ -265,6 +288,7 @@ class AssessmentIndex extends Component
                 'data' => $a,
                 'row' => $rows[$a->id],
                 'sessionPosition' => $a->session_id ? ($sessionPositions[$a->session_id] ?? null) : null,
+                'isReorderable' => ! $this->isStudent && ! in_array($type, [AssessmentType::Attendance, AssessmentType::ForumDiscussion], true),
             ]),
             'sectionKey' => $type->value,
             'isExpanded' => isset($this->expandedSections[$type->value]) && $this->expandedSections[$type->value],

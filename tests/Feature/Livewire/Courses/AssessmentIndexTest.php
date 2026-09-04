@@ -377,6 +377,118 @@ class AssessmentIndexTest extends TestCase
             ->assertDontSee('Submitted');
     }
 
+    public function test_move_assessment_up_swaps_order_with_previous_sibling(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.edit']);
+        $this->actingAs($this->teacher);
+
+        $first = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'order' => 1,
+        ]);
+        $second = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'order' => 2,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->call('moveAssessment', $second->id, 'up');
+
+        $this->assertSame(2, $first->fresh()->order);
+        $this->assertSame(1, $second->fresh()->order);
+    }
+
+    public function test_move_assessment_up_is_noop_when_already_first(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.edit']);
+        $this->actingAs($this->teacher);
+
+        $first = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'order' => 1,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->call('moveAssessment', $first->id, 'up');
+
+        $this->assertSame(1, $first->fresh()->order);
+    }
+
+    public function test_move_assessment_requires_permission(): void
+    {
+        $this->teacher->givePermissionTo('assessment.view');
+        $this->actingAs($this->teacher);
+
+        $first = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'order' => 1,
+        ]);
+        $second = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'order' => 2,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->call('moveAssessment', $second->id, 'up')
+            ->assertStatus(403);
+
+        $this->assertSame(1, $first->fresh()->order);
+        $this->assertSame(2, $second->fresh()->order);
+    }
+
+    public function test_reorder_assessments_persists_dragged_order(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.edit']);
+        $this->actingAs($this->teacher);
+
+        $first = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'order' => 1,
+        ]);
+        $second = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'order' => 2,
+        ]);
+        $third = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'order' => 3,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->call('reorderAssessments', AssessmentType::TheoryPersonalAssignment->value, [$third->id, $first->id, $second->id]);
+
+        $this->assertSame(1, $third->fresh()->order);
+        $this->assertSame(2, $first->fresh()->order);
+        $this->assertSame(3, $second->fresh()->order);
+    }
+
+    public function test_reorder_assessments_requires_permission(): void
+    {
+        $this->teacher->givePermissionTo('assessment.view');
+        $this->actingAs($this->teacher);
+
+        $first = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'order' => 1,
+        ]);
+        $second = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'order' => 2,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->call('reorderAssessments', AssessmentType::TheoryPersonalAssignment->value, [$second->id, $first->id])
+            ->assertStatus(403);
+
+        $this->assertSame(1, $first->fresh()->order);
+        $this->assertSame(2, $second->fresh()->order);
+    }
+
     public function test_final_exam_shows_in_progress_when_attempt_not_yet_submitted(): void
     {
         CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);

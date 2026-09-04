@@ -19,7 +19,7 @@ class AssessmentRepository implements AssessmentRepositoryInterface
             $query->where($key, $value);
         }
 
-        return $query->with($with)->get();
+        return $query->with($with)->orderBy('order')->orderBy('created_at')->get();
     }
 
     public function find(string $id, array $with = []): ?Assessment
@@ -29,6 +29,12 @@ class AssessmentRepository implements AssessmentRepositoryInterface
 
     public function create(array $data): Assessment
     {
+        if (! isset($data['order'])) {
+            $data['order'] = Assessment::where('course_id', $data['course_id'])
+                ->where('type', $data['type'])
+                ->max('order') + 1;
+        }
+
         return Assessment::create($data);
     }
 
@@ -47,6 +53,19 @@ class AssessmentRepository implements AssessmentRepositoryInterface
 
     public function forCourse(string $courseId): Collection
     {
-        return Assessment::where('course_id', $courseId)->get();
+        return Assessment::where('course_id', $courseId)->orderBy('order')->orderBy('created_at')->get();
+    }
+
+    public function reorder(string $courseId, string $type, array $orderedIds): void
+    {
+        // Two passes avoid order collisions while shifting rows; `order` is
+        // unsigned, so the temp pass uses a high offset instead of negatives.
+        foreach ($orderedIds as $index => $id) {
+            Assessment::where('id', $id)->where('course_id', $courseId)->where('type', $type)->update(['order' => 1_000_000 + $index]);
+        }
+
+        foreach ($orderedIds as $index => $id) {
+            Assessment::where('id', $id)->where('course_id', $courseId)->where('type', $type)->update(['order' => $index + 1]);
+        }
     }
 }

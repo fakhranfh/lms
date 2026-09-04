@@ -47,4 +47,43 @@ class AssessmentService
     {
         return $this->assessmentRepository->forCourse($courseId);
     }
+
+    public function moveOrder(string $assessmentId, string $direction): void
+    {
+        $assessment = $this->assessmentRepository->find($assessmentId);
+
+        if (! $assessment) {
+            return;
+        }
+
+        $siblings = $this->assessmentRepository->get([
+            'course_id' => $assessment->course_id,
+            'type' => $assessment->type->value,
+        ])->values();
+
+        $index = $siblings->search(fn (Assessment $a): bool => $a->id === $assessment->id);
+
+        if ($index === false) {
+            return;
+        }
+
+        $swapIndex = $direction === 'up' ? $index - 1 : $index + 1;
+
+        if ($swapIndex < 0 || $swapIndex >= $siblings->count()) {
+            return;
+        }
+
+        $orderedIds = $siblings->pluck('id')->all();
+        [$orderedIds[$index], $orderedIds[$swapIndex]] = [$orderedIds[$swapIndex], $orderedIds[$index]];
+
+        $this->reorder($assessment->course_id, $assessment->type->value, $orderedIds);
+    }
+
+    /**
+     * @param  array<int, string>  $orderedIds
+     */
+    public function reorder(string $courseId, string $type, array $orderedIds): void
+    {
+        $this->assessmentRepository->reorder($courseId, $type, $orderedIds);
+    }
 }

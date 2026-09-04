@@ -336,11 +336,12 @@
                                         <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Start Date</th>
                                         <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Due Date</th>
                                         <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Status</th>
-                                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attempt</th>
-                                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Score</th>
-                                        @unless ($isStudent)
+                                        @if ($isStudent)
+                                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attempt</th>
+                                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Score</th>
+                                        @else
                                             <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Actions</th>
-                                        @endunless
+                                        @endif
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-outline-variant" x-ref="assessmentList">
@@ -350,7 +351,7 @@
                                             x-show="deletingIds.includes(@js((string) $item['data']->id))"
                                             x-cloak
                                         >
-                                            <td colspan="{{ $isStudent ? 7 : 9 }}" class="px-space-lg py-space-md">
+                                            <td colspan="7" class="px-space-lg py-space-md">
                                                 <div class="h-5 w-full rounded bg-surface-container animate-pulse"></div>
                                             </td>
                                         </tr>
@@ -437,20 +438,22 @@
                                                     {{ str($item['row']['status'])->replace('_', ' ')->title() }}
                                                 </span>
                                             </td>
-                                            <td class="px-space-lg py-space-md text-body-sm text-on-surface">
-                                                @if ($isStudent && $item['row']['route'])
-                                                    {{ $item['row']['attemptCount'] }} of {{ $item['row']['attemptLimit'] }}
-                                                @else
-                                                    <span class="text-on-surface-variant">—</span>
-                                                @endif
-                                            </td>
-                                            <td class="px-space-lg py-space-md text-body-sm text-on-surface font-label-md">
-                                                @if ($item['row']['score'] !== null)
-                                                    {{ number_format($item['row']['score'], 1) }}
-                                                @else
-                                                    <span class="text-on-surface-variant">—</span>
-                                                @endif
-                                            </td>
+                                            @if ($isStudent)
+                                                <td class="px-space-lg py-space-md text-body-sm text-on-surface">
+                                                    @if ($item['row']['route'])
+                                                        {{ $item['row']['attemptCount'] }} of {{ $item['row']['attemptLimit'] }}
+                                                    @else
+                                                        <span class="text-on-surface-variant">—</span>
+                                                    @endif
+                                                </td>
+                                                <td class="px-space-lg py-space-md text-body-sm text-on-surface font-label-md">
+                                                    @if ($item['row']['score'] !== null)
+                                                        {{ number_format($item['row']['score'], 1) }}
+                                                    @else
+                                                        <span class="text-on-surface-variant">—</span>
+                                                    @endif
+                                                </td>
+                                            @endif
                                             @unless ($isStudent)
                                                 <td class="px-space-lg py-space-md" @click.stop>
                                                     <div class="flex gap-space-sm">

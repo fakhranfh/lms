@@ -191,6 +191,9 @@ class AssessmentIndex extends Component
         $materialIds = $this->devMaterialIds($this->course->school_id, $mediaLibraryService, $r2StorageService);
 
         for ($i = 0; $i < $count; $i++) {
+            $startDate = now()->addWeeks($i);
+            $endDate = $startDate->clone()->addWeek();
+
             $assessment = $assessmentService->create([
                 'course_id' => $this->course->id,
                 'session_id' => null,
@@ -198,8 +201,8 @@ class AssessmentIndex extends Component
                 'title' => AssessmentTypeLabel::forType(AssessmentType::TheoryPersonalAssignment).' - Week '.random_int(1, 14).' Practice',
                 'weight' => AssessmentType::TheoryPersonalAssignment->defaultWeight(),
                 'assigned_to' => AssessmentAssignedTo::Individual,
-                'start_date' => now(),
-                'end_date' => now()->addWeek(),
+                'start_date' => $startDate,
+                'end_date' => $endDate,
                 'status' => AssessmentStatus::Draft,
             ]);
 

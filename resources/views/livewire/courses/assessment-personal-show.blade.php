@@ -457,13 +457,11 @@
                             <div class="flex flex-col items-center text-center gap-space-sm">
                                 <x-avatar :user="$row['user']" size="12" />
                                 <p class="font-label-lg text-label-lg text-on-surface">{{ $row['user']->name }}</p>
-                                <p class="text-body-sm text-on-surface-variant">
-                                    @if ($row['attempt'])
+                                @if ($row['attempt'])
+                                    <p class="text-body-sm text-on-surface-variant">
                                         Attempt {{ $row['attempt']->attempt_number }} &middot; submitted {{ $row['attempt']->submitted_at_display?->format('M j, Y H:i') }}
-                                    @else
-                                        Not submitted
-                                    @endif
-                                </p>
+                                    </p>
+                                @endif
 
                                 <span class="inline-flex items-center px-space-md py-space-xs rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant">
                                     {{ $row['score'] ? 'Score: '.rtrim(rtrim(number_format($row['score']->score, 2), '0'), '.') : ($row['attempt'] ? 'Ungraded' : 'Not submitted') }}
@@ -527,6 +525,7 @@
                             {{ trim($studentSearch) !== '' ? 'No students match your search.' : 'No students enrolled.' }}
                         </div>
                     @endforelse
+                    <x-ui.person-grid-filler :count="$studentRows->count()" />
                 </x-ui.person-grid>
 
                 @if ($studentRows->hasPages())

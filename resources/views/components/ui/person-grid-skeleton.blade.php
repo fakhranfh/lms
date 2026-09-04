@@ -9,4 +9,5 @@
     @for ($i = 0; $i < $rows; $i++)
         <x-ui.person-card-skeleton />
     @endfor
+    <x-ui.person-grid-filler :count="$rows" />
 </x-ui.person-grid>

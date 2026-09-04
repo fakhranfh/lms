@@ -191,9 +191,7 @@
                         @empty
                             <div x-show="enrollingId === null" class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">No students enrolled yet.</div>
                         @endforelse
-                        @for ($i = 0; $i < (3 - $students->count() % 3) % 3; $i++)
-                            <div class="bg-surface hidden md:block"></div>
-                        @endfor
+                        <x-ui.person-grid-filler :count="$students->count()" />
                     </x-ui.person-grid>
                 @endif
 
@@ -292,9 +290,7 @@
                         @empty
                             <div x-show="enrollingId === null" class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">No teachers assigned yet.</div>
                         @endforelse
-                        @for ($i = 0; $i < (3 - $teachers->count() % 3) % 3; $i++)
-                            <div class="bg-surface hidden md:block"></div>
-                        @endfor
+                        <x-ui.person-grid-filler :count="$teachers->count()" />
                     </x-ui.person-grid>
                 @endif
 

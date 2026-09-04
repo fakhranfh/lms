@@ -491,6 +491,32 @@
                                                                 <span class="material-symbols-outlined">edit</span>
                                                             </a>
 
+                                                            @if (in_array($item['data']->type, [\App\Enums\AssessmentType::TheoryPersonalAssignment, \App\Enums\AssessmentType::TheoryTeamAssignment], true))
+                                                                @if ($item['data']->status === \App\Enums\AssessmentStatus::Draft)
+                                                                    <button
+                                                                        type="button"
+                                                                        wire:click="publishAssessment('{{ $item['data']->id }}')"
+                                                                        wire:loading.attr="disabled"
+                                                                        wire:target="publishAssessment('{{ $item['data']->id }}')"
+                                                                        class="p-2 hover:bg-surface-container rounded transition text-success disabled:opacity-50"
+                                                                        title="Publish assessment"
+                                                                    >
+                                                                        <span class="material-symbols-outlined">publish</span>
+                                                                    </button>
+                                                                @else
+                                                                    <button
+                                                                        type="button"
+                                                                        wire:click="unpublishAssessment('{{ $item['data']->id }}')"
+                                                                        wire:loading.attr="disabled"
+                                                                        wire:target="unpublishAssessment('{{ $item['data']->id }}')"
+                                                                        class="p-2 hover:bg-surface-container rounded transition text-on-surface-variant disabled:opacity-50"
+                                                                        title="Unpublish assessment"
+                                                                    >
+                                                                        <span class="material-symbols-outlined">unpublished</span>
+                                                                    </button>
+                                                                @endif
+                                                            @endif
+
                                                             @if (! in_array($item['data']->type, [\App\Enums\AssessmentType::Attendance, \App\Enums\AssessmentType::ForumDiscussion], true))
                                                                 <button
                                                                     type="button"

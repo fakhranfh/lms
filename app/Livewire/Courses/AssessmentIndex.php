@@ -117,6 +117,39 @@ class AssessmentIndex extends Component
         }
     }
 
+    public function publishAssessment(string $assessmentId, AssessmentService $assessmentService): void
+    {
+        $this->setAssessmentStatus($assessmentId, AssessmentStatus::Published, $assessmentService);
+    }
+
+    public function unpublishAssessment(string $assessmentId, AssessmentService $assessmentService): void
+    {
+        $this->setAssessmentStatus($assessmentId, AssessmentStatus::Draft, $assessmentService);
+    }
+
+    private function setAssessmentStatus(string $assessmentId, AssessmentStatus $status, AssessmentService $assessmentService): void
+    {
+        abort_unless(auth()->user()->can('assessment.edit'), 403);
+
+        $this->errorMessage = null;
+
+        $assessment = $assessmentService->find($assessmentId);
+
+        if (! $assessment || $assessment->course_id !== $this->course->id) {
+            $this->errorMessage = __('Assessment not found.');
+
+            return;
+        }
+
+        if (! in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment], true)) {
+            $this->errorMessage = __('Only personal and team assignments can be published or unpublished.');
+
+            return;
+        }
+
+        $assessmentService->update($assessmentId, ['status' => $status]);
+    }
+
     public function moveAssessment(string $assessmentId, string $direction, AssessmentService $assessmentService): void
     {
         abort_unless(auth()->user()->can('assessment.edit'), 403);

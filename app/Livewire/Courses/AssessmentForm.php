@@ -269,10 +269,14 @@ class AssessmentForm extends Component
             $mediaByRow[$index] = Collection::make($mediaLibraryService->list($schoolId, null, $question['materialSearch'] ?: null)->get());
         }
 
+        $statuses = in_array($this->assessmentType, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment], true)
+            ? [AssessmentStatus::Draft, AssessmentStatus::Published]
+            : AssessmentStatus::cases();
+
         return view('livewire.courses.assessment-form', [
             'pageTitle' => $this->assessment ? 'Edit '.AssessmentTypeLabel::forType($this->assessmentType) : 'Create '.AssessmentTypeLabel::forType($this->assessmentType),
             'sessions' => $sessionService->forCourse($this->course->id),
-            'statuses' => AssessmentStatus::cases(),
+            'statuses' => $statuses,
             'mediaByRow' => $mediaByRow,
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->assessment ? 'Edit Assessment' : 'Create Assessment'])

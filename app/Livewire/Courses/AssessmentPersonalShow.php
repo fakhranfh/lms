@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\RoleName;
 use App\Livewire\Concerns\WithRichTextEditor;
@@ -59,6 +60,7 @@ class AssessmentPersonalShow extends Component
 
         if ($this->isStudent) {
             abort_unless($coursePersonService->isEnrolledAsStudent($course->id, auth()->id()), 403);
+            abort_if($assessment->status === AssessmentStatus::Draft, 404);
         }
 
         $this->course = $course;
@@ -88,6 +90,12 @@ class AssessmentPersonalShow extends Component
 
         if ($this->assessment->end_date && now()->greaterThan($this->assessment->end_date)) {
             $this->errorMessage = __('The submission window for this assignment has closed.');
+
+            return false;
+        }
+
+        if ($this->assessment->start_date && now()->lessThan($this->assessment->start_date)) {
+            $this->errorMessage = __('This assignment is not open yet.');
 
             return false;
         }
@@ -225,6 +233,7 @@ class AssessmentPersonalShow extends Component
                 ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
                 : null,
             'isExpired' => $isExpired,
+            'notStarted' => $this->assessment->start_date && now()->lessThan($this->assessment->start_date),
         ];
 
         if ($this->isStudent) {

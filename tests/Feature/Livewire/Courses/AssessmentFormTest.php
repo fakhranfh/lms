@@ -137,6 +137,29 @@ class AssessmentFormTest extends TestCase
         ]);
     }
 
+    public function test_personal_assignment_form_only_offers_draft_and_published_statuses(): void
+    {
+        $this->teacher->givePermissionTo('assessment.create');
+
+        Livewire::test(AssessmentForm::class, ['course' => $this->course, 'type' => 'personal'])
+            ->assertSet('status', 'draft')
+            ->assertSee('Draft')
+            ->assertSee('Published')
+            ->assertDontSee('Ongoing')
+            ->assertDontSee('Closed');
+    }
+
+    public function test_team_assignment_form_only_offers_draft_and_published_statuses(): void
+    {
+        $this->teacher->givePermissionTo('assessment.create');
+
+        Livewire::test(AssessmentForm::class, ['course' => $this->course, 'type' => 'team'])
+            ->assertSee('Draft')
+            ->assertSee('Published')
+            ->assertDontSee('Ongoing')
+            ->assertDontSee('Closed');
+    }
+
     public function test_creates_team_assignment_with_group_assigned_to(): void
     {
         $this->teacher->givePermissionTo('assessment.create');

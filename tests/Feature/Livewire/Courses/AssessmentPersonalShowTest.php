@@ -45,6 +45,7 @@ class AssessmentPersonalShowTest extends TestCase
 
         $this->assessment = Assessment::factory()->for($this->course)->create([
             'type' => AssessmentType::TheoryPersonalAssignment,
+            'start_date' => now()->subDay(),
             'end_date' => now()->addWeek(),
         ]);
     }
@@ -127,6 +128,22 @@ class AssessmentPersonalShowTest extends TestCase
             ->set('answerText', 'Late answer')
             ->call('submit')
             ->assertSee('submission window');
+
+        $this->assertDatabaseMissing('assessment_attempts', ['assessment_id' => $this->assessment->id]);
+    }
+
+    public function test_student_cannot_submit_before_start_date(): void
+    {
+        $this->assessment->update(['start_date' => now()->addDay()]);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentPersonalShow::class, ['assessment' => $this->assessment])
+            ->assertSee('not open yet')
+            ->set('answerText', 'Too early')
+            ->call('submit')
+            ->assertSee('not open yet');
 
         $this->assertDatabaseMissing('assessment_attempts', ['assessment_id' => $this->assessment->id]);
     }

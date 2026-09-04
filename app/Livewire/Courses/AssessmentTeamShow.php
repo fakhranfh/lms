@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\RoleName;
 use App\Livewire\Concerns\WithRichTextEditor;
@@ -57,6 +58,10 @@ class AssessmentTeamShow extends Component
         $this->course = $course;
         $this->assessment = $assessment;
         $this->isStudent = auth()->user()->hasRole(RoleName::Student);
+
+        if ($this->isStudent) {
+            abort_if($assessment->status === AssessmentStatus::Draft, 404);
+        }
     }
 
     private function ownGroupId(GroupMemberService $groupMemberService): ?string
@@ -98,6 +103,12 @@ class AssessmentTeamShow extends Component
 
         if ($this->assessment->end_date && now()->greaterThan($this->assessment->end_date)) {
             $this->errorMessage = __('The submission window for this assignment has closed.');
+
+            return false;
+        }
+
+        if ($this->assessment->start_date && now()->lessThan($this->assessment->start_date)) {
+            $this->errorMessage = __('This assignment is not open yet.');
 
             return false;
         }
@@ -204,6 +215,7 @@ class AssessmentTeamShow extends Component
                 ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
                 : null,
             'isExpired' => $isExpired,
+            'notStarted' => $this->assessment->start_date && now()->lessThan($this->assessment->start_date),
         ];
 
         if ($this->isStudent) {

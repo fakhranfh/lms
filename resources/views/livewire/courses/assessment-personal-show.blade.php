@@ -165,6 +165,15 @@
                         <p class="text-body-sm text-on-surface-variant">You have reached the maximum number of attempts for this assessment.</p>
                     </div>
                 </div>
+            @elseif ($notStarted)
+                <div class="flex items-center justify-between gap-space-md">
+                    <div class="flex-1">
+                        <p class="text-body-sm text-on-surface-variant">This assessment is not open yet. It will be available from {{ $assessment->start_date_display->format('M j, Y, H:i') }}.</p>
+                    </div>
+                    <button type="button" disabled class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md opacity-50 cursor-not-allowed">
+                        Start Attempt
+                    </button>
+                </div>
             @elseif ($canSubmit && $canResubmit)
                 <div x-data="{ attemptOpen: false }">
                     <button

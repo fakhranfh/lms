@@ -239,6 +239,11 @@ class AssessmentIndex extends Component
 
         $assessments = $assessmentService->get(['course_id' => $this->course->id], ['attempts.score']);
 
+        if ($this->isStudent) {
+            $assessments = $assessments->reject(fn (Assessment $assessment) => in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment], true)
+                && $assessment->status === AssessmentStatus::Draft)->values();
+        }
+
         $rows = $assessments->mapWithKeys(function (Assessment $assessment) use ($assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService, $proctorSessionService) {
             return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService, $proctorSessionService)];
         })->all();

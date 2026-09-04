@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\AttendanceStatus;
 use App\Enums\DeliveryMode;
@@ -99,6 +100,50 @@ class AssessmentIndexTest extends TestCase
         Livewire::test(AssessmentIndex::class, ['course' => $this->course])
             ->call('loadAssessments')
             ->assertDontSee('Create Assessment');
+    }
+
+    public function test_student_does_not_see_draft_personal_or_team_assignments(): void
+    {
+        $this->student->givePermissionTo('assessment.view');
+        $this->actingAs($this->student);
+
+        Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'title' => 'Draft Personal Assignment',
+            'status' => AssessmentStatus::Draft,
+        ]);
+        Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryTeamAssignment,
+            'title' => 'Draft Team Assignment',
+            'status' => AssessmentStatus::Draft,
+        ]);
+        Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'title' => 'Published Personal Assignment',
+            'status' => AssessmentStatus::Published,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->assertDontSee('Draft Personal Assignment')
+            ->assertDontSee('Draft Team Assignment')
+            ->assertSee('Published Personal Assignment');
+    }
+
+    public function test_teacher_sees_draft_personal_and_team_assignments(): void
+    {
+        $this->teacher->givePermissionTo('assessment.view');
+        $this->actingAs($this->teacher);
+
+        Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryPersonalAssignment,
+            'title' => 'Draft Personal Assignment',
+            'status' => AssessmentStatus::Draft,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->assertSee('Draft Personal Assignment');
     }
 
     public function test_delete_blocked_when_attempts_exist(): void

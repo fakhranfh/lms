@@ -48,11 +48,14 @@
 
                 <div>
                     <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Status</label>
-                    <select wire:model="status" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <div class="flex items-center gap-space-lg py-space-sm">
                         @foreach ($statuses as $statusOption)
-                            <option value="{{ $statusOption->value }}">{{ str($statusOption->value)->title() }}</option>
+                            <label class="inline-flex items-center gap-space-xs cursor-pointer">
+                                <input type="radio" wire:model="status" value="{{ $statusOption->value }}" class="w-4 h-4 text-primary border-outline focus:ring-primary/50" />
+                                <span class="font-body-md text-body-md text-on-surface">{{ str($statusOption->value)->title() }}</span>
+                            </label>
                         @endforeach
-                    </select>
+                    </div>
                 </div>
             </div>
 

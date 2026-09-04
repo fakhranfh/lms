@@ -13,7 +13,6 @@ use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentQuestionScoreService;
 use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
-use App\Services\GradebookScoringService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
@@ -33,17 +32,9 @@ class AssessmentPersonalShow extends Component
 
     public string $answerText = '';
 
-    public ?string $gradingUserId = null;
-
-    public string $gradeScore = '';
-
-    public string $gradeFeedback = '';
-
     public ?string $errorMessage = null;
 
     public ?string $successMessage = null;
-
-    public array $gradeQuestionScores = [];
 
     public int $perPage = 12;
 
@@ -78,6 +69,7 @@ class AssessmentPersonalShow extends Component
 
         $this->course = $course;
         $this->assessment = $assessment;
+        $this->successMessage = session('successMessage');
     }
 
     public function submit(AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService): bool
@@ -136,99 +128,6 @@ class AssessmentPersonalShow extends Component
     public function clearSuccessMessage(): void
     {
         $this->successMessage = null;
-    }
-
-    public function openGrading(string $userId, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService): void
-    {
-        abort_unless(auth()->user()->can('assessment.grade'), 403);
-
-        $attempt = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $userId)->last();
-
-        if (! $attempt) {
-            return;
-        }
-
-        $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
-        $questionScores = $assessmentQuestionScoreService->findByAttempt($attempt->id);
-
-        $this->gradingUserId = $userId;
-        $this->gradeFeedback = $existingScore ? ($existingScore->feedback ?? '') : '';
-
-        $this->gradeQuestionScores = [];
-        foreach ($this->assessment->questions as $question) {
-            $qScore = $questionScores->firstWhere('assessment_question_id', $question->id);
-            $this->gradeQuestionScores[$question->id] = $qScore ? (string) $qScore->score : '';
-        }
-    }
-
-    public function cancelGrading(): void
-    {
-        $this->gradingUserId = null;
-        $this->gradeScore = '';
-        $this->gradeFeedback = '';
-    }
-
-    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, GradebookScoringService $gradebookScoringService): void
-    {
-        abort_unless(auth()->user()->can('assessment.grade'), 403);
-        abort_unless($this->gradingUserId !== null, 404);
-
-        $this->validate([
-            'gradeFeedback' => 'nullable|string',
-        ]);
-
-        $attempt = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $this->gradingUserId)->last();
-        abort_unless($attempt !== null, 404);
-
-        $totalScore = 0;
-        foreach ($this->assessment->questions as $question) {
-            $score = $this->gradeQuestionScores[$question->id] ?? '';
-            if ($score === '') {
-                $this->addError("gradeQuestionScores.{$question->id}", __('Score is required'));
-
-                continue;
-            }
-
-            if (! is_numeric($score) || (float) $score < 0 || (float) $score > $question->points) {
-                $this->addError("gradeQuestionScores.{$question->id}", __('Score must be between 0 and '.$question->points));
-
-                continue;
-            }
-
-            $totalScore += (float) $score;
-        }
-
-        if ($this->getErrorBag()->isNotEmpty()) {
-            return;
-        }
-
-        foreach ($this->assessment->questions as $question) {
-            $score = (float) $this->gradeQuestionScores[$question->id];
-            $assessmentQuestionScoreService->updateOrCreate(
-                ['assessment_attempt_id' => $attempt->id, 'assessment_question_id' => $question->id],
-                ['score' => $score]
-            );
-        }
-
-        $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
-        $data = [
-            'assessment_attempt_id' => $attempt->id,
-            'score' => $totalScore,
-            'graded_by' => auth()->id(),
-            'graded_at' => now(),
-            'feedback' => $this->gradeFeedback ?: null,
-        ];
-
-        if ($existingScore) {
-            $assessmentScoreService->update($existingScore->id, $data);
-        } else {
-            $assessmentScoreService->create($data);
-        }
-
-        $gradebookScoringService->recomputeForUser($this->course, $this->gradingUserId);
-
-        $this->cancelGrading();
-        $this->successMessage = __('Grade saved.');
     }
 
     public function render(CoursePersonService $coursePersonService, AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService)

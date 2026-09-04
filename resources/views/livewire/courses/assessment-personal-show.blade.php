@@ -370,6 +370,8 @@
                                     x-transition:enter-start="opacity-0"
                                     x-transition:enter-end="opacity-100"
                                     class="flex-1 overflow-y-auto p-space-lg space-y-space-lg"
+                                    x-data="rteVideoPreview()"
+                                    @click="onContentClick($event)"
                                 >
                                     <div class="flex items-center justify-between border-b border-outline-variant pb-space-md">
                                         <h2 class="font-headline-sm text-headline-sm text-on-surface">Attempt {{ $row['attempt']->attempt_number }} Answer</h2>
@@ -392,6 +394,8 @@
                                             <p class="text-body-sm text-on-surface">{{ $row['score']->feedback }}</p>
                                         </div>
                                     @endif
+
+                                    <x-ui.material-preview-modals />
                                 </div>
                             </div>
                         </template>
@@ -424,7 +428,7 @@
 
                 <x-ui.person-grid wire:loading.remove wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch">
                     @forelse ($studentRows as $row)
-                        <div wire:key="student-{{ $row['user']->id }}" class="bg-surface p-space-lg {{ $gradingUserId === $row['user']->id ? 'md:col-span-3' : '' }}">
+                        <div wire:key="student-{{ $row['user']->id }}" class="bg-surface p-space-lg">
                             <div class="flex flex-col items-center text-center gap-space-sm">
                                 <x-avatar :user="$row['user']" size="12" />
                                 <p class="font-label-lg text-label-lg text-on-surface">{{ $row['user']->name }}</p>
@@ -439,57 +443,14 @@
                                 </span>
 
                                 @if ($canGrade && $row['attempt'])
-                                    <button
-                                        type="button"
-                                        wire:click="openGrading('{{ $row['user']->id }}')"
+                                    <a
+                                        href="{{ route('assessments.personal.grade', ['assessment' => $assessment->id, 'student' => $row['user']->id]) }}"
                                         class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
                                     >
                                         Grade
-                                    </button>
+                                    </a>
                                 @endif
                             </div>
-
-                            @if ($gradingUserId === $row['user']->id)
-                                <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md text-left">
-                                    <div class="rte-content text-body-sm text-on-surface-variant">{!! $row['answer']?->answer_text !!}</div>
-
-                                    <form wire:submit="submitGrade" class="space-y-space-md">
-                                        <div class="space-y-space-md">
-                                            <h4 class="font-label-md text-label-md text-on-surface">Question Scores</h4>
-                                            @foreach ($assessment->questions as $question)
-                                                <div>
-                                                    <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
-                                                        Question {{ $loop->iteration }} ({{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts)
-                                                    </label>
-                                                    <input
-                                                        type="number"
-                                                        step="0.01"
-                                                        min="0"
-                                                        max="{{ $question->points }}"
-                                                        wire:model="gradeQuestionScores.{{ $question->id }}"
-                                                        class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                                    />
-                                                    @error("gradeQuestionScores.{$question->id}") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
-                                                </div>
-                                            @endforeach
-                                        </div>
-
-                                        <div>
-                                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Feedback</label>
-                                            <textarea wire:model="gradeFeedback" rows="3" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"></textarea>
-                                        </div>
-
-                                        <div class="flex gap-space-md">
-                                            <button type="button" wire:click="cancelGrading" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
-                                                Cancel
-                                            </button>
-                                            <button type="submit" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
-                                                Save Grade
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            @endif
                         </div>
                     @empty
                         <div class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">

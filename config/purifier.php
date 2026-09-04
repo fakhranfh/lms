@@ -36,7 +36,7 @@ return [
         ],
         'forum' => [
             'HTML.Doctype' => 'HTML 4.01 Transitional',
-            'HTML.Allowed' => 'p,br,b,strong,i,em,u,h1,h2,ul,ol,li,a[href|title|target|rel|class|contenteditable|data-video-preview],span[class],blockquote,img[src|alt|width|height],table,thead,tbody,tr,th,td',
+            'HTML.Allowed' => 'p,br,b,strong,i,em,u,h1,h2,ul,ol,li,a[href|title|target|rel|class|contenteditable|data-video-preview|data-file-preview|data-file-preview-name],span[class],blockquote,img[src|alt|width|height],table,thead,tbody,tr,th,td',
             'AutoFormat.AutoParagraph' => false,
             'AutoFormat.RemoveEmpty' => true,
         ],
@@ -104,10 +104,13 @@ return [
         ],
         'custom_attributes' => [
             ['a', 'target', 'Enum#_blank,_self,_target,_top'],
-            // Video chips store their preview URL here (see rich-text-editor.js
-            // buildFileChip) instead of href, so the read-only view's click
-            // delegation can open a preview modal instead of navigating.
+            // File/video chips store their preview URL (and, for files, a
+            // display name) here (see rich-text-editor.js buildFileChip)
+            // instead of href, so the read-only view's click delegation can
+            // open a preview modal instead of navigating.
             ['a', 'data-video-preview', 'URI'],
+            ['a', 'data-file-preview', 'URI'],
+            ['a', 'data-file-preview-name', 'Text'],
         ],
         'custom_elements' => [
             ['u', 'Inline', 'Inline', 'Common'],

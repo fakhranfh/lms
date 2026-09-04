@@ -158,8 +158,9 @@ export default (initialValue, wireModel, id, disabled = false, allowAttachments 
         // Chips saved before file previews existed still carry a plain
         // href + target="_blank" instead of data-file-preview.
         const legacyChip = event.target.closest('a.rte-file-chip');
+        const legacyHref = legacyChip?.getAttribute('href');
 
-        if (legacyChip && legacyChip.href) {
+        if (legacyChip && legacyHref && legacyHref !== '#') {
             event.preventDefault();
             const name = legacyChip.querySelector('.rte-file-chip-name')?.textContent || '';
             this.openFilePreview(legacyChip.href, name);

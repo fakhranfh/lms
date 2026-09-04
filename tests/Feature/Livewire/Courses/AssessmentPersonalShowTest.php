@@ -7,7 +7,6 @@ use App\Enums\RoleName;
 use App\Livewire\Courses\AssessmentPersonalShow;
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
-use App\Models\AssessmentQuestion;
 use App\Models\AssessmentScore;
 use App\Models\Course;
 use App\Models\CoursePerson;
@@ -157,37 +156,6 @@ class AssessmentPersonalShowTest extends TestCase
 
         Livewire::test(AssessmentPersonalShow::class, ['assessment' => $this->assessment])
             ->assertSee($this->student->name);
-    }
-
-    public function test_teacher_grade_creates_score_and_student_sees_it(): void
-    {
-        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
-
-        $q1 = AssessmentQuestion::factory()->for($this->assessment)->create(['points' => 50]);
-        $q2 = AssessmentQuestion::factory()->for($this->assessment)->create(['points' => 35]);
-
-        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
-
-        $this->actingAs($this->teacher);
-        Livewire::test(AssessmentPersonalShow::class, ['assessment' => $this->assessment])
-            ->call('openGrading', $this->student->id)
-            ->set("gradeQuestionScores.{$q1->id}", '50')
-            ->set("gradeQuestionScores.{$q2->id}", '35')
-            ->set('gradeFeedback', 'Well done')
-            ->call('submitGrade');
-
-        $this->assertDatabaseHas('assessment_scores', [
-            'assessment_attempt_id' => $attempt->id,
-            'score' => 85,
-            'feedback' => 'Well done',
-        ]);
-
-        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
-        $this->actingAs($this->student);
-
-        Livewire::test(AssessmentPersonalShow::class, ['assessment' => $this->assessment])
-            ->assertSee('85')
-            ->assertSee('Well done');
     }
 
     public function test_cross_school_access_forbidden(): void

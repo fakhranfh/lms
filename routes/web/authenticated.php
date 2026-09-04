@@ -18,6 +18,7 @@ use App\Livewire\Courses\AssessmentFinalExamShow;
 use App\Livewire\Courses\AssessmentForm;
 use App\Livewire\Courses\AssessmentForumDiscussionShow;
 use App\Livewire\Courses\AssessmentIndex;
+use App\Livewire\Courses\AssessmentPersonalGrade;
 use App\Livewire\Courses\AssessmentPersonalShow;
 use App\Livewire\Courses\AssessmentQuizForm;
 use App\Livewire\Courses\AssessmentQuizShow;
@@ -112,6 +113,7 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/courses/{course}/assessments/create/{type}', AssessmentForm::class)->whereIn('type', ['personal', 'team'])->middleware('permission:assessment.create')->name('assessments.create');
         Route::get('/assessments/{assessment}/edit', AssessmentForm::class)->middleware('permission:assessment.edit')->name('assessments.edit');
         Route::get('/assessments/{assessment}/personal', AssessmentPersonalShow::class)->middleware('permission:assessment.view')->name('assessments.personal.show');
+        Route::get('/assessments/{assessment}/personal/grade/{student}', AssessmentPersonalGrade::class)->middleware('permission:assessment.grade')->name('assessments.personal.grade');
         Route::get('/assessments/{assessment}/team', AssessmentTeamShow::class)->middleware('permission:assessment.view')->name('assessments.team.show');
         Route::get('/courses/{course}/assessments/create/quiz', AssessmentQuizForm::class)->middleware('permission:assessment.create')->name('assessments.quiz.create');
         Route::get('/assessments/{assessment}/quiz/edit', AssessmentQuizForm::class)->middleware('permission:assessment.edit')->name('assessments.quiz.edit');

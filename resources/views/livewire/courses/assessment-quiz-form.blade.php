@@ -116,7 +116,7 @@
                 <h2 class="font-label-lg text-label-lg text-on-surface">Questions</h2>
                 <button
                     type="button"
-                    @click="window.addSyllabusRow($wire, 'question-template', 'questions', { id: null, description: '', points: '', options: [{ id: null, label: '', isCorrect: false }, { id: null, label: '', isCorrect: false }] })"
+                    @click="window.addSyllabusRow($wire, 'question-template', 'questions', { id: null, description: '', options: [{ id: null, label: '', isCorrect: false }, { id: null, label: '', isCorrect: false }] })"
                     class="text-primary text-body-sm font-medium hover:underline inline-flex items-center gap-space-xs"
                 >
                     <span class="material-symbols-outlined text-[16px]">add</span>
@@ -142,13 +142,6 @@
                         </div>
                         <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                         @error("questions.{$index}.description") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="w-40" data-field="points" @error("questions.{$index}.points") data-field-error @enderror>
-                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Points</label>
-                        <input type="number" step="0.01" min="0" wire:model="questions.{{ $index }}.points" data-question-points class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 @error("questions.{$index}.points") border-error ring-2 ring-error/30 @enderror" />
-                        <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
-                        @error("questions.{$index}.points") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                     </div>
 
                     <div data-field="options" @error("questions.{$index}.options") data-field-error @enderror>
@@ -201,19 +194,6 @@
                     <div data-field="description">
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Description</label>
                         <x-rich-text-editor id="question-__NEW__" wire-model="questions.__NEW__.description" />
-                        <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
-                    </div>
-
-                    <div class="w-40" data-field="points">
-                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Points</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            data-question-points
-                            @input="$wire.set('questions.__NEW__.points', $event.target.value, false)"
-                            class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        />
                         <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                     </div>
 

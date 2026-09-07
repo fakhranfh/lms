@@ -31,11 +31,13 @@ export function validateAssessmentQuestionsTotal(formEl) {
 
 /**
  * Client-side gate for the quiz form (see assessment-quiz-form.blade.php),
- * catching obviously-invalid input (empty title/session/description,
- * missing points, fewer than two options, no option marked correct) before
- * a request is sent. Server-side validation still re-checks everything as
- * the source of truth. Question descriptions live in a wire:ignore rich
- * text editor, so they're read straight from its contenteditable DOM.
+ * catching obviously-invalid input (empty title/session/description, fewer
+ * than two options, no option marked correct) before a request is sent.
+ * Questions are not individually weighted — points are split evenly across
+ * them server-side, so there is nothing to validate there. Server-side
+ * validation still re-checks everything as the source of truth. Question
+ * descriptions live in a wire:ignore rich text editor, so they're read
+ * straight from its contenteditable DOM.
  */
 export function validateQuizForm(formEl) {
     let valid = true;
@@ -85,14 +87,6 @@ export function validateQuizForm(formEl) {
             markField(descriptionWrapper, 'Description is required.');
         } else {
             clearField(descriptionWrapper);
-        }
-
-        const pointsWrapper = row.querySelector('[data-field="points"]');
-        const pointsValue = row.querySelector('[data-question-points]')?.value;
-        if (pointsValue === '' || pointsValue === undefined || parseFloat(pointsValue) < 0) {
-            markField(pointsWrapper, 'Points is required.');
-        } else {
-            clearField(pointsWrapper);
         }
 
         const optionsWrapper = row.querySelector('[data-field="options"]');

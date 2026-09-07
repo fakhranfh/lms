@@ -216,7 +216,7 @@ class AssessmentIndexTest extends TestCase
         Livewire::test(AssessmentIndex::class, ['course' => $this->course])
             ->call('loadAssessments')
             ->call('publishAssessment', $assessment->id)
-            ->assertSee('Only personal and team assignments');
+            ->assertSee('Only personal assignments, team assignments, and quizzes');
 
         $this->assertDatabaseHas('assessments', [
             'id' => $assessment->id,

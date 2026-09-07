@@ -253,7 +253,7 @@
 
                                     @foreach ($quiz->questions as $question)
                                         <div x-show="currentQuestion === {{ $loop->index }}" x-cloak class="space-y-space-lg max-w-2xl mx-auto">
-                                            <p class="text-body-sm text-on-surface-variant">Question {{ $loop->iteration }} of {{ $quiz->questions->count() }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
+                                            <p class="text-body-sm text-on-surface-variant">Question {{ $loop->iteration }} of {{ $quiz->questions->count() }}</p>
                                             <div class="rte-content prose prose-lg max-w-none text-on-surface">{!! $question->description !!}</div>
 
                                             @if (in_array($question->question_type->value, ['multiple_choice', 'true_false']))

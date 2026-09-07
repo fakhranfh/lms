@@ -25,11 +25,6 @@ class AssessmentQuizForm extends Component
 {
     use WithRichTextEditor;
 
-    /**
-     * Points distribution for the 3 dev-generated questions, summing to 100.
-     */
-    private const GENERATED_QUESTION_POINTS = [30, 30, 40];
-
     public Course $course;
 
     public ?Assessment $assessment = null;
@@ -51,9 +46,10 @@ class AssessmentQuizForm extends Component
     /**
      * A question or option slot is temporarily null between a client-side
      * remove (see resources/js/syllabus-form.js's removeSyllabusRow) and the
-     * next pruneRemoved() call.
+     * next pruneRemoved() call. Questions are not individually weighted —
+     * points are split evenly across them at save time (see equalPoints()).
      *
-     * @var array<int, ?array{id: ?string, description: string, points: string, order: int, options: array<int, ?array{id: ?string, label: string, isCorrect: bool, order: int}>}>
+     * @var array<int, ?array{id: ?string, description: string, order: int, options: array<int, ?array{id: ?string, label: string, isCorrect: bool, order: int}>}>
      */
     public array $questions = [];
 
@@ -89,7 +85,6 @@ class AssessmentQuizForm extends Component
                 $this->questions = $quiz->questions->map(fn ($question) => [
                     'id' => $question->id,
                     'description' => $question->description,
-                    'points' => (string) $question->points,
                     'order' => $question->order,
                     'options' => $question->options->map(fn ($option) => [
                         'id' => $option->id,
@@ -141,7 +136,6 @@ class AssessmentQuizForm extends Component
         $this->questions = collect($questionContent)->values()->map(fn ($question, $index) => [
             'id' => null,
             'description' => '<p>'.$question['description'].'</p>',
-            'points' => (string) self::GENERATED_QUESTION_POINTS[$index],
             'order' => $index + 1,
             'options' => collect($question['options'])->values()->map(fn ($label, $optionIndex) => [
                 'id' => null,
@@ -163,7 +157,6 @@ class AssessmentQuizForm extends Component
         $this->questions[] = [
             'id' => null,
             'description' => '',
-            'points' => '',
             'order' => count($this->questions) + 1,
             'options' => $this->defaultOptions(),
         ];
@@ -209,6 +202,28 @@ class AssessmentQuizForm extends Component
             ['id' => null, 'label' => '', 'isCorrect' => false, 'order' => 1],
             ['id' => null, 'label' => '', 'isCorrect' => false, 'order' => 2],
         ];
+    }
+
+    /**
+     * Splits 100 points evenly across a quiz's questions (remainder cents
+     * assigned to the first questions) so every question counts equally
+     * toward the total — question-level weighting is not configurable.
+     *
+     * @return array<int, float>
+     */
+    private function equalPoints(int $count): array
+    {
+        if ($count === 0) {
+            return [];
+        }
+
+        $baseCents = intdiv(10000, $count);
+        $remainderCents = 10000 - $baseCents * $count;
+
+        return array_map(
+            fn (int $index) => ($baseCents + ($index < $remainderCents ? 1 : 0)) / 100,
+            range(0, $count - 1)
+        );
     }
 
     /**
@@ -267,7 +282,6 @@ class AssessmentQuizForm extends Component
             'timeLimitPerAttempt' => 'nullable|integer|min:1',
             'questions' => 'array|min:1',
             'questions.*.description' => 'required|string',
-            'questions.*.points' => 'required|numeric|min:0',
         ]);
 
         foreach ($this->questions as $index => $question) {
@@ -332,11 +346,13 @@ class AssessmentQuizForm extends Component
                 }
             }
 
+            $pointsByIndex = $this->equalPoints(count($this->questions));
+
             foreach ($this->questions as $index => $question) {
                 $questionData = [
                     'quiz_id' => $quiz->id,
                     'description' => HtmlSanitizer::forum($this->promoteRichTextAttachments($question['description'])),
-                    'points' => (float) $question['points'],
+                    'points' => $pointsByIndex[$index],
                     'question_type' => QuizQuestionType::MultipleChoice,
                     'order' => $index + 1,
                 ];

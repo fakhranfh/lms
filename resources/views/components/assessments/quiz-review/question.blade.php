@@ -1,17 +1,14 @@
 {{--
-    Molecule: one question's description, points, and answer review in a
-    quiz review modal. Relies on a `currentQuestion` Alpine property owned
-    by the enclosing modal to toggle visibility.
+    Molecule: one question's description and answer review in a quiz review
+    modal. Relies on a `currentQuestion` Alpine property owned by the
+    enclosing modal to toggle visibility. Questions are not individually
+    weighted, so only the final score is shown (in the modal header) — not
+    a per-question score.
 --}}
 @props(['question', 'index', 'total', 'answer'])
 
 <div x-show="currentQuestion === {{ $index }}" x-cloak class="space-y-space-lg max-w-2xl mx-auto">
-    <div class="flex items-center justify-between">
-        <p class="text-body-sm text-on-surface-variant">Question {{ $index + 1 }} of {{ $total }}</p>
-        <p class="text-body-sm font-medium text-on-surface">
-            {{ $answer?->score !== null ? rtrim(rtrim(number_format($answer->score, 2), '0'), '.') : '—' }} / {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts
-        </p>
-    </div>
+    <p class="text-body-sm text-on-surface-variant">Question {{ $index + 1 }} of {{ $total }}</p>
     <div class="rte-content prose prose-lg max-w-none text-on-surface">{!! $question->description !!}</div>
 
     @if (in_array($question->question_type->value, ['multiple_choice', 'true_false']))

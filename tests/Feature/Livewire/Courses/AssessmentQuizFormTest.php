@@ -84,7 +84,6 @@ class AssessmentQuizFormTest extends TestCase
             ->set('scoringMethod', 'highest')
             ->set('timeLimitPerAttempt', '30')
             ->set('questions.0.description', 'What is 2 + 2?')
-            ->set('questions.0.points', '10')
             ->set('questions.0.options.0.label', '4')
             ->set('questions.0.options.1.label', '5')
             ->call('toggleCorrect', 0, 0)
@@ -112,6 +111,7 @@ class AssessmentQuizFormTest extends TestCase
         $question = QuizQuestion::where('description', 'What is 2 + 2?')->firstOrFail();
         $this->assertEquals(2, $question->options()->count());
         $this->assertEquals(1, $question->options()->where('is_correct', true)->count());
+        $this->assertEquals(100.0, (float) $question->points);
     }
 
     public function test_multiple_choice_requires_exactly_one_correct_option(): void
@@ -122,7 +122,6 @@ class AssessmentQuizFormTest extends TestCase
             ->set('title', 'Bad Quiz')
             ->set('sessionId', $this->session->id)
             ->set('questions.0.description', 'Pick one.')
-            ->set('questions.0.points', '10')
             ->set('questions.0.options.0.label', 'A')
             ->set('questions.0.options.1.label', 'B')
             ->call('save')
@@ -138,7 +137,6 @@ class AssessmentQuizFormTest extends TestCase
         Livewire::test(AssessmentQuizForm::class, ['course' => $this->course])
             ->set('title', 'No Session Quiz')
             ->set('questions.0.description', 'Q1')
-            ->set('questions.0.points', '10')
             ->set('questions.0.options.0.label', 'A')
             ->set('questions.0.options.1.label', 'B')
             ->call('toggleCorrect', 0, 0)

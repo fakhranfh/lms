@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\QuizScoringMethod;
 use App\Enums\RoleName;
@@ -281,6 +282,28 @@ class AssessmentQuizShowTest extends TestCase
         $expectedDeadline = $attempt->started_at->copy()->addMinutes(10);
 
         $this->assertTrue($attempt->fresh()->submitted_at->equalTo($expectedDeadline));
+    }
+
+    public function test_draft_quiz_is_inaccessible_to_students(): void
+    {
+        $this->assessment->update(['status' => AssessmentStatus::Draft]);
+
+        $this->student->givePermissionTo('assessment.view');
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
+            ->assertStatus(404);
+    }
+
+    public function test_draft_quiz_remains_accessible_to_teacher(): void
+    {
+        $this->assessment->update(['status' => AssessmentStatus::Draft]);
+
+        $this->teacher->givePermissionTo('assessment.view');
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentQuizShow::class, ['assessment' => $this->assessment])
+            ->assertStatus(200);
     }
 
     public function test_wrong_type_returns_404(): void

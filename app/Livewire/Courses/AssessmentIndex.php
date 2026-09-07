@@ -154,8 +154,8 @@ class AssessmentIndex extends Component
             return;
         }
 
-        if (! in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment], true)) {
-            $this->errorMessage = __('Only personal and team assignments can be published or unpublished.');
+        if (! in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::TheoryQuiz], true)) {
+            $this->errorMessage = __('Only personal assignments, team assignments, and quizzes can be published or unpublished.');
 
             return;
         }
@@ -384,6 +384,9 @@ class AssessmentIndex extends Component
             ['description' => 'Given the example from the lecture, what would be the expected outcome?', 'options' => ['The correct outcome', 'A plausible but wrong outcome', 'An unrelated outcome']],
         ];
 
+        // Quiz questions are not individually weighted (see AssessmentQuizForm::equalPoints()).
+        $equalPoints = [33.34, 33.33, 33.33];
+
         for ($i = 0; $i < $count; $i++) {
             $session = $sessions[$i % $sessions->count()];
 
@@ -412,7 +415,7 @@ class AssessmentIndex extends Component
                 $question = $quizQuestionService->create([
                     'quiz_id' => $quiz->id,
                     'description' => '<p>'.$questionData['description'].'</p>',
-                    'points' => self::GENERATED_QUESTION_POINTS[$index],
+                    'points' => $equalPoints[$index],
                     'question_type' => QuizQuestionType::MultipleChoice,
                     'order' => $index + 1,
                 ]);
@@ -446,7 +449,7 @@ class AssessmentIndex extends Component
         $assessments = $assessmentService->get(['course_id' => $this->course->id], ['attempts.score']);
 
         if ($this->isStudent) {
-            $assessments = $assessments->reject(fn (Assessment $assessment) => in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment], true)
+            $assessments = $assessments->reject(fn (Assessment $assessment) => in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::TheoryQuiz], true)
                 && $assessment->status === AssessmentStatus::Draft)->values();
         }
 
@@ -504,7 +507,7 @@ class AssessmentIndex extends Component
                 'sessionPosition' => $a->session_id ? ($sessionPositions[$a->session_id] ?? null) : null,
                 'isReorderable' => ! $this->isStudent && ! $this->isAutoProvisionedType($a->type),
                 'isAutoProvisionedType' => $this->isAutoProvisionedType($a->type),
-                'isAssignmentType' => in_array($a->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment], true),
+                'isAssignmentType' => in_array($a->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::TheoryQuiz], true),
                 'isDraft' => $a->status === AssessmentStatus::Draft,
                 'editRoute' => $this->editRoute($a),
                 'publishWireTargets' => "publishAssessment('{$a->id}'),unpublishAssessment('{$a->id}')",

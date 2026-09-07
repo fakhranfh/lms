@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\QuizQuestionType;
 use App\Enums\RoleName;
@@ -79,6 +80,7 @@ class AssessmentQuizShow extends Component
 
         if ($this->isStudent) {
             abort_unless($coursePersonService->isEnrolledAsStudent($course->id, auth()->id()), 403);
+            abort_if($assessment->status === AssessmentStatus::Draft, 404);
         }
 
         $this->course = $course;

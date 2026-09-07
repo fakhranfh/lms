@@ -105,31 +105,6 @@
 
     <!-- Grouped Collapsible Tables -->
     <div class="space-y-space-lg" x-data="{ deleteId: null, deleteMode: 'single', showDeleteModal: false, selectedIds: [], deletingIds: [], bulkDeleting: false }">
-        @unless ($isStudent)
-            <div x-show="selectedIds.length > 0" x-cloak class="flex items-center justify-between px-space-lg py-space-sm bg-surface-container border border-outline-variant rounded-lg">
-                <p class="font-label-md text-label-md text-on-surface"><span x-text="selectedIds.length"></span> selected</p>
-                <div class="flex items-center gap-space-sm">
-                    <button
-                        type="button"
-                        @click="selectedIds = []"
-                        class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface transition"
-                    >
-                        Clear
-                    </button>
-                    <button
-                        type="button"
-                        :disabled="bulkDeleting"
-                        @click="deleteMode = 'bulk'; showDeleteModal = true"
-                        class="px-space-md py-space-xs bg-error text-on-error rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity inline-flex items-center gap-space-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <span x-show="!bulkDeleting" class="material-symbols-outlined text-[16px]">delete</span>
-                        <span x-show="bulkDeleting" class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span>
-                        <span x-text="bulkDeleting ? 'Deleting...' : 'Delete Selected'"></span>
-                    </button>
-                </div>
-            </div>
-        @endunless
-
         @foreach ($groupedAssessments as $index => $group)
             <div x-data="{ open: true }">
                 @if ($group['assessments']->isNotEmpty())
@@ -151,11 +126,18 @@
                     </button>
 
                     <!-- Collapsible Content: Table -->
-                    <div x-show="open" x-cloak class="bg-surface border border-t-0 border-outline-variant rounded-b-lg overflow-hidden">
+                    <div x-show="open" x-cloak>
                         @if (($group['type'] === \App\Enums\AssessmentType::Attendance || $group['type'] === \App\Enums\AssessmentType::ForumDiscussion) && $isStudent)
-                            <x-assessments.session-table :rows="$group['sessionTableRows']" :empty-message="$group['sessionTableEmptyMessage']" />
+                            <div class="bg-surface border border-t-0 border-outline-variant rounded-b-lg overflow-hidden">
+                                <x-assessments.session-table :rows="$group['sessionTableRows']" :empty-message="$group['sessionTableEmptyMessage']" />
+                            </div>
                         @else
-                            <x-assessments.table :group="$group" :is-student="$isStudent" :course="$course" />
+                            @unless ($isStudent)
+                                <x-assessments.bulk-delete-bar />
+                            @endunless
+                            <div class="bg-surface border border-t-0 border-outline-variant rounded-b-lg overflow-hidden">
+                                <x-assessments.table :group="$group" :is-student="$isStudent" :course="$course" />
+                            </div>
                         @endif
                     </div>
                 @else

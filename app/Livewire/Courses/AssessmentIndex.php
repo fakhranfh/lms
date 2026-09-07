@@ -7,6 +7,8 @@ use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\DeliveryMode;
 use App\Enums\ProctorReviewDecision;
+use App\Enums\QuizQuestionType;
+use App\Enums\QuizScoringMethod;
 use App\Enums\RoleName;
 use App\Livewire\Concerns\WithDevMaterialAttachments;
 use App\Models\Assessment;
@@ -25,7 +27,11 @@ use App\Services\GroupService;
 use App\Services\MediaLibraryService;
 use App\Services\ProctorSessionService;
 use App\Services\QuizAttemptScoringService;
+use App\Services\QuizQuestionOptionService;
+use App\Services\QuizQuestionService;
+use App\Services\QuizService;
 use App\Services\R2StorageService;
+use App\Services\SessionService;
 use App\Support\AssessmentTypeLabel;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
@@ -341,6 +347,84 @@ class AssessmentIndex extends Component
                     $materialSync[$materialId] = ['order' => $order + 1];
                 }
                 $question->files()->sync($materialSync);
+            }
+        }
+    }
+
+    /**
+     * Dev-only: bulk-creates draft quizzes, cycling through the course's
+     * existing sessions (a quiz always needs one), each seeded with 3
+     * multiple-choice questions worth the same GENERATED_QUESTION_POINTS
+     * distribution used by the other dev generators.
+     */
+    public function generateQuizzes(AssessmentService $assessmentService, QuizService $quizService, QuizQuestionService $quizQuestionService, QuizQuestionOptionService $quizQuestionOptionService, SessionService $sessionService): void
+    {
+        abort_unless(app()->environment(['local', 'testing']), 403);
+        abort_unless(auth()->user()->can('assessment.create'), 403);
+
+        $this->errorMessage = null;
+
+        $this->validate([
+            'generateCount' => 'required|integer|min:1|max:50',
+        ]);
+
+        $count = (int) $this->generateCount;
+
+        $sessions = $sessionService->forCourse($this->course->id);
+
+        if ($sessions->isEmpty()) {
+            $this->errorMessage = __('This course has no sessions to attach quizzes to.');
+
+            return;
+        }
+
+        $questionContent = [
+            ['description' => 'What is the primary purpose of the concept covered this week?', 'options' => ['The correct answer', 'A common misconception', 'An unrelated distractor']],
+            ['description' => 'Which of the following best describes the technique discussed in class?', 'options' => ['The correct technique', 'A similar but incorrect technique', 'An unrelated technique']],
+            ['description' => 'Given the example from the lecture, what would be the expected outcome?', 'options' => ['The correct outcome', 'A plausible but wrong outcome', 'An unrelated outcome']],
+        ];
+
+        for ($i = 0; $i < $count; $i++) {
+            $session = $sessions[$i % $sessions->count()];
+
+            $assessment = $assessmentService->create([
+                'course_id' => $this->course->id,
+                'session_id' => $session->id,
+                'type' => AssessmentType::TheoryQuiz,
+                'title' => AssessmentTypeLabel::forType(AssessmentType::TheoryQuiz).' - Week '.random_int(1, 14).' Quiz',
+                'weight' => AssessmentType::TheoryQuiz->defaultWeight(),
+                'start_date' => $session->date_start,
+                'end_date' => $session->date_end,
+                'status' => AssessmentStatus::Draft,
+            ]);
+
+            $quiz = $quizService->create([
+                'assessment_id' => $assessment->id,
+                'start_date' => $session->date_start,
+                'due_date' => $session->date_end,
+                'total_question' => count($questionContent),
+                'total_attempts' => 3,
+                'scoring_method' => QuizScoringMethod::Highest,
+                'time_limit_per_attempt' => 30,
+            ]);
+
+            foreach ($questionContent as $index => $questionData) {
+                $question = $quizQuestionService->create([
+                    'quiz_id' => $quiz->id,
+                    'description' => '<p>'.$questionData['description'].'</p>',
+                    'points' => self::GENERATED_QUESTION_POINTS[$index],
+                    'question_type' => QuizQuestionType::MultipleChoice,
+                    'order' => $index + 1,
+                ]);
+
+                foreach ($questionData['options'] as $optionIndex => $label) {
+                    $quizQuestionOptionService->create([
+                        'quiz_question_id' => $question->id,
+                        'label' => $label,
+                        'is_correct' => $optionIndex === 0,
+                        'order' => $optionIndex + 1,
+                    ]);
+                }
             }
         }
     }

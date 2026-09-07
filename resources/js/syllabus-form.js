@@ -57,6 +57,64 @@ export function removeSyllabusRow($wire, paths, buttonEl) {
 }
 
 /**
+ * Sets a single boolean field to true on one item of a Livewire array and
+ * false on every sibling (e.g. picking the correct option of a quiz
+ * question), the same deferred, no-round-trip way as addSyllabusRow.
+ */
+export function setSyllabusRadio($wire, arrayPath, selectedIndex, field = 'isCorrect') {
+    const items = $wire.get(arrayPath) || [];
+
+    items.forEach((item, index) => {
+        if (item !== null) {
+            $wire.set(`${arrayPath}.${index}.${field}`, index === selectedIndex, false);
+        }
+    });
+}
+
+/**
+ * Adds a new empty option to a quiz question. Options are nested one level
+ * inside questions, and the <template>-clone approach addSyllabusRow uses
+ * only substitutes a single index per clone (see its own docblock) — reusing
+ * it here would collide the option's index with the parent question's index
+ * for any question added client-side. Building the row by hand instead
+ * sidesteps that, and works the same whether the question was rendered by
+ * the server or added moments ago via addSyllabusRow.
+ */
+export function addQuizOption($wire, questionIndex, containerEl) {
+    if (!containerEl) {
+        return;
+    }
+
+    const arrayPath = `questions.${questionIndex}.options`;
+    const options = $wire.get(arrayPath) || [];
+    const optionIndex = options.length;
+
+    $wire.set(`${arrayPath}.${optionIndex}`, { id: null, label: '', isCorrect: false }, false);
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `
+        <div data-row data-option-row class="flex items-center gap-space-sm">
+            <input type="radio" name="correct-option-${questionIndex}" data-option-correct />
+            <input type="text" data-option-label placeholder="Option label" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            <button type="button" data-remove-option class="text-error text-body-sm hover:underline">Remove</button>
+        </div>
+    `.trim();
+    const row = wrapper.firstElementChild;
+
+    row.querySelector('[data-option-correct]').addEventListener('change', () => {
+        setSyllabusRadio($wire, arrayPath, optionIndex);
+    });
+    row.querySelector('[data-option-label]').addEventListener('input', (event) => {
+        $wire.set(`${arrayPath}.${optionIndex}.label`, event.target.value, false);
+    });
+    row.querySelector('[data-remove-option]').addEventListener('click', () => {
+        removeSyllabusRow($wire, `${arrayPath}.${optionIndex}`, row);
+    });
+
+    containerEl.appendChild(row);
+}
+
+/**
  * Toggles a value in/out of a Livewire array property (e.g. the learning
  * outcome checkboxes on an evaluation activity), the same deferred,
  * no-round-trip way as addSyllabusRow.

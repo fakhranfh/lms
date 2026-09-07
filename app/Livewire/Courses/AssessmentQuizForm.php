@@ -6,6 +6,7 @@ use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\QuizQuestionType;
 use App\Enums\QuizScoringMethod;
+use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Services\AssessmentService;
@@ -14,6 +15,7 @@ use App\Services\QuizQuestionOptionService;
 use App\Services\QuizQuestionService;
 use App\Services\QuizService;
 use App\Services\SessionService;
+use App\Support\AssessmentTypeLabel;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +23,13 @@ use Livewire\Component;
 
 class AssessmentQuizForm extends Component
 {
+    use WithRichTextEditor;
+
+    /**
+     * Points distribution for the 3 dev-generated questions, summing to 100.
+     */
+    private const GENERATED_QUESTION_POINTS = [30, 30, 40];
+
     public Course $course;
 
     public ?Assessment $assessment = null;
@@ -40,7 +49,11 @@ class AssessmentQuizForm extends Component
     public string $timeLimitPerAttempt = '';
 
     /**
-     * @var array<int, array{id: ?string, description: string, points: string, order: int, options: array<int, array{id: ?string, label: string, isCorrect: bool, order: int}>}>
+     * A question or option slot is temporarily null between a client-side
+     * remove (see resources/js/syllabus-form.js's removeSyllabusRow) and the
+     * next pruneRemoved() call.
+     *
+     * @var array<int, ?array{id: ?string, description: string, points: string, order: int, options: array<int, ?array{id: ?string, label: string, isCorrect: bool, order: int}>}>
      */
     public array $questions = [];
 
@@ -93,6 +106,55 @@ class AssessmentQuizForm extends Component
 
         if ($this->questions === []) {
             $this->addQuestion();
+        }
+    }
+
+    protected function richTextAttachmentFolder(): string
+    {
+        return 'quiz-questions';
+    }
+
+    /**
+     * Dev-only: fills the form with fake data so the UI can be exercised
+     * without manually typing every field.
+     */
+    public function devAutofill(SessionService $sessionService): void
+    {
+        abort_unless(app()->environment(['local', 'testing']), 403);
+        abort_unless(auth()->user()->can('assessment.create') || auth()->user()->can('assessment.edit'), 403);
+
+        $this->title = AssessmentTypeLabel::forType(AssessmentType::TheoryQuiz).' - Week '.random_int(1, 14).' Quiz';
+        $this->weight = (string) AssessmentType::TheoryQuiz->defaultWeight();
+        $firstSession = $sessionService->forCourse($this->course->id)->first();
+        $this->sessionId = $firstSession->id ?? '';
+        $this->status = 'draft';
+        $this->totalAttempts = '3';
+        $this->scoringMethod = 'highest';
+        $this->timeLimitPerAttempt = '30';
+
+        $questionContent = [
+            ['description' => 'What is the primary purpose of the concept covered this week?', 'options' => ['A correct explanation', 'An unrelated definition', 'A common misconception']],
+            ['description' => 'Which of the following best describes the technique discussed in class?', 'options' => ['The correct technique', 'A similar but incorrect technique', 'An unrelated technique']],
+            ['description' => 'Given the example from the lecture, what would be the expected outcome?', 'options' => ['The correct outcome', 'A plausible but wrong outcome', 'An unrelated outcome']],
+        ];
+
+        $this->questions = collect($questionContent)->values()->map(fn ($question, $index) => [
+            'id' => null,
+            'description' => '<p>'.$question['description'].'</p>',
+            'points' => (string) self::GENERATED_QUESTION_POINTS[$index],
+            'order' => $index + 1,
+            'options' => collect($question['options'])->values()->map(fn ($label, $optionIndex) => [
+                'id' => null,
+                'label' => $label,
+                'isCorrect' => $optionIndex === 0,
+                'order' => $optionIndex + 1,
+            ])->all(),
+        ])->all();
+
+        // Question descriptions run wire:ignore, so their DOM is silent to
+        // property changes; they only refresh when told to via this event.
+        foreach ($this->questions as $index => $question) {
+            $this->dispatch('rich-text-set-content', id: "question-{$index}", value: $question['description']);
         }
     }
 
@@ -149,6 +211,22 @@ class AssessmentQuizForm extends Component
         ];
     }
 
+    /**
+     * Questions/options removed client-side (see resources/js/syllabus-form.js's
+     * removeSyllabusRow, reused here) are left as null holes in their arrays
+     * rather than spliced out, since reindexing survivors would desync
+     * their already-bound wire:model/index-baked handlers. Prune them here,
+     * right before validation and persistence.
+     */
+    private function pruneRemoved(): void
+    {
+        $this->questions = array_values(array_filter($this->questions, fn ($question) => $question !== null));
+
+        foreach ($this->questions as $index => $question) {
+            $this->questions[$index]['options'] = array_values(array_filter($question['options'], fn ($option) => $option !== null));
+        }
+    }
+
     public function save(
         AssessmentService $assessmentService,
         QuizService $quizService,
@@ -156,6 +234,30 @@ class AssessmentQuizForm extends Component
         QuizQuestionOptionService $quizQuestionOptionService,
         SessionService $sessionService,
     ): mixed {
+        try {
+            $result = $this->persist($assessmentService, $quizService, $quizQuestionService, $quizQuestionOptionService, $sessionService);
+        } catch (\Throwable $exception) {
+            $this->dispatch('assessmentquizform-error');
+
+            throw $exception;
+        }
+
+        if ($result === null) {
+            $this->dispatch('assessmentquizform-error');
+        }
+
+        return $result;
+    }
+
+    private function persist(
+        AssessmentService $assessmentService,
+        QuizService $quizService,
+        QuizQuestionService $quizQuestionService,
+        QuizQuestionOptionService $quizQuestionOptionService,
+        SessionService $sessionService,
+    ): mixed {
+        $this->pruneRemoved();
+
         $this->validate([
             'title' => 'required|string|max:255',
             'weight' => 'required|numeric|min:0|max:100',
@@ -233,7 +335,7 @@ class AssessmentQuizForm extends Component
             foreach ($this->questions as $index => $question) {
                 $questionData = [
                     'quiz_id' => $quiz->id,
-                    'description' => HtmlSanitizer::forum($question['description']),
+                    'description' => HtmlSanitizer::forum($this->promoteRichTextAttachments($question['description'])),
                     'points' => (float) $question['points'],
                     'question_type' => QuizQuestionType::MultipleChoice,
                     'order' => $index + 1,

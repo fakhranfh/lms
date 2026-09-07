@@ -3,8 +3,8 @@ import rteVideoPreview from './rte-video-preview';
 import headMovementTest from './head-movement-test';
 import materialPicker from './material-picker';
 import { createReadingDetector } from './reading-detector';
-import { addSyllabusRow, removeSyllabusRow, toggleWireArrayValue } from './syllabus-form';
-import { scrollToFirstFormError, validateAssessmentQuestionsTotal } from './form-error-scroll';
+import { addQuizOption, addSyllabusRow, removeSyllabusRow, setSyllabusRadio, toggleWireArrayValue } from './syllabus-form';
+import { scrollToFirstFormError, validateAssessmentQuestionsTotal, validateQuizForm } from './form-error-scroll';
 
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('richTextEditor', richTextEditor);
@@ -21,9 +21,12 @@ window.createReadingDetector = createReadingDetector;
 // Alpine.data components) can clone a <template> row without a server call.
 window.addSyllabusRow = addSyllabusRow;
 window.removeSyllabusRow = removeSyllabusRow;
+window.setSyllabusRadio = setSyllabusRadio;
+window.addQuizOption = addQuizOption;
 window.toggleWireArrayValue = toggleWireArrayValue;
 
 // Exposed globally so forms can jump to their first invalid field on a
 // failed submit (inline @window event handlers, not Alpine.data components).
 window.scrollToFirstFormError = scrollToFirstFormError;
 window.validateAssessmentQuestionsTotal = validateAssessmentQuestionsTotal;
+window.validateQuizForm = validateQuizForm;

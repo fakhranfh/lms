@@ -4,6 +4,7 @@ import headMovementTest from './head-movement-test';
 import materialPicker from './material-picker';
 import { createReadingDetector } from './reading-detector';
 import { addSyllabusRow, removeSyllabusRow, toggleWireArrayValue } from './syllabus-form';
+import { scrollToFirstFormError, validateAssessmentQuestionsTotal } from './form-error-scroll';
 
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('richTextEditor', richTextEditor);
@@ -21,3 +22,8 @@ window.createReadingDetector = createReadingDetector;
 window.addSyllabusRow = addSyllabusRow;
 window.removeSyllabusRow = removeSyllabusRow;
 window.toggleWireArrayValue = toggleWireArrayValue;
+
+// Exposed globally so forms can jump to their first invalid field on a
+// failed submit (inline @window event handlers, not Alpine.data components).
+window.scrollToFirstFormError = scrollToFirstFormError;
+window.validateAssessmentQuestionsTotal = validateAssessmentQuestionsTotal;

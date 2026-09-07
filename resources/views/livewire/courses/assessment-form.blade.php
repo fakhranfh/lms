@@ -26,23 +26,29 @@
     @endif
 
     <form
-        wire:submit="save"
         x-data="{ submitting: false }"
-        @submit="submitting = true"
-        @assessmentform-error.window="submitting = false"
+        @submit.prevent="
+            if (!window.validateAssessmentQuestionsTotal($el)) {
+                $nextTick(() => window.scrollToFirstFormError($el));
+                return;
+            }
+            submitting = true;
+            $wire.save();
+        "
+        @assessmentform-error.window="submitting = false; $nextTick(() => window.scrollToFirstFormError($el))"
         class="space-y-space-lg"
     >
         <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
-            <div>
+            <div @error('title') data-field-error @enderror>
                 <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Title</label>
-                <input type="text" wire:model="title" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <input type="text" wire:model="title" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 @error('title') border-error ring-2 ring-error/30 @enderror" />
                 @error('title') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
             </div>
 
             <div class="grid grid-cols-2 gap-space-md">
-                <div>
+                <div @error('weight') data-field-error @enderror>
                     <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Weight (%)</label>
-                    <input type="number" step="0.01" min="0" max="100" wire:model="weight" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <input type="number" step="0.01" min="0" max="100" wire:model="weight" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 @error('weight') border-error ring-2 ring-error/30 @enderror" />
                     @error('weight') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                 </div>
 
@@ -60,15 +66,15 @@
             </div>
 
             <div class="grid grid-cols-2 gap-space-md">
-                <div>
+                <div @error('startDate') data-field-error @enderror>
                     <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Start Date</label>
-                    <input type="datetime-local" wire:model="startDate" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <input type="datetime-local" wire:model="startDate" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 @error('startDate') border-error ring-2 ring-error/30 @enderror" />
                     @error('startDate') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                 </div>
 
-                <div>
+                <div @error('endDate') data-field-error @enderror>
                     <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">End Date</label>
-                    <input type="datetime-local" wire:model="endDate" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <input type="datetime-local" wire:model="endDate" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 @error('endDate') border-error ring-2 ring-error/30 @enderror" />
                     @error('endDate') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -98,7 +104,14 @@
                     Add Question
                 </button>
             </div>
-            @error('questions') <p class="text-body-xs text-error">{{ $message }}</p> @enderror
+            <div id="questions-total-error" class="hidden border border-error ring-2 ring-error/30 rounded-lg p-space-md bg-error/5">
+                <p class="text-body-xs text-error">The total points of all questions must equal 100.</p>
+            </div>
+            @error('questions')
+                <div data-field-error class="border border-error ring-2 ring-error/30 rounded-lg p-space-md bg-error/5">
+                    <p class="text-body-xs text-error">{{ $message }}</p>
+                </div>
+            @enderror
 
             @foreach ($questions as $index => $question)
                 @continue($question === null)
@@ -108,15 +121,17 @@
                         <button type="button" @click="window.removeSyllabusRow($wire, 'questions.{{ $index }}', $el)" class="text-error text-body-sm hover:underline">Remove</button>
                     </div>
 
-                    <div>
+                    <div @error("questions.{$index}.description") data-field-error @enderror>
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Description</label>
-                        <x-rich-text-editor id="question-{{ $index }}" wire-model="questions.{{ $index }}.description" :value="$question['description']" />
+                        <div @error("questions.{$index}.description") class="rounded-lg ring-2 ring-error/30 border border-error" @enderror>
+                            <x-rich-text-editor id="question-{{ $index }}" wire-model="questions.{{ $index }}.description" :value="$question['description']" />
+                        </div>
                         @error("questions.{$index}.description") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="w-40">
+                    <div class="w-40" @error("questions.{$index}.points") data-field-error @enderror>
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Points</label>
-                        <input type="number" step="0.01" min="0" wire:model="questions.{{ $index }}.points" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                        <input type="number" step="0.01" min="0" wire:model="questions.{{ $index }}.points" data-question-points class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 @error("questions.{$index}.points") border-error ring-2 ring-error/30 @enderror" />
                         @error("questions.{$index}.points") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                     </div>
 
@@ -179,6 +194,7 @@
                             type="number"
                             step="0.01"
                             min="0"
+                            data-question-points
                             @input="$wire.set('questions.__NEW__.points', $event.target.value, false)"
                             class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />

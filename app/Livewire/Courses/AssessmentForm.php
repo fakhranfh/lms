@@ -141,10 +141,12 @@ class AssessmentForm extends Component
             'Given the sample dataset provided in the course materials, describe the steps you would take to solve the problem.',
         ];
 
+        $pointsDistribution = [30, 30, 40];
+
         $this->questions = collect($questionContent)->values()->map(fn ($description, $index) => [
             'id' => null,
             'description' => '<p>'.$description.'</p>',
-            'points' => (string) (($index + 1) * 10),
+            'points' => (string) $pointsDistribution[$index],
             'selectedMaterialIds' => $materialIds,
             'materialSearch' => '',
         ])->all();
@@ -191,7 +193,17 @@ class AssessmentForm extends Component
             'endDate' => 'required|date|after:startDate',
             'sessionId' => 'nullable|string',
             ...($this->usesQuestions() ? [
-                'questions' => 'array|min:1',
+                'questions' => [
+                    'array',
+                    'min:1',
+                    function (string $attribute, mixed $value, \Closure $fail): void {
+                        $total = collect($value)->sum(fn ($question) => (float) ($question['points'] ?? 0));
+
+                        if (abs($total - 100.0) > 0.001) {
+                            $fail('The total points of all questions must equal 100.');
+                        }
+                    },
+                ],
                 'questions.*.description' => 'required|string',
                 'questions.*.points' => 'required|numeric|min:0',
             ] : []),

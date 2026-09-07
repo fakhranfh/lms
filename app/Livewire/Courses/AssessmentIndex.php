@@ -36,6 +36,12 @@ class AssessmentIndex extends Component
 {
     use WithDevMaterialAttachments;
 
+    /**
+     * Points distribution for the 3 dev-generated questions, summing to 100
+     * to satisfy AssessmentForm's total-points validation.
+     */
+    private const GENERATED_QUESTION_POINTS = [30, 30, 40];
+
     public Course $course;
 
     public bool $isStudent = false;
@@ -244,7 +250,7 @@ class AssessmentIndex extends Component
                 $question = $assessmentQuestionService->create([
                     'assessment_id' => $assessment->id,
                     'description' => '<p>'.$description.'</p>',
-                    'points' => ($index + 1) * 10,
+                    'points' => self::GENERATED_QUESTION_POINTS[$index],
                     'order' => $index + 1,
                 ]);
 
@@ -326,7 +332,7 @@ class AssessmentIndex extends Component
                 $question = $assessmentQuestionService->create([
                     'assessment_id' => $assessment->id,
                     'description' => '<p>'.$description.'</p>',
-                    'points' => ($index + 1) * 10,
+                    'points' => self::GENERATED_QUESTION_POINTS[$index],
                     'order' => $index + 1,
                 ]);
 

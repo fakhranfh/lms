@@ -100,7 +100,7 @@ class AssessmentFormTest extends TestCase
             ->set('weight', '25')
             ->set('startDate', now()->format('Y-m-d\TH:i'))
             ->set('endDate', now()->addWeek()->format('Y-m-d\TH:i'))
-            ->set('questions.1', ['id' => null, 'description' => 'Second question.', 'points' => '50', 'selectedMaterialIds' => [], 'materialSearch' => ''])
+            ->set('questions.1', ['id' => null, 'description' => 'Second question.', 'points' => '100', 'selectedMaterialIds' => [], 'materialSearch' => ''])
             ->set('questions.0', null)
             ->call('save')
             ->assertRedirect(route('assessments.index', $this->course));
@@ -169,7 +169,7 @@ class AssessmentFormTest extends TestCase
             ->set('startDate', now()->format('Y-m-d\TH:i'))
             ->set('endDate', now()->addWeek()->format('Y-m-d\TH:i'))
             ->set('questions.0.description', 'Build something together.')
-            ->set('questions.0.points', '50')
+            ->set('questions.0.points', '100')
             ->call('save');
 
         $this->assertDatabaseHas('assessments', [
@@ -193,6 +193,23 @@ class AssessmentFormTest extends TestCase
             ->assertHasErrors(['endDate']);
     }
 
+    public function test_validation_requires_question_points_to_total_100(): void
+    {
+        $this->teacher->givePermissionTo('assessment.create');
+
+        Livewire::test(AssessmentForm::class, ['course' => $this->course, 'type' => 'personal'])
+            ->set('title', 'Essay Assignment')
+            ->set('weight', '25')
+            ->set('startDate', now()->format('Y-m-d\TH:i'))
+            ->set('endDate', now()->addWeek()->format('Y-m-d\TH:i'))
+            ->set('questions.0.description', 'Write an essay about Laravel.')
+            ->set('questions.0.points', '40')
+            ->call('save')
+            ->assertHasErrors(['questions']);
+
+        $this->assertDatabaseMissing('assessments', ['title' => 'Essay Assignment']);
+    }
+
     public function test_media_attachment_is_synced_to_question(): void
     {
         $this->teacher->givePermissionTo('assessment.create');
@@ -207,7 +224,7 @@ class AssessmentFormTest extends TestCase
             ->set('startDate', now()->format('Y-m-d\TH:i'))
             ->set('endDate', now()->addWeek()->format('Y-m-d\TH:i'))
             ->set('questions.0.description', 'See attached file.')
-            ->set('questions.0.points', '10')
+            ->set('questions.0.points', '100')
             ->set('questions.0.selectedMaterialIds', [$material->id])
             ->call('save');
 
@@ -229,6 +246,7 @@ class AssessmentFormTest extends TestCase
         Livewire::test(AssessmentForm::class, ['assessment' => $assessment])
             ->assertSet('questions.0.id', $question->id)
             ->set('questions.0.description', 'Updated description')
+            ->set('questions.0.points', '100')
             ->call('save');
 
         $this->assertEquals(1, $assessment->questions()->count());

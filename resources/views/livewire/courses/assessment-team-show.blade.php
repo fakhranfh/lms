@@ -234,14 +234,7 @@
                                             <p class="text-body-xs text-on-surface-variant mb-space-sm">Question {{ $loop->iteration }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
                                             <div class="rte-content prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
                                             @if ($question->files->isNotEmpty())
-                                                <div class="mt-space-md space-y-space-xs">
-                                                    @foreach ($question->files as $file)
-                                                        <div class="flex items-center gap-space-xs text-body-sm text-on-surface-variant">
-                                                            <span class="material-symbols-outlined text-[16px]">description</span>
-                                                            {{ $file->title }}
-                                                        </div>
-                                                    @endforeach
-                                                </div>
+                                                <x-ui.material-list :files="$question->files" class="mt-space-md" />
                                             @endif
                                         </div>
                                     @endforeach
@@ -331,14 +324,7 @@
                         <p class="text-body-xs text-on-surface-variant mb-space-sm">Question {{ $loop->iteration }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
                         <div class="rte-content prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
                         @if ($question->files->isNotEmpty())
-                            <div class="mt-space-md space-y-space-xs">
-                                @foreach ($question->files as $file)
-                                    <div class="flex items-center gap-space-xs text-body-sm text-on-surface-variant">
-                                        <span class="material-symbols-outlined text-[16px]">description</span>
-                                        {{ $file->title }}
-                                    </div>
-                                @endforeach
-                            </div>
+                            <x-ui.material-list :files="$question->files" class="mt-space-md" />
                         @endif
                     </div>
                 @endforeach
@@ -410,6 +396,8 @@
                                     x-transition:enter-start="opacity-0"
                                     x-transition:enter-end="opacity-100"
                                     class="flex-1 overflow-y-auto p-space-lg space-y-space-lg"
+                                    x-data="rteVideoPreview()"
+                                    @click="onContentClick($event)"
                                 >
                                     <div class="flex items-center justify-between border-b border-outline-variant pb-space-md">
                                         <h2 class="font-headline-sm text-headline-sm text-on-surface">Attempt {{ $row['attempt']->attempt_number }} Answer</h2>
@@ -432,6 +420,8 @@
                                             <p class="text-body-sm text-on-surface">{{ $row['score']->feedback }}</p>
                                         </div>
                                     @endif
+
+                                    <x-ui.material-preview-modals />
                                 </div>
                             </div>
                         </template>
@@ -475,43 +465,14 @@
                             </span>
 
                             @if ($canGrade && $row['attempt'])
-                                <button
-                                    type="button"
-                                    wire:click="openGrading('{{ $row['group']->id }}')"
+                                <a
+                                    href="{{ route('assessments.team.grade', ['assessment' => $assessment->id, 'group' => $row['group']->id]) }}"
                                     class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition flex-shrink-0"
                                 >
                                     Grade
-                                </button>
+                                </a>
                             @endif
                         </div>
-
-                        @if ($gradingGroupId === $row['group']->id)
-                            <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md">
-                                <div class="rte-content text-body-sm text-on-surface-variant">{!! $row['answer']?->answer_text !!}</div>
-
-                                <form wire:submit="submitGrade" class="space-y-space-md">
-                                    <div>
-                                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Score</label>
-                                        <input type="number" step="0.01" min="0" wire:model="gradeScore" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                                        @error('gradeScore') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
-                                    </div>
-
-                                    <div>
-                                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Feedback</label>
-                                        <textarea wire:model="gradeFeedback" rows="3" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"></textarea>
-                                    </div>
-
-                                    <div class="flex gap-space-md">
-                                        <button type="button" wire:click="cancelGrading" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
-                                            Cancel
-                                        </button>
-                                        <button type="submit" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
-                                            Save Grade
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        @endif
                     </div>
                 @empty
                     <div class="p-space-lg text-center text-body-sm text-on-surface-variant">No groups yet. Use "Manage Groups" from the Assessment list to create one.</div>

@@ -12,7 +12,6 @@ use App\Services\AssessmentAnswerService;
 use App\Services\AssessmentAttemptService;
 use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
-use App\Services\GradebookScoringService;
 use App\Services\GroupMemberService;
 use App\Services\GroupService;
 use App\Support\CourseTabs;
@@ -31,12 +30,6 @@ class AssessmentTeamShow extends Component
     public bool $isStudent = false;
 
     public string $answerText = '';
-
-    public ?string $gradingGroupId = null;
-
-    public string $gradeScore = '';
-
-    public string $gradeFeedback = '';
 
     public ?string $errorMessage = null;
 
@@ -62,6 +55,8 @@ class AssessmentTeamShow extends Component
         if ($this->isStudent) {
             abort_if($assessment->status === AssessmentStatus::Draft, 404);
         }
+
+        $this->successMessage = session('successMessage');
     }
 
     private function ownGroupId(GroupMemberService $groupMemberService): ?string
@@ -136,68 +131,6 @@ class AssessmentTeamShow extends Component
     public function clearSuccessMessage(): void
     {
         $this->successMessage = null;
-    }
-
-    public function openGrading(string $groupId, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService): void
-    {
-        abort_unless(auth()->user()->can('assessment.grade'), 403);
-
-        $attempt = $assessmentAttemptService->forAssessmentAndGroup($this->assessment->id, $groupId)->last();
-
-        if (! $attempt) {
-            return;
-        }
-
-        $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
-
-        $this->gradingGroupId = $groupId;
-        $this->gradeScore = $existingScore ? (string) $existingScore->score : '';
-        $this->gradeFeedback = $existingScore ? ($existingScore->feedback ?? '') : '';
-    }
-
-    public function cancelGrading(): void
-    {
-        $this->gradingGroupId = null;
-        $this->gradeScore = '';
-        $this->gradeFeedback = '';
-    }
-
-    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, GroupMemberService $groupMemberService, GradebookScoringService $gradebookScoringService): void
-    {
-        abort_unless(auth()->user()->can('assessment.grade'), 403);
-        abort_unless($this->gradingGroupId !== null, 404);
-
-        $this->validate([
-            'gradeScore' => 'required|numeric|min:0',
-            'gradeFeedback' => 'nullable|string',
-        ]);
-
-        $attempt = $assessmentAttemptService->forAssessmentAndGroup($this->assessment->id, $this->gradingGroupId)->last();
-
-        abort_unless($attempt !== null, 404);
-
-        $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
-
-        $data = [
-            'assessment_attempt_id' => $attempt->id,
-            'score' => (float) $this->gradeScore,
-            'graded_by' => auth()->id(),
-            'graded_at' => now(),
-            'feedback' => $this->gradeFeedback ?: null,
-        ];
-
-        if ($existingScore) {
-            $assessmentScoreService->update($existingScore->id, $data);
-        } else {
-            $assessmentScoreService->create($data);
-        }
-
-        foreach ($groupMemberService->get(['group_id' => $this->gradingGroupId]) as $member) {
-            $gradebookScoringService->recomputeForUser($this->course, $member->user_id);
-        }
-
-        $this->cancelGrading();
-        $this->successMessage = __('Grade saved.');
     }
 
     public function render(CoursePersonService $coursePersonService, GroupService $groupService, GroupMemberService $groupMemberService, AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService, AssessmentScoreService $assessmentScoreService)

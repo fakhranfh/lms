@@ -101,34 +101,6 @@ class AssessmentTeamShowTest extends TestCase
             ->assertSee('Our group answer');
     }
 
-    public function test_teacher_grading_group_updates_shared_attempt_visible_to_all_members(): void
-    {
-        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
-        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create([
-            'group_id' => $this->group->id,
-            'user_id' => null,
-            'submitted_by' => $this->studentOne->id,
-        ]);
-
-        $this->actingAs($this->teacher);
-        Livewire::test(AssessmentTeamShow::class, ['assessment' => $this->assessment])
-            ->call('openGrading', $this->group->id)
-            ->set('gradeScore', '90')
-            ->call('submitGrade');
-
-        $this->assertDatabaseHas('assessment_scores', [
-            'assessment_attempt_id' => $attempt->id,
-            'score' => 90,
-        ]);
-
-        foreach ([$this->studentOne, $this->studentTwo] as $member) {
-            $member->givePermissionTo(['assessment.view', 'assessment.submit']);
-            $this->actingAs($member);
-            Livewire::test(AssessmentTeamShow::class, ['assessment' => $this->assessment])
-                ->assertSee('90');
-        }
-    }
-
     public function test_no_groups_shows_empty_state_for_teacher(): void
     {
         $emptyAssessment = Assessment::factory()->for($this->course)->create([

@@ -76,7 +76,7 @@
                             <span class="material-symbols-outlined text-on-surface-variant transition-transform" :class="open ? 'rotate-90' : ''">
                                 chevron_right
                             </span>
-                            <h2 class="font-label-lg text-label-lg text-on-surface">
+                            <h2 class="font-label-lg text-label-lg text-on-surface font-bold">
                                 {{ strtoupper(\App\Support\AssessmentTypeLabel::forType($group['type'])) }}: {{ rtrim(rtrim(number_format($group['totalWeight'], 2), '0'), '.') }}%
                             </h2>
                         </div>

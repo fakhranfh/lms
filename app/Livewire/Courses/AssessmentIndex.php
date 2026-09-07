@@ -334,6 +334,7 @@ class AssessmentIndex extends Component
                 'isAssignmentType' => in_array($a->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment], true),
                 'isDraft' => $a->status === AssessmentStatus::Draft,
                 'editRoute' => $this->editRoute($a),
+                'publishWireTargets' => "publishAssessment('{$a->id}'),unpublishAssessment('{$a->id}')",
             ]),
             'sectionKey' => $type->value,
             'isExpanded' => isset($this->expandedSections[$type->value]) && $this->expandedSections[$type->value],

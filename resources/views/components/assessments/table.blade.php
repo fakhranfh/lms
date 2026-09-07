@@ -191,7 +191,10 @@
                         </div>
                     </td>
                     <td class="px-space-lg py-space-md">
+                        <div wire:loading.block wire:target="{{ $item['publishWireTargets'] }}" class="hidden h-6 w-full rounded-full bg-surface-container animate-pulse"></div>
                         <x-ui.status-pill
+                            wire:loading.remove
+                            wire:target="{{ $item['publishWireTargets'] }}"
                             :bg="$item['row']['statusConfig']['bg']"
                             :text="$item['row']['statusConfig']['text']"
                             :icon="$item['row']['statusConfig']['icon']"

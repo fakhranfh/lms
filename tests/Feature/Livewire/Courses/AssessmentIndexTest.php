@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\AssessmentAssignedTo;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\AttendanceStatus;
@@ -358,6 +359,74 @@ class AssessmentIndexTest extends TestCase
             ->set('generateCount', '0')
             ->call('generatePersonalAssignments')
             ->assertHasErrors(['generateCount']);
+
+        $this->assertDatabaseMissing('assessments', ['course_id' => $this->course->id]);
+    }
+
+    public function test_generate_team_assignments_creates_requested_count_with_groups(): void
+    {
+        $r2Mock = Mockery::mock(R2StorageService::class);
+        $r2Mock->shouldReceive('schoolPrefix')->andReturn('');
+        $r2Mock->shouldReceive('uploadRawContent')->once()->andReturn('https://example.test/dummy.pdf');
+        $this->app->instance(R2StorageService::class, $r2Mock);
+
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.create']);
+        $this->actingAs($this->teacher);
+
+        CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->set('generateCount', '2')
+            ->call('generateTeamAssignments');
+
+        $assessments = Assessment::query()
+            ->where('course_id', $this->course->id)
+            ->where('type', AssessmentType::TheoryTeamAssignment)
+            ->with('questions')
+            ->get();
+
+        $this->assertCount(2, $assessments);
+
+        foreach ($assessments as $assessment) {
+            $this->assertSame(AssessmentAssignedTo::Group, $assessment->assigned_to);
+            $this->assertCount(3, $assessment->questions);
+
+            foreach ($assessment->questions as $question) {
+                $this->assertNotEmpty($question->files);
+            }
+        }
+
+        $this->assertDatabaseCount('groups', 2);
+        $this->assertDatabaseHas('group_members', ['user_id' => $this->student->id]);
+    }
+
+    public function test_generate_team_assignments_validates_count(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.create']);
+        $this->actingAs($this->teacher);
+
+        CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->set('generateCount', '0')
+            ->call('generateTeamAssignments')
+            ->assertHasErrors(['generateCount']);
+
+        $this->assertDatabaseMissing('assessments', ['course_id' => $this->course->id]);
+    }
+
+    public function test_generate_team_assignments_requires_enrolled_students(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.create']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->set('generateCount', '2')
+            ->call('generateTeamAssignments')
+            ->assertSet('errorMessage', 'This course has no enrolled students to form groups with.');
 
         $this->assertDatabaseMissing('assessments', ['course_id' => $this->course->id]);
     }

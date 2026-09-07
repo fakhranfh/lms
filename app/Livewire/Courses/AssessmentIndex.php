@@ -21,6 +21,7 @@ use App\Services\AttendanceScoringService;
 use App\Services\CoursePersonService;
 use App\Services\ForumDiscussionScoringService;
 use App\Services\GroupMemberService;
+use App\Services\GroupService;
 use App\Services\MediaLibraryService;
 use App\Services\ProctorSessionService;
 use App\Services\QuizAttemptScoringService;
@@ -234,6 +235,88 @@ class AssessmentIndex extends Component
                 'title' => AssessmentTypeLabel::forType(AssessmentType::TheoryPersonalAssignment).' - Week '.random_int(1, 14).' Practice',
                 'weight' => AssessmentType::TheoryPersonalAssignment->defaultWeight(),
                 'assigned_to' => AssessmentAssignedTo::Individual,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'status' => AssessmentStatus::Draft,
+            ]);
+
+            foreach ($questionContent as $index => $description) {
+                $question = $assessmentQuestionService->create([
+                    'assessment_id' => $assessment->id,
+                    'description' => '<p>'.$description.'</p>',
+                    'points' => ($index + 1) * 10,
+                    'order' => $index + 1,
+                ]);
+
+                $materialSync = [];
+                foreach (array_values($materialIds) as $order => $materialId) {
+                    $materialSync[$materialId] = ['order' => $order + 1];
+                }
+                $question->files()->sync($materialSync);
+            }
+        }
+    }
+
+    /**
+     * Dev-only: bulk-creates draft team assignments, each backed by a freshly
+     * generated group (built from the course's enrolled students) so the
+     * assignment has somewhere to attach submissions during testing.
+     */
+    public function generateTeamAssignments(AssessmentService $assessmentService, AssessmentQuestionService $assessmentQuestionService, MediaLibraryService $mediaLibraryService, R2StorageService $r2StorageService, CoursePersonService $coursePersonService, GroupService $groupService, GroupMemberService $groupMemberService): void
+    {
+        abort_unless(app()->environment(['local', 'testing']), 403);
+        abort_unless(auth()->user()->can('assessment.create'), 403);
+
+        $this->errorMessage = null;
+
+        $this->validate([
+            'generateCount' => 'required|integer|min:1|max:50',
+        ]);
+
+        $count = (int) $this->generateCount;
+
+        $questionContent = [
+            'As a team, outline your division of labor for this week\'s project milestone and justify your choices.',
+            'Discuss as a group how this week\'s concept could be combined with a topic from an earlier week.',
+            'Present a joint critique of the reference solution shown in class, noting where your team would diverge.',
+        ];
+
+        $students = $coursePersonService->studentsForCourse($this->course->id)->pluck('user_id')->values();
+
+        if ($students->isEmpty()) {
+            $this->errorMessage = __('This course has no enrolled students to form groups with.');
+
+            return;
+        }
+
+        $materialIds = $this->devMaterialIds($this->course->school_id, $mediaLibraryService, $r2StorageService);
+
+        for ($i = 0; $i < $count; $i++) {
+            $startDate = now()->addWeeks($i);
+            $endDate = $startDate->clone()->addWeek();
+
+            $group = $groupService->create([
+                'course_id' => $this->course->id,
+                'name' => 'Dev Team '.random_int(100, 999),
+                'created_by' => auth()->id(),
+                'target_size' => min(4, $students->count()),
+            ]);
+
+            foreach ($students->random(min(4, $students->count()))->values() as $studentId) {
+                $groupMemberService->create([
+                    'group_id' => $group->id,
+                    'user_id' => $studentId,
+                    'joined_at' => now(),
+                ]);
+            }
+
+            $assessment = $assessmentService->create([
+                'course_id' => $this->course->id,
+                'session_id' => null,
+                'type' => AssessmentType::TheoryTeamAssignment,
+                'title' => AssessmentTypeLabel::forType(AssessmentType::TheoryTeamAssignment).' - Week '.random_int(1, 14).' Project',
+                'weight' => AssessmentType::TheoryTeamAssignment->defaultWeight(),
+                'assigned_to' => AssessmentAssignedTo::Group,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'status' => AssessmentStatus::Draft,

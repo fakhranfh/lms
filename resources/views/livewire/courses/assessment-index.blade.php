@@ -30,6 +30,16 @@
                     <span wire:loading wire:target="generatePersonalAssignments" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
                     Generate Personal Assignments
                 </button>
+                <button
+                    type="button"
+                    wire:click="generateTeamAssignments"
+                    wire:loading.attr="disabled"
+                    wire:target="generateTeamAssignments"
+                    class="px-space-md py-space-xs bg-tertiary text-on-tertiary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
+                >
+                    <span wire:loading wire:target="generateTeamAssignments" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                    Generate Team Assignments
+                </button>
             </form>
         </div>
         @error('generateCount')

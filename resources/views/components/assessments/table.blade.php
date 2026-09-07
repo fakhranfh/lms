@@ -110,7 +110,7 @@
                     x-cloak
                 >
                     <td colspan="7" class="px-space-lg py-space-md">
-                        <div class="h-5 w-full rounded bg-surface-container animate-pulse"></div>
+                        <x-ui.skeleton-box class="h-6 w-full rounded-full" />
                     </td>
                 </tr>
                 <tr
@@ -191,7 +191,7 @@
                         </div>
                     </td>
                     <td class="px-space-lg py-space-md">
-                        <div wire:loading.block wire:target="{{ $item['publishWireTargets'] }}" class="hidden h-6 w-full rounded-full bg-surface-container animate-pulse"></div>
+                        <x-ui.skeleton-box wire:loading.block wire:target="{{ $item['publishWireTargets'] }}" class="hidden h-6 w-full rounded-full" />
                         <x-ui.status-pill
                             wire:loading.remove
                             wire:target="{{ $item['publishWireTargets'] }}"

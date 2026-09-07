@@ -3,24 +3,22 @@
 <div wire:init="loadAssessments" class="space-y-space-lg">
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => $teacher])
 
-    <div class="space-y-space-lg animate-pulse">
+    <div class="space-y-space-lg">
         <div class="flex items-start justify-between">
-            <div class="space-y-space-xs">
-                <div class="h-6 bg-surface-container rounded w-40"></div>
-            </div>
-            <div class="h-9 w-36 bg-surface-container rounded-lg"></div>
+            <x-ui.skeleton-box class="h-6 w-40" />
+            <x-ui.skeleton-box class="h-9 w-36 rounded-lg" />
         </div>
 
-        <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
-            @for ($i = 0; $i < 4; $i++)
-                <div class="p-space-lg flex items-center gap-space-md">
-                    <div class="flex-1 space-y-space-xs">
-                        <div class="h-4 bg-surface-container rounded w-1/3"></div>
-                        <div class="h-3 bg-surface-container rounded w-1/4"></div>
-                    </div>
-                    <div class="w-20 h-6 bg-surface-container rounded-full flex-shrink-0"></div>
+        @for ($group = 0; $group < 2; $group++)
+            <div class="space-y-0">
+                <div class="flex items-center gap-space-md px-space-lg py-space-md bg-surface border border-outline-variant rounded-t-lg">
+                    <x-ui.skeleton-box class="h-5 w-5 rounded" />
+                    <x-ui.skeleton-box class="h-4 w-48" />
                 </div>
-            @endfor
-        </div>
+                <div class="bg-surface border border-t-0 border-outline-variant rounded-b-lg overflow-hidden">
+                    <x-assessments.table-skeleton :is-student="$isStudent" />
+                </div>
+            </div>
+        @endfor
     </div>
 </div>

@@ -329,29 +329,64 @@ class AssessmentIndex extends Component
                 'data' => $a,
                 'row' => $rows[$a->id],
                 'sessionPosition' => $a->session_id ? ($sessionPositions[$a->session_id] ?? null) : null,
-                'isReorderable' => ! $this->isStudent && ! in_array($type, [AssessmentType::Attendance, AssessmentType::ForumDiscussion], true),
+                'isReorderable' => ! $this->isStudent && ! $this->isAutoProvisionedType($a->type),
+                'isAutoProvisionedType' => $this->isAutoProvisionedType($a->type),
+                'isAssignmentType' => in_array($a->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment], true),
+                'isDraft' => $a->status === AssessmentStatus::Draft,
+                'editRoute' => $this->editRoute($a),
             ]),
             'sectionKey' => $type->value,
             'isExpanded' => isset($this->expandedSections[$type->value]) && $this->expandedSections[$type->value],
             'totalWeight' => $assessments->where('type', $type)->sum('weight'),
         ];
 
+        $group['selectableAssessmentIds'] = $group['assessments']
+            ->filter(fn (array $item) => $item['row']['route'] && ! $item['isAutoProvisionedType'])
+            ->pluck('data.id')
+            ->values();
+
         if ($type === AssessmentType::Attendance && $this->isStudent) {
-            $group['sessionRows'] = $virtualClassSessions->map(fn (Session $session) => [
-                'session' => $session,
-                'attended' => $attendanceDerivationService->isSessionAttended($session, auth()->id()),
-            ]);
+            $group['sessionTableRows'] = $virtualClassSessions->values()->map(function (Session $session, int $index) use ($attendanceDerivationService) {
+                $attended = $attendanceDerivationService->isSessionAttended($session, auth()->id());
+
+                return [
+                    'session' => $session,
+                    'sessionIndex' => $index,
+                    'met' => $attended,
+                    'metLabel' => 'Completed',
+                    'notMetLabel' => 'Not attended',
+                    'points' => $attended ? '100 pts' : '0 pts',
+                    'href' => route('sessions.index', $this->course).'?session='.$session->id,
+                    'wireKey' => 'attendance-session-'.$session->id,
+                ];
+            });
+            $group['sessionTableEmptyMessage'] = __('No virtual class sessions yet.');
         }
 
         if ($type === AssessmentType::ForumDiscussion && $this->isStudent) {
-            $group['sessionRows'] = $onlineSessions->map(fn (Session $session) => [
-                'session' => $session,
-                'met' => $forumDiscussionScoringService->hasMetForumPostRequirement($session, auth()->id()),
-                'required' => $forumDiscussionScoringService->requiredForumPosts($session),
-            ]);
+            $group['sessionTableRows'] = $onlineSessions->values()->map(function (Session $session, int $index) use ($forumDiscussionScoringService) {
+                $met = $forumDiscussionScoringService->hasMetForumPostRequirement($session, auth()->id());
+
+                return [
+                    'session' => $session,
+                    'sessionIndex' => $index,
+                    'met' => $met,
+                    'metLabel' => 'Completed',
+                    'notMetLabel' => $forumDiscussionScoringService->requiredForumPosts($session).' posts required',
+                    'points' => $met ? '100 pts' : '0 pts',
+                    'href' => route('forum.index', $this->course).'?session='.$session->id,
+                    'wireKey' => 'forum-discussion-session-'.$session->id,
+                ];
+            });
+            $group['sessionTableEmptyMessage'] = __('No online sessions yet.');
         }
 
         return $group;
+    }
+
+    private function isAutoProvisionedType(AssessmentType $type): bool
+    {
+        return in_array($type, [AssessmentType::Attendance, AssessmentType::ForumDiscussion], true);
     }
 
     public function editRoute(Assessment $assessment): string
@@ -529,8 +564,9 @@ class AssessmentIndex extends Component
     private function statusConfig(string $status): array
     {
         return match ($status) {
-            'completed', 'graded' => ['bg' => 'bg-success/10', 'text' => 'text-success', 'icon' => 'check_circle'],
+            'completed', 'graded', 'published' => ['bg' => 'bg-success/10', 'text' => 'text-success', 'icon' => 'check_circle'],
             'submitted', 'pending_review' => ['bg' => 'bg-warning/10', 'text' => 'text-warning', 'icon' => 'schedule'],
+            'draft' => ['bg' => 'bg-on-surface-variant/10', 'text' => 'text-on-surface-variant', 'icon' => 'edit_note'],
             'not_started' => ['bg' => 'bg-on-surface-variant/10', 'text' => 'text-on-surface-variant', 'icon' => 'pending'],
             'in_progress' => ['bg' => 'bg-primary/10', 'text' => 'text-primary', 'icon' => 'timelapse'],
             'disqualified' => ['bg' => 'bg-error/10', 'text' => 'text-error', 'icon' => 'cancel'],

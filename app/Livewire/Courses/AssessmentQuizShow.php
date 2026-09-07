@@ -18,10 +18,14 @@ use App\Services\QuizInstructionService;
 use App\Services\QuizService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class AssessmentQuizShow extends Component
 {
+    use WithPagination;
+
     public Course $course;
 
     public Assessment $assessment;
@@ -38,6 +42,17 @@ class AssessmentQuizShow extends Component
     public ?string $errorMessage = null;
 
     public ?string $successMessage = null;
+
+    public int $perPage = 12;
+
+    public string $studentSearch = '';
+
+    public function updating(string $property): void
+    {
+        if (in_array($property, ['perPage', 'studentSearch'], true)) {
+            $this->resetPage();
+        }
+    }
 
     public function mount(
         CurrentSchool $currentSchool,
@@ -212,7 +227,14 @@ class AssessmentQuizShow extends Component
         } else {
             $students = $coursePersonService->studentsForCourse($this->course->id);
 
-            $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentScoreService, $quizAttemptScoringService) {
+            $search = trim($this->studentSearch);
+            if ($search !== '') {
+                $students = $students->filter(
+                    fn ($coursePerson) => str_contains(strtolower($coursePerson->user->name), strtolower($search))
+                )->values();
+            }
+
+            $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentQuizAnswerService, $assessmentScoreService, $quizAttemptScoringService) {
                 $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $coursePerson->user_id)
                     ->filter(fn ($a) => $a->submitted_at !== null)
                     ->values();
@@ -224,12 +246,22 @@ class AssessmentQuizShow extends Component
                     'user' => $coursePerson->user,
                     'attemptCount' => $attempts->count(),
                     'attempt' => $latest,
+                    'total' => $latest ? $quizAttemptScoringService->attemptTotal($latest->id) : null,
                     'score' => $score,
                     'pending' => $pending,
+                    'answers' => $latest ? $assessmentQuizAnswerService->forAttempt($latest->id)->keyBy('quiz_question_id') : collect(),
                 ];
             })->values();
 
-            $viewData['studentRows'] = $rows;
+            $page = $this->getPage();
+
+            $viewData['studentRows'] = new LengthAwarePaginator(
+                $rows->forPage($page, $this->perPage)->values(),
+                $rows->count(),
+                $this->perPage,
+                $page,
+                ['path' => request()->url(), 'pageName' => 'page']
+            );
         }
 
         return view('livewire.courses.assessment-quiz-show', $viewData)

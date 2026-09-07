@@ -118,6 +118,31 @@ class AssessmentTeamShowTest extends TestCase
             ->assertSee('No groups yet');
     }
 
+    public function test_teacher_can_filter_team_submissions_by_group_or_student_name(): void
+    {
+        $otherGroup = Group::factory()->for($this->course)->create(['name' => 'Zebras']);
+        $otherStudent = User::factory()->forSchool($this->school)->create(['name' => 'Unrelated Person']);
+        $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $otherStudent->assignRole($studentRole);
+        CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $otherStudent->id]);
+        GroupMember::factory()->for($otherGroup)->create(['user_id' => $otherStudent->id]);
+
+        $this->teacher->givePermissionTo('assessment.view');
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentTeamShow::class, ['assessment' => $this->assessment])
+            ->assertSee($this->group->name)
+            ->assertSee('Zebras')
+            ->set('groupSearch', 'Zebras')
+            ->assertDontSee($this->group->name)
+            ->assertSee('Zebras');
+
+        Livewire::test(AssessmentTeamShow::class, ['assessment' => $this->assessment])
+            ->set('groupSearch', $this->studentOne->name)
+            ->assertSee($this->group->name)
+            ->assertDontSee('Zebras');
+    }
+
     public function test_your_group_section_lists_each_member_name_and_avatar(): void
     {
         $this->studentOne->givePermissionTo(['assessment.view', 'assessment.submit']);

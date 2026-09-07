@@ -35,6 +35,8 @@ class AssessmentTeamShow extends Component
 
     public ?string $successMessage = null;
 
+    public string $groupSearch = '';
+
     public function mount(CurrentSchool $currentSchool, ?Course $course = null, ?Assessment $assessment = null): void
     {
         abort_if($assessment === null, 404);
@@ -186,6 +188,14 @@ class AssessmentTeamShow extends Component
             $viewData['attemptRows'] = $attemptRows;
         } else {
             $groups = $groupService->forCourse($this->course->id);
+
+            $search = trim($this->groupSearch);
+            if ($search !== '') {
+                $groups = $groups->filter(
+                    fn ($group) => str_contains(strtolower($group->name), strtolower($search))
+                        || $group->members->contains(fn ($member) => str_contains(strtolower($member->user->name), strtolower($search)))
+                )->values();
+            }
 
             $rows = $groups->map(function ($group) use ($assessmentAttemptService, $assessmentAnswerService, $assessmentScoreService) {
                 $attempts = $assessmentAttemptService->forAssessmentAndGroup($this->assessment->id, $group->id);

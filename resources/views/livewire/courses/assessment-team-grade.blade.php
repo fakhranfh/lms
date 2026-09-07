@@ -37,16 +37,25 @@
             <!-- Right: Grading Form -->
             <div class="p-space-lg">
                 <form wire:submit="submitGrade" class="space-y-space-md">
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Score</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            wire:model="gradeScore"
-                            class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        />
-                        @error('gradeScore') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                    <div class="space-y-space-md">
+                        <h4 class="font-label-md text-label-md text-on-surface">Question Scores</h4>
+                        @foreach ($assessment->questions as $question)
+                            <div>
+                                <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
+                                    Question {{ $loop->iteration }} ({{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts)
+                                </label>
+                                <div class="rte-content prose prose-sm max-w-none text-on-surface-variant mb-space-xs">{!! $question->description !!}</div>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    max="{{ $question->points }}"
+                                    wire:model="gradeQuestionScores.{{ $question->id }}"
+                                    class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                                @error("gradeQuestionScores.{$question->id}") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                            </div>
+                        @endforeach
                     </div>
 
                     <div>

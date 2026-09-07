@@ -8,6 +8,7 @@ use App\Models\Course;
 use App\Models\Group;
 use App\Services\AssessmentAnswerService;
 use App\Services\AssessmentAttemptService;
+use App\Services\AssessmentQuestionScoreService;
 use App\Services\AssessmentScoreService;
 use App\Services\GradebookScoringService;
 use App\Services\GroupMemberService;
@@ -23,13 +24,13 @@ class AssessmentTeamGrade extends Component
 
     public Group $group;
 
-    public string $gradeScore = '';
-
     public string $gradeFeedback = '';
+
+    public array $gradeQuestionScores = [];
 
     public ?string $errorMessage = null;
 
-    public function mount(CurrentSchool $currentSchool, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, Assessment $assessment, Group $group): void
+    public function mount(CurrentSchool $currentSchool, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, Assessment $assessment, Group $group): void
     {
         $course = $assessment->course;
 
@@ -48,27 +49,60 @@ class AssessmentTeamGrade extends Component
         $this->group = $group;
 
         $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
-        $this->gradeScore = $existingScore ? (string) $existingScore->score : '';
         $this->gradeFeedback = $existingScore ? ($existingScore->feedback ?? '') : '';
+
+        $questionScores = $assessmentQuestionScoreService->findByAttempt($attempt->id);
+        foreach ($this->assessment->questions as $question) {
+            $qScore = $questionScores->firstWhere('assessment_question_id', $question->id);
+            $this->gradeQuestionScores[$question->id] = $qScore ? (string) $qScore->score : '';
+        }
     }
 
-    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, GroupMemberService $groupMemberService, GradebookScoringService $gradebookScoringService): void
+    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, GroupMemberService $groupMemberService, GradebookScoringService $gradebookScoringService): void
     {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
 
         $this->validate([
-            'gradeScore' => 'required|numeric|min:0',
             'gradeFeedback' => 'nullable|string',
         ]);
 
         $attempt = $assessmentAttemptService->forAssessmentAndGroup($this->assessment->id, $this->group->id)->last();
         abort_unless($attempt !== null, 404);
 
-        $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
+        $totalScore = 0;
+        foreach ($this->assessment->questions as $question) {
+            $score = $this->gradeQuestionScores[$question->id] ?? '';
+            if ($score === '') {
+                $this->addError("gradeQuestionScores.{$question->id}", __('Score is required'));
 
+                continue;
+            }
+
+            if (! is_numeric($score) || (float) $score < 0 || (float) $score > $question->points) {
+                $this->addError("gradeQuestionScores.{$question->id}", __('Score must be between 0 and '.$question->points));
+
+                continue;
+            }
+
+            $totalScore += (float) $score;
+        }
+
+        if ($this->getErrorBag()->isNotEmpty()) {
+            return;
+        }
+
+        foreach ($this->assessment->questions as $question) {
+            $score = (float) $this->gradeQuestionScores[$question->id];
+            $assessmentQuestionScoreService->updateOrCreate(
+                ['assessment_attempt_id' => $attempt->id, 'assessment_question_id' => $question->id],
+                ['score' => $score]
+            );
+        }
+
+        $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
         $data = [
             'assessment_attempt_id' => $attempt->id,
-            'score' => (float) $this->gradeScore,
+            'score' => $totalScore,
             'graded_by' => auth()->id(),
             'graded_at' => now(),
             'feedback' => $this->gradeFeedback ?: null,

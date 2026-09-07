@@ -8,6 +8,7 @@ use App\Livewire\Courses\AssessmentTeamGrade;
 use App\Livewire\Courses\AssessmentTeamShow;
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
+use App\Models\AssessmentQuestion;
 use App\Models\Course;
 use App\Models\CoursePerson;
 use App\Models\Group;
@@ -65,6 +66,10 @@ class AssessmentTeamGradeTest extends TestCase
     public function test_teacher_grading_group_updates_shared_attempt_visible_to_all_members(): void
     {
         $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
+
+        $q1 = AssessmentQuestion::factory()->for($this->assessment)->create(['points' => 50]);
+        $q2 = AssessmentQuestion::factory()->for($this->assessment)->create(['points' => 40]);
+
         $attempt = AssessmentAttempt::factory()->for($this->assessment)->create([
             'group_id' => $this->group->id,
             'user_id' => null,
@@ -73,7 +78,8 @@ class AssessmentTeamGradeTest extends TestCase
 
         $this->actingAs($this->teacher);
         Livewire::test(AssessmentTeamGrade::class, ['assessment' => $this->assessment, 'group' => $this->group])
-            ->set('gradeScore', '90')
+            ->set("gradeQuestionScores.{$q1->id}", '50')
+            ->set("gradeQuestionScores.{$q2->id}", '40')
             ->call('submitGrade')
             ->assertRedirect(route('assessments.team.show', $this->assessment));
 
@@ -93,6 +99,8 @@ class AssessmentTeamGradeTest extends TestCase
     public function test_missing_score_shows_validation_error(): void
     {
         $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
+
+        AssessmentQuestion::factory()->for($this->assessment)->create(['points' => 50]);
         AssessmentAttempt::factory()->for($this->assessment)->create([
             'group_id' => $this->group->id,
             'user_id' => null,
@@ -102,7 +110,7 @@ class AssessmentTeamGradeTest extends TestCase
         $this->actingAs($this->teacher);
         Livewire::test(AssessmentTeamGrade::class, ['assessment' => $this->assessment, 'group' => $this->group])
             ->call('submitGrade')
-            ->assertHasErrors(['gradeScore']);
+            ->assertHasErrors();
     }
 
     public function test_without_attempt_returns_404(): void

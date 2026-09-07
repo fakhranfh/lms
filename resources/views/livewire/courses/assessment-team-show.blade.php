@@ -435,16 +435,31 @@
     @if (!$isStudent)
         <div class="space-y-space-md">
             <h2 class="font-label-lg text-label-lg text-on-surface">Team Submissions</h2>
+
+            <div class="flex items-center gap-space-sm">
+                <x-ui.search-input wireModel="groupSearch" placeholder="Search by group or student name" compact class="w-56" />
+
+                @if (trim($groupSearch) !== '')
+                    <button
+                        type="button"
+                        wire:click="$set('groupSearch', '')"
+                        class="text-body-sm text-primary font-medium hover:underline flex-shrink-0"
+                    >
+                        {{ __('Clear filter') }}
+                    </button>
+                @endif
+            </div>
+
             <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
                 @forelse ($groupRows as $row)
                     <div wire:key="group-{{ $row['group']->id }}" class="p-space-lg">
                         <div class="flex items-center justify-between gap-space-md mb-space-md">
                             <div class="flex-1 min-w-0">
                                 <p class="font-label-md text-label-md text-on-surface">{{ $row['group']->name }}</p>
-                                <div class="flex flex-wrap items-center gap-space-sm mt-space-sm">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm mt-space-sm">
                                     @forelse ($row['group']->members as $member)
                                         <div class="flex items-center gap-space-xs">
-                                            <x-avatar :user="$member->user" size="6" />
+                                            <x-avatar :user="$member->user" size="8" />
                                             <p class="text-body-xs text-on-surface-variant">{{ $member->user->name }}</p>
                                         </div>
                                     @empty
@@ -475,7 +490,13 @@
                         </div>
                     </div>
                 @empty
-                    <div class="p-space-lg text-center text-body-sm text-on-surface-variant">No groups yet. Use "Manage Groups" from the Assessment list to create one.</div>
+                    <div class="p-space-lg text-center text-body-sm text-on-surface-variant">
+                        @if (trim($groupSearch) !== '')
+                            No groups or students match "{{ $groupSearch }}".
+                        @else
+                            No groups yet. Use "Manage Groups" from the Assessment list to create one.
+                        @endif
+                    </div>
                 @endforelse
             </div>
         </div>

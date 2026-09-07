@@ -15,21 +15,13 @@
     @enderror
 
     <!-- Header -->
-    <div class="flex items-start justify-between">
+    <div class="relative sticky top-0 z-20 bg-background flex items-start justify-between pt-space-xxs pb-space-sm border-b border-outline-variant before:content-[''] before:absolute before:left-0 before:right-0 before:-top-space-lg before:h-space-lg before:bg-background before:-z-10">
         <div>
             <h1 class="font-headline-md text-headline-md text-on-surface">Assessment</h1>
         </div>
 
         @unless ($isStudent)
             <div class="flex items-center gap-space-sm">
-                <a
-                    href="{{ route('people.index', [$course, 'tab' => 'groups']) }}"
-                    class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition inline-flex items-center gap-space-sm"
-                >
-                    <span class="material-symbols-outlined">groups</span>
-                    Manage Groups
-                </a>
-
                 <div class="relative" x-data="{ open: false }">
                     <button
                         type="button"

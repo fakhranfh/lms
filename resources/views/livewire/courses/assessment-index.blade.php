@@ -10,52 +10,9 @@
         </div>
     @endif
 
-    @if (app()->isLocal() && ! $isStudent)
-        <div class="bg-tertiary-container border border-outline-variant rounded-lg p-space-md flex items-center justify-between gap-space-md">
-            <p class="font-body-sm text-body-sm text-on-tertiary-container">Dev tools</p>
-            <form wire:submit="generatePersonalAssignments" class="flex items-center gap-space-sm">
-                <input
-                    type="number"
-                    wire:model="generateCount"
-                    min="1"
-                    max="50"
-                    class="w-20 px-space-sm py-space-xs border border-outline rounded-lg font-body-sm text-body-sm"
-                />
-                <button
-                    type="submit"
-                    wire:loading.attr="disabled"
-                    wire:target="generatePersonalAssignments"
-                    class="px-space-md py-space-xs bg-tertiary text-on-tertiary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
-                >
-                    <span wire:loading wire:target="generatePersonalAssignments" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-                    Generate Personal Assignments
-                </button>
-                <button
-                    type="button"
-                    wire:click="generateTeamAssignments"
-                    wire:loading.attr="disabled"
-                    wire:target="generateTeamAssignments"
-                    class="px-space-md py-space-xs bg-tertiary text-on-tertiary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
-                >
-                    <span wire:loading wire:target="generateTeamAssignments" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-                    Generate Team Assignments
-                </button>
-                <button
-                    type="button"
-                    wire:click="generateQuizzes"
-                    wire:loading.attr="disabled"
-                    wire:target="generateQuizzes"
-                    class="px-space-md py-space-xs bg-tertiary text-on-tertiary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
-                >
-                    <span wire:loading wire:target="generateQuizzes" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-                    Generate Quizzes
-                </button>
-            </form>
-        </div>
-        @error('generateCount')
-            <p class="font-body-sm text-body-sm text-error">{{ $message }}</p>
-        @enderror
-    @endif
+    @error('generateCount')
+        <p class="font-body-sm text-body-sm text-error">{{ $message }}</p>
+    @enderror
 
     <!-- Header -->
     <div class="flex items-start justify-between">
@@ -127,6 +84,30 @@
 
                     <!-- Collapsible Content: Table -->
                     <div x-show="open" x-cloak>
+                        @if (app()->isLocal() && ! $isStudent && $group['generateMethod'])
+                            <div class="bg-tertiary-container border border-outline-variant p-space-md flex items-center justify-between gap-space-md">
+                                <p class="font-body-sm text-body-sm text-on-tertiary-container">Dev tools</p>
+                                <form wire:submit="{{ $group['generateMethod'] }}" class="flex items-center gap-space-sm">
+                                    <input
+                                        type="number"
+                                        wire:model="generateCount"
+                                        min="1"
+                                        max="50"
+                                        class="w-20 px-space-sm py-space-xs border border-outline rounded-lg font-body-sm text-body-sm"
+                                    />
+                                    <button
+                                        type="submit"
+                                        wire:loading.attr="disabled"
+                                        wire:target="{{ $group['generateMethod'] }}"
+                                        class="px-space-md py-space-xs bg-tertiary text-on-tertiary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
+                                    >
+                                        <span wire:loading wire:target="{{ $group['generateMethod'] }}" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                                        Generate {{ \App\Support\AssessmentTypeLabel::forType($group['type']) }}
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
+
                         @if (($group['type'] === \App\Enums\AssessmentType::Attendance || $group['type'] === \App\Enums\AssessmentType::ForumDiscussion) && $isStudent)
                             <div class="bg-surface border border-t-0 border-outline-variant rounded-b-lg overflow-hidden">
                                 <x-assessments.session-table :rows="$group['sessionTableRows']" :empty-message="$group['sessionTableEmptyMessage']" />

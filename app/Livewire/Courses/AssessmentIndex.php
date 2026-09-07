@@ -515,6 +515,7 @@ class AssessmentIndex extends Component
             'sectionKey' => $type->value,
             'isExpanded' => isset($this->expandedSections[$type->value]) && $this->expandedSections[$type->value],
             'totalWeight' => $assessments->where('type', $type)->sum('weight'),
+            'generateMethod' => $this->generateMethodForType($type),
         ];
 
         $group['selectableAssessmentIds'] = $group['assessments']
@@ -564,6 +565,16 @@ class AssessmentIndex extends Component
     private function isAutoProvisionedType(AssessmentType $type): bool
     {
         return in_array($type, [AssessmentType::Attendance, AssessmentType::ForumDiscussion], true);
+    }
+
+    private function generateMethodForType(AssessmentType $type): ?string
+    {
+        return match ($type) {
+            AssessmentType::TheoryPersonalAssignment => 'generatePersonalAssignments',
+            AssessmentType::TheoryTeamAssignment => 'generateTeamAssignments',
+            AssessmentType::TheoryQuiz => 'generateQuizzes',
+            default => null,
+        };
     }
 
     public function editRoute(Assessment $assessment): string

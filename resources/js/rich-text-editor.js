@@ -1,9 +1,10 @@
-export default (initialValue, wireModel, id, disabled = false, allowAttachments = true, allowLinks = true, allowVideo = false) => ({
+export default (initialValue, wireModel, id, disabled = false, allowAttachments = true, allowLinks = true, allowVideo = false, allowAudio = false) => ({
     id,
     disabled,
     allowAttachments,
     allowLinks,
     allowVideo,
+    allowAudio,
     uploading: false,
     videoPreviewUrl: null,
     filePreviewUrl: null,
@@ -263,6 +264,12 @@ export default (initialValue, wireModel, id, disabled = false, allowAttachments 
             xlsx: { label: 'XLS', type: 'xls' },
             ppt: { label: 'PPT', type: 'ppt' },
             pptx: { label: 'PPT', type: 'ppt' },
+            mp3: { label: 'AUD', type: 'audio' },
+            wav: { label: 'AUD', type: 'audio' },
+            ogg: { label: 'AUD', type: 'audio' },
+            m4a: { label: 'AUD', type: 'audio' },
+            aac: { label: 'AUD', type: 'audio' },
+            flac: { label: 'AUD', type: 'audio' },
         };
 
         return badges[extension] || { label: extension.slice(0, 4).toUpperCase() || 'FILE', type: 'generic' };
@@ -316,10 +323,16 @@ export default (initialValue, wireModel, id, disabled = false, allowAttachments 
             return;
         }
 
-        // The file input's accept attribute already keeps video out of the
-        // native picker here; this only guards against a file dragged in or
-        // otherwise selected outside that picker.
+        // The file input's accept attribute already keeps video/audio out of
+        // the native picker here; this only guards against a file dragged in
+        // or otherwise selected outside that picker.
         if (file.type.startsWith('video/') && !this.allowVideo) {
+            event.target.value = '';
+
+            return;
+        }
+
+        if (file.type.startsWith('audio/') && !this.allowAudio) {
             event.target.value = '';
 
             return;

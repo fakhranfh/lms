@@ -39,6 +39,18 @@ export function validateAssessmentQuestionsTotal(formEl) {
  * descriptions live in a wire:ignore rich text editor, so they're read
  * straight from its contenteditable DOM.
  */
+/**
+ * A rich text editor field counts as filled if it has text or an inserted
+ * attachment (image/file chip) — a file-only answer has no text at all.
+ */
+function rteHasContent(rteContentEl) {
+    if (!rteContentEl) {
+        return false;
+    }
+
+    return rteContentEl.textContent.trim() !== '' || rteContentEl.querySelector('img, a.rte-file-chip') !== null;
+}
+
 export function validateQuizForm(formEl) {
     let valid = true;
 
@@ -83,14 +95,14 @@ export function validateQuizForm(formEl) {
 
     formEl.querySelectorAll('[data-question-row]').forEach((row) => {
         const descriptionWrapper = row.querySelector('[data-field="description"]');
-        if (!row.querySelector('.rte-content')?.textContent.trim()) {
+        if (!rteHasContent(row.querySelector('[data-field="description"] .rte-content'))) {
             markField(descriptionWrapper, 'Description is required.');
         } else {
             clearField(descriptionWrapper);
         }
 
         const optionsWrapper = row.querySelector('[data-field="options"]');
-        const filledOptions = Array.from(row.querySelectorAll('[data-option-label]')).filter((input) => input.value.trim() !== '');
+        const filledOptions = Array.from(row.querySelectorAll('[data-option-row]')).filter((optionRow) => rteHasContent(optionRow.querySelector('.rte-content')));
         const hasCorrect = row.querySelector('[data-option-correct]:checked') !== null;
 
         if (filledOptions.length < 2) {

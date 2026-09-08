@@ -7,7 +7,7 @@
             <span class="material-symbols-outlined text-white text-[14px]" data-weight="fill">{{ $option->is_correct ? 'check' : 'close' }}</span>
         @endif
     </span>
-    <span class="text-body-lg text-on-surface flex-1">{{ $option->label }}</span>
+    <span class="rte-content text-body-lg text-on-surface flex-1">{!! $option->label !!}</span>
     @if ($selected)
         <span class="text-body-sm font-medium flex-shrink-0 {{ $option->is_correct ? 'text-success' : 'text-error' }}">
             {{ $option->is_correct ? 'Correct' : 'Incorrect' }}

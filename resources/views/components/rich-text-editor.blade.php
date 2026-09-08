@@ -1,8 +1,8 @@
-@props(['id', 'wireModel', 'value' => '', 'disabled' => false, 'allowAttachments' => true, 'allowLinks' => true, 'allowVideo' => false])
+@props(['id', 'wireModel', 'value' => '', 'disabled' => false, 'allowAttachments' => true, 'allowLinks' => true, 'allowVideo' => false, 'allowAudio' => false])
 
 <div
     wire:ignore
-    x-data="richTextEditor(@js($value), '{{ $wireModel }}', '{{ $id }}', @js((bool) $disabled), @js((bool) $allowAttachments), @js((bool) $allowLinks), @js((bool) $allowVideo))"
+    x-data="richTextEditor(@js($value), '{{ $wireModel }}', '{{ $id }}', @js((bool) $disabled), @js((bool) $allowAttachments), @js((bool) $allowLinks), @js((bool) $allowVideo), @js((bool) $allowAudio))"
     x-on:rich-text-cleared.window="if ($event.detail.id === id) { clear(); }"
     x-on:rich-text-disabled-changed.window="if ($event.detail.id === id) { disabled = $event.detail.disabled; }"
     x-on:rich-text-set-content.window="if ($event.detail.id === id) { setContent($event.detail.value); }"
@@ -99,7 +99,7 @@
                 <span class="material-symbols-outlined text-[18px]">attach_file</span>
             </button>
         </template>
-        <input x-show="allowAttachments" x-cloak type="file" x-ref="fileInput" accept="{{ $allowVideo ? 'image/*,.pdf,.zip,video/*' : 'image/*,.pdf,.zip' }}" class="hidden" :disabled="disabled" @change="uploadFile($event)">
+        <input x-show="allowAttachments" x-cloak type="file" x-ref="fileInput" accept="image/*,.pdf,.zip{{ $allowVideo ? ',video/*' : '' }}{{ $allowAudio ? ',audio/*' : '' }}" class="hidden" :disabled="disabled" @change="uploadFile($event)">
     </div>
 
     <div

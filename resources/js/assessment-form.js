@@ -1,16 +1,26 @@
 import { removeSyllabusRow, setSyllabusRadio } from './syllabus-form';
 
 /**
- * Adds a new empty option to a quiz question. Options are nested one level
- * inside questions, and the <template>-clone approach addSyllabusRow uses
- * only substitutes a single index per clone (see its own docblock) — reusing
- * it here would collide the option's index with the parent question's index
- * for any question added client-side. Building the row by hand instead
- * sidesteps that, and works the same whether the question was rendered by
- * the server or added moments ago via addSyllabusRow.
+ * Adds a new empty option to a quiz question, cloned from the form's
+ * #option-template (a server-rendered <x-rich-text-editor> row with
+ * __QINDEX__/__OPTINDEX__ placeholders) so the option's editor gets the same
+ * markup Blade would produce — hand-building the rich text editor's internals
+ * in JS would drift from resources/views/components/rich-text-editor.blade.php.
+ * Options are nested one level inside questions, and the <template>-clone
+ * approach addSyllabusRow uses only substitutes a single index per clone (see
+ * its own docblock) — reusing it here would collide the option's index with
+ * the parent question's index for any question added client-side, so this
+ * clones its own template and substitutes both indexes instead. Works the
+ * same whether the question was rendered by the server or added moments ago
+ * via addSyllabusRow.
  */
 export function addQuizOption($wire, questionIndex, containerEl) {
     if (!containerEl) {
+        return;
+    }
+
+    const template = document.getElementById('option-template');
+    if (!template) {
         return;
     }
 
@@ -20,21 +30,15 @@ export function addQuizOption($wire, questionIndex, containerEl) {
 
     $wire.set(`${arrayPath}.${optionIndex}`, { id: null, label: '', isCorrect: false }, false);
 
+    let html = template.innerHTML;
+    html = html.replaceAll('__QINDEX__', questionIndex).replaceAll('__OPTINDEX__', optionIndex);
+
     const wrapper = document.createElement('div');
-    wrapper.innerHTML = `
-        <div data-row data-option-row class="flex items-center gap-space-sm">
-            <input type="radio" name="correct-option-${questionIndex}" data-option-correct />
-            <input type="text" data-option-label placeholder="Option label" class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
-            <button type="button" data-remove-option class="text-error text-body-sm hover:underline">Remove</button>
-        </div>
-    `.trim();
+    wrapper.innerHTML = html.trim();
     const row = wrapper.firstElementChild;
 
     row.querySelector('[data-option-correct]').addEventListener('change', () => {
         setSyllabusRadio($wire, arrayPath, optionIndex);
-    });
-    row.querySelector('[data-option-label]').addEventListener('input', (event) => {
-        $wire.set(`${arrayPath}.${optionIndex}.label`, event.target.value, false);
     });
     row.querySelector('[data-remove-option]').addEventListener('click', () => {
         removeSyllabusRow($wire, `${arrayPath}.${optionIndex}`, row);

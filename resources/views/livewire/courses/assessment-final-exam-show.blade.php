@@ -904,7 +904,7 @@
                                 @foreach ($question->options as $option)
                                     <div class="flex items-center gap-space-sm text-body-sm {{ $option->is_correct ? 'text-success font-medium' : 'text-on-surface-variant' }}">
                                         <span class="material-symbols-outlined text-[16px]">{{ $option->is_correct ? 'check_circle' : 'radio_button_unchecked' }}</span>
-                                        {{ $option->label }}
+                                        <span class="rte-content">{!! $option->label !!}</span>
                                     </div>
                                 @endforeach
                             </div>

@@ -149,7 +149,7 @@
                     <div data-field="description" @error("questions.{$index}.description") data-field-error @enderror>
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Description</label>
                         <div @error("questions.{$index}.description") class="rounded-lg ring-2 ring-error/30 border border-error" @enderror>
-                            <x-rich-text-editor id="question-{{ $index }}" wire-model="questions.{{ $index }}.description" :value="$question['description']" />
+                            <x-rich-text-editor id="question-{{ $index }}" wire-model="questions.{{ $index }}.description" :value="$question['description']" :allow-audio="true" />
                         </div>
                         <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                         @error("questions.{$index}.description") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
@@ -160,21 +160,24 @@
 
                         <div data-options-container class="space-y-space-sm">
                             @foreach ($question['options'] as $optionIndex => $option)
-                                <div wire:key="question-{{ $index }}-option-{{ $optionIndex }}" data-row data-option-row class="flex items-center gap-space-sm">
+                                <div wire:key="question-{{ $index }}-option-{{ $optionIndex }}" data-row data-option-row class="flex items-start gap-space-sm">
                                     <input
                                         type="radio"
                                         name="correct-option-{{ $index }}"
                                         data-option-correct
+                                        class="mt-space-md"
                                         @change="window.setSyllabusRadio($wire, 'questions.{{ $index }}.options', {{ $optionIndex }})"
                                         @checked($option['isCorrect'])
                                     />
-                                    <input
-                                        type="text"
-                                        data-option-label
-                                        wire:model="questions.{{ $index }}.options.{{ $optionIndex }}.label"
-                                        placeholder="Option label"
-                                        class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                    />
+                                    <div class="flex-1">
+                                        <x-rich-text-editor
+                                            id="question-{{ $index }}-option-{{ $optionIndex }}"
+                                            wire-model="questions.{{ $index }}.options.{{ $optionIndex }}.label"
+                                            :value="$option['label']"
+                                            :allow-links="false"
+                                            :allow-audio="true"
+                                        />
+                                    </div>
                                     @if (count($question['options']) > 2)
                                         <button type="button" @click="window.removeSyllabusRow($wire, 'questions.{{ $index }}.options.{{ $optionIndex }}', $el)" class="text-error text-body-sm hover:underline">Remove</button>
                                     @endif
@@ -204,7 +207,7 @@
 
                     <div data-field="description">
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Description</label>
-                        <x-rich-text-editor id="question-__NEW__" wire-model="questions.__NEW__.description" />
+                        <x-rich-text-editor id="question-__NEW__" wire-model="questions.__NEW__.description" :allow-audio="true" />
                         <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                     </div>
 
@@ -212,25 +215,17 @@
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Options (select the correct one)</label>
 
                         <div data-options-container class="space-y-space-sm">
-                            <div data-row data-option-row class="flex items-center gap-space-sm">
-                                <input type="radio" name="correct-option-__NEW__" data-option-correct @change="window.setSyllabusRadio($wire, 'questions.__NEW__.options', 0)" />
-                                <input
-                                    type="text"
-                                    data-option-label
-                                    placeholder="Option label"
-                                    @input="$wire.set('questions.__NEW__.options.0.label', $event.target.value, false)"
-                                    class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                />
+                            <div data-row data-option-row class="flex items-start gap-space-sm">
+                                <input type="radio" name="correct-option-__NEW__" data-option-correct class="mt-space-md" @change="window.setSyllabusRadio($wire, 'questions.__NEW__.options', 0)" />
+                                <div class="flex-1">
+                                    <x-rich-text-editor id="question-__NEW__-option-0" wire-model="questions.__NEW__.options.0.label" :allow-links="false" :allow-audio="true" />
+                                </div>
                             </div>
-                            <div data-row data-option-row class="flex items-center gap-space-sm">
-                                <input type="radio" name="correct-option-__NEW__" data-option-correct @change="window.setSyllabusRadio($wire, 'questions.__NEW__.options', 1)" />
-                                <input
-                                    type="text"
-                                    data-option-label
-                                    placeholder="Option label"
-                                    @input="$wire.set('questions.__NEW__.options.1.label', $event.target.value, false)"
-                                    class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                />
+                            <div data-row data-option-row class="flex items-start gap-space-sm">
+                                <input type="radio" name="correct-option-__NEW__" data-option-correct class="mt-space-md" @change="window.setSyllabusRadio($wire, 'questions.__NEW__.options', 1)" />
+                                <div class="flex-1">
+                                    <x-rich-text-editor id="question-__NEW__-option-1" wire-model="questions.__NEW__.options.1.label" :allow-links="false" :allow-audio="true" />
+                                </div>
                             </div>
                         </div>
 
@@ -243,6 +238,16 @@
                         </button>
                         <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                     </div>
+                </div>
+            </template>
+
+            <template id="option-template">
+                <div data-row data-option-row class="flex items-start gap-space-sm">
+                    <input type="radio" name="correct-option-__QINDEX__" data-option-correct class="mt-space-md" />
+                    <div class="flex-1">
+                        <x-rich-text-editor id="question-__QINDEX__-option-__OPTINDEX__" wire-model="questions.__QINDEX__.options.__OPTINDEX__.label" :allow-links="false" :allow-audio="true" />
+                    </div>
+                    <button type="button" data-remove-option class="text-error text-body-sm hover:underline">Remove</button>
                 </div>
             </template>
         </div>

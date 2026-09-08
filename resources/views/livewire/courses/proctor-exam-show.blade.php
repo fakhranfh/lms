@@ -546,7 +546,7 @@
                                     @foreach ($question->options as $option)
                                         <label class="flex items-center gap-space-md p-space-lg border border-outline rounded-lg cursor-pointer hover:bg-surface-container/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 transition">
                                             <input type="radio" name="answer-{{ $question->id }}" wire:model="answers.{{ $question->id }}" value="{{ $option->id }}" class="w-5 h-5 accent-primary flex-shrink-0" />
-                                            <span class="text-body-lg text-on-surface">{{ $option->label }}</span>
+                                            <span class="rte-content text-body-lg text-on-surface">{!! $option->label !!}</span>
                                         </label>
                                     @endforeach
                                 </div>

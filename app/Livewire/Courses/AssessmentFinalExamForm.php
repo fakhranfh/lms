@@ -121,6 +121,8 @@ class AssessmentFinalExamForm extends Component
 
         $this->title = AssessmentTypeLabel::forType(AssessmentType::TheoryFinalExam).' - Comprehensive Review';
         $this->weight = (string) AssessmentType::TheoryFinalExam->defaultWeight();
+        $this->startDate = now()->addWeek()->setTime(8, 0)->format('Y-m-d\TH:i');
+        $this->endDate = now()->addWeek()->setTime(10, 0)->format('Y-m-d\TH:i');
         $this->status = 'draft';
         $this->examType = 'closed_book';
         $this->instructions = '<p>Answer every question independently. No collaboration is permitted during this exam.</p>';

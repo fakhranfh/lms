@@ -872,15 +872,37 @@
         @endif
     </div>
 
-    @if (!$isStudent && !$isProctored)
+    @if (!$isStudent)
         <!-- Question List (teacher view, read-only) -->
         <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
-            <h2 class="font-label-lg text-label-lg text-on-surface">Questions</h2>
-            <div class="divide-y divide-outline-variant">
-                @foreach ($assessment->questions as $question)
+            <h2 class="font-label-lg text-label-lg text-on-surface font-bold">Questions</h2>
+
+            <x-ui.pagination-links
+                :paginator="$paginatedQuestions"
+                perPageModel="questionsPerPage"
+                :perPageOptions="[5, 10, 25, 50]"
+            />
+
+            <div wire:loading.remove wire:target="previousPage,nextPage,gotoPage,questionsPerPage" class="divide-y divide-outline-variant">
+                @foreach ($paginatedQuestions as $question)
                     <div class="space-y-space-md {{ $loop->first ? '' : 'pt-space-lg' }} {{ $loop->last ? '' : 'pb-space-lg' }}">
-                        <p class="text-body-xs text-on-surface-variant mb-space-sm">Question {{ $loop->iteration }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
+                        <p class="text-body-xs text-on-surface-variant mb-space-sm">
+                            Question {{ $paginatedQuestions->firstItem() + $loop->index }}
+                            @if ($question->question_type !== \App\Enums\AssessmentQuestionType::MultipleChoice)
+                                &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts
+                            @endif
+                        </p>
                         <div class="rte-content prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
+                        @if ($question->question_type === \App\Enums\AssessmentQuestionType::MultipleChoice)
+                            <div class="space-y-space-xs">
+                                @foreach ($question->options as $option)
+                                    <div class="flex items-center gap-space-sm text-body-sm {{ $option->is_correct ? 'text-success font-medium' : 'text-on-surface-variant' }}">
+                                        <span class="material-symbols-outlined text-[16px]">{{ $option->is_correct ? 'check_circle' : 'radio_button_unchecked' }}</span>
+                                        {{ $option->label }}
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                         @if ($question->files->isNotEmpty())
                             <div class="mt-space-md space-y-space-xs">
                                 @foreach ($question->files as $file)
@@ -894,6 +916,22 @@
                     </div>
                 @endforeach
             </div>
+
+            <div wire:loading.block wire:target="previousPage,nextPage,gotoPage,questionsPerPage" class="divide-y divide-outline-variant">
+                @php($skeletonRows = min($questionsPerPage, 5))
+                @for ($i = 0; $i < $skeletonRows; $i++)
+                    <div class="space-y-space-sm {{ $i === 0 ? '' : 'pt-space-lg' }} {{ $i === $skeletonRows - 1 ? '' : 'pb-space-lg' }}">
+                        <x-ui.skeleton-box class="h-4 w-full" />
+                        <x-ui.skeleton-box class="h-4 w-2/3" />
+                    </div>
+                @endfor
+            </div>
+
+            <x-ui.pagination-links
+                :paginator="$paginatedQuestions"
+                perPageModel="questionsPerPage"
+                :perPageOptions="[5, 10, 25, 50]"
+            />
         </div>
     @endif
 

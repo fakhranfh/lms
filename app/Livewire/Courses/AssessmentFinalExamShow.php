@@ -46,6 +46,8 @@ class AssessmentFinalExamShow extends Component
 
     public int $perPage = 12;
 
+    public int $questionsPerPage = 5;
+
     public string $studentSearch = '';
 
     public string $submissionFilter = '';
@@ -101,6 +103,10 @@ class AssessmentFinalExamShow extends Component
     {
         if (in_array($property, ['perPage', 'studentSearch', 'submissionFilter'], true)) {
             $this->resetPage();
+        }
+
+        if ($property === 'questionsPerPage') {
+            $this->resetPage('questionsPage');
         }
     }
 
@@ -571,6 +577,19 @@ class AssessmentFinalExamShow extends Component
             'referenceAcceptedExtensions' => '',
             'referenceFileError' => $this->referenceFileError,
         ];
+
+        if (! $this->isStudent) {
+            $questions = $this->assessment->questions->loadMissing('options');
+            $questionsPage = $this->getPage('questionsPage');
+
+            $viewData['paginatedQuestions'] = new LengthAwarePaginator(
+                $questions->forPage($questionsPage, $this->questionsPerPage)->values(),
+                $questions->count(),
+                $this->questionsPerPage,
+                $questionsPage,
+                ['path' => request()->url(), 'pageName' => 'questionsPage']
+            );
+        }
 
         if ($this->isStudent) {
             $allAttempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, auth()->id());

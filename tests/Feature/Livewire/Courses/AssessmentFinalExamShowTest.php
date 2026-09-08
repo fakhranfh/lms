@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
 use App\Enums\ProctorSnapshotType;
@@ -10,6 +11,7 @@ use App\Livewire\Courses\AssessmentFinalExamShow;
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
 use App\Models\AssessmentQuestion;
+use App\Models\AssessmentQuestionOption;
 use App\Models\AssessmentScore;
 use App\Models\Course;
 use App\Models\CoursePerson;
@@ -125,6 +127,83 @@ class AssessmentFinalExamShowTest extends TestCase
             'user_id' => $this->student->id,
             'attempt_number' => 2,
         ]);
+    }
+
+    public function test_teacher_sees_paginated_question_list(): void
+    {
+        $this->assessment->finalExam->update(['exam_type' => FinalExamType::TakeHome]);
+        $this->teacher->givePermissionTo(['assessment.view']);
+
+        $questions = AssessmentQuestion::factory()->for($this->assessment)->count(7)->sequence(
+            fn ($sequence) => ['description' => 'Question body '.$sequence->index]
+        )->create();
+
+        $this->actingAs($this->teacher);
+
+        $component = Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Question body 0')
+            ->assertSee('Question body 4')
+            ->assertDontSee('Question body 5')
+            ->assertDontSee('Question body 6');
+
+        $component->call('gotoPage', 2, 'questionsPage')
+            ->assertDontSee('Question body 0')
+            ->assertSee('Question body 5')
+            ->assertSee('Question body 6');
+    }
+
+    public function test_teacher_sees_paginated_question_list_for_proctored_exam(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view']);
+
+        AssessmentQuestion::factory()->for($this->assessment)->create(['description' => 'Closed-book question body']);
+
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Closed-book question body');
+    }
+
+    public function test_teacher_sees_multiple_choice_options_in_question_list(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view']);
+
+        $question = AssessmentQuestion::factory()->for($this->assessment)->create([
+            'question_type' => AssessmentQuestionType::MultipleChoice,
+        ]);
+        AssessmentQuestionOption::factory()->for($question, 'question')->create(['label' => 'Correct option', 'is_correct' => true]);
+        AssessmentQuestionOption::factory()->for($question, 'question')->create(['label' => 'Wrong option', 'is_correct' => false]);
+
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Correct option')
+            ->assertSee('Wrong option');
+    }
+
+    public function test_student_does_not_see_question_list_for_non_proctored_exam(): void
+    {
+        $this->assessment->finalExam->update(['exam_type' => FinalExamType::TakeHome]);
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+
+        AssessmentQuestion::factory()->for($this->assessment)->create(['description' => 'Take-home question body']);
+
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertDontSeeHtml('<h2 class="font-label-lg text-label-lg text-on-surface">Questions</h2>');
+    }
+
+    public function test_student_does_not_see_question_list_for_proctored_exam(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+
+        AssessmentQuestion::factory()->for($this->assessment)->create(['description' => 'Proctored question body']);
+
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertDontSee('Proctored question body');
     }
 
     public function test_student_cannot_resubmit_take_home_exam_after_graded(): void

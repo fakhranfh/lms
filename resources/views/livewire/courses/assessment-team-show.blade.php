@@ -72,7 +72,7 @@
                     @endif
                 </div>
                 <div class="flex items-center gap-space-md">
-                    <span class="inline-flex items-center gap-space-xs text-body-sm text-on-surface-variant">
+                    <span class="inline-flex items-center gap-space-xs text-body-sm font-bold text-on-surface-variant">
                         <span class="material-symbols-outlined text-[16px]">groups</span>
                         Team
                     </span>
@@ -467,7 +467,11 @@
                 </select>
             </div>
 
-            <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
+            <div
+                class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant"
+                wire:loading.remove
+                wire:target="groupSearch,submissionFilter"
+            >
                 @forelse ($groupRows as $row)
                     <div wire:key="group-{{ $row['group']->id }}" class="p-space-lg">
                         <div class="flex items-center justify-between gap-space-md mb-space-md">
@@ -515,6 +519,36 @@
                         @endif
                     </div>
                 @endforelse
+            </div>
+
+            <div
+                class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant"
+                wire:loading.grid
+                wire:target="groupSearch,submissionFilter"
+            >
+                @for ($i = 0; $i < 3; $i++)
+                    <div class="p-space-lg">
+                        <div class="flex items-center justify-between gap-space-md mb-space-md">
+                            <div class="flex-1 min-w-0 space-y-space-sm">
+                                <x-ui.skeleton-box class="h-4 w-1/4" />
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm mt-space-sm">
+                                    <div class="flex items-center gap-space-xs">
+                                        <x-ui.skeleton-box class="w-8 h-8 rounded-full" />
+                                        <x-ui.skeleton-box class="h-3 w-24" />
+                                    </div>
+                                    <div class="flex items-center gap-space-xs">
+                                        <x-ui.skeleton-box class="w-8 h-8 rounded-full" />
+                                        <x-ui.skeleton-box class="h-3 w-24" />
+                                    </div>
+                                </div>
+                                <x-ui.skeleton-box class="h-3 w-2/3 mt-space-sm" />
+                            </div>
+
+                            <x-ui.skeleton-box class="h-6 w-24 rounded-full flex-shrink-0" />
+                            <x-ui.skeleton-box class="h-8 w-16 rounded-lg flex-shrink-0" />
+                        </div>
+                    </div>
+                @endfor
             </div>
         </div>
     @endif

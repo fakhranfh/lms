@@ -639,7 +639,7 @@ class AssessmentIndex extends Component
         $assessments = $assessmentService->get(['course_id' => $this->course->id], ['attempts.score', 'finalExam']);
 
         if ($this->isStudent) {
-            $assessments = $assessments->reject(fn (Assessment $assessment) => in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::TheoryQuiz], true)
+            $assessments = $assessments->reject(fn (Assessment $assessment) => in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::TheoryQuiz, AssessmentType::TheoryFinalExam], true)
                 && $assessment->status === AssessmentStatus::Draft)->values();
         }
 

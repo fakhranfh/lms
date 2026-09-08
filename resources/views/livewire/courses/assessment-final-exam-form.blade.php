@@ -72,7 +72,13 @@
                 <div class="flex items-center gap-space-lg py-space-sm">
                     @foreach ($examTypes as $examTypeOption)
                         <label class="inline-flex items-center gap-space-xs cursor-pointer">
-                            <input type="radio" wire:model="examType" value="{{ $examTypeOption->value }}" class="w-4 h-4 text-primary border-outline focus:ring-primary/50" />
+                            <input
+                                type="radio"
+                                wire:model="examType"
+                                value="{{ $examTypeOption->value }}"
+                                class="w-4 h-4 text-primary border-outline focus:ring-primary/50"
+                                @change="window.toggleFinalExamType($wire, $el)"
+                            />
                             <span class="font-body-md text-body-md text-on-surface">{{ str($examTypeOption->value)->replace('_', ' ')->title() }}</span>
                         </label>
                     @endforeach
@@ -91,29 +97,31 @@
         <!-- Questions -->
         <div class="space-y-space-md">
             <div class="flex items-center justify-between">
-                <h2 class="font-label-lg text-label-lg text-on-surface">Questions</h2>
+                <h2 class="font-label-lg text-label-lg text-on-surface font-bold">Questions</h2>
                 <button
                     type="button"
+                    data-take-home-hide
                     @click="window.addSyllabusRow($wire, 'question-template', 'questions', { id: null, description: '', questionType: 'essay', points: '', options: [] })"
-                    class="text-primary text-body-sm font-medium hover:underline inline-flex items-center gap-space-xs"
+                    class="text-primary text-body-sm font-medium hover:underline inline-flex items-center gap-space-xs {{ $examType === 'take_home' ? 'hidden' : '' }}"
                 >
                     <span class="material-symbols-outlined text-[16px]">add</span>
                     Add Question
                 </button>
             </div>
+            <p data-take-home-only class="text-body-xs text-on-surface-variant {{ $examType === 'take_home' ? '' : 'hidden' }}">Take-home exams are a single essay prompt.</p>
             @error('questions') <p class="text-body-xs text-error">{{ $message }}</p> @enderror
 
             @foreach ($questions as $index => $question)
                 @continue($question === null)
                 <div wire:key="question-{{ $index }}" data-row data-question-row class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
                     <div class="flex items-start justify-between gap-space-md">
-                        <p class="font-label-md text-label-md text-on-surface">Question {{ $index + 1 }}</p>
+                        <p data-take-home-hide class="font-label-md text-label-md text-on-surface {{ $examType === 'take_home' ? 'hidden' : '' }}">Question {{ $index + 1 }}</p>
                         @if (count($questions) > 1)
-                            <button type="button" @click="window.removeSyllabusRow($wire, 'questions.{{ $index }}', $el)" class="text-error text-body-sm hover:underline">Remove</button>
+                            <button type="button" data-take-home-hide @click="window.removeSyllabusRow($wire, 'questions.{{ $index }}', $el)" class="text-error text-body-sm hover:underline {{ $examType === 'take_home' ? 'hidden' : '' }}">Remove</button>
                         @endif
                     </div>
 
-                    <div>
+                    <div data-take-home-hide class="{{ $examType === 'take_home' ? 'hidden' : '' }}">
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Question Type</label>
                         <div class="flex items-center gap-space-lg py-space-sm">
                             @foreach ($questionTypes as $questionTypeOption)

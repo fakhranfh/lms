@@ -86,6 +86,33 @@ class AssessmentFinalExamFormTest extends TestCase
         ]);
     }
 
+    // Collapsing to a single essay question when the exam type is switched
+    // to take_home happens client-side (window.toggleFinalExamType in
+    // resources/js/syllabus-form.js), not via a Livewire round trip, so it
+    // isn't covered by a Livewire component test. The save-time rule below
+    // is the server-side safety net for that behavior.
+
+    public function test_take_home_exam_rejects_more_than_one_question(): void
+    {
+        $this->teacher->givePermissionTo('assessment.create');
+
+        Livewire::test(AssessmentFinalExamForm::class, ['course' => $this->course])
+            ->set('title', 'Take Home Exam')
+            ->set('startDate', now()->format('Y-m-d\TH:i'))
+            ->set('endDate', now()->addWeek()->format('Y-m-d\TH:i'))
+            ->set('examType', FinalExamType::TakeHome->value)
+            ->set('questions.0.description', 'Write an essay.')
+            ->set('questions.0.points', '100')
+            ->set('questions', [
+                ['id' => null, 'description' => 'Write an essay.', 'questionType' => AssessmentQuestionType::Essay->value, 'points' => '50', 'order' => 1, 'options' => []],
+                ['id' => null, 'description' => 'Write another essay.', 'questionType' => AssessmentQuestionType::Essay->value, 'points' => '50', 'order' => 2, 'options' => []],
+            ])
+            ->call('save')
+            ->assertHasErrors('questions');
+
+        $this->assertDatabaseMissing('assessments', ['title' => 'Take Home Exam']);
+    }
+
     public function test_creates_final_exam_with_multiple_choice_question_without_points(): void
     {
         $this->teacher->givePermissionTo('assessment.create');

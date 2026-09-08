@@ -269,6 +269,14 @@ class AssessmentFinalExamForm extends Component
             'questions.*.points' => 'required_if:questions.*.questionType,essay|nullable|numeric|min:0',
         ]);
 
+        if ($this->examType === 'take_home') {
+            if (count($this->questions) !== 1 || $this->questions[0]['questionType'] !== AssessmentQuestionType::Essay->value) {
+                $this->addError('questions', __('Take-home exams must have exactly one essay question.'));
+
+                return null;
+            }
+        }
+
         foreach ($this->questions as $index => $question) {
             if ($question['questionType'] !== AssessmentQuestionType::MultipleChoice->value) {
                 continue;

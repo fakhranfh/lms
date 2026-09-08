@@ -3,7 +3,8 @@ import rteVideoPreview from './rte-video-preview';
 import headMovementTest from './head-movement-test';
 import materialPicker from './material-picker';
 import { createReadingDetector } from './reading-detector';
-import { addQuizOption, addSyllabusRow, removeSyllabusRow, setSyllabusRadio, toggleFinalExamQuestionType, toggleWireArrayValue } from './syllabus-form';
+import { addSyllabusRow, removeSyllabusRow, setSyllabusRadio, toggleWireArrayValue } from './syllabus-form';
+import { addQuizOption, toggleFinalExamQuestionType, toggleFinalExamType } from './assessment-form';
 import { scrollToFirstFormError, validateAssessmentQuestionsTotal, validateQuizForm } from './form-error-scroll';
 
 document.addEventListener('alpine:init', () => {
@@ -24,6 +25,7 @@ window.removeSyllabusRow = removeSyllabusRow;
 window.setSyllabusRadio = setSyllabusRadio;
 window.addQuizOption = addQuizOption;
 window.toggleFinalExamQuestionType = toggleFinalExamQuestionType;
+window.toggleFinalExamType = toggleFinalExamType;
 window.toggleWireArrayValue = toggleWireArrayValue;
 
 // Exposed globally so forms can jump to their first invalid field on a

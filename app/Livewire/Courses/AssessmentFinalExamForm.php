@@ -427,6 +427,7 @@ class AssessmentFinalExamForm extends Component
             'statuses' => AssessmentStatus::cases(),
             'examTypes' => FinalExamType::cases(),
             'questionTypes' => AssessmentQuestionType::cases(),
+            'showUrl' => $this->assessment ? route('assessments.final-exam.show', $this->assessment) : null,
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->assessment ? 'Edit Assessment' : 'Create Assessment'])
             ->section('app-content');

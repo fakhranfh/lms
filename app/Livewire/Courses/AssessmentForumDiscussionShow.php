@@ -58,6 +58,7 @@ class AssessmentForumDiscussionShow extends Component
             'course' => $this->course,
             'assessment' => $this->assessment,
             'isStudent' => $this->isStudent,
+            'canEdit' => auth()->user()->can('assessment.edit'),
             'courseTabs' => CourseTabs::build($this->course, 'assessment'),
             'teacher' => $this->isStudent
                 ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user

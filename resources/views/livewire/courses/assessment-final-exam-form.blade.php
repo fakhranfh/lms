@@ -1,12 +1,23 @@
 @section('title', $pageTitle)
 
 <div class="w-full space-y-space-lg">
-    <div>
-        <a href="{{ route('assessments.index', $course) }}" class="text-body-sm text-primary hover:underline inline-flex items-center gap-space-xs">
-            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-            Back to Assessments
-        </a>
-        <h1 class="font-headline-md text-headline-md text-on-surface mt-space-sm">{{ $pageTitle }}</h1>
+    <div class="flex items-start justify-between gap-space-md">
+        <div>
+            <a href="{{ route('assessments.index', $course) }}" class="text-body-sm text-primary hover:underline inline-flex items-center gap-space-xs">
+                <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                Back to Assessments
+            </a>
+            <h1 class="font-headline-md text-headline-md text-on-surface mt-space-sm">{{ $pageTitle }}</h1>
+        </div>
+
+        @if ($showUrl)
+            <a
+                href="{{ $showUrl }}"
+                class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition flex-shrink-0"
+            >
+                Show Exam
+            </a>
+        @endif
     </div>
 
     @if (app()->isLocal())

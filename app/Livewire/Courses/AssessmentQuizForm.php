@@ -404,6 +404,7 @@ class AssessmentQuizForm extends Component
             'statuses' => AssessmentStatus::cases(),
             'scoringMethods' => QuizScoringMethod::cases(),
             'hasInstructions' => $quizInstructionService->current() !== null,
+            'showUrl' => $this->assessment ? route('assessments.quiz.show', $this->assessment) : null,
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->assessment ? 'Edit Assessment' : 'Create Assessment'])
             ->section('app-content');

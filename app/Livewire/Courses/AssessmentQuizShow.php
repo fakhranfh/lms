@@ -48,11 +48,25 @@ class AssessmentQuizShow extends Component
 
     public string $studentSearch = '';
 
+    public string $submissionFilter = '';
+
     public function updating(string $property): void
     {
-        if (in_array($property, ['perPage', 'studentSearch'], true)) {
+        if (in_array($property, ['perPage', 'studentSearch', 'submissionFilter'], true)) {
             $this->resetPage();
         }
+    }
+
+    /**
+     * @param  array{attempt: mixed, score: mixed}  $row
+     */
+    private function submissionStatus(array $row): string
+    {
+        if (! $row['attempt']) {
+            return 'not_submitted';
+        }
+
+        return $row['score'] ? 'graded' : 'submitted';
     }
 
     public function mount(
@@ -189,6 +203,7 @@ class AssessmentQuizShow extends Component
             'quiz' => $this->quiz,
             'isStudent' => $this->isStudent,
             'canSubmit' => auth()->user()->can('assessment.submit'),
+            'canEdit' => auth()->user()->can('assessment.edit'),
             'courseTabs' => CourseTabs::build($this->course, 'assessment'),
             'teacher' => $this->isStudent
                 ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
@@ -254,6 +269,10 @@ class AssessmentQuizShow extends Component
                     'answers' => $latest ? $assessmentQuizAnswerService->forAttempt($latest->id)->keyBy('quiz_question_id') : collect(),
                 ];
             })->values();
+
+            if ($this->submissionFilter !== '') {
+                $rows = $rows->filter(fn (array $row) => $this->submissionStatus($row) === $this->submissionFilter)->values();
+            }
 
             $page = $this->getPage();
 

@@ -78,6 +78,15 @@
                     </span>
                 </div>
             </div>
+
+            @if (!$isStudent && $canEdit)
+                <a
+                    href="{{ route('assessments.edit', $assessment) }}"
+                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity flex-shrink-0"
+                >
+                    Edit
+                </a>
+            @endif
         </div>
 
         <!-- Meta grid (2 columns) -->
@@ -436,7 +445,7 @@
         <div class="space-y-space-md">
             <h2 class="font-label-lg text-label-lg text-on-surface">Team Submissions</h2>
 
-            <div class="flex items-center gap-space-sm">
+            <div class="flex items-center gap-space-sm flex-wrap">
                 <x-ui.search-input wireModel="groupSearch" placeholder="Search by group or student name" compact class="w-56" />
 
                 @if (trim($groupSearch) !== '')
@@ -448,6 +457,14 @@
                         {{ __('Clear filter') }}
                     </button>
                 @endif
+
+                <label class="text-body-sm text-on-surface-variant" for="submissionFilter">Status</label>
+                <select id="submissionFilter" wire:model.live="submissionFilter" class="h-9 px-space-sm rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none">
+                    <option value="">All</option>
+                    <option value="not_submitted">Not Submitted</option>
+                    <option value="submitted">Ungraded</option>
+                    <option value="graded">Graded</option>
+                </select>
             </div>
 
             <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
@@ -491,8 +508,8 @@
                     </div>
                 @empty
                     <div class="p-space-lg text-center text-body-sm text-on-surface-variant">
-                        @if (trim($groupSearch) !== '')
-                            No groups or students match "{{ $groupSearch }}".
+                        @if (trim($groupSearch) !== '' || $submissionFilter !== '')
+                            No groups match your filters.
                         @else
                             No groups yet. Use "Manage Groups" from the Assessment list to create one.
                         @endif

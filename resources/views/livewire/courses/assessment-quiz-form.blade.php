@@ -10,10 +10,21 @@
             <h1 class="font-headline-md text-headline-md text-on-surface mt-space-sm">{{ $pageTitle }}</h1>
         </div>
 
-        <a href="{{ route('quiz-instructions.edit') }}" class="text-body-sm text-primary hover:underline inline-flex items-center gap-space-xs">
-            <span class="material-symbols-outlined text-[16px]">info</span>
-            {{ $hasInstructions ? 'Edit Global Instructions' : 'Set Global Instructions' }}
-        </a>
+        <div class="flex items-center gap-space-lg flex-shrink-0">
+            <a href="{{ route('quiz-instructions.edit') }}" class="text-body-sm text-primary hover:underline inline-flex items-center gap-space-xs">
+                <span class="material-symbols-outlined text-[16px]">info</span>
+                {{ $hasInstructions ? 'Edit Global Instructions' : 'Set Global Instructions' }}
+            </a>
+
+            @if ($showUrl)
+                <a
+                    href="{{ $showUrl }}"
+                    class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition"
+                >
+                    Show Quiz
+                </a>
+            @endif
+        </div>
     </div>
 
     @if (app()->isLocal())

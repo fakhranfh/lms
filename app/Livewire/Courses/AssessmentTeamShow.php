@@ -37,6 +37,20 @@ class AssessmentTeamShow extends Component
 
     public string $groupSearch = '';
 
+    public string $submissionFilter = '';
+
+    /**
+     * @param  array{attempt: mixed, score: mixed}  $row
+     */
+    private function submissionStatus(array $row): string
+    {
+        if (! $row['attempt']) {
+            return 'not_submitted';
+        }
+
+        return $row['score'] ? 'graded' : 'submitted';
+    }
+
     public function mount(CurrentSchool $currentSchool, ?Course $course = null, ?Assessment $assessment = null): void
     {
         abort_if($assessment === null, 404);
@@ -145,6 +159,7 @@ class AssessmentTeamShow extends Component
             'isStudent' => $this->isStudent,
             'canGrade' => auth()->user()->can('assessment.grade'),
             'canSubmit' => auth()->user()->can('assessment.submit'),
+            'canEdit' => auth()->user()->can('assessment.edit'),
             'courseTabs' => CourseTabs::build($this->course, 'assessment'),
             'teacher' => $this->isStudent
                 ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
@@ -210,6 +225,10 @@ class AssessmentTeamShow extends Component
                     'score' => $score,
                 ];
             })->values();
+
+            if ($this->submissionFilter !== '') {
+                $rows = $rows->filter(fn (array $row) => $this->submissionStatus($row) === $this->submissionFilter)->values();
+            }
 
             $viewData['groupRows'] = $rows;
         }

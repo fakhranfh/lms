@@ -80,6 +80,15 @@
                     </span>
                 </div>
             </div>
+
+            @if (!$isStudent && $isProctored && $canEdit)
+                <a
+                    href="{{ route('assessments.final-exam.edit', $assessment) }}"
+                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity flex-shrink-0"
+                >
+                    Edit Exam
+                </a>
+            @endif
         </div>
 
         <!-- Meta grid (2 columns) -->
@@ -101,22 +110,6 @@
                         {{ $assessment->end_date_display->format('M j, Y, H:i') }}
                     @else
                         <span class="text-on-surface-variant">—</span>
-                    @endif
-                </p>
-            </div>
-            <div>
-                <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Total Question</p>
-                <p class="text-body-sm text-on-surface font-medium">
-                    {{ $assessment->quiz && $assessment->quiz->questions->isNotEmpty() ? $assessment->quiz->questions->count() : $assessment->questions->count() }}
-                </p>
-            </div>
-            <div>
-                <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Total Attempts</p>
-                <p class="text-body-sm text-on-surface font-medium">
-                    @if ($isStudent)
-                        {{ $attemptsUsed }} of {{ $attemptLimit }} Attempts
-                    @else
-                        —
                     @endif
                 </p>
             </div>
@@ -904,44 +897,50 @@
         </div>
     @endif
 
-    <!-- Teacher: Manage Exam Questions (proctored exams only) -->
-    @if (!$isStudent && $isProctored && $canGrade)
-        <div class="bg-surface border border-outline-variant rounded-lg p-space-lg flex items-center justify-between gap-space-md">
-            <div>
-                <p class="font-label-md text-label-md text-on-surface">Exam Questions</p>
-                <p class="text-body-sm text-on-surface-variant mt-space-xs">
-                    {{ $assessment->quiz && $assessment->quiz->questions->isNotEmpty() ? $assessment->quiz->questions->count().' question(s) configured.' : 'No questions configured yet — students cannot start this exam until questions are added.' }}
-                </p>
-            </div>
-            <a
-                href="{{ route('assessments.final-exam.questions.edit', $assessment) }}"
-                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity flex-shrink-0"
-            >
-                Manage Questions
-            </a>
-        </div>
-    @endif
-
     <!-- Teacher: Submissions List -->
     @if (!$isStudent)
         <div class="space-y-space-md">
-            <h2 class="font-label-lg text-label-lg text-on-surface">Student Submissions</h2>
-            <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
-                @forelse ($studentRows as $row)
-                    <div wire:key="student-{{ $row['user']->id }}" class="p-space-lg">
-                        <div class="flex items-center justify-between gap-space-md mb-space-md">
-                            <div class="flex-1 min-w-0">
-                                <p class="font-label-md text-label-md text-on-surface">{{ $row['user']->name }}</p>
-                                <p class="text-body-sm text-on-surface-variant mt-1">
-                                    @if ($row['attempt'])
-                                        Attempt {{ $row['attempt']->attempt_number }} &middot; submitted {{ $row['attempt']->submitted_at_display?->format('M j, Y H:i') }}
-                                    @else
-                                        Not submitted
-                                    @endif
-                                </p>
-                            </div>
+            <h2 class="font-label-lg text-label-lg text-on-surface font-bold">Student Submissions</h2>
 
-                            <span class="inline-flex items-center px-space-md py-space-xs rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant flex-shrink-0">
+            <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
+                <x-ui.pagination-links
+                    :paginator="$studentRows"
+                    perPageModel="perPage"
+                    searchModel="studentSearch"
+                    searchPlaceholder="Search by name"
+                    :search="$studentSearch"
+                    class="p-space-md border-b border-outline-variant"
+                />
+
+                <div class="flex items-center gap-space-sm p-space-md border-b border-outline-variant">
+                    <label class="text-body-sm text-on-surface-variant" for="submissionFilter">Status</label>
+                    <select id="submissionFilter" wire:model.live="submissionFilter" class="h-9 px-space-sm rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none">
+                        <option value="">All</option>
+                        <option value="not_submitted">Not Submitted</option>
+                        <option value="submitted">Ungraded</option>
+                        <option value="graded">Graded</option>
+                    </select>
+                </div>
+
+                <x-ui.person-grid-skeleton
+                    :rows="9"
+                    wire:loading.grid
+                    wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch,submissionFilter"
+                />
+
+                <x-ui.person-grid wire:loading.remove wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch,submissionFilter">
+                @forelse ($studentRows as $row)
+                    <div wire:key="student-{{ $row['user']->id }}" class="bg-surface p-space-lg">
+                        <div class="flex flex-col items-center text-center gap-space-sm mb-space-md">
+                            <x-avatar :user="$row['user']" size="12" />
+                            <p class="font-label-lg text-label-lg text-on-surface">{{ $row['user']->name }}</p>
+                            @if ($row['attempt'])
+                                <p class="text-body-sm text-on-surface-variant">
+                                    Attempt {{ $row['attempt']->attempt_number }} &middot; submitted {{ $row['attempt']->submitted_at_display?->format('M j, Y H:i') }}
+                                </p>
+                            @endif
+
+                            <span class="inline-flex items-center px-space-md py-space-xs rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant">
                                 @if (! $row['attempt'])
                                     Not submitted
                                 @elseif ($row['pendingProctorReview'])
@@ -957,7 +956,7 @@
                                 <button
                                     type="button"
                                     wire:click="openGrading('{{ $row['user']->id }}')"
-                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition flex-shrink-0"
+                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
                                 >
                                     Grade
                                 </button>
@@ -1410,8 +1409,17 @@
                         @endif
                     </div>
                 @empty
-                    <div class="p-space-lg text-center text-body-sm text-on-surface-variant">No students enrolled.</div>
+                    <div class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">
+                        {{ trim($studentSearch) !== '' || $submissionFilter !== '' ? 'No students match your filters.' : 'No students enrolled.' }}
+                    </div>
                 @endforelse
+                    <x-ui.person-grid-filler :count="$studentRows->count()" />
+                </x-ui.person-grid>
+
+                <x-ui.pagination-links
+                    :paginator="$studentRows"
+                    class="p-space-md border-t border-outline-variant"
+                />
             </div>
         </div>
     @endif

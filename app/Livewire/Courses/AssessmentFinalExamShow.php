@@ -27,12 +27,14 @@ use App\Services\R2StorageService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Renderless;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class AssessmentFinalExamShow extends Component
 {
-    use WithRichTextEditor;
+    use WithPagination, WithRichTextEditor;
 
     public Course $course;
 
@@ -41,6 +43,12 @@ class AssessmentFinalExamShow extends Component
     public bool $isStudent = false;
 
     public string $answerText = '';
+
+    public int $perPage = 12;
+
+    public string $studentSearch = '';
+
+    public string $submissionFilter = '';
 
     public ?string $gradingUserId = null;
 
@@ -87,6 +95,25 @@ class AssessmentFinalExamShow extends Component
 
         $this->course = $course;
         $this->assessment = $assessment;
+    }
+
+    public function updating(string $property): void
+    {
+        if (in_array($property, ['perPage', 'studentSearch', 'submissionFilter'], true)) {
+            $this->resetPage();
+        }
+    }
+
+    /**
+     * @param  array{attempt: mixed, score: mixed}  $row
+     */
+    private function submissionStatus(array $row): string
+    {
+        if (! $row['attempt']) {
+            return 'not_submitted';
+        }
+
+        return $row['score'] ? 'graded' : 'submitted';
     }
 
     public function submit(AssessmentAttemptService $assessmentAttemptService, AssessmentAnswerService $assessmentAnswerService): bool
@@ -533,6 +560,7 @@ class AssessmentFinalExamShow extends Component
             'isStudent' => $this->isStudent,
             'canGrade' => auth()->user()->can('assessment.grade'),
             'canSubmit' => auth()->user()->can('assessment.submit'),
+            'canEdit' => auth()->user()->can('assessment.edit'),
             'courseTabs' => CourseTabs::build($this->course, 'assessment'),
             'teacher' => $this->isStudent
                 ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
@@ -586,6 +614,13 @@ class AssessmentFinalExamShow extends Component
         } else {
             $students = $coursePersonService->studentsForCourse($this->course->id);
 
+            $search = trim($this->studentSearch);
+            if ($search !== '') {
+                $students = $students->filter(
+                    fn ($coursePerson) => str_contains(strtolower($coursePerson->user->name), strtolower($search))
+                )->values();
+            }
+
             $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentAnswerService, $assessmentScoreService, $assessmentQuestionScoreService, $proctorSessionService, $isProctored) {
                 $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $coursePerson->user_id);
                 $latest = $attempts->last();
@@ -626,7 +661,19 @@ class AssessmentFinalExamShow extends Component
                 ];
             })->values();
 
-            $viewData['studentRows'] = $rows;
+            if ($this->submissionFilter !== '') {
+                $rows = $rows->filter(fn (array $row) => $this->submissionStatus($row) === $this->submissionFilter)->values();
+            }
+
+            $page = $this->getPage();
+
+            $viewData['studentRows'] = new LengthAwarePaginator(
+                $rows->forPage($page, $this->perPage)->values(),
+                $rows->count(),
+                $this->perPage,
+                $page,
+                ['path' => request()->url(), 'pageName' => 'page']
+            );
         }
 
         return view('livewire.courses.assessment-final-exam-show', $viewData)

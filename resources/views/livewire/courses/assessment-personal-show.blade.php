@@ -80,6 +80,15 @@
                     </span>
                 </div>
             </div>
+
+            @if (!$isStudent && $canEdit)
+                <a
+                    href="{{ route('assessments.edit', $assessment) }}"
+                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity flex-shrink-0"
+                >
+                    Edit
+                </a>
+            @endif
         </div>
 
         <!-- Meta grid (2 columns) -->
@@ -420,13 +429,23 @@
                     class="p-space-md border-b border-outline-variant"
                 />
 
+                <div class="flex items-center gap-space-sm p-space-md border-b border-outline-variant">
+                    <label class="text-body-sm text-on-surface-variant" for="submissionFilter">Status</label>
+                    <select id="submissionFilter" wire:model.live="submissionFilter" class="h-9 px-space-sm rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none">
+                        <option value="">All</option>
+                        <option value="not_submitted">Not Submitted</option>
+                        <option value="submitted">Ungraded</option>
+                        <option value="graded">Graded</option>
+                    </select>
+                </div>
+
                 <x-ui.person-grid-skeleton
                     :rows="9"
                     wire:loading.grid
-                    wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch"
+                    wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch,submissionFilter"
                 />
 
-                <x-ui.person-grid wire:loading.remove wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch">
+                <x-ui.person-grid wire:loading.remove wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch,submissionFilter">
                     @forelse ($studentRows as $row)
                         <div wire:key="student-{{ $row['user']->id }}" class="bg-surface p-space-lg">
                             <div class="flex flex-col items-center text-center gap-space-sm">
@@ -454,7 +473,7 @@
                         </div>
                     @empty
                         <div class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">
-                            {{ trim($studentSearch) !== '' ? 'No students match your search.' : 'No students enrolled.' }}
+                            {{ trim($studentSearch) !== '' || $submissionFilter !== '' ? 'No students match your filters.' : 'No students enrolled.' }}
                         </div>
                     @endforelse
                     <x-ui.person-grid-filler :count="$studentRows->count()" />

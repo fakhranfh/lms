@@ -3,13 +3,24 @@
 <div class="space-y-space-lg">
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => $teacher])
 
-    <div>
-        <a href="{{ route('assessments.index', $course) }}" class="text-body-sm text-primary hover:underline inline-flex items-center gap-space-xs">
-            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-            Back to Assessments
-        </a>
-        <h1 class="font-headline-md text-headline-md text-on-surface mt-space-sm">{{ $assessment->title }}</h1>
-        <p class="text-body-sm text-on-surface-variant mt-1">Attendance &middot; Weight {{ rtrim(rtrim(number_format($assessment->weight, 2), '0'), '.') }}%</p>
+    <div class="flex items-start justify-between gap-space-md">
+        <div>
+            <a href="{{ route('assessments.index', $course) }}" class="text-body-sm text-primary hover:underline inline-flex items-center gap-space-xs">
+                <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                Back to Assessments
+            </a>
+            <h1 class="font-headline-md text-headline-md text-on-surface mt-space-sm">{{ $assessment->title }}</h1>
+            <p class="text-body-sm text-on-surface-variant mt-1">Attendance &middot; Weight {{ rtrim(rtrim(number_format($assessment->weight, 2), '0'), '.') }}%</p>
+        </div>
+
+        @if (!$isStudent && $canEdit)
+            <a
+                href="{{ route('assessments.edit', $assessment) }}"
+                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity flex-shrink-0"
+            >
+                Edit
+            </a>
+        @endif
     </div>
 
     <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">

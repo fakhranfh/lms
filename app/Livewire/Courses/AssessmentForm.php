@@ -103,6 +103,17 @@ class AssessmentForm extends Component
         return ! in_array($this->assessmentType, [AssessmentType::Attendance, AssessmentType::ForumDiscussion], true);
     }
 
+    private function showRouteName(): string
+    {
+        return match ($this->assessmentType) {
+            AssessmentType::TheoryPersonalAssignment => 'assessments.personal.show',
+            AssessmentType::TheoryTeamAssignment => 'assessments.team.show',
+            AssessmentType::Attendance => 'assessments.attendance.show',
+            AssessmentType::ForumDiscussion => 'assessments.forum-discussion.show',
+            default => abort(404),
+        };
+    }
+
     public function addQuestion(): void
     {
         $this->questions[] = [
@@ -290,6 +301,7 @@ class AssessmentForm extends Component
             'sessions' => $sessionService->forCourse($this->course->id),
             'statuses' => $statuses,
             'mediaByRow' => $mediaByRow,
+            'showUrl' => $this->assessment ? route($this->showRouteName(), $this->assessment) : null,
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->assessment ? 'Edit Assessment' : 'Create Assessment'])
             ->section('app-content');

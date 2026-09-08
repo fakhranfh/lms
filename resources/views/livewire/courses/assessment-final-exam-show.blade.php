@@ -123,6 +123,12 @@
                     {{ $finalExam ? str($finalExam->exam_type->value)->replace('_', ' ')->title() : '—' }}
                 </p>
             </div>
+            @if ($isStudent)
+                <div>
+                    <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Total Attempts</p>
+                    <p class="text-body-sm text-on-surface font-medium">{{ $attemptsUsed }} of {{ $attemptLimit }} Attempts</p>
+                </div>
+            @endif
         </div>
 
         @if ($finalExam?->instructions)

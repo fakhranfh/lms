@@ -438,13 +438,35 @@ class AssessmentIndex extends Component
     }
 
     /**
-     * Dev-only: bulk-creates draft final exams, each seeded with 15
-     * multiple-choice and 5 essay questions. Content is deliberately
-     * different wording from AssessmentFinalExamForm::devAutofill() so the
-     * two dev tools don't produce identical-looking exams. Doesn't require
-     * a period since the Period field was removed from the form/UI.
+     * Dev-only: bulk-creates draft final exams of one exam type. Open/closed
+     * book get the full 15 multiple-choice + 5 essay set; take_home gets the
+     * single essay question that shape enforces (see
+     * AssessmentFinalExamForm::persist()'s take_home validation). Content is
+     * deliberately different wording from AssessmentFinalExamForm::devAutofill()
+     * so the two dev tools don't produce identical-looking exams. Doesn't
+     * require a period since the Period field was removed from the form/UI.
      */
-    public function generateFinalExam(AssessmentService $assessmentService, AssessmentQuestionService $assessmentQuestionService, AssessmentQuestionOptionService $assessmentQuestionOptionService, FinalExamService $finalExamService): void
+    public function generateFinalExam(string $examType, AssessmentService $assessmentService, AssessmentQuestionService $assessmentQuestionService, AssessmentQuestionOptionService $assessmentQuestionOptionService, FinalExamService $finalExamService): void
+    {
+        abort_unless(app()->environment(['local', 'testing']), 403);
+        abort_unless(auth()->user()->can('assessment.create'), 403);
+        abort_unless(in_array($examType, ['open_book', 'closed_book', 'take_home'], true), 422);
+
+        $this->errorMessage = null;
+
+        $this->validate([
+            'generateCount' => 'required|integer|min:1|max:50',
+        ]);
+
+        $this->generateFinalExamOfType($examType, (int) $this->generateCount, $assessmentService, $assessmentQuestionService, $assessmentQuestionOptionService, $finalExamService);
+    }
+
+    /**
+     * Dev-only: runs generateFinalExam's three exam types back to back in a
+     * single click, instead of clicking each "Generate {Type}" button
+     * separately.
+     */
+    public function generateAllFinalExamTypes(AssessmentService $assessmentService, AssessmentQuestionService $assessmentQuestionService, AssessmentQuestionOptionService $assessmentQuestionOptionService, FinalExamService $finalExamService): void
     {
         abort_unless(app()->environment(['local', 'testing']), 403);
         abort_unless(auth()->user()->can('assessment.create'), 403);
@@ -456,6 +478,60 @@ class AssessmentIndex extends Component
         ]);
 
         $count = (int) $this->generateCount;
+
+        foreach (['open_book', 'closed_book', 'take_home'] as $examType) {
+            $this->generateFinalExamOfType($examType, $count, $assessmentService, $assessmentQuestionService, $assessmentQuestionOptionService, $finalExamService);
+        }
+    }
+
+    private function generateFinalExamOfType(string $examType, int $count, AssessmentService $assessmentService, AssessmentQuestionService $assessmentQuestionService, AssessmentQuestionOptionService $assessmentQuestionOptionService, FinalExamService $finalExamService): void
+    {
+        $instructions = match ($examType) {
+            'open_book' => '<p>You may consult your notes, textbooks, and any written or digital materials while answering. Collaboration with other students is not permitted.</p>',
+            'take_home' => '<p>Submit your response before the exam window closes. Cite any external sources you reference in your answer.</p>',
+            default => '<p>Complete this exam individually within the allotted time window.</p>',
+        };
+
+        if ($examType === 'take_home') {
+            $essayPrompt = 'Design a rate-limiting strategy for a public-facing API. Describe the approach you would use, how you would communicate limits to clients, and how you would handle abuse.';
+
+            for ($i = 0; $i < $count; $i++) {
+                $startDate = now()->addWeeks($i);
+                $endDate = $startDate->clone()->addWeek();
+
+                DB::transaction(function () use ($assessmentService, $assessmentQuestionService, $finalExamService, $instructions, $essayPrompt, $startDate, $endDate): void {
+                    $assessment = $assessmentService->create([
+                        'course_id' => $this->course->id,
+                        'session_id' => null,
+                        'type' => AssessmentType::TheoryFinalExam,
+                        'title' => AssessmentTypeLabel::forType(AssessmentType::TheoryFinalExam).' - Set '.random_int(1, 99),
+                        'weight' => AssessmentType::TheoryFinalExam->defaultWeight(),
+                        'assigned_to' => AssessmentAssignedTo::Individual,
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'status' => AssessmentStatus::Draft,
+                    ]);
+
+                    $finalExamService->create([
+                        'assessment_id' => $assessment->id,
+                        'exam_type' => FinalExamType::TakeHome,
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'instructions' => $instructions,
+                    ]);
+
+                    $assessmentQuestionService->create([
+                        'assessment_id' => $assessment->id,
+                        'description' => '<p>'.$essayPrompt.'</p>',
+                        'points' => 100,
+                        'question_type' => AssessmentQuestionType::Essay,
+                        'order' => 1,
+                    ]);
+                });
+            }
+
+            return;
+        }
 
         $mcContent = [
             ['description' => 'A stack data structure follows which access order?', 'options' => ['Last-in, first-out', 'First-in, first-out', 'Random access', 'Priority-based']],
@@ -487,7 +563,7 @@ class AssessmentIndex extends Component
             $startDate = now()->addWeeks($i);
             $endDate = $startDate->clone()->addWeek();
 
-            DB::transaction(function () use ($assessmentService, $assessmentQuestionService, $assessmentQuestionOptionService, $finalExamService, $mcContent, $essayContent, $startDate, $endDate, $i): void {
+            DB::transaction(function () use ($assessmentService, $assessmentQuestionService, $assessmentQuestionOptionService, $finalExamService, $mcContent, $essayContent, $examType, $instructions, $startDate, $endDate): void {
                 $assessment = $assessmentService->create([
                     'course_id' => $this->course->id,
                     'session_id' => null,
@@ -502,10 +578,10 @@ class AssessmentIndex extends Component
 
                 $finalExamService->create([
                     'assessment_id' => $assessment->id,
-                    'exam_type' => FinalExamType::cases()[$i % count(FinalExamType::cases())],
+                    'exam_type' => FinalExamType::from($examType),
                     'start_date' => $startDate,
                     'end_date' => $endDate,
-                    'instructions' => '<p>Complete this exam individually within the allotted time window.</p>',
+                    'instructions' => $instructions,
                 ]);
 
                 $order = 0;
@@ -560,7 +636,7 @@ class AssessmentIndex extends Component
                 ->section('app-content');
         }
 
-        $assessments = $assessmentService->get(['course_id' => $this->course->id], ['attempts.score']);
+        $assessments = $assessmentService->get(['course_id' => $this->course->id], ['attempts.score', 'finalExam']);
 
         if ($this->isStudent) {
             $assessments = $assessments->reject(fn (Assessment $assessment) => in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::TheoryQuiz], true)
@@ -625,12 +701,16 @@ class AssessmentIndex extends Component
                 'isDraft' => $a->status === AssessmentStatus::Draft,
                 'editRoute' => $this->editRoute($a),
                 'publishWireTargets' => "publishAssessment('{$a->id}'),unpublishAssessment('{$a->id}')",
+                'examTypeLabel' => $a->finalExam ? str($a->finalExam->exam_type->value)->replace('_', ' ')->title()->toString() : null,
             ]),
             'sectionKey' => $type->value,
             'isExpanded' => isset($this->expandedSections[$type->value]) && $this->expandedSections[$type->value],
             'totalWeight' => $assessments->where('type', $type)->sum('weight'),
             'generateMethod' => $this->generateMethodForType($type),
+            'showExamType' => $type === AssessmentType::TheoryFinalExam,
         ];
+
+        $group['columnCount'] = 7 + ($group['showExamType'] ? 1 : 0);
 
         $group['selectableAssessmentIds'] = $group['assessments']
             ->filter(fn (array $item) => $item['row']['route'] && ! $item['isAutoProvisionedType'])

@@ -710,7 +710,51 @@ class AssessmentIndexTest extends TestCase
             ->assertDontSee('Pending Review');
     }
 
-    public function test_generate_final_exam_creates_requested_count_with_mc_and_essay_questions(): void
+    public function test_generate_final_exam_creates_requested_count_with_mc_and_essay_questions_for_open_and_closed_book(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.create']);
+        $this->actingAs($this->teacher);
+
+        foreach ([FinalExamType::OpenBook, FinalExamType::ClosedBook] as $examType) {
+            Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+                ->call('loadAssessments')
+                ->set('generateCount', '2')
+                ->call('generateFinalExam', $examType->value);
+
+            $assessments = Assessment::query()
+                ->where('course_id', $this->course->id)
+                ->where('type', AssessmentType::TheoryFinalExam)
+                ->whereHas('finalExam', fn ($query) => $query->where('exam_type', $examType))
+                ->with('questions.options')
+                ->get();
+
+            $this->assertCount(2, $assessments);
+
+            foreach ($assessments as $assessment) {
+                $this->assertCount(20, $assessment->questions);
+
+                $mcQuestions = $assessment->questions->where('question_type', AssessmentQuestionType::MultipleChoice);
+                $essayQuestions = $assessment->questions->where('question_type', AssessmentQuestionType::Essay);
+
+                $this->assertCount(15, $mcQuestions);
+                $this->assertCount(5, $essayQuestions);
+
+                foreach ($mcQuestions as $mcQuestion) {
+                    $this->assertSame(0.0, (float) $mcQuestion->points);
+                    $this->assertGreaterThanOrEqual(2, $mcQuestion->options->count());
+                    $this->assertSame(1, $mcQuestion->options->where('is_correct', true)->count());
+                }
+
+                foreach ($essayQuestions as $essayQuestion) {
+                    $this->assertGreaterThan(0, (float) $essayQuestion->points);
+                }
+
+                $this->assertSame($examType, $assessment->finalExam->exam_type);
+            }
+        }
+    }
+
+    public function test_generate_final_exam_creates_single_essay_question_for_take_home(): void
     {
         $this->teacher->givePermissionTo(['assessment.view', 'assessment.create']);
         $this->actingAs($this->teacher);
@@ -718,36 +762,22 @@ class AssessmentIndexTest extends TestCase
         Livewire::test(AssessmentIndex::class, ['course' => $this->course])
             ->call('loadAssessments')
             ->set('generateCount', '2')
-            ->call('generateFinalExam');
+            ->call('generateFinalExam', FinalExamType::TakeHome->value);
 
         $assessments = Assessment::query()
             ->where('course_id', $this->course->id)
             ->where('type', AssessmentType::TheoryFinalExam)
-            ->with('questions.options')
+            ->whereHas('finalExam', fn ($query) => $query->where('exam_type', FinalExamType::TakeHome))
+            ->with('questions')
             ->get();
 
         $this->assertCount(2, $assessments);
 
         foreach ($assessments as $assessment) {
-            $this->assertCount(20, $assessment->questions);
-
-            $mcQuestions = $assessment->questions->where('question_type', AssessmentQuestionType::MultipleChoice);
-            $essayQuestions = $assessment->questions->where('question_type', AssessmentQuestionType::Essay);
-
-            $this->assertCount(15, $mcQuestions);
-            $this->assertCount(5, $essayQuestions);
-
-            foreach ($mcQuestions as $mcQuestion) {
-                $this->assertSame(0.0, (float) $mcQuestion->points);
-                $this->assertGreaterThanOrEqual(2, $mcQuestion->options->count());
-                $this->assertSame(1, $mcQuestion->options->where('is_correct', true)->count());
-            }
-
-            foreach ($essayQuestions as $essayQuestion) {
-                $this->assertGreaterThan(0, (float) $essayQuestion->points);
-            }
-
-            $this->assertNotNull($assessment->finalExam);
+            $this->assertCount(1, $assessment->questions);
+            $this->assertSame(AssessmentQuestionType::Essay, $assessment->questions->first()->question_type);
+            $this->assertGreaterThan(0, (float) $assessment->questions->first()->points);
+            $this->assertSame(FinalExamType::TakeHome, $assessment->finalExam->exam_type);
         }
     }
 
@@ -759,12 +789,43 @@ class AssessmentIndexTest extends TestCase
         Livewire::test(AssessmentIndex::class, ['course' => $this->course])
             ->call('loadAssessments')
             ->set('generateCount', '0')
-            ->call('generateFinalExam')
+            ->call('generateFinalExam', FinalExamType::ClosedBook->value)
             ->assertHasErrors(['generateCount']);
 
         $this->assertDatabaseMissing('assessments', [
             'course_id' => $this->course->id,
             'type' => AssessmentType::TheoryFinalExam->value,
         ]);
+    }
+
+    public function test_generate_all_final_exam_types_creates_one_of_each_type(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.create']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->set('generateCount', '1')
+            ->call('generateAllFinalExamTypes');
+
+        $assessments = Assessment::query()
+            ->where('course_id', $this->course->id)
+            ->where('type', AssessmentType::TheoryFinalExam)
+            ->with('finalExam', 'questions')
+            ->get();
+
+        $this->assertCount(3, $assessments);
+
+        $examTypes = $assessments->pluck('finalExam.exam_type')->all();
+        $this->assertEqualsCanonicalizing(
+            [FinalExamType::OpenBook, FinalExamType::ClosedBook, FinalExamType::TakeHome],
+            $examTypes
+        );
+
+        $takeHome = $assessments->first(fn ($assessment) => $assessment->finalExam->exam_type === FinalExamType::TakeHome);
+        $this->assertCount(1, $takeHome->questions);
+
+        $openBook = $assessments->first(fn ($assessment) => $assessment->finalExam->exam_type === FinalExamType::OpenBook);
+        $this->assertCount(20, $openBook->questions);
     }
 }

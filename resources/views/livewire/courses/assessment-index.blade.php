@@ -56,47 +56,81 @@
     <div class="space-y-space-lg" x-data="{ deleteId: null, deleteMode: 'single', showDeleteModal: false, selectedIds: [], deletingIds: [], bulkDeleting: false }">
         @foreach ($groupedAssessments as $index => $group)
             <div x-data="{ open: true }">
-                @if ($group['assessments']->isNotEmpty())
-                    <!-- Collapsible Header -->
-                    <button
-                        type="button"
-                        wire:click="toggleSection('{{ $group['sectionKey'] }}')"
-                        @click="open = !open"
-                        class="w-full flex items-center justify-between px-space-lg py-space-md bg-surface border border-outline-variant rounded-lg hover:bg-surface-container/50 transition"
-                    >
-                        <div class="flex items-center gap-space-md flex-1">
-                            <span class="material-symbols-outlined text-on-surface-variant transition-transform" :class="open ? 'rotate-90' : ''">
-                                chevron_right
-                            </span>
-                            <h2 class="font-label-lg text-label-lg text-on-surface font-bold">
-                                {{ strtoupper(\App\Support\AssessmentTypeLabel::forType($group['type'])) }}: {{ rtrim(rtrim(number_format($group['totalWeight'], 2), '0'), '.') }}%
-                            </h2>
-                        </div>
-                    </button>
+                <!-- Collapsible Header -->
+                <button
+                    type="button"
+                    wire:click="toggleSection('{{ $group['sectionKey'] }}')"
+                    @click="open = !open"
+                    class="w-full flex items-center justify-between px-space-lg py-space-md bg-surface border border-outline-variant rounded-lg hover:bg-surface-container/50 transition"
+                >
+                    <div class="flex items-center gap-space-md flex-1">
+                        <span class="material-symbols-outlined text-on-surface-variant transition-transform" :class="open ? 'rotate-90' : ''">
+                            chevron_right
+                        </span>
+                        <h2 class="font-label-lg text-label-lg text-on-surface font-bold">
+                            {{ strtoupper(\App\Support\AssessmentTypeLabel::forType($group['type'])) }}: {{ rtrim(rtrim(number_format($group['totalWeight'], 2), '0'), '.') }}%
+                        </h2>
+                    </div>
+                </button>
 
-                    <!-- Collapsible Content: Table -->
+                <!-- Collapsible Content: Table -->
                     <div x-show="open" x-cloak>
                         @if (app()->isLocal() && ! $isStudent && $group['generateMethod'])
                             <div class="bg-tertiary-container border border-outline-variant p-space-md flex items-center justify-between gap-space-md">
                                 <p class="font-body-sm text-body-sm text-on-tertiary-container">Dev tools</p>
-                                <form wire:submit="{{ $group['generateMethod'] }}" class="flex items-center gap-space-sm">
-                                    <input
-                                        type="number"
-                                        wire:model="generateCount"
-                                        min="1"
-                                        max="50"
-                                        class="w-20 px-space-sm py-space-xs border border-outline rounded-lg font-body-sm text-body-sm"
-                                    />
-                                    <button
-                                        type="submit"
-                                        wire:loading.attr="disabled"
-                                        wire:target="{{ $group['generateMethod'] }}"
-                                        class="px-space-md py-space-xs bg-tertiary text-on-tertiary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
-                                    >
-                                        <span wire:loading wire:target="{{ $group['generateMethod'] }}" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-                                        Generate {{ \App\Support\AssessmentTypeLabel::forType($group['type']) }}
-                                    </button>
-                                </form>
+
+                                @if ($group['type'] === \App\Enums\AssessmentType::TheoryFinalExam)
+                                    <div class="flex items-center gap-space-sm">
+                                        <input
+                                            type="number"
+                                            wire:model="generateCount"
+                                            min="1"
+                                            max="50"
+                                            class="w-20 px-space-sm py-space-xs border border-outline rounded-lg font-body-sm text-body-sm"
+                                        />
+                                        @foreach (\App\Enums\FinalExamType::cases() as $examTypeOption)
+                                            <button
+                                                type="button"
+                                                wire:click="generateFinalExam('{{ $examTypeOption->value }}')"
+                                                wire:loading.attr="disabled"
+                                                wire:target="generateFinalExam('{{ $examTypeOption->value }}')"
+                                                class="px-space-md py-space-xs bg-tertiary text-on-tertiary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
+                                            >
+                                                <span wire:loading wire:target="generateFinalExam('{{ $examTypeOption->value }}')" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                                                Generate {{ str($examTypeOption->value)->replace('_', ' ')->title() }}
+                                            </button>
+                                        @endforeach
+                                        <button
+                                            type="button"
+                                            wire:click="generateAllFinalExamTypes"
+                                            wire:loading.attr="disabled"
+                                            wire:target="generateAllFinalExamTypes"
+                                            class="px-space-md py-space-xs bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
+                                        >
+                                            <span wire:loading wire:target="generateAllFinalExamTypes" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                                            Generate All
+                                        </button>
+                                    </div>
+                                @else
+                                    <form wire:submit="{{ $group['generateMethod'] }}" class="flex items-center gap-space-sm">
+                                        <input
+                                            type="number"
+                                            wire:model="generateCount"
+                                            min="1"
+                                            max="50"
+                                            class="w-20 px-space-sm py-space-xs border border-outline rounded-lg font-body-sm text-body-sm"
+                                        />
+                                        <button
+                                            type="submit"
+                                            wire:loading.attr="disabled"
+                                            wire:target="{{ $group['generateMethod'] }}"
+                                            class="px-space-md py-space-xs bg-tertiary text-on-tertiary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
+                                        >
+                                            <span wire:loading wire:target="{{ $group['generateMethod'] }}" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                                            Generate {{ \App\Support\AssessmentTypeLabel::forType($group['type']) }}
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         @endif
 
@@ -104,20 +138,19 @@
                             <div class="bg-surface border border-t-0 border-outline-variant rounded-b-lg overflow-hidden">
                                 <x-assessments.session-table :rows="$group['sessionTableRows']" :empty-message="$group['sessionTableEmptyMessage']" />
                             </div>
-                        @else
+                        @elseif ($group['assessments']->isNotEmpty())
                             @unless ($isStudent)
                                 <x-assessments.bulk-delete-bar />
                             @endunless
                             <div class="bg-surface border border-t-0 border-outline-variant rounded-b-lg overflow-hidden">
                                 <x-assessments.table :group="$group" :is-student="$isStudent" :course="$course" />
                             </div>
+                        @else
+                            <div class="bg-surface border border-t-0 border-outline-variant rounded-b-lg p-space-lg text-center text-body-sm text-on-surface-variant">
+                                No {{ strtolower(\App\Support\AssessmentTypeLabel::forType($group['type'])) }} yet.
+                            </div>
                         @endif
                     </div>
-                @else
-                    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg text-center text-body-sm text-on-surface-variant">
-                        No {{ strtolower(\App\Support\AssessmentTypeLabel::forType($group['type'])) }} yet.
-                    </div>
-                @endif
             </div>
         @endforeach
 

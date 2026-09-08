@@ -79,18 +79,29 @@
         <thead>
             <tr class="border-b border-outline-variant bg-surface-container/50">
                 @unless ($isStudent)
+                    {{--
+                        No x-data here on purpose: an inner x-data would shadow
+                        the ancestor's `selectedIds` (Alpine's prototypal scope
+                        rules mean assigning to it from a nested scope creates
+                        a local copy instead of updating the shared array), so
+                        the "select all" checkbox would silently select nothing.
+                        The group's ids are inlined directly into each
+                        expression instead of being cached in a local scope.
+                    --}}
                     <th class="px-space-lg py-space-md w-10">
                         <input
                             type="checkbox"
-                            x-data="{ groupIds: @js($group['selectableAssessmentIds']) }"
-                            :checked="groupIds.length > 0 && groupIds.every(id => selectedIds.includes(id))"
-                            @change="selectedIds = $event.target.checked ? [...new Set([...selectedIds, ...groupIds])] : selectedIds.filter(id => ! groupIds.includes(id))"
+                            :checked="@js($group['selectableAssessmentIds']).length > 0 && @js($group['selectableAssessmentIds']).every(id => selectedIds.includes(id))"
+                            @change="selectedIds = $event.target.checked ? [...new Set([...selectedIds, ...@js($group['selectableAssessmentIds'])])] : selectedIds.filter(id => ! @js($group['selectableAssessmentIds']).includes(id))"
                             class="w-4 h-4 rounded border-outline"
                         />
                     </th>
                 @endunless
                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Title</th>
                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Assigned to</th>
+                @if ($group['showExamType'])
+                    <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Exam Type</th>
+                @endif
                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Start Date</th>
                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Due Date</th>
                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Status</th>
@@ -109,7 +120,7 @@
                     x-show="deletingIds.includes(@js((string) $item['data']->id))"
                     x-cloak
                 >
-                    <td colspan="7" class="px-space-lg py-space-md">
+                    <td colspan="{{ $group['columnCount'] }}" class="px-space-lg py-space-md">
                         <x-ui.skeleton-box class="h-6 w-full rounded-full" />
                     </td>
                 </tr>
@@ -169,6 +180,11 @@
                             {{ str($item['data']->assigned_to->value)->title() }}
                         </span>
                     </td>
+                    @if ($group['showExamType'])
+                        <td class="px-space-lg py-space-md text-body-sm text-on-surface">
+                            {{ $item['examTypeLabel'] ?? '—' }}
+                        </td>
+                    @endif
                     <td class="px-space-lg py-space-md text-body-sm text-on-surface">
                         @if ($item['data']->start_date)
                             {{ $item['data']->start_date_display->format('M j, Y, H:i') }}

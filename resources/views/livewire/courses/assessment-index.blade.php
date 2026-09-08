@@ -22,32 +22,22 @@
 
         @unless ($isStudent)
             <div class="flex items-center gap-space-sm">
-                <div class="relative" x-data="{ open: false }">
-                    <button
-                        type="button"
-                        @click="open = !open"
-                        @click.outside="open = false"
-                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm"
-                    >
-                        <span class="material-symbols-outlined">add</span>
-                        Create Assessment
-                    </button>
-
-                    <div x-show="open" x-cloak class="absolute right-0 mt-space-xs w-56 bg-surface border border-outline-variant rounded-lg shadow-lg z-10 overflow-hidden">
-                        <a href="{{ route('assessments.create', [$course, 'personal']) }}" class="block px-space-md py-space-sm text-body-sm text-on-surface hover:bg-surface-container">
-                            Personal Assignment
-                        </a>
-                        <a href="{{ route('assessments.create', [$course, 'team']) }}" class="block px-space-md py-space-sm text-body-sm text-on-surface hover:bg-surface-container">
-                            Team Assignment
-                        </a>
-                        <a href="{{ route('assessments.quiz.create', $course) }}" class="block px-space-md py-space-sm text-body-sm text-on-surface hover:bg-surface-container">
-                            Quiz
-                        </a>
-                        <a href="{{ route('assessments.final-exam.create', $course) }}" class="block px-space-md py-space-sm text-body-sm text-on-surface hover:bg-surface-container">
-                            Final Exam
-                        </a>
-                    </div>
-                </div>
+                <a href="{{ route('assessments.create', [$course, 'personal']) }}" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm">
+                    <span class="material-symbols-outlined">add</span>
+                    Personal Assignment
+                </a>
+                <a href="{{ route('assessments.create', [$course, 'team']) }}" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm">
+                    <span class="material-symbols-outlined">add</span>
+                    Team Assignment
+                </a>
+                <a href="{{ route('assessments.quiz.create', $course) }}" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm">
+                    <span class="material-symbols-outlined">add</span>
+                    Quiz
+                </a>
+                <a href="{{ route('assessments.final-exam.create', $course) }}" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm">
+                    <span class="material-symbols-outlined">add</span>
+                    Final Exam
+                </a>
             </div>
         @endunless
     </div>

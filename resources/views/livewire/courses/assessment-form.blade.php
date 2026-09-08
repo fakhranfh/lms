@@ -220,10 +220,18 @@
         <div class="h-16" aria-hidden="true"></div>
 
         <div class="relative sticky bottom-[-1.5rem] z-20 -mx-gutter px-gutter pt-space-md pb-space-lg bg-surface border-t border-outline-variant flex gap-space-md before:content-[''] before:absolute before:left-0 before:right-0 before:-top-space-lg before:h-space-lg before:bg-surface before:-z-10">
-            <a href="{{ route('assessments.index', $course) }}" class="flex-1 text-center px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
+            <a href="{{ route('assessments.index', $course) }}" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
                 Cancel
             </a>
-            <x-ui.submit-button label="Save" loadingLabel="Saving..." target="save" />
+            <button
+                type="submit"
+                wire:loading.attr="disabled"
+                wire:target="save"
+                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm"
+            >
+                <span wire:loading wire:target="save" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                Save
+            </button>
         </div>
     </form>
 </div>

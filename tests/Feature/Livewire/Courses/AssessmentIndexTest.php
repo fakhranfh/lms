@@ -96,12 +96,15 @@ class AssessmentIndexTest extends TestCase
         $this->actingAs($this->teacher);
         Livewire::test(AssessmentIndex::class, ['course' => $this->course])
             ->call('loadAssessments')
-            ->assertSee('Create Assessment');
+            ->assertSee('Personal Assignment')
+            ->assertSee('Team Assignment')
+            ->assertSee('Quiz')
+            ->assertSee('Final Exam');
 
         $this->actingAs($this->student);
         Livewire::test(AssessmentIndex::class, ['course' => $this->course])
             ->call('loadAssessments')
-            ->assertDontSee('Create Assessment');
+            ->assertDontSee(route('assessments.create', [$this->course, 'personal']));
     }
 
     public function test_student_does_not_see_draft_personal_or_team_assignments(): void

@@ -193,22 +193,40 @@ class AssessmentFinalExamFormTest extends TestCase
             ->assertCount('questions', 1);
     }
 
-    public function test_dev_autofill_generates_fifteen_multiple_choice_and_five_essay_questions(): void
+    public function test_dev_autofill_generates_fifteen_multiple_choice_and_five_essay_questions_for_open_and_closed_book(): void
+    {
+        $this->teacher->givePermissionTo('assessment.create');
+
+        foreach ([FinalExamType::OpenBook->value, FinalExamType::ClosedBook->value] as $examType) {
+            $component = Livewire::test(AssessmentFinalExamForm::class, ['course' => $this->course])
+                ->call('devAutofill', $examType)
+                ->assertSet('examType', $examType);
+
+            $questions = $component->get('questions');
+
+            $this->assertCount(20, $questions);
+
+            $mcCount = collect($questions)->where('questionType', AssessmentQuestionType::MultipleChoice->value)->count();
+            $essayCount = collect($questions)->where('questionType', AssessmentQuestionType::Essay->value)->count();
+
+            $this->assertSame(15, $mcCount);
+            $this->assertSame(5, $essayCount);
+        }
+    }
+
+    public function test_dev_autofill_generates_single_essay_question_for_take_home(): void
     {
         $this->teacher->givePermissionTo('assessment.create');
 
         $component = Livewire::test(AssessmentFinalExamForm::class, ['course' => $this->course])
-            ->call('devAutofill');
+            ->call('devAutofill', FinalExamType::TakeHome->value)
+            ->assertSet('examType', FinalExamType::TakeHome->value);
 
         $questions = $component->get('questions');
 
-        $this->assertCount(20, $questions);
-
-        $mcCount = collect($questions)->where('questionType', AssessmentQuestionType::MultipleChoice->value)->count();
-        $essayCount = collect($questions)->where('questionType', AssessmentQuestionType::Essay->value)->count();
-
-        $this->assertSame(15, $mcCount);
-        $this->assertSame(5, $essayCount);
+        $this->assertCount(1, $questions);
+        $this->assertSame(AssessmentQuestionType::Essay->value, $questions[0]['questionType']);
+        $this->assertNotSame('', $questions[0]['points']);
     }
 
     public function test_editing_preserves_question_ids_and_final_exam_fields(): void

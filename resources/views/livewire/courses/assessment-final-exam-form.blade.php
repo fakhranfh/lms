@@ -12,16 +12,20 @@
     @if (app()->isLocal())
         <div class="bg-tertiary-container border border-outline-variant rounded-lg p-space-md flex items-center justify-between">
             <p class="font-body-sm text-body-sm text-on-tertiary-container">Dev tools</p>
-            <button
-                type="button"
-                wire:click="devAutofill"
-                wire:loading.attr="disabled"
-                wire:target="devAutofill"
-                class="px-space-md py-space-xs bg-tertiary text-on-tertiary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
-            >
-                <span wire:loading wire:target="devAutofill" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-                Autofill
-            </button>
+            <div class="flex items-center gap-space-xs">
+                @foreach ($examTypes as $examTypeOption)
+                    <button
+                        type="button"
+                        wire:click="devAutofill('{{ $examTypeOption->value }}')"
+                        wire:loading.attr="disabled"
+                        wire:target="devAutofill"
+                        class="px-space-md py-space-xs bg-tertiary text-on-tertiary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
+                    >
+                        <span wire:loading wire:target="devAutofill('{{ $examTypeOption->value }}')" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                        Autofill {{ str($examTypeOption->value)->replace('_', ' ')->title() }}
+                    </button>
+                @endforeach
+            </div>
         </div>
     @endif
 

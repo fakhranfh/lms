@@ -112,20 +112,45 @@ class AssessmentFinalExamForm extends Component
      * Dev-only: fills the form with fake data so the UI can be exercised
      * without manually typing every field. Content deliberately differs
      * from AssessmentIndex::generateFinalExam()'s wording so the two dev
-     * tools don't produce identical-looking exams.
+     * tools don't produce identical-looking exams. Each exam type gets its
+     * own instructions text and question shape — take_home collapses to the
+     * single forced essay question that shape actually allows (see
+     * toggleFinalExamType in resources/js/assessment-form.js), the other two
+     * get the full 15 MC + 5 essay set.
      */
-    public function devAutofill(): void
+    public function devAutofill(string $examType): void
     {
         abort_unless(app()->environment(['local', 'testing']), 403);
         abort_unless(auth()->user()->can('assessment.create') || auth()->user()->can('assessment.edit'), 403);
+        abort_unless(in_array($examType, ['open_book', 'closed_book', 'take_home'], true), 422);
 
         $this->title = AssessmentTypeLabel::forType(AssessmentType::TheoryFinalExam).' - Comprehensive Review';
         $this->weight = (string) AssessmentType::TheoryFinalExam->defaultWeight();
         $this->startDate = now()->addWeek()->setTime(8, 0)->format('Y-m-d\TH:i');
         $this->endDate = now()->addWeek()->setTime(10, 0)->format('Y-m-d\TH:i');
         $this->status = 'draft';
-        $this->examType = 'closed_book';
-        $this->instructions = '<p>Answer every question independently. No collaboration is permitted during this exam.</p>';
+        $this->examType = $examType;
+        $this->instructions = match ($examType) {
+            'open_book' => '<p>You may consult your notes, textbooks, and any written or digital materials while answering. Collaboration with other students is not permitted.</p>',
+            'take_home' => '<p>Submit your response before the exam window closes. Cite any external sources you reference in your answer.</p>',
+            default => '<p>Answer every question independently. No collaboration is permitted during this exam.</p>',
+        };
+        $this->dispatch('rich-text-set-content', id: 'final-exam-instructions', value: $this->instructions);
+
+        if ($examType === 'take_home') {
+            $this->questions = [[
+                'id' => null,
+                'description' => '<p>Design a caching strategy for a high-traffic e-commerce product catalog. Describe what you would cache, how you would invalidate stale entries, and how you would measure whether the strategy is working.</p>',
+                'questionType' => AssessmentQuestionType::Essay->value,
+                'points' => '100',
+                'order' => 1,
+                'options' => [],
+            ]];
+
+            $this->dispatch('rich-text-set-content', id: 'question-0', value: $this->questions[0]['description']);
+
+            return;
+        }
 
         $mcContent = [
             ['description' => 'Which data structure provides O(1) average-case lookup by key?', 'options' => ['Hash table', 'Linked list', 'Binary search tree', 'Array']],

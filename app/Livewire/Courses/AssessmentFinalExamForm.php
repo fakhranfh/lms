@@ -3,21 +3,20 @@
 namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentAssignedTo;
+use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
-use App\Models\MediaLibraryItem;
+use App\Services\AssessmentQuestionOptionService;
 use App\Services\AssessmentQuestionService;
 use App\Services\AssessmentService;
 use App\Services\FinalExamService;
-use App\Services\MediaLibraryService;
-use App\Services\PeriodService;
+use App\Support\AssessmentTypeLabel;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
@@ -37,8 +36,6 @@ class AssessmentFinalExamForm extends Component
 
     public string $endDate = '';
 
-    public string $periodId = '';
-
     public string $examType = 'closed_book';
 
     public string $instructions = '';
@@ -46,7 +43,12 @@ class AssessmentFinalExamForm extends Component
     public string $status = 'draft';
 
     /**
-     * @var array<int, array{id: ?string, description: string, points: string, selectedMaterialIds: array<int, string>, materialSearch: string}>
+     * A question slot is temporarily null between a client-side remove (see
+     * resources/js/syllabus-form.js's removeSyllabusRow) and the next
+     * pruneRemoved() call. Multiple choice questions store no points (see
+     * persist()); options are nested the same "null hole" way.
+     *
+     * @var array<int, ?array{id: ?string, description: string, questionType: string, points: string, order: int, options: array<int, ?array{id: ?string, label: string, isCorrect: bool, order: int}>}>
      */
     public array $questions = [];
 
@@ -76,14 +78,19 @@ class AssessmentFinalExamForm extends Component
             $this->questions = $assessment->questions->map(fn ($question) => [
                 'id' => $question->id,
                 'description' => $question->description,
-                'points' => (string) $question->points,
-                'selectedMaterialIds' => $question->files->pluck('id')->all(),
-                'materialSearch' => '',
+                'questionType' => $question->question_type->value,
+                'points' => $question->question_type === AssessmentQuestionType::Essay ? (string) $question->points : '',
+                'order' => $question->order,
+                'options' => $question->options->map(fn ($option) => [
+                    'id' => $option->id,
+                    'label' => $option->label,
+                    'isCorrect' => $option->is_correct,
+                    'order' => $option->order,
+                ])->all(),
             ])->all();
 
             $finalExam = $finalExamService->findByAssessment($assessment->id);
             if ($finalExam) {
-                $this->periodId = $finalExam->period_id ?? '';
                 $this->examType = $finalExam->exam_type->value;
                 $this->instructions = $finalExam->instructions ?? '';
             }
@@ -96,15 +103,90 @@ class AssessmentFinalExamForm extends Component
         }
     }
 
+    protected function richTextAttachmentFolder(): string
+    {
+        return 'final-exam-questions';
+    }
+
+    /**
+     * Dev-only: fills the form with fake data so the UI can be exercised
+     * without manually typing every field. Content deliberately differs
+     * from AssessmentIndex::generateFinalExam()'s wording so the two dev
+     * tools don't produce identical-looking exams.
+     */
+    public function devAutofill(): void
+    {
+        abort_unless(app()->environment(['local', 'testing']), 403);
+        abort_unless(auth()->user()->can('assessment.create') || auth()->user()->can('assessment.edit'), 403);
+
+        $this->title = AssessmentTypeLabel::forType(AssessmentType::TheoryFinalExam).' - Comprehensive Review';
+        $this->weight = (string) AssessmentType::TheoryFinalExam->defaultWeight();
+        $this->status = 'draft';
+        $this->examType = 'closed_book';
+        $this->instructions = '<p>Answer every question independently. No collaboration is permitted during this exam.</p>';
+
+        $mcContent = [
+            ['description' => 'Which data structure provides O(1) average-case lookup by key?', 'options' => ['Hash table', 'Linked list', 'Binary search tree', 'Array']],
+            ['description' => 'In relational database design, what does the term "normalization" primarily aim to reduce?', 'options' => ['Data redundancy', 'Query latency', 'Index count', 'Table count']],
+            ['description' => 'Which HTTP status code indicates a successful resource creation?', 'options' => ['201 Created', '200 OK', '204 No Content', '301 Moved Permanently']],
+            ['description' => 'What is the time complexity of binary search on a sorted array of size n?', 'options' => ['O(log n)', 'O(n)', 'O(n log n)', 'O(1)']],
+            ['description' => 'Which principle states that a class should have only one reason to change?', 'options' => ['Single Responsibility Principle', 'Open/Closed Principle', 'Liskov Substitution Principle', 'Interface Segregation Principle']],
+            ['description' => 'What does ACID stand for in the context of database transactions?', 'options' => ['Atomicity, Consistency, Isolation, Durability', 'Availability, Consistency, Isolation, Durability', 'Atomicity, Concurrency, Isolation, Durability', 'Atomicity, Consistency, Integrity, Durability']],
+            ['description' => 'Which of the following best describes a race condition?', 'options' => ['Two or more threads accessing shared data with an unsynchronized outcome', 'A CPU scheduling algorithm', 'A network congestion pattern', 'A compiler optimization']],
+            ['description' => 'What is the primary purpose of a load balancer in a distributed system?', 'options' => ['Distributing incoming requests across multiple servers', 'Encrypting traffic between clients and servers', 'Caching database query results', 'Compressing HTTP responses']],
+            ['description' => 'Which sorting algorithm has the best average-case time complexity?', 'options' => ['Quicksort', 'Bubble sort', 'Insertion sort', 'Selection sort']],
+            ['description' => 'What is the main benefit of using dependency injection in software design?', 'options' => ['Reduced coupling between components', 'Faster runtime execution', 'Smaller binary size', 'Automatic memory management']],
+            ['description' => 'In version control, what does a "merge conflict" indicate?', 'options' => ['Two branches changed the same lines differently', 'A missing commit message', 'A corrupted repository', 'An expired access token']],
+            ['description' => 'Which layer of the OSI model is responsible for routing packets between networks?', 'options' => ['Network layer', 'Transport layer', 'Data link layer', 'Application layer']],
+            ['description' => 'What is the purpose of an index in a database table?', 'options' => ['Speeding up data retrieval at the cost of write overhead', 'Enforcing foreign key constraints', 'Storing backup copies of rows', 'Compressing table storage']],
+            ['description' => 'Which testing approach verifies that individual units of code work in isolation?', 'options' => ['Unit testing', 'Integration testing', 'End-to-end testing', 'Smoke testing']],
+            ['description' => 'What does the term "idempotent" mean for an HTTP method?', 'options' => ['Repeating the same request produces the same result', 'The request always succeeds', 'The request is cached by default', 'The request requires authentication']],
+        ];
+
+        $essayContent = [
+            'Explain the trade-offs between horizontal and vertical scaling for a growing web application.',
+            'Describe how you would design a database schema for a course enrollment system, including the key entities and relationships.',
+            'Discuss the advantages and disadvantages of using microservices compared to a monolithic architecture.',
+            'Explain how caching can improve application performance and describe a scenario where caching could introduce bugs.',
+            'Walk through the steps you would take to diagnose a slow API endpoint in production.',
+        ];
+
+        $questions = collect($mcContent)->values()->map(fn ($question, $index) => [
+            'id' => null,
+            'description' => '<p>'.$question['description'].'</p>',
+            'questionType' => AssessmentQuestionType::MultipleChoice->value,
+            'points' => '',
+            'order' => $index + 1,
+            'options' => collect($question['options'])->values()->map(fn ($label, $optionIndex) => [
+                'id' => null,
+                'label' => $label,
+                'isCorrect' => $optionIndex === 0,
+                'order' => $optionIndex + 1,
+            ])->all(),
+        ])->all();
+
+        $offset = count($questions);
+        $essayQuestions = collect($essayContent)->values()->map(fn ($description, $index) => [
+            'id' => null,
+            'description' => '<p>'.$description.'</p>',
+            'questionType' => AssessmentQuestionType::Essay->value,
+            'points' => '20',
+            'order' => $offset + $index + 1,
+            'options' => [],
+        ])->all();
+
+        $this->questions = [...$questions, ...$essayQuestions];
+
+        // Question descriptions run wire:ignore, so their DOM is silent to
+        // property changes; they only refresh when told to via this event.
+        foreach ($this->questions as $index => $question) {
+            $this->dispatch('rich-text-set-content', id: "question-{$index}", value: $question['description']);
+        }
+    }
+
     public function addQuestion(): void
     {
-        $this->questions[] = [
-            'id' => null,
-            'description' => '',
-            'points' => '',
-            'selectedMaterialIds' => [],
-            'materialSearch' => '',
-        ];
+        $this->questions[] = $this->defaultQuestion(count($this->questions) + 1);
     }
 
     public function removeQuestion(int $index): void
@@ -113,40 +195,99 @@ class AssessmentFinalExamForm extends Component
         $this->questions = array_values($this->questions);
     }
 
-    public function toggleQuestionMaterial(int $index, string $materialId): void
+    /**
+     * @return array{id: ?string, description: string, questionType: string, points: string, order: int, options: array<int, array{id: ?string, label: string, isCorrect: bool, order: int}>}
+     */
+    private function defaultQuestion(int $order): array
     {
-        $selected = $this->questions[$index]['selectedMaterialIds'];
+        return [
+            'id' => null,
+            'description' => '',
+            'questionType' => AssessmentQuestionType::Essay->value,
+            'points' => '',
+            'order' => $order,
+            'options' => [],
+        ];
+    }
 
-        if (in_array($materialId, $selected, true)) {
-            $this->questions[$index]['selectedMaterialIds'] = array_values(array_diff($selected, [$materialId]));
-        } else {
-            $selected[] = $materialId;
-            $this->questions[$index]['selectedMaterialIds'] = $selected;
+    /**
+     * Questions/options removed client-side (see resources/js/syllabus-form.js's
+     * removeSyllabusRow, reused here) are left as null holes in their arrays
+     * rather than spliced out, since reindexing survivors would desync
+     * their already-bound wire:model/index-baked handlers. Prune them here,
+     * right before validation and persistence.
+     */
+    private function pruneRemoved(): void
+    {
+        $this->questions = array_values(array_filter($this->questions, fn ($question) => $question !== null));
+
+        foreach ($this->questions as $index => $question) {
+            $this->questions[$index]['options'] = array_values(array_filter($question['options'], fn ($option) => $option !== null));
         }
     }
 
     public function save(
         AssessmentService $assessmentService,
         AssessmentQuestionService $assessmentQuestionService,
+        AssessmentQuestionOptionService $assessmentQuestionOptionService,
         FinalExamService $finalExamService,
-        PeriodService $periodService,
     ): mixed {
+        try {
+            $result = $this->persist($assessmentService, $assessmentQuestionService, $assessmentQuestionOptionService, $finalExamService);
+        } catch (\Throwable $exception) {
+            $this->dispatch('assessmentfinalexamform-error');
+
+            throw $exception;
+        }
+
+        if ($result === null) {
+            $this->dispatch('assessmentfinalexamform-error');
+        }
+
+        return $result;
+    }
+
+    private function persist(
+        AssessmentService $assessmentService,
+        AssessmentQuestionService $assessmentQuestionService,
+        AssessmentQuestionOptionService $assessmentQuestionOptionService,
+        FinalExamService $finalExamService,
+    ): mixed {
+        $this->pruneRemoved();
+
         $this->validate([
             'title' => 'required|string|max:255',
             'weight' => 'required|numeric|min:0|max:100',
             'startDate' => 'required|date',
             'endDate' => 'required|date|after:startDate',
-            'periodId' => 'required|string',
             'examType' => 'required|in:open_book,closed_book,take_home',
             'questions' => 'array|min:1',
             'questions.*.description' => 'required|string',
-            'questions.*.points' => 'required|numeric|min:0',
+            'questions.*.questionType' => 'required|in:multiple_choice,essay',
+            'questions.*.points' => 'required_if:questions.*.questionType,essay|nullable|numeric|min:0',
         ]);
 
-        $period = $periodService->find($this->periodId);
-        abort_if($period === null || $period->course_id !== $this->course->id, 404);
+        foreach ($this->questions as $index => $question) {
+            if ($question['questionType'] !== AssessmentQuestionType::MultipleChoice->value) {
+                continue;
+            }
 
-        DB::transaction(function () use ($assessmentService, $assessmentQuestionService, $finalExamService, $period) {
+            $labelled = array_filter($question['options'], fn ($option) => trim($option['label']) !== '');
+            if (count($labelled) < 2) {
+                $this->addError("questions.{$index}.options", __('At least two options are required.'));
+            }
+
+            $correctCount = count(array_filter($question['options'], fn ($option) => $option['isCorrect']));
+            if ($correctCount !== 1) {
+                $this->addError("questions.{$index}.options", __('Exactly one option must be marked correct.'));
+            }
+        }
+
+        if ($this->getErrorBag()->isNotEmpty()) {
+            return null;
+        }
+
+        DB::transaction(function () use ($assessmentService, $assessmentQuestionService, $assessmentQuestionOptionService, $finalExamService) {
             $data = [
                 'course_id' => $this->course->id,
                 'type' => AssessmentType::TheoryFinalExam,
@@ -174,7 +315,6 @@ class AssessmentFinalExamForm extends Component
 
             $finalExamData = [
                 'assessment_id' => $assessment->id,
-                'period_id' => $period->id,
                 'exam_type' => FinalExamType::from($this->examType),
                 'start_date' => $this->startDate,
                 'end_date' => $this->endDate,
@@ -191,51 +331,67 @@ class AssessmentFinalExamForm extends Component
             }
 
             foreach ($this->questions as $index => $question) {
+                $questionType = AssessmentQuestionType::from($question['questionType']);
+                $isMultipleChoice = $questionType === AssessmentQuestionType::MultipleChoice;
+
                 $questionData = [
                     'assessment_id' => $assessment->id,
                     'description' => HtmlSanitizer::forum($this->promoteRichTextAttachments($question['description'])),
-                    'points' => (float) $question['points'],
+                    'points' => $isMultipleChoice ? 0 : (float) $question['points'],
+                    'question_type' => $questionType,
                     'order' => $index + 1,
                 ];
 
                 if ($question['id']) {
-                    $assessmentQuestionModel = $assessmentQuestionService->update($question['id'], $questionData);
+                    $questionModel = $assessmentQuestionService->update($question['id'], $questionData);
                 } else {
-                    $assessmentQuestionModel = $assessmentQuestionService->create($questionData);
+                    $questionModel = $assessmentQuestionService->create($questionData);
                 }
 
-                $materialSync = [];
-                foreach (array_values($question['selectedMaterialIds']) as $order => $materialId) {
-                    $materialSync[$materialId] = ['order' => $order + 1];
+                $existingOptionIds = collect($question['options'])->pluck('id')->filter()->all();
+                foreach ($questionModel->options as $existingOption) {
+                    if (! in_array($existingOption->id, $existingOptionIds, true)) {
+                        $assessmentQuestionOptionService->delete($existingOption->id);
+                    }
                 }
-                $assessmentQuestionModel->files()->sync($materialSync);
+
+                if (! $isMultipleChoice) {
+                    continue;
+                }
+
+                foreach ($question['options'] as $optionIndex => $option) {
+                    if (trim($option['label']) === '') {
+                        continue;
+                    }
+
+                    $optionData = [
+                        'assessment_question_id' => $questionModel->id,
+                        'label' => $option['label'],
+                        'is_correct' => $option['isCorrect'],
+                        'order' => $optionIndex + 1,
+                    ];
+
+                    if ($option['id']) {
+                        $assessmentQuestionOptionService->update($option['id'], $optionData);
+                    } else {
+                        $assessmentQuestionOptionService->create($optionData);
+                    }
+                }
             }
+
+            return $assessment;
         });
 
         return redirect()->route('assessments.index', $this->course);
     }
 
-    public function render(MediaLibraryService $mediaLibraryService, PeriodService $periodService)
+    public function render()
     {
-        $schoolId = $this->course->school_id;
-
-        $mediaByRow = [];
-        $selectedMediaByRow = [];
-
-        foreach ($this->questions as $index => $question) {
-            $mediaByRow[$index] = Collection::make($mediaLibraryService->list($schoolId, null, $question['materialSearch'] ?: null)->get());
-            $selectedMediaByRow[$index] = $question['selectedMaterialIds'] === []
-                ? Collection::make()
-                : MediaLibraryItem::whereIn('id', $question['selectedMaterialIds'])->get();
-        }
-
         return view('livewire.courses.assessment-final-exam-form', [
             'pageTitle' => $this->assessment ? 'Edit Final Exam' : 'Create Final Exam',
-            'periods' => $periodService->get(['course_id' => $this->course->id]),
             'statuses' => AssessmentStatus::cases(),
             'examTypes' => FinalExamType::cases(),
-            'mediaByRow' => $mediaByRow,
-            'selectedMediaByRow' => $selectedMediaByRow,
+            'questionTypes' => AssessmentQuestionType::cases(),
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->assessment ? 'Edit Assessment' : 'Create Assessment'])
             ->section('app-content');

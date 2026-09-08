@@ -1,6 +1,6 @@
 @section('title', $pageTitle)
 
-<div class="max-w-3xl space-y-space-lg">
+<div class="w-full space-y-space-lg">
     <div>
         <a href="{{ route('assessments.index', $course) }}" class="text-body-sm text-primary hover:underline inline-flex items-center gap-space-xs">
             <span class="material-symbols-outlined text-[16px]">arrow_back</span>
@@ -9,7 +9,23 @@
         <h1 class="font-headline-md text-headline-md text-on-surface mt-space-sm">{{ $pageTitle }}</h1>
     </div>
 
-    <form wire:submit="save" class="space-y-space-lg">
+    @if (app()->isLocal())
+        <div class="bg-tertiary-container border border-outline-variant rounded-lg p-space-md flex items-center justify-between">
+            <p class="font-body-sm text-body-sm text-on-tertiary-container">Dev tools</p>
+            <button
+                type="button"
+                wire:click="devAutofill"
+                wire:loading.attr="disabled"
+                wire:target="devAutofill"
+                class="px-space-md py-space-xs bg-tertiary text-on-tertiary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
+            >
+                <span wire:loading wire:target="devAutofill" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                Autofill
+            </button>
+        </div>
+    @endif
+
+    <form wire:submit="save" class="w-full space-y-space-lg">
         <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
             <div>
                 <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Title</label>
@@ -26,11 +42,14 @@
 
                 <div>
                     <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Status</label>
-                    <select wire:model="status" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <div class="flex items-center gap-space-lg py-space-sm">
                         @foreach ($statuses as $statusOption)
-                            <option value="{{ $statusOption->value }}">{{ str($statusOption->value)->title() }}</option>
+                            <label class="inline-flex items-center gap-space-xs cursor-pointer">
+                                <input type="radio" wire:model="status" value="{{ $statusOption->value }}" class="w-4 h-4 text-primary border-outline focus:ring-primary/50" />
+                                <span class="font-body-md text-body-md text-on-surface">{{ str($statusOption->value)->title() }}</span>
+                            </label>
                         @endforeach
-                    </select>
+                    </div>
                 </div>
             </div>
 
@@ -48,27 +67,17 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-space-md">
-                <div>
-                    <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Period</label>
-                    <select wire:model="periodId" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50">
-                        <option value="">Select a period</option>
-                        @foreach ($periods as $period)
-                            <option value="{{ $period->id }}">{{ $period->title }}</option>
-                        @endforeach
-                    </select>
-                    @error('periodId') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+            <div>
+                <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Exam Type</label>
+                <div class="flex items-center gap-space-lg py-space-sm">
+                    @foreach ($examTypes as $examTypeOption)
+                        <label class="inline-flex items-center gap-space-xs cursor-pointer">
+                            <input type="radio" wire:model="examType" value="{{ $examTypeOption->value }}" class="w-4 h-4 text-primary border-outline focus:ring-primary/50" />
+                            <span class="font-body-md text-body-md text-on-surface">{{ str($examTypeOption->value)->replace('_', ' ')->title() }}</span>
+                        </label>
+                    @endforeach
                 </div>
-
-                <div>
-                    <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Exam Type</label>
-                    <select wire:model="examType" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50">
-                        @foreach ($examTypes as $examTypeOption)
-                            <option value="{{ $examTypeOption->value }}">{{ str($examTypeOption->value)->replace('_', ' ')->title() }}</option>
-                        @endforeach
-                    </select>
-                    @error('examType') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
-                </div>
+                @error('examType') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
             </div>
 
             <div>
@@ -83,7 +92,11 @@
         <div class="space-y-space-md">
             <div class="flex items-center justify-between">
                 <h2 class="font-label-lg text-label-lg text-on-surface">Questions</h2>
-                <button type="button" wire:click="addQuestion" class="text-primary text-body-sm font-medium hover:underline inline-flex items-center gap-space-xs">
+                <button
+                    type="button"
+                    @click="window.addSyllabusRow($wire, 'question-template', 'questions', { id: null, description: '', questionType: 'essay', points: '', options: [] })"
+                    class="text-primary text-body-sm font-medium hover:underline inline-flex items-center gap-space-xs"
+                >
                     <span class="material-symbols-outlined text-[16px]">add</span>
                     Add Question
                 </button>
@@ -91,12 +104,32 @@
             @error('questions') <p class="text-body-xs text-error">{{ $message }}</p> @enderror
 
             @foreach ($questions as $index => $question)
-                <div wire:key="question-{{ $index }}" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+                @continue($question === null)
+                <div wire:key="question-{{ $index }}" data-row data-question-row class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
                     <div class="flex items-start justify-between gap-space-md">
                         <p class="font-label-md text-label-md text-on-surface">Question {{ $index + 1 }}</p>
                         @if (count($questions) > 1)
-                            <button type="button" wire:click="removeQuestion({{ $index }})" class="text-error text-body-sm hover:underline">Remove</button>
+                            <button type="button" @click="window.removeSyllabusRow($wire, 'questions.{{ $index }}', $el)" class="text-error text-body-sm hover:underline">Remove</button>
                         @endif
+                    </div>
+
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Question Type</label>
+                        <div class="flex items-center gap-space-lg py-space-sm">
+                            @foreach ($questionTypes as $questionTypeOption)
+                                <label class="inline-flex items-center gap-space-xs cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        wire:model="questions.{{ $index }}.questionType"
+                                        value="{{ $questionTypeOption->value }}"
+                                        class="w-4 h-4 text-primary border-outline focus:ring-primary/50"
+                                        @change="window.toggleFinalExamQuestionType($wire, {{ $index }}, $el)"
+                                    />
+                                    <span class="font-body-md text-body-md text-on-surface">{{ str($questionTypeOption->value)->replace('_', ' ')->title() }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                        @error("questions.{$index}.questionType") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
@@ -105,50 +138,129 @@
                         @error("questions.{$index}.description") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                     </div>
 
-                    <div class="w-40">
+                    <div data-mc-fields data-field="options" class="{{ $question['questionType'] === \App\Enums\AssessmentQuestionType::MultipleChoice->value ? '' : 'hidden' }}" @error("questions.{$index}.options") data-field-error @enderror>
+                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Options (select the correct one)</label>
+
+                        <div data-options-container class="space-y-space-sm">
+                            @foreach ($question['options'] as $optionIndex => $option)
+                                <div wire:key="question-{{ $index }}-option-{{ $optionIndex }}" data-row data-option-row class="flex items-center gap-space-sm">
+                                    <input
+                                        type="radio"
+                                        name="correct-option-{{ $index }}"
+                                        data-option-correct
+                                        @change="window.setSyllabusRadio($wire, 'questions.{{ $index }}.options', {{ $optionIndex }})"
+                                        @checked($option['isCorrect'])
+                                    />
+                                    <input
+                                        type="text"
+                                        data-option-label
+                                        wire:model="questions.{{ $index }}.options.{{ $optionIndex }}.label"
+                                        placeholder="Option label"
+                                        class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    />
+                                    @if (count($question['options']) > 2)
+                                        <button type="button" @click="window.removeSyllabusRow($wire, 'questions.{{ $index }}.options.{{ $optionIndex }}', $el)" class="text-error text-body-sm hover:underline">Remove</button>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <button
+                            type="button"
+                            @click="window.addQuizOption($wire, {{ $index }}, $el.closest('[data-question-row]').querySelector('[data-options-container]'))"
+                            class="mt-space-sm text-primary text-body-sm font-medium hover:underline"
+                        >
+                            Add Option
+                        </button>
+                        @error("questions.{$index}.options") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div data-essay-fields class="w-40 {{ $question['questionType'] === \App\Enums\AssessmentQuestionType::MultipleChoice->value ? 'hidden' : '' }}">
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Points</label>
                         <input type="number" step="0.01" min="0" wire:model="questions.{{ $index }}.points" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
                         @error("questions.{$index}.points") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                     </div>
-
-                    <div>
-                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Attachments</label>
-
-                        @if ($selectedMediaByRow[$index]->isNotEmpty())
-                            <div class="flex flex-wrap gap-space-xs mb-space-sm">
-                                @foreach ($selectedMediaByRow[$index] as $material)
-                                    <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container text-body-xs text-on-surface">
-                                        {{ $material->title }}
-                                        <button type="button" wire:click="toggleQuestionMaterial({{ $index }}, '{{ $material->id }}')" class="text-error">&times;</button>
-                                    </span>
-                                @endforeach
-                            </div>
-                        @endif
-
-                        <input
-                            type="text"
-                            wire:model.live.debounce.400ms="questions.{{ $index }}.materialSearch"
-                            placeholder="Search media library..."
-                            class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mb-space-xs"
-                        />
-
-                        <div class="max-h-40 overflow-y-auto border border-outline-variant rounded-lg divide-y divide-outline-variant">
-                            @forelse ($mediaByRow[$index] as $material)
-                                <label class="flex items-center gap-space-sm px-space-md py-space-sm text-body-sm cursor-pointer hover:bg-surface-container">
-                                    <input
-                                        type="checkbox"
-                                        @checked(in_array($material->id, $question['selectedMaterialIds']))
-                                        wire:click="toggleQuestionMaterial({{ $index }}, '{{ $material->id }}')"
-                                    />
-                                    {{ $material->title }}
-                                </label>
-                            @empty
-                                <p class="px-space-md py-space-sm text-body-sm text-on-surface-variant">No materials found.</p>
-                            @endforelse
-                        </div>
-                    </div>
                 </div>
             @endforeach
+
+            <template id="question-template">
+                <div data-row data-question-row class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+                    <div class="flex items-start justify-between gap-space-md">
+                        <p class="font-label-md text-label-md text-on-surface">New question</p>
+                        <button type="button" @click="window.removeSyllabusRow($wire, 'questions.__NEW__', $el)" class="text-error text-body-sm hover:underline">Remove</button>
+                    </div>
+
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Question Type</label>
+                        <div class="flex items-center gap-space-lg py-space-sm">
+                            @foreach ($questionTypes as $questionTypeOption)
+                                <label class="inline-flex items-center gap-space-xs cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="question-type-__NEW__"
+                                        value="{{ $questionTypeOption->value }}"
+                                        @checked($questionTypeOption === \App\Enums\AssessmentQuestionType::Essay)
+                                        class="w-4 h-4 text-primary border-outline focus:ring-primary/50"
+                                        @change="$wire.set('questions.__NEW__.questionType', '{{ $questionTypeOption->value }}', false); window.toggleFinalExamQuestionType($wire, __NEW__, $el)"
+                                    />
+                                    <span class="font-body-md text-body-md text-on-surface">{{ str($questionTypeOption->value)->replace('_', ' ')->title() }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Description</label>
+                        <x-rich-text-editor id="question-__NEW__" wire-model="questions.__NEW__.description" />
+                    </div>
+
+                    <div data-mc-fields data-field="options" class="hidden">
+                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Options (select the correct one)</label>
+
+                        <div data-options-container class="space-y-space-sm">
+                            <div data-row data-option-row class="flex items-center gap-space-sm">
+                                <input type="radio" name="correct-option-__NEW__" data-option-correct @change="window.setSyllabusRadio($wire, 'questions.__NEW__.options', 0)" />
+                                <input
+                                    type="text"
+                                    data-option-label
+                                    placeholder="Option label"
+                                    @input="$wire.set('questions.__NEW__.options.0.label', $event.target.value, false)"
+                                    class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                            </div>
+                            <div data-row data-option-row class="flex items-center gap-space-sm">
+                                <input type="radio" name="correct-option-__NEW__" data-option-correct @change="window.setSyllabusRadio($wire, 'questions.__NEW__.options', 1)" />
+                                <input
+                                    type="text"
+                                    data-option-label
+                                    placeholder="Option label"
+                                    @input="$wire.set('questions.__NEW__.options.1.label', $event.target.value, false)"
+                                    class="flex-1 px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            @click="window.addQuizOption($wire, '__NEW__', $el.closest('[data-question-row]').querySelector('[data-options-container]'))"
+                            class="mt-space-sm text-primary text-body-sm font-medium hover:underline"
+                        >
+                            Add Option
+                        </button>
+                    </div>
+
+                    <div data-essay-fields class="w-40">
+                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Points</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            @input="$wire.set('questions.__NEW__.points', $event.target.value, false)"
+                            class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                    </div>
+                </div>
+            </template>
         </div>
 
         <div class="flex gap-space-md">

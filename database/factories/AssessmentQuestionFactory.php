@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\AssessmentQuestionType;
 use App\Models\Assessment;
 use App\Models\AssessmentQuestion;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -24,6 +25,7 @@ class AssessmentQuestionFactory extends Factory
             'assessment_id' => Assessment::factory(),
             'description' => fake()->paragraph(),
             'points' => fake()->numberBetween(10, 50),
+            'question_type' => AssessmentQuestionType::Essay,
             'order' => 1,
         ];
     }

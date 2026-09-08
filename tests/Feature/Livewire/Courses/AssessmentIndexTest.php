@@ -3,6 +3,7 @@
 namespace Tests\Feature\Livewire\Courses;
 
 use App\Enums\AssessmentAssignedTo;
+use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\AttendanceStatus;
@@ -707,5 +708,63 @@ class AssessmentIndexTest extends TestCase
             ->assertSee('In Progress')
             ->assertDontSee('Submitted')
             ->assertDontSee('Pending Review');
+    }
+
+    public function test_generate_final_exam_creates_requested_count_with_mc_and_essay_questions(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.create']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->set('generateCount', '2')
+            ->call('generateFinalExam');
+
+        $assessments = Assessment::query()
+            ->where('course_id', $this->course->id)
+            ->where('type', AssessmentType::TheoryFinalExam)
+            ->with('questions.options')
+            ->get();
+
+        $this->assertCount(2, $assessments);
+
+        foreach ($assessments as $assessment) {
+            $this->assertCount(20, $assessment->questions);
+
+            $mcQuestions = $assessment->questions->where('question_type', AssessmentQuestionType::MultipleChoice);
+            $essayQuestions = $assessment->questions->where('question_type', AssessmentQuestionType::Essay);
+
+            $this->assertCount(15, $mcQuestions);
+            $this->assertCount(5, $essayQuestions);
+
+            foreach ($mcQuestions as $mcQuestion) {
+                $this->assertSame(0.0, (float) $mcQuestion->points);
+                $this->assertGreaterThanOrEqual(2, $mcQuestion->options->count());
+                $this->assertSame(1, $mcQuestion->options->where('is_correct', true)->count());
+            }
+
+            foreach ($essayQuestions as $essayQuestion) {
+                $this->assertGreaterThan(0, (float) $essayQuestion->points);
+            }
+
+            $this->assertNotNull($assessment->finalExam);
+        }
+    }
+
+    public function test_generate_final_exam_validates_count(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.create']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->set('generateCount', '0')
+            ->call('generateFinalExam')
+            ->assertHasErrors(['generateCount']);
+
+        $this->assertDatabaseMissing('assessments', [
+            'course_id' => $this->course->id,
+            'type' => AssessmentType::TheoryFinalExam->value,
+        ]);
     }
 }

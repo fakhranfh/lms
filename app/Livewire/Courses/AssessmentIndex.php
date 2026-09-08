@@ -3,9 +3,11 @@
 namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentAssignedTo;
+use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\DeliveryMode;
+use App\Enums\FinalExamType;
 use App\Enums\ProctorReviewDecision;
 use App\Enums\QuizQuestionType;
 use App\Enums\QuizScoringMethod;
@@ -16,11 +18,13 @@ use App\Models\Course;
 use App\Models\GroupMember;
 use App\Models\Session;
 use App\Services\AssessmentAttemptService;
+use App\Services\AssessmentQuestionOptionService;
 use App\Services\AssessmentQuestionService;
 use App\Services\AssessmentService;
 use App\Services\AttendanceDerivationService;
 use App\Services\AttendanceScoringService;
 use App\Services\CoursePersonService;
+use App\Services\FinalExamService;
 use App\Services\ForumDiscussionScoringService;
 use App\Services\GroupMemberService;
 use App\Services\GroupService;
@@ -36,6 +40,7 @@ use App\Support\AssessmentTypeLabel;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class AssessmentIndex extends Component
@@ -432,6 +437,115 @@ class AssessmentIndex extends Component
         }
     }
 
+    /**
+     * Dev-only: bulk-creates draft final exams, each seeded with 15
+     * multiple-choice and 5 essay questions. Content is deliberately
+     * different wording from AssessmentFinalExamForm::devAutofill() so the
+     * two dev tools don't produce identical-looking exams. Doesn't require
+     * a period since the Period field was removed from the form/UI.
+     */
+    public function generateFinalExam(AssessmentService $assessmentService, AssessmentQuestionService $assessmentQuestionService, AssessmentQuestionOptionService $assessmentQuestionOptionService, FinalExamService $finalExamService): void
+    {
+        abort_unless(app()->environment(['local', 'testing']), 403);
+        abort_unless(auth()->user()->can('assessment.create'), 403);
+
+        $this->errorMessage = null;
+
+        $this->validate([
+            'generateCount' => 'required|integer|min:1|max:50',
+        ]);
+
+        $count = (int) $this->generateCount;
+
+        $mcContent = [
+            ['description' => 'A stack data structure follows which access order?', 'options' => ['Last-in, first-out', 'First-in, first-out', 'Random access', 'Priority-based']],
+            ['description' => 'Which SQL clause is used to filter grouped rows?', 'options' => ['HAVING', 'WHERE', 'GROUP BY', 'ORDER BY']],
+            ['description' => 'What does REST stand for in the context of web APIs?', 'options' => ['Representational State Transfer', 'Remote State Transmission', 'Reliable Endpoint Service Transfer', 'Resource State Translation']],
+            ['description' => 'Which of these is a non-relational (NoSQL) database?', 'options' => ['MongoDB', 'PostgreSQL', 'MySQL', 'SQLite']],
+            ['description' => 'What is the purpose of a foreign key in a relational database?', 'options' => ['Enforcing a link between two tables', 'Speeding up full-table scans', 'Encrypting column values', 'Compressing row storage']],
+            ['description' => 'Which design pattern restricts a class to a single instance?', 'options' => ['Singleton', 'Factory', 'Observer', 'Decorator']],
+            ['description' => 'What is the main advantage of using a CDN?', 'options' => ['Serving static assets closer to the user', 'Encrypting database backups', 'Reducing server-side CPU usage', 'Automating deployments']],
+            ['description' => 'Which HTTP method is idempotent and used to update a full resource?', 'options' => ['PUT', 'POST', 'PATCH', 'CONNECT']],
+            ['description' => 'What does the acronym API stand for?', 'options' => ['Application Programming Interface', 'Automated Process Integration', 'Application Process Instance', 'Advanced Programming Interface']],
+            ['description' => 'Which term describes breaking a large problem into smaller, independent subproblems?', 'options' => ['Decomposition', 'Aggregation', 'Normalization', 'Serialization']],
+            ['description' => 'What is the purpose of a git branch?', 'options' => ['Isolating a line of development from the main codebase', 'Compressing repository history', 'Encrypting commit messages', 'Merging two remote repositories automatically']],
+            ['description' => 'Which of the following best defines "latency" in a networked system?', 'options' => ['The time it takes for a request to travel and receive a response', 'The maximum number of concurrent users a server can handle', 'The total storage capacity of a server', 'The number of requests processed per second']],
+            ['description' => 'What is the main goal of input validation in a web application?', 'options' => ['Preventing malformed or malicious data from being processed', 'Improving page load times', 'Reducing database storage size', 'Simplifying the user interface']],
+            ['description' => 'Which concurrency primitive is used to prevent two threads from accessing a critical section simultaneously?', 'options' => ['Mutex/lock', 'Callback', 'Promise', 'Iterator']],
+            ['description' => 'What is the primary purpose of a code review?', 'options' => ['Catching defects and sharing knowledge before code is merged', 'Automatically formatting code', 'Generating documentation', 'Measuring test coverage']],
+        ];
+
+        $essayContent = [
+            'Describe a real-world scenario where you would choose a NoSQL database over a relational one, and justify your reasoning.',
+            'Explain the difference between synchronous and asynchronous processing, with an example of when each is appropriate.',
+            'Outline the steps involved in deploying a web application to production, including any safeguards you would put in place.',
+            'Compare and contrast unit tests, integration tests, and end-to-end tests, and describe when each is most valuable.',
+            'Describe how you would approach securing a public-facing API against common attacks.',
+        ];
+
+        for ($i = 0; $i < $count; $i++) {
+            $startDate = now()->addWeeks($i);
+            $endDate = $startDate->clone()->addWeek();
+
+            DB::transaction(function () use ($assessmentService, $assessmentQuestionService, $assessmentQuestionOptionService, $finalExamService, $mcContent, $essayContent, $startDate, $endDate, $i): void {
+                $assessment = $assessmentService->create([
+                    'course_id' => $this->course->id,
+                    'session_id' => null,
+                    'type' => AssessmentType::TheoryFinalExam,
+                    'title' => AssessmentTypeLabel::forType(AssessmentType::TheoryFinalExam).' - Set '.random_int(1, 99),
+                    'weight' => AssessmentType::TheoryFinalExam->defaultWeight(),
+                    'assigned_to' => AssessmentAssignedTo::Individual,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'status' => AssessmentStatus::Draft,
+                ]);
+
+                $finalExamService->create([
+                    'assessment_id' => $assessment->id,
+                    'exam_type' => FinalExamType::cases()[$i % count(FinalExamType::cases())],
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'instructions' => '<p>Complete this exam individually within the allotted time window.</p>',
+                ]);
+
+                $order = 0;
+
+                foreach ($mcContent as $questionData) {
+                    $order++;
+
+                    $question = $assessmentQuestionService->create([
+                        'assessment_id' => $assessment->id,
+                        'description' => '<p>'.$questionData['description'].'</p>',
+                        'points' => 0,
+                        'question_type' => AssessmentQuestionType::MultipleChoice,
+                        'order' => $order,
+                    ]);
+
+                    foreach ($questionData['options'] as $optionIndex => $label) {
+                        $assessmentQuestionOptionService->create([
+                            'assessment_question_id' => $question->id,
+                            'label' => $label,
+                            'is_correct' => $optionIndex === 0,
+                            'order' => $optionIndex + 1,
+                        ]);
+                    }
+                }
+
+                foreach ($essayContent as $description) {
+                    $order++;
+
+                    $assessmentQuestionService->create([
+                        'assessment_id' => $assessment->id,
+                        'description' => '<p>'.$description.'</p>',
+                        'points' => 20,
+                        'question_type' => AssessmentQuestionType::Essay,
+                        'order' => $order,
+                    ]);
+                }
+            });
+        }
+    }
+
     public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, AttendanceDerivationService $attendanceDerivationService, ForumDiscussionScoringService $forumDiscussionScoringService, ProctorSessionService $proctorSessionService)
     {
         if (! $this->assessmentsLoaded) {
@@ -573,6 +687,7 @@ class AssessmentIndex extends Component
             AssessmentType::TheoryPersonalAssignment => 'generatePersonalAssignments',
             AssessmentType::TheoryTeamAssignment => 'generateTeamAssignments',
             AssessmentType::TheoryQuiz => 'generateQuizzes',
+            AssessmentType::TheoryFinalExam => 'generateFinalExam',
             default => null,
         };
     }

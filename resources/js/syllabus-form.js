@@ -115,6 +115,37 @@ export function addQuizOption($wire, questionIndex, containerEl) {
 }
 
 /**
+ * Shows the multiple-choice options fields or the essay points field on a
+ * final exam question row, based on which question-type radio was just
+ * changed. Purely a DOM visibility toggle (both field sets are always
+ * present in the row's markup) so it works the same for server-rendered
+ * rows and rows cloned client-side via addSyllabusRow, without needing a
+ * Livewire round trip to react to the type change. Switching a row to
+ * multiple choice seeds two empty options (deferred, no round trip) so
+ * there is something for "Add Option"/the correct-answer radios to build on.
+ */
+export function toggleFinalExamQuestionType($wire, questionIndex, radioEl) {
+    const row = radioEl.closest('[data-question-row]');
+    if (!row) {
+        return;
+    }
+
+    const isMultipleChoice = radioEl.value === 'multiple_choice';
+    row.querySelector('[data-mc-fields]')?.classList.toggle('hidden', !isMultipleChoice);
+    row.querySelector('[data-essay-fields]')?.classList.toggle('hidden', isMultipleChoice);
+
+    if (isMultipleChoice) {
+        const options = $wire.get(`questions.${questionIndex}.options`) || [];
+        if (options.length < 2) {
+            $wire.set(`questions.${questionIndex}.options`, [
+                { id: null, label: '', isCorrect: false },
+                { id: null, label: '', isCorrect: false },
+            ], false);
+        }
+    }
+}
+
+/**
  * Toggles a value in/out of a Livewire array property (e.g. the learning
  * outcome checkboxes on an evaluation activity), the same deferred,
  * no-round-trip way as addSyllabusRow.

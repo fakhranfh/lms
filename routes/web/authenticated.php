@@ -14,6 +14,7 @@ use App\Http\Controllers\UserLoginLinkController;
 use App\Livewire\ChangePassword;
 use App\Livewire\Courses\AssessmentAttendanceShow;
 use App\Livewire\Courses\AssessmentFinalExamForm;
+use App\Livewire\Courses\AssessmentFinalExamGrade;
 use App\Livewire\Courses\AssessmentFinalExamShow;
 use App\Livewire\Courses\AssessmentForm;
 use App\Livewire\Courses\AssessmentForumDiscussionShow;
@@ -123,6 +124,7 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/courses/{course}/assessments/create/final-exam', AssessmentFinalExamForm::class)->middleware('permission:assessment.create')->name('assessments.final-exam.create');
         Route::get('/assessments/{assessment}/final-exam/edit', AssessmentFinalExamForm::class)->middleware('permission:assessment.edit')->name('assessments.final-exam.edit');
         Route::get('/assessments/{assessment}/final-exam', AssessmentFinalExamShow::class)->middleware('permission:assessment.view')->name('assessments.final-exam.show');
+        Route::get('/assessments/{assessment}/final-exam/grade/{student}', AssessmentFinalExamGrade::class)->middleware('permission:assessment.grade')->name('assessments.final-exam.grade');
         Route::get('/assessments/{assessment}/final-exam/questions/edit', ProctorQuizQuestionsForm::class)->middleware('permission:assessment.edit')->name('assessments.final-exam.questions.edit');
         Route::get('/proctor/speed-test-download', [ProctorSpeedTestController::class, 'download'])->name('proctor.speed-test-download');
         Route::post('/proctor/speed-test-upload', [ProctorSpeedTestController::class, 'upload'])->name('proctor.speed-test-upload');

@@ -5,7 +5,6 @@ namespace Tests\Feature\Livewire\Courses;
 use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
-use App\Enums\ProctorSnapshotType;
 use App\Enums\RoleName;
 use App\Livewire\Courses\AssessmentFinalExamShow;
 use App\Models\Assessment;
@@ -18,7 +17,6 @@ use App\Models\CoursePerson;
 use App\Models\ExamReferenceFile;
 use App\Models\FinalExam;
 use App\Models\Period;
-use App\Models\ProctorEvent;
 use App\Models\ProctorSession;
 use App\Models\ProctorSnapshot;
 use App\Models\Role;
@@ -279,35 +277,17 @@ class AssessmentFinalExamShowTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_teacher_grade_creates_score_and_student_sees_score_and_feedback(): void
+    public function test_grade_link_visible_to_teacher_for_submitted_attempt(): void
     {
         $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
 
-        $q1 = AssessmentQuestion::factory()->for($this->assessment)->create(['points' => 50]);
-        $q2 = AssessmentQuestion::factory()->for($this->assessment)->create(['points' => 35]);
-
-        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
+        AssessmentQuestion::factory()->for($this->assessment)->create(['points' => 50]);
+        AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
 
         $this->actingAs($this->teacher);
-        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->call('openGrading', $this->student->id)
-            ->set("gradeQuestionScores.{$q1->id}", '50')
-            ->set("gradeQuestionScores.{$q2->id}", '35')
-            ->set('gradeFeedback', 'Well done')
-            ->call('submitGrade');
-
-        $this->assertDatabaseHas('assessment_scores', [
-            'assessment_attempt_id' => $attempt->id,
-            'score' => 85,
-            'feedback' => 'Well done',
-        ]);
-
-        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
-        $this->actingAs($this->student);
 
         Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->assertSee('85')
-            ->assertSee('Well done');
+            ->assertSeeHtml(route('assessments.final-exam.grade', [$this->assessment, $this->student]));
     }
 
     public function test_teacher_sees_pending_review_until_proctor_session_reviewed(): void
@@ -347,219 +327,11 @@ class AssessmentFinalExamShowTest extends TestCase
         $this->actingAs($this->student);
 
         Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->assertSee('Score: 90')
+            ->assertSee('Score')
+            ->assertSee('90')
             ->assertSee('Well done')
             ->assertSee('Warning')
             ->assertSee('Looked away briefly.');
-    }
-
-    public function test_teacher_sees_event_triggered_screenshots(): void
-    {
-        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
-
-        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
-        $session = ProctorSession::factory()->for($attempt, 'attempt')->create();
-        $event = ProctorEvent::factory()->for($session)->create();
-        ProctorSnapshot::factory()->for($session)->create([
-            'type' => ProctorSnapshotType::Screen,
-            'triggered_by_event_id' => $event->id,
-            'file_url' => 'temp/proctor/'.$session->id.'/screenshot-1.jpg',
-        ]);
-
-        $this->actingAs($this->teacher);
-
-        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->assertSee('Preview Screenshots (1)');
-    }
-
-    public function test_load_proctor_screenshots_returns_items_grouped_by_event_type(): void
-    {
-        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
-
-        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
-        $session = ProctorSession::factory()->for($attempt, 'attempt')->create();
-        $event = ProctorEvent::factory()->for($session)->create(['event_type' => 'tab_switch']);
-        ProctorSnapshot::factory()->for($session)->create([
-            'type' => ProctorSnapshotType::Screen,
-            'triggered_by_event_id' => $event->id,
-            'file_url' => 'temp/proctor/'.$session->id.'/screenshot-1.jpg',
-        ]);
-
-        $r2Mock = $this->mock(R2StorageService::class);
-        $r2Mock->shouldReceive('getSignedUrl')->once()->andReturn('https://r2.example.com/signed-url');
-
-        $this->actingAs($this->teacher);
-
-        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->call('loadProctorScreenshots', $this->student->id)
-            ->assertReturned(function ($result) {
-                return $result['eventTypeOptions'] === ['tab_switch']
-                    && count($result['items']) === 1
-                    && $result['items'][0]['url'] === 'https://r2.example.com/signed-url'
-                    && $result['items'][0]['eventType'] === 'tab_switch';
-            });
-    }
-
-    public function test_load_proctor_screenshots_pairs_camera_snapshot_from_same_event(): void
-    {
-        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
-
-        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
-        $session = ProctorSession::factory()->for($attempt, 'attempt')->create();
-        $event = ProctorEvent::factory()->for($session)->create(['event_type' => 'tab_switch']);
-        ProctorSnapshot::factory()->for($session)->create([
-            'type' => ProctorSnapshotType::Screen,
-            'triggered_by_event_id' => $event->id,
-            'file_url' => 'temp/proctor/'.$session->id.'/screen-1.jpg',
-        ]);
-        ProctorSnapshot::factory()->for($session)->create([
-            'type' => ProctorSnapshotType::Webcam,
-            'triggered_by_event_id' => $event->id,
-            'file_url' => 'temp/proctor/'.$session->id.'/webcam-1.jpg',
-        ]);
-
-        $r2Mock = $this->mock(R2StorageService::class);
-        $r2Mock->shouldReceive('getSignedUrl')->twice()->andReturn('https://r2.example.com/signed-url');
-
-        $this->actingAs($this->teacher);
-
-        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->call('loadProctorScreenshots', $this->student->id)
-            ->assertReturned(function ($result) {
-                return count($result['items']) === 1
-                    && $result['items'][0]['cameraUrl'] === 'https://r2.example.com/signed-url';
-            });
-    }
-
-    public function test_load_proctor_screenshots_returns_null_camera_url_when_no_paired_webcam_snapshot(): void
-    {
-        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
-
-        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
-        $session = ProctorSession::factory()->for($attempt, 'attempt')->create();
-        $event = ProctorEvent::factory()->for($session)->create(['event_type' => 'tab_switch']);
-        ProctorSnapshot::factory()->for($session)->create([
-            'type' => ProctorSnapshotType::Screen,
-            'triggered_by_event_id' => $event->id,
-            'file_url' => 'temp/proctor/'.$session->id.'/screen-1.jpg',
-        ]);
-
-        $r2Mock = $this->mock(R2StorageService::class);
-        $r2Mock->shouldReceive('getSignedUrl')->once()->andReturn('https://r2.example.com/signed-url');
-
-        $this->actingAs($this->teacher);
-
-        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->call('loadProctorScreenshots', $this->student->id)
-            ->assertReturned(fn ($result) => $result['items'][0]['cameraUrl'] === null);
-    }
-
-    public function test_load_proctor_screenshots_filters_server_side_by_event_type(): void
-    {
-        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
-
-        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
-        $session = ProctorSession::factory()->for($attempt, 'attempt')->create();
-        $tabSwitchEvent = ProctorEvent::factory()->for($session)->create(['event_type' => 'tab_switch']);
-        $windowBlurEvent = ProctorEvent::factory()->for($session)->create(['event_type' => 'window_blur']);
-        ProctorSnapshot::factory()->for($session)->create([
-            'type' => ProctorSnapshotType::Screen,
-            'triggered_by_event_id' => $tabSwitchEvent->id,
-            'file_url' => 'temp/proctor/'.$session->id.'/screenshot-1.jpg',
-            'captured_at' => now()->subSeconds(2),
-        ]);
-        ProctorSnapshot::factory()->for($session)->create([
-            'type' => ProctorSnapshotType::Screen,
-            'triggered_by_event_id' => $windowBlurEvent->id,
-            'file_url' => 'temp/proctor/'.$session->id.'/screenshot-2.jpg',
-            'captured_at' => now()->subSecond(),
-        ]);
-
-        $r2Mock = $this->mock(R2StorageService::class);
-        $r2Mock->shouldReceive('getSignedUrl')->once()->andReturn('https://r2.example.com/signed-url');
-
-        $this->actingAs($this->teacher);
-
-        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->call('loadProctorScreenshots', $this->student->id, 'tab_switch')
-            ->assertReturned(function ($result) {
-                return count($result['items']) === 1
-                    && $result['items'][0]['eventType'] === 'tab_switch'
-                    && $result['eventTypeOptions'] === ['tab_switch', 'window_blur'];
-            });
-    }
-
-    public function test_load_proctor_screenshots_paginates_five_per_page(): void
-    {
-        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
-
-        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
-        $session = ProctorSession::factory()->for($attempt, 'attempt')->create();
-
-        foreach (range(1, 7) as $i) {
-            ProctorSnapshot::factory()->for($session)->create([
-                'type' => ProctorSnapshotType::Screen,
-                'file_url' => 'temp/proctor/'.$session->id.'/screenshot-'.$i.'.jpg',
-                'captured_at' => now()->addSeconds($i),
-            ]);
-        }
-
-        $r2Mock = $this->mock(R2StorageService::class);
-        $r2Mock->shouldReceive('getSignedUrl')->times(7)->andReturn('https://r2.example.com/signed-url');
-
-        $this->actingAs($this->teacher);
-
-        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->call('loadProctorScreenshots', $this->student->id, null, 'asc', 0, 5)
-            ->assertReturned(fn ($result) => count($result['items']) === 5 && $result['hasMore'] === true);
-
-        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->call('loadProctorScreenshots', $this->student->id, null, 'asc', 5, 5)
-            ->assertReturned(fn ($result) => count($result['items']) === 2 && $result['hasMore'] === false);
-    }
-
-    public function test_load_proctor_screenshot_groups_paginates_each_group_independently(): void
-    {
-        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
-
-        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
-        $session = ProctorSession::factory()->for($attempt, 'attempt')->create();
-        $tabSwitchEvent = ProctorEvent::factory()->for($session)->create(['event_type' => 'tab_switch']);
-        $windowBlurEvent = ProctorEvent::factory()->for($session)->create(['event_type' => 'window_blur']);
-
-        foreach (range(1, 7) as $i) {
-            ProctorSnapshot::factory()->for($session)->create([
-                'type' => ProctorSnapshotType::Screen,
-                'triggered_by_event_id' => $tabSwitchEvent->id,
-                'file_url' => 'temp/proctor/'.$session->id.'/tab-'.$i.'.jpg',
-                'captured_at' => now()->addSeconds($i),
-            ]);
-        }
-
-        ProctorSnapshot::factory()->for($session)->create([
-            'type' => ProctorSnapshotType::Screen,
-            'triggered_by_event_id' => $windowBlurEvent->id,
-            'file_url' => 'temp/proctor/'.$session->id.'/blur-1.jpg',
-        ]);
-
-        $r2Mock = $this->mock(R2StorageService::class);
-        $r2Mock->shouldReceive('getSignedUrl')->times(6)->andReturn('https://r2.example.com/signed-url');
-
-        $this->actingAs($this->teacher);
-
-        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
-            ->call('loadProctorScreenshotGroups', $this->student->id, 'asc', 5)
-            ->assertReturned(function ($result) {
-                $tabGroup = collect($result['groups'])->firstWhere('eventType', 'tab_switch');
-                $blurGroup = collect($result['groups'])->firstWhere('eventType', 'window_blur');
-
-                return $tabGroup['total'] === 7
-                    && count($tabGroup['items']) === 5
-                    && $tabGroup['hasMore'] === true
-                    && $blurGroup['total'] === 1
-                    && count($blurGroup['items']) === 1
-                    && $blurGroup['hasMore'] === false;
-            });
     }
 
     public function test_student_sees_continue_exam_for_in_progress_unsubmitted_attempt(): void
@@ -784,5 +556,70 @@ class AssessmentFinalExamShowTest extends TestCase
             ->assertStatus(403);
 
         $this->assertDatabaseHas('exam_reference_files', ['id' => $ownFile->id]);
+    }
+
+    public function test_reset_student_exam_button_only_visible_in_local_environment(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
+        AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
+
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertDontSee('Reset Exam (Dev)');
+
+        $this->app['env'] = 'local';
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Reset Exam (Dev)');
+    }
+
+    public function test_reset_student_exam_deletes_attempt_score_and_r2_recordings(): void
+    {
+        $this->app['env'] = 'local';
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
+
+        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
+        AssessmentScore::factory()->for($attempt, 'attempt')->create(['score' => 90]);
+        $session = ProctorSession::factory()->for($attempt, 'attempt')->create();
+        $snapshot = ProctorSnapshot::factory()->for($session)->create(['file_url' => 'schools/demo/proctor/'.$session->id.'/screenshot-1.jpg']);
+
+        $r2Mock = $this->mock(R2StorageService::class);
+        $r2Mock->shouldReceive('delete')->once()->with($snapshot->file_url)->andReturn(true);
+
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->call('resetStudentExam', $this->student->id)
+            ->assertSee('Exam attempt reset for this student.');
+
+        $this->assertDatabaseMissing('assessment_attempts', ['id' => $attempt->id]);
+        $this->assertDatabaseMissing('assessment_scores', ['assessment_attempt_id' => $attempt->id]);
+        $this->assertDatabaseMissing('proctor_sessions', ['id' => $session->id]);
+    }
+
+    public function test_reset_student_exam_returns_404_outside_local_environment(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
+        AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
+
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->call('resetStudentExam', $this->student->id)
+            ->assertStatus(404);
+    }
+
+    public function test_reset_student_exam_requires_grade_permission(): void
+    {
+        $this->app['env'] = 'local';
+        $this->teacher->givePermissionTo(['assessment.view']);
+        AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
+
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->call('resetStudentExam', $this->student->id)
+            ->assertStatus(403);
     }
 }

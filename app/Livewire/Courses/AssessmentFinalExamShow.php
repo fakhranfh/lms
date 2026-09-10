@@ -2,29 +2,22 @@
 
 namespace App\Livewire\Courses;
 
-use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
 use App\Enums\MaterialType;
 use App\Enums\ProctorReviewDecision;
-use App\Enums\ProctorSnapshotType;
 use App\Enums\RoleName;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\ExamReferenceFile;
-use App\Models\ProctorSnapshot;
 use App\Services\AssessmentAnswerService;
 use App\Services\AssessmentAttemptService;
-use App\Services\AssessmentQuestionAnswerService;
-use App\Services\AssessmentQuestionScoreService;
 use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
 use App\Services\ExamReferenceFileService;
 use App\Services\FinalExamService;
-use App\Services\GradebookScoringService;
 use App\Services\ProctorSessionService;
-use App\Services\ProctorSnapshotService;
 use App\Services\R2StorageService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
@@ -54,29 +47,11 @@ class AssessmentFinalExamShow extends Component
 
     public string $submissionFilter = '';
 
-    public ?string $gradingUserId = null;
-
-    public string $gradeScore = '';
-
-    public string $gradeFeedback = '';
-
     public ?string $errorMessage = null;
 
     public ?string $successMessage = null;
 
     public ?string $referenceFileError = null;
-
-    public array $gradeQuestionScores = [];
-
-    /**
-     * @var array<string, string>
-     */
-    public array $reviewDecision = [];
-
-    /**
-     * @var array<string, string>
-     */
-    public array $reviewNotes = [];
 
     public function mount(CurrentSchool $currentSchool, CoursePersonService $coursePersonService, ?Course $course = null, ?Assessment $assessment = null): void
     {
@@ -99,6 +74,7 @@ class AssessmentFinalExamShow extends Component
 
         $this->course = $course;
         $this->assessment = $assessment;
+        $this->successMessage = session('successMessage');
     }
 
     public function updating(string $property): void
@@ -295,285 +271,32 @@ class AssessmentFinalExamShow extends Component
         $examReferenceFileService->deleteAllForAssessmentAndUser($this->assessment->id, auth()->id());
     }
 
-    public function reviewProctorSession(
-        string $proctorSessionId,
-        ProctorSessionService $proctorSessionService,
-        AssessmentScoreService $assessmentScoreService,
-        AssessmentAttemptService $assessmentAttemptService,
-        GradebookScoringService $gradebookScoringService,
-    ): void {
-        abort_unless(auth()->user()->can('assessment.grade'), 403);
-
-        $decisionEnum = ProctorReviewDecision::from($this->reviewDecision[$proctorSessionId] ?? 'no_action');
-        $notes = $this->reviewNotes[$proctorSessionId] ?? null;
-
-        $session = $proctorSessionService->update($proctorSessionId, [
-            'reviewed_by' => auth()->id(),
-            'reviewed_at' => now(),
-            'review_decision' => $decisionEnum,
-            'review_notes' => $notes,
-        ]);
-
-        if ($decisionEnum === ProctorReviewDecision::Disqualified) {
-            $score = $assessmentScoreService->findByAttempt($session->assessment_attempt_id);
-
-            if ($score) {
-                $assessmentScoreService->update($score->id, ['score' => 0]);
-            } else {
-                $assessmentScoreService->create([
-                    'assessment_attempt_id' => $session->assessment_attempt_id,
-                    'score' => 0,
-                    'graded_by' => auth()->id(),
-                    'graded_at' => now(),
-                    'feedback' => __('Disqualified due to proctoring violation.'),
-                ]);
-            }
-
-            $attempt = $assessmentAttemptService->find($session->assessment_attempt_id);
-            if ($attempt !== null) {
-                $gradebookScoringService->recomputeForUser($this->course, $attempt->user_id);
-            }
-        }
-
-        $this->successMessage = __('Proctoring review saved.');
-    }
-
-    public function recordingUrl(string $key): string
-    {
-        abort_unless(auth()->user()->can('assessment.grade'), 403);
-        abort_unless(str_contains($key, '/proctor/'), 403);
-
-        return app(R2StorageService::class)->getSignedUrl($key, 3600);
-    }
-
     /**
-     * Loaded on demand when the teacher opens the screenshot review modal
-     * for a student, and re-loaded whenever they change the event-type
-     * filter, sort order, or group-by-event toggle, rather than eagerly
-     * signing URLs for every student's every screenshot on every page
-     * load. Filtering/sorting/pagination happens in the repository at
-     * the database level — nothing is loaded into memory beyond the
-     * current page.
-     *
-     * @return array{items: array<int, array{url: string, capturedAt: string, capturedAtEpoch: int, eventType: string, eventTypeLabel: string}>, eventTypeOptions: array<int, string>, hasMore: bool}
+     * Dev-only convenience for re-testing the exam flow without a database
+     * reset: wipes a student's attempt(s) for this final exam, including
+     * their R2 proctor recordings/screenshots, so they show as not
+     * submitted again. FK cascadeOnDelete on assessment_attempts takes
+     * care of scores, answers, question answers/scores, and proctor
+     * sessions/events/snapshots.
      */
-    public function loadProctorScreenshots(
-        string $userId,
-        AssessmentAttemptService $assessmentAttemptService,
-        ProctorSessionService $proctorSessionService,
-        ProctorSnapshotService $proctorSnapshotService,
-        R2StorageService $r2StorageService,
-        ?string $eventType = null,
-        string $sort = 'asc',
-        int $offset = 0,
-        int $limit = 5,
-    ): array {
+    public function resetStudentExam(string $userId, AssessmentAttemptService $assessmentAttemptService, R2StorageService $r2StorageService): void
+    {
+        abort_unless(app()->isLocal(), 404);
         abort_unless(auth()->user()->can('assessment.grade'), 403);
 
-        $proctorSessionId = $this->resolveProctorSessionId($userId, $assessmentAttemptService, $proctorSessionService);
+        $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $userId);
 
-        $page = $proctorSnapshotService->paginateScreenshotsForSession($proctorSessionId, $eventType, $sort, $offset, $limit);
+        foreach ($attempts as $attempt) {
+            $attempt->loadMissing('proctorSession.snapshots');
 
-        return [
-            'items' => $page['items']->map(fn ($shot) => $this->formatProctorScreenshotItem($shot, $r2StorageService))->values()->all(),
-            'eventTypeOptions' => $proctorSnapshotService->screenshotEventTypesForSession($proctorSessionId),
-            'hasMore' => ($offset + $limit) < $page['total'],
-        ];
-    }
-
-    /**
-     * Groups screenshots by event type (counts computed from the full set
-     * in the repository, so a group's badge count is always accurate),
-     * then loads only each group's first N items. loadProctorScreenshots()
-     * handles paginating further within a group.
-     *
-     * @return array{groups: array<int, array{eventType: string, label: string, total: int, hasMore: bool, items: array<int, array{url: string, capturedAt: string, capturedAtEpoch: int, eventType: string, eventTypeLabel: string}>}>, eventTypeOptions: array<int, string>}
-     */
-    public function loadProctorScreenshotGroups(
-        string $userId,
-        AssessmentAttemptService $assessmentAttemptService,
-        ProctorSessionService $proctorSessionService,
-        ProctorSnapshotService $proctorSnapshotService,
-        R2StorageService $r2StorageService,
-        string $sort = 'asc',
-        int $limitPerGroup = 5,
-    ): array {
-        abort_unless(auth()->user()->can('assessment.grade'), 403);
-
-        $proctorSessionId = $this->resolveProctorSessionId($userId, $assessmentAttemptService, $proctorSessionService);
-
-        $eventTypeOptions = $proctorSnapshotService->screenshotEventTypesForSession($proctorSessionId);
-
-        $groups = collect($eventTypeOptions)->map(function ($eventType) use ($proctorSessionId, $proctorSnapshotService, $r2StorageService, $sort, $limitPerGroup) {
-            $page = $proctorSnapshotService->paginateScreenshotsForSession($proctorSessionId, $eventType, $sort, 0, $limitPerGroup);
-
-            return [
-                'eventType' => $eventType,
-                'label' => $eventType === 'none' ? 'Other' : str($eventType)->replace('_', ' ')->title()->toString(),
-                'total' => $page['total'],
-                'hasMore' => $limitPerGroup < $page['total'],
-                'items' => $page['items']->map(fn ($shot) => $this->formatProctorScreenshotItem($shot, $r2StorageService))->values()->all(),
-            ];
-        })->values()->all();
-
-        return [
-            'groups' => $groups,
-            'eventTypeOptions' => $eventTypeOptions,
-        ];
-    }
-
-    private function resolveProctorSessionId(string $userId, AssessmentAttemptService $assessmentAttemptService, ProctorSessionService $proctorSessionService): string
-    {
-        $latest = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $userId)->last();
-        abort_if($latest === null, 404);
-
-        $proctorSession = $proctorSessionService->findByAttempt($latest->id);
-        abort_if($proctorSession === null, 404);
-
-        return $proctorSession->id;
-    }
-
-    /**
-     * @return array{url: string, cameraUrl: ?string, capturedAt: string, capturedAtEpoch: int, eventType: string, eventTypeLabel: string}
-     */
-    private function formatProctorScreenshotItem(ProctorSnapshot $shot, R2StorageService $r2StorageService): array
-    {
-        $eventType = $shot->triggeredByEvent?->event_type->value ?? 'none';
-        $pairedWebcam = $shot->relationLoaded('pairedWebcam') ? $shot->getRelation('pairedWebcam') : null;
-
-        return [
-            'url' => $r2StorageService->getSignedUrl($shot->file_url, 3600),
-            'cameraUrl' => $pairedWebcam ? $r2StorageService->getSignedUrl($pairedWebcam->file_url, 3600) : null,
-            'capturedAt' => $shot->captured_at_display->format('M j, Y H:i:s'),
-            'capturedAtEpoch' => $shot->captured_at_display->timestamp,
-            'eventType' => $eventType,
-            'eventTypeLabel' => $eventType === 'none' ? 'Other' : str($eventType)->replace('_', ' ')->title()->toString(),
-        ];
-    }
-
-    public function openGrading(string $userId, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, AssessmentQuestionAnswerService $assessmentQuestionAnswerService): void
-    {
-        abort_unless(auth()->user()->can('assessment.grade'), 403);
-
-        $attempt = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $userId)->last();
-
-        if (! $attempt) {
-            return;
-        }
-
-        $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
-        $questionScores = $assessmentQuestionScoreService->findByAttempt($attempt->id);
-        $questionAnswers = $assessmentQuestionAnswerService->forAttempt($attempt->id);
-
-        $this->gradingUserId = $userId;
-        $this->gradeFeedback = $existingScore ? ($existingScore->feedback ?? '') : '';
-
-        $this->gradeQuestionScores = [];
-        foreach ($this->assessment->questions as $question) {
-            if ($question->question_type !== AssessmentQuestionType::Essay) {
-                continue;
-            }
-
-            $qAnswer = $questionAnswers->firstWhere('assessment_question_id', $question->id);
-            if ($qAnswer) {
-                $this->gradeQuestionScores[$question->id] = $qAnswer->score !== null ? (string) $qAnswer->score : '';
-
-                continue;
-            }
-
-            $qScore = $questionScores->firstWhere('assessment_question_id', $question->id);
-            $this->gradeQuestionScores[$question->id] = $qScore ? (string) $qScore->score : '';
-        }
-    }
-
-    public function cancelGrading(): void
-    {
-        $this->gradingUserId = null;
-        $this->gradeScore = '';
-        $this->gradeFeedback = '';
-    }
-
-    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, AssessmentQuestionAnswerService $assessmentQuestionAnswerService, GradebookScoringService $gradebookScoringService): void
-    {
-        abort_unless(auth()->user()->can('assessment.grade'), 403);
-        abort_unless($this->gradingUserId !== null, 404);
-
-        $this->validate([
-            'gradeFeedback' => 'nullable|string',
-        ]);
-
-        $attempt = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $this->gradingUserId)->last();
-        abort_unless($attempt !== null, 404);
-
-        $questionAnswers = $assessmentQuestionAnswerService->forAttempt($attempt->id);
-        $usesAnswerPipeline = $questionAnswers->isNotEmpty();
-
-        $gradableQuestions = $usesAnswerPipeline
-            ? $this->assessment->questions->filter(fn ($question) => $question->question_type === AssessmentQuestionType::Essay)
-            : $this->assessment->questions;
-
-        $totalScore = $usesAnswerPipeline
-            ? (float) $questionAnswers->filter(fn ($answer) => $answer->score !== null)->sum('score')
-            : 0.0;
-
-        foreach ($gradableQuestions as $question) {
-            $score = $this->gradeQuestionScores[$question->id] ?? '';
-            if ($score === '') {
-                $this->addError("gradeQuestionScores.{$question->id}", __('Score is required'));
-
-                continue;
-            }
-
-            if (! is_numeric($score) || (float) $score < 0 || (float) $score > $question->points) {
-                $this->addError("gradeQuestionScores.{$question->id}", __('Score must be between 0 and '.$question->points));
-
-                continue;
-            }
-
-            $totalScore += (float) $score;
-        }
-
-        if ($this->getErrorBag()->isNotEmpty()) {
-            return;
-        }
-
-        foreach ($gradableQuestions as $question) {
-            $score = (float) $this->gradeQuestionScores[$question->id];
-
-            if ($usesAnswerPipeline) {
-                $answer = $questionAnswers->firstWhere('assessment_question_id', $question->id);
-                if ($answer) {
-                    $assessmentQuestionAnswerService->update($answer->id, ['score' => $score]);
-                }
-
-                continue;
-            }
-
-            $assessmentQuestionScoreService->updateOrCreate(
-                ['assessment_attempt_id' => $attempt->id, 'assessment_question_id' => $question->id],
-                ['score' => $score]
+            $attempt->proctorSession?->snapshots->each(
+                fn ($snapshot) => $r2StorageService->delete($snapshot->file_url)
             );
+
+            $assessmentAttemptService->delete($attempt->id);
         }
 
-        $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
-        $data = [
-            'assessment_attempt_id' => $attempt->id,
-            'score' => $totalScore,
-            'graded_by' => auth()->id(),
-            'graded_at' => now(),
-            'feedback' => $this->gradeFeedback ?: null,
-        ];
-
-        if ($existingScore) {
-            $assessmentScoreService->update($existingScore->id, $data);
-        } else {
-            $assessmentScoreService->create($data);
-        }
-
-        $gradebookScoringService->recomputeForUser($this->course, $this->gradingUserId);
-
-        $this->cancelGrading();
-        $this->successMessage = __('Grade saved.');
+        $this->successMessage = __('Exam attempt reset for this student.');
     }
 
     public function render(
@@ -581,8 +304,6 @@ class AssessmentFinalExamShow extends Component
         AssessmentAttemptService $assessmentAttemptService,
         AssessmentAnswerService $assessmentAnswerService,
         AssessmentScoreService $assessmentScoreService,
-        AssessmentQuestionScoreService $assessmentQuestionScoreService,
-        AssessmentQuestionAnswerService $assessmentQuestionAnswerService,
         FinalExamService $finalExamService,
         ProctorSessionService $proctorSessionService,
         ExamReferenceFileService $examReferenceFileService,
@@ -602,6 +323,7 @@ class AssessmentFinalExamShow extends Component
             'canGrade' => auth()->user()->can('assessment.grade'),
             'canSubmit' => auth()->user()->can('assessment.submit'),
             'canEdit' => auth()->user()->can('assessment.edit'),
+            'isLocal' => app()->isLocal(),
             'courseTabs' => CourseTabs::build($this->course, 'assessment'),
             'teacher' => $this->isStudent
                 ? $coursePersonService->teachersForCourse($this->course->id)->first()?->user
@@ -675,45 +397,24 @@ class AssessmentFinalExamShow extends Component
                 )->values();
             }
 
-            $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentAnswerService, $assessmentScoreService, $assessmentQuestionScoreService, $assessmentQuestionAnswerService, $proctorSessionService, $isProctored) {
+            $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentAnswerService, $assessmentScoreService, $proctorSessionService, $isProctored) {
                 $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $coursePerson->user_id);
                 $latest = $attempts->last();
                 $score = $latest ? $assessmentScoreService->findByAttempt($latest->id) : null;
                 $answer = $latest ? $assessmentAnswerService->findByAttempt($latest->id) : null;
-                $questionScores = $latest ? $assessmentQuestionScoreService->findByAttempt($latest->id) : collect();
-                $questionAnswers = $latest ? $assessmentQuestionAnswerService->forAttempt($latest->id) : collect();
                 $proctorSession = ($isProctored && $latest)
-                    ? $proctorSessionService->findByAttempt($latest->id, ['events', 'snapshots'])
+                    ? $proctorSessionService->findByAttempt($latest->id)
                     : null;
-
-                $recordings = $proctorSession
-                    ? $proctorSession->snapshots->where('type', ProctorSnapshotType::Recording)->sortBy('captured_at')
-                    : collect();
 
                 $isInProgress = $latest !== null && $latest->submitted_at === null;
                 $pendingProctorReview = $proctorSession !== null && $proctorSession->reviewed_at === null && ! $isInProgress;
-
-                // Screenshot count only — no signed URLs generated here. The
-                // actual items (with signed URLs) are loaded on demand via
-                // loadProctorScreenshots() when the teacher opens the modal,
-                // so we're not signing URLs for every student's every
-                // screenshot on every page load.
-                $screenshotsCount = $proctorSession
-                    ? $proctorSession->snapshots->where('type', ProctorSnapshotType::Screen)->count()
-                    : 0;
 
                 return [
                     'user' => $coursePerson->user,
                     'attempt' => $latest,
                     'answer' => $answer,
                     'score' => $score,
-                    'questionScores' => $questionScores->keyBy('assessment_question_id'),
-                    'questionAnswers' => $questionAnswers->keyBy('assessment_question_id'),
-                    'proctorSession' => $proctorSession,
                     'pendingProctorReview' => $pendingProctorReview,
-                    'cameraRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'webcam-recording'))->values(),
-                    'screenRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'screen-recording'))->values(),
-                    'screenshotsCount' => $screenshotsCount,
                 ];
             })->values();
 

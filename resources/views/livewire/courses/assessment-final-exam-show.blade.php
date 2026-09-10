@@ -192,30 +192,32 @@
                     <p class="text-body-sm text-on-surface-variant">Your submission is pending proctoring review. You'll be notified once it's graded.</p>
                 </div>
             @elseif ($latestScore)
-                <div class="p-space-lg {{ $isDisqualified ? 'bg-error/5 border border-error/20' : 'bg-success/5 border border-success/20' }} rounded-lg space-y-space-md">
-                    <div class="flex items-center gap-space-sm">
-                        <span class="material-symbols-outlined {{ $isDisqualified ? 'text-error' : 'text-success' }}" data-weight="fill">{{ $isDisqualified ? 'cancel' : 'check_circle' }}</span>
-                        <p class="font-label-md text-label-md text-on-surface">Score: {{ rtrim(rtrim(number_format($latestScore->score, 2), '0'), '.') }}</p>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-space-lg">
+                    <div class="aspect-square {{ $isDisqualified ? 'bg-error/5 border border-error/20' : 'bg-primary/5 border border-primary/20' }} rounded-lg flex flex-col items-center justify-center text-center p-space-md">
+                        <p class="text-body-sm text-on-surface-variant uppercase tracking-wide">Score</p>
+                        <p class="font-headline-lg leading-none {{ $isDisqualified ? 'text-error' : 'text-primary' }} text-[6rem]">{{ rtrim(rtrim(number_format($latestScore->score, 2), '0'), '.') }}</p>
                     </div>
 
-                    @if ($latestScore->feedback)
-                        <div>
-                            <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Feedback</p>
-                            <p class="text-body-sm text-on-surface">{{ $latestScore->feedback }}</p>
-                        </div>
-                    @endif
+                    <div class="md:col-span-3 space-y-space-md">
+                        @if ($latestScore->feedback)
+                            <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
+                                <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Feedback</p>
+                                <p class="text-body-sm text-on-surface">{{ $latestScore->feedback }}</p>
+                            </div>
+                        @endif
 
-                    @if ($isProctored && $latestProctorSession)
-                        <div>
-                            <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Proctoring Result</p>
-                            <p class="text-body-sm text-on-surface font-medium">
-                                {{ $latestProctorSession->review_decision ? str($latestProctorSession->review_decision->value)->replace('_', ' ')->title() : 'No Action' }}
-                            </p>
-                            @if ($latestProctorSession->review_notes)
-                                <p class="text-body-sm text-on-surface-variant mt-space-xs">{{ $latestProctorSession->review_notes }}</p>
-                            @endif
-                        </div>
-                    @endif
+                        @if ($isProctored && $latestProctorSession)
+                            <div class="p-space-lg bg-surface-container/50 border border-outline-variant rounded-lg">
+                                <p class="text-body-xs text-on-surface-variant mb-space-xs uppercase tracking-wide">Proctoring Result</p>
+                                <p class="text-body-sm text-on-surface font-medium">
+                                    {{ $latestProctorSession->review_decision ? str($latestProctorSession->review_decision->value)->replace('_', ' ')->title() : 'No Action' }}
+                                </p>
+                                @if ($latestProctorSession->review_notes)
+                                    <p class="text-body-sm text-on-surface-variant mt-space-xs">{{ $latestProctorSession->review_notes }}</p>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
                 </div>
             @elseif (!$canResubmit && $latestAttempt)
                 <div class="flex items-center justify-between gap-space-md">
@@ -900,14 +902,7 @@
                         </p>
                         <div class="rte-content prose prose-sm max-w-none text-on-surface">{!! $question->description !!}</div>
                         @if ($question->question_type === \App\Enums\AssessmentQuestionType::MultipleChoice)
-                            <div class="space-y-space-xs">
-                                @foreach ($question->options as $option)
-                                    <div class="flex items-center gap-space-sm text-body-sm {{ $option->is_correct ? 'text-success font-medium' : 'text-on-surface-variant' }}">
-                                        <span class="material-symbols-outlined text-[16px]">{{ $option->is_correct ? 'check_circle' : 'radio_button_unchecked' }}</span>
-                                        <span class="rte-content">{!! $option->label !!}</span>
-                                    </div>
-                                @endforeach
-                            </div>
+                            <x-assessments.final-exam.question-options-list :question="$question" />
                         @endif
                         @if ($question->files->isNotEmpty())
                             <div class="mt-space-md space-y-space-xs">
@@ -974,7 +969,7 @@
 
                 <x-ui.person-grid wire:loading.remove wire:target="previousPage,nextPage,gotoPage,perPage,studentSearch,submissionFilter">
                 @forelse ($studentRows as $row)
-                    <div wire:key="student-{{ $row['user']->id }}" class="bg-surface p-space-lg">
+                    <div wire:key="student-{{ $row['user']->id }}" class="bg-surface p-space-lg" x-data="{ confirmResetOpen: false }">
                         <div class="flex flex-col items-center text-center gap-space-sm mb-space-md">
                             <x-avatar :user="$row['user']" size="12" />
                             <p class="font-label-lg text-label-lg text-on-surface">{{ $row['user']->name }}</p>
@@ -996,477 +991,66 @@
                                 @endif
                             </span>
 
-                            @if ($canGrade && $row['attempt'])
-                                <button
-                                    type="button"
-                                    wire:click="openGrading('{{ $row['user']->id }}')"
-                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
-                                >
-                                    Grade
-                                </button>
-                            @endif
-                        </div>
-
-                        @if ($isProctored && $row['proctorSession'])
-                            <div
-                                class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md"
-                                x-data="{
-                                    reviewOpen: false,
-                                    cameraModalOpen: false,
-                                    screenModalOpen: false,
-                                    screenshotModalOpen: false,
-                                    lightboxUrl: null,
-                                    screenshotFilter: 'all',
-                                    screenshotGrouped: true,
-                                    screenshotSort: 'asc',
-                                    screenshotUserId: null,
-                                    screenshotItems: [],
-                                    screenshotGroups: [],
-                                    screenshotEventTypeOptions: [],
-                                    screenshotsLoading: false,
-                                    screenshotsLoadingMore: false,
-                                    screenshotHasMore: false,
-                                    init() {
-                                        this.$watch('screenshotFilter', () => this.fetchScreenshots());
-                                        this.$watch('screenshotSort', () => this.fetchScreenshots());
-                                        this.$watch('screenshotGrouped', () => this.fetchScreenshots());
-                                    },
-                                    openScreenshots(userId) {
-                                        this.screenshotModalOpen = true;
-                                        this.screenshotUserId = userId;
-                                        this.fetchScreenshots();
-                                    },
-                                    isGroupedView() {
-                                        return this.screenshotGrouped && this.screenshotFilter === 'all';
-                                    },
-                                    async fetchScreenshots() {
-                                        if (! this.screenshotUserId) { return; }
-                                        this.screenshotsLoading = true;
-                                        try {
-                                            if (this.isGroupedView()) {
-                                                const data = await $wire.loadProctorScreenshotGroups(this.screenshotUserId, this.screenshotSort, 5);
-                                                this.screenshotGroups = data.groups.map((group) => ({ ...group, loadingMore: false }));
-                                                this.screenshotEventTypeOptions = data.eventTypeOptions;
-                                                this.screenshotItems = [];
-                                                this.screenshotHasMore = false;
-                                            } else {
-                                                const eventType = this.screenshotFilter === 'all' ? null : this.screenshotFilter;
-                                                const data = await $wire.loadProctorScreenshots(this.screenshotUserId, eventType, this.screenshotSort, 0, 5);
-                                                this.screenshotItems = data.items;
-                                                this.screenshotEventTypeOptions = data.eventTypeOptions;
-                                                this.screenshotHasMore = data.hasMore;
-                                                this.screenshotGroups = [];
-                                            }
-                                        } finally {
-                                            this.screenshotsLoading = false;
-                                        }
-                                    },
-                                    async loadMoreScreenshots() {
-                                        if (! this.screenshotUserId || ! this.screenshotHasMore || this.screenshotsLoading || this.screenshotsLoadingMore) { return; }
-                                        this.screenshotsLoadingMore = true;
-                                        try {
-                                            const eventType = this.screenshotFilter === 'all' ? null : this.screenshotFilter;
-                                            const data = await $wire.loadProctorScreenshots(this.screenshotUserId, eventType, this.screenshotSort, this.screenshotItems.length, 5);
-                                            this.screenshotItems = [...this.screenshotItems, ...data.items];
-                                            this.screenshotHasMore = data.hasMore;
-                                        } finally {
-                                            this.screenshotsLoadingMore = false;
-                                        }
-                                    },
-                                    async loadMoreGroupScreenshots(group) {
-                                        if (! group.hasMore || group.loadingMore) { return; }
-                                        group.loadingMore = true;
-                                        try {
-                                            const data = await $wire.loadProctorScreenshots(this.screenshotUserId, group.eventType, this.screenshotSort, group.items.length, 5);
-                                            group.items = [...group.items, ...data.items];
-                                            group.hasMore = data.hasMore;
-                                        } finally {
-                                            group.loadingMore = false;
-                                        }
-                                    },
-                                    onScreenshotListScroll(e) {
-                                        if (this.isGroupedView()) { return; }
-                                        const el = e.target;
-                                        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
-                                            this.loadMoreScreenshots();
-                                        }
-                                    },
-                                }"
-                            >
-                                <div class="flex items-center justify-between gap-space-md">
-                                    <div class="flex items-center gap-space-sm text-body-sm">
-                                        <span class="material-symbols-outlined text-[16px]" :class="{}">shield</span>
-                                        <span class="text-on-surface-variant">Proctoring:</span>
-                                        <span class="font-medium text-on-surface">{{ str($row['proctorSession']->status->value)->title() }}</span>
-                                        <span class="text-on-surface-variant">&middot; {{ $row['proctorSession']->events->count() }} event(s)</span>
-                                        @if ($row['proctorSession']->review_decision)
-                                            <span class="inline-flex items-center px-space-sm py-0.5 rounded-full text-body-xs font-medium bg-surface-container text-on-surface-variant">
-                                                Review: {{ str($row['proctorSession']->review_decision->value)->replace('_', ' ')->title() }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                    <button type="button" @click="reviewOpen = !reviewOpen" class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition flex-shrink-0">
-                                        Review
-                                    </button>
-                                </div>
-
-                                <div x-show="reviewOpen" x-cloak class="space-y-space-sm">
-                                    @if ($row['cameraRecordings']->isNotEmpty() || $row['screenRecordings']->isNotEmpty() || $row['screenshotsCount'] > 0)
-                                        <div class="flex items-center gap-space-sm">
-                                            @if ($row['cameraRecordings']->isNotEmpty())
-                                                <button type="button" @click="cameraModalOpen = true" class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition inline-flex items-center gap-space-xs">
-                                                    <span class="material-symbols-outlined text-[16px]">videocam</span>
-                                                    Preview Camera ({{ $row['cameraRecordings']->count() }})
-                                                </button>
-                                            @endif
-
-                                            @if ($row['screenRecordings']->isNotEmpty())
-                                                <button type="button" @click="screenModalOpen = true" class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition inline-flex items-center gap-space-xs">
-                                                    <span class="material-symbols-outlined text-[16px]">screen_share</span>
-                                                    Preview Screen Share ({{ $row['screenRecordings']->count() }})
-                                                </button>
-                                            @endif
-
-                                            @if ($row['screenshotsCount'] > 0)
-                                                <button
-                                                    type="button"
-                                                    @click="openScreenshots(@js($row['user']->id))"
-                                                    class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition inline-flex items-center gap-space-xs"
-                                                >
-                                                    <span class="material-symbols-outlined text-[16px]">photo_camera</span>
-                                                    Preview Screenshots ({{ $row['screenshotsCount'] }})
-                                                </button>
-                                            @endif
-                                        </div>
-
-                                        <template x-teleport="body">
-                                            <div
-                                                x-show="cameraModalOpen"
-                                                x-cloak
-                                                x-transition:enter="transition ease-out duration-200"
-                                                x-transition:enter-start="opacity-0"
-                                                x-transition:enter-end="opacity-100"
-                                                x-transition:leave="transition ease-in duration-150"
-                                                x-transition:leave-start="opacity-100"
-                                                x-transition:leave-end="opacity-0"
-                                                class="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-gutter"
-                                                @click.self="cameraModalOpen = false"
-                                            >
-                                                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-2xl w-full space-y-space-md">
-                                                    <div class="flex items-center justify-between">
-                                                        <h2 class="font-headline-sm text-headline-sm text-on-surface">Camera Recording &middot; {{ $row['user']->name }}</h2>
-                                                        <button type="button" @click="cameraModalOpen = false" class="text-on-surface-variant hover:text-on-surface">
-                                                            <span class="material-symbols-outlined">close</span>
-                                                        </button>
-                                                    </div>
-                                                    <div class="space-y-space-sm max-h-[70vh] overflow-y-auto">
-                                                        @foreach ($row['cameraRecordings'] as $recording)
-                                                            <video controls preload="none" class="w-full rounded-lg bg-black aspect-video" src="{{ $this->recordingUrl($recording->file_url) }}"></video>
-                                                        @endforeach
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </template>
-
-                                        <template x-teleport="body">
-                                            <div
-                                                x-show="screenModalOpen"
-                                                x-cloak
-                                                x-transition:enter="transition ease-out duration-200"
-                                                x-transition:enter-start="opacity-0"
-                                                x-transition:enter-end="opacity-100"
-                                                x-transition:leave="transition ease-in duration-150"
-                                                x-transition:leave-start="opacity-100"
-                                                x-transition:leave-end="opacity-0"
-                                                class="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 px-gutter"
-                                                @click.self="screenModalOpen = false"
-                                            >
-                                                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-2xl w-full space-y-space-md">
-                                                    <div class="flex items-center justify-between">
-                                                        <h2 class="font-headline-sm text-headline-sm text-on-surface">Screen Share Recording &middot; {{ $row['user']->name }}</h2>
-                                                        <button type="button" @click="screenModalOpen = false" class="text-on-surface-variant hover:text-on-surface">
-                                                            <span class="material-symbols-outlined">close</span>
-                                                        </button>
-                                                    </div>
-                                                    <div class="space-y-space-sm max-h-[70vh] overflow-y-auto">
-                                        @foreach ($row['screenRecordings'] as $recording)
-                                                            <video controls preload="none" class="w-full rounded-lg bg-black aspect-video" src="{{ $this->recordingUrl($recording->file_url) }}"></video>
-                                                        @endforeach
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </template>
-
-                                        <template x-teleport="body">
-                                            <div
-                                                x-show="screenshotModalOpen"
-                                                x-cloak
-                                                x-transition:enter="transition ease-out duration-200"
-                                                x-transition:enter-start="opacity-0"
-                                                x-transition:enter-end="opacity-100"
-                                                x-transition:leave="transition ease-in duration-150"
-                                                x-transition:leave-start="opacity-100"
-                                                x-transition:leave-end="opacity-0"
-                                                class="fixed inset-0 z-[110] bg-surface flex flex-col"
-                                            >
-                                                <div class="flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant flex-shrink-0 gap-space-md flex-wrap">
-                                                    <h2 class="font-headline-sm text-headline-sm text-on-surface">Event Screenshots &middot; {{ $row['user']->name }}</h2>
-
-                                                    <div class="flex items-center gap-space-sm flex-wrap">
-                                                        <select x-model="screenshotFilter" class="px-space-sm py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface bg-surface">
-                                                            <option value="all">All event types</option>
-                                                            <template x-for="eventType in screenshotEventTypeOptions" :key="eventType">
-                                                                <option :value="eventType" x-text="eventType === 'none' ? 'Other' : eventType.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())"></option>
-                                                            </template>
-                                                        </select>
-
-                                                        <button
-                                                            type="button"
-                                                            x-show="screenshotFilter !== 'all'"
-                                                            x-cloak
-                                                            @click="screenshotFilter = 'all'"
-                                                            class="inline-flex items-center gap-space-xs px-space-sm py-xs font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface"
-                                                        >
-                                                            <span class="material-symbols-outlined text-[16px]">close</span>
-                                                            Clear filter
-                                                        </button>
-
-                                                        <select x-model="screenshotSort" class="px-space-sm py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface bg-surface">
-                                                            <option value="asc">Oldest first</option>
-                                                            <option value="desc">Newest first</option>
-                                                        </select>
-
-                                                        <label class="inline-flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
-                                                            <input type="checkbox" x-model="screenshotGrouped" class="w-4 h-4 accent-primary" />
-                                                            Group by event
-                                                        </label>
-
-                                                        <button type="button" @click="screenshotModalOpen = false" class="text-on-surface-variant hover:text-on-surface">
-                                                            <span class="material-symbols-outlined">close</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div class="flex-1 overflow-y-auto p-space-lg space-y-space-md" @scroll.debounce.150ms="onScreenshotListScroll($event)">
-                                                    <template x-if="screenshotsLoading">
-                                                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
-                                                            <template x-for="n in 6" :key="n">
-                                                                <div class="animate-pulse bg-surface-container rounded-lg aspect-video"></div>
-                                                            </template>
-                                                        </div>
-                                                    </template>
-
-                                                    <template x-if="!screenshotsLoading && isGroupedView() && screenshotGroups.length === 0">
-                                                        <p class="text-body-sm text-on-surface-variant text-center">No screenshots recorded.</p>
-                                                    </template>
-
-                                                    <template x-if="!screenshotsLoading && ! isGroupedView() && screenshotItems.length === 0">
-                                                        <p class="text-body-sm text-on-surface-variant text-center">No screenshots recorded.</p>
-                                                    </template>
-
-                                                    <template x-if="!screenshotsLoading && isGroupedView() && screenshotGroups.length > 0">
-                                                        <div class="space-y-space-md">
-                                                            <template x-for="group in screenshotGroups" :key="group.eventType">
-                                                                <div class="border border-outline-variant rounded-lg p-space-md space-y-space-sm">
-                                                                    <p class="font-label-sm text-label-sm text-on-surface">
-                                                                        <span x-text="group.label"></span>
-                                                                        <span class="text-body-xs text-on-surface-variant font-normal" x-text="'× ' + group.total"></span>
-                                                                    </p>
-                                                                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
-                                                                        <template x-for="item in group.items" :key="item.url">
-                                                                            <div class="space-y-space-xs">
-                                                                                <div class="grid grid-rows-2 gap-space-xs">
-                                                                                    <div x-data="{ loaded: false }" class="relative">
-                                                                                        <template x-if="item.cameraUrl">
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                @click="lightboxUrl = item.cameraUrl"
-                                                                                                class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
-                                                                                            >
-                                                                                                <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
-                                                                                                <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" :src="item.cameraUrl" alt="Proctor camera screenshot" />
-                                                                                            </button>
-                                                                                        </template>
-                                                                                        <template x-if="!item.cameraUrl">
-                                                                                            <div class="w-full aspect-video rounded-lg bg-surface-container flex items-center justify-center text-body-xs text-on-surface-variant">No camera</div>
-                                                                                        </template>
-                                                                                    </div>
-                                                                                    <div x-data="{ loaded: false }" class="relative">
-                                                                                        <button
-                                                                                            type="button"
-                                                                                            @click="lightboxUrl = item.url"
-                                                                                            class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
-                                                                                        >
-                                                                                            <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
-                                                                                            <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" :src="item.url" alt="Proctor screen screenshot" />
-                                                                                        </button>
-                                                                                    </div>
-                                                                                </div>
-                                                                                <p class="text-body-xs text-on-surface-variant text-center" x-text="item.capturedAt"></p>
-                                                                            </div>
-                                                                        </template>
-                                                                    </div>
-                                                                    <button
-                                                                        type="button"
-                                                                        x-show="group.hasMore"
-                                                                        x-cloak
-                                                                        @click="loadMoreGroupScreenshots(group)"
-                                                                        :disabled="group.loadingMore"
-                                                                        class="text-body-xs text-primary hover:underline disabled:opacity-50 inline-flex items-center gap-space-xs"
-                                                                    >
-                                                                        <span x-show="group.loadingMore" x-cloak class="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>
-                                                                        <span x-text="group.loadingMore ? 'Loading…' : 'Load more'"></span>
-                                                                    </button>
-                                                                </div>
-                                                            </template>
-                                                        </div>
-                                                    </template>
-
-                                                    <template x-if="!screenshotsLoading && ! isGroupedView() && screenshotItems.length > 0">
-                                                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm">
-                                                            <template x-for="item in screenshotItems" :key="item.url">
-                                                                <div class="space-y-space-xs">
-                                                                    <div class="grid grid-rows-2 gap-space-xs">
-                                                                        <div x-data="{ loaded: false }" class="relative">
-                                                                            <template x-if="item.cameraUrl">
-                                                                                <button
-                                                                                    type="button"
-                                                                                    @click="lightboxUrl = item.cameraUrl"
-                                                                                    class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
-                                                                                >
-                                                                                    <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
-                                                                                    <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" :src="item.cameraUrl" alt="Proctor camera screenshot" />
-                                                                                </button>
-                                                                            </template>
-                                                                            <template x-if="!item.cameraUrl">
-                                                                                <div class="w-full aspect-video rounded-lg bg-surface-container flex items-center justify-center text-body-xs text-on-surface-variant">No camera</div>
-                                                                            </template>
-                                                                        </div>
-                                                                        <div x-data="{ loaded: false }" class="relative">
-                                                                            <button
-                                                                                type="button"
-                                                                                @click="lightboxUrl = item.url"
-                                                                                class="relative block w-full aspect-video rounded-lg overflow-hidden bg-surface-container cursor-zoom-in"
-                                                                            >
-                                                                                <div x-show="!loaded" x-cloak class="absolute inset-0 animate-pulse bg-surface-container"></div>
-                                                                                <img loading="lazy" @load="loaded = true" :class="loaded ? 'opacity-100' : 'opacity-0'" class="w-full h-full rounded-lg bg-black object-cover transition-opacity duration-300" :src="item.url" alt="Proctor screen screenshot" />
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                    <p class="text-body-xs text-on-surface-variant text-center" x-text="item.capturedAt + ' · ' + item.eventTypeLabel"></p>
-                                                                </div>
-                                                            </template>
-                                                        </div>
-                                                    </template>
-
-                                                    <template x-if="screenshotsLoadingMore">
-                                                        <div class="flex justify-center pt-space-sm">
-                                                            <span class="material-symbols-outlined animate-spin text-on-surface-variant text-[20px]">progress_activity</span>
-                                                        </div>
-                                                    </template>
-                                                </div>
-                                            </div>
-                                        </template>
-
-                                        <template x-teleport="body">
-                                            <div
-                                                x-show="lightboxUrl"
-                                                x-cloak
-                                                x-transition:enter="transition ease-out duration-150"
-                                                x-transition:enter-start="opacity-0"
-                                                x-transition:enter-end="opacity-100"
-                                                x-transition:leave="transition ease-in duration-100"
-                                                x-transition:leave-start="opacity-100"
-                                                x-transition:leave-end="opacity-0"
-                                                class="fixed inset-0 z-[120] bg-black/90 flex items-center justify-center"
-                                                @click.self="lightboxUrl = null"
-                                                @keydown.escape.window="lightboxUrl = null"
-                                            >
-                                                <button type="button" @click="lightboxUrl = null" class="absolute top-space-lg right-space-lg text-white/80 hover:text-white">
-                                                    <span class="material-symbols-outlined text-[32px]">close</span>
-                                                </button>
-                                                <img :src="lightboxUrl" class="max-w-[95vw] max-h-[95vh] object-contain" alt="Proctor screenshot full view" />
-                                            </div>
-                                        </template>
-                                    @endif
-
-                                    <div class="flex items-end gap-space-sm">
-                                        <div class="flex-1">
-                                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Decision</label>
-                                            <select wire:model="reviewDecision.{{ $row['proctorSession']->id }}" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-sm text-body-sm">
-                                                <option value="no_action" @selected(($row['proctorSession']->review_decision?->value ?? 'no_action') === 'no_action')>No Action</option>
-                                                <option value="warning" @selected($row['proctorSession']->review_decision?->value === 'warning')>Warning</option>
-                                                <option value="disqualified" @selected($row['proctorSession']->review_decision?->value === 'disqualified')>Disqualified</option>
-                                            </select>
-                                        </div>
-                                        <div class="flex-1">
-                                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Notes</label>
-                                            <input type="text" wire:model="reviewNotes.{{ $row['proctorSession']->id }}" value="{{ $row['proctorSession']->review_notes }}" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-sm text-body-sm" />
-                                        </div>
-                                        <button type="button" wire:click="reviewProctorSession('{{ $row['proctorSession']->id }}')" class="px-space-md py-space-sm bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity flex-shrink-0">
-                                            Save
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-
-                        @if ($gradingUserId === $row['user']->id)
-                            <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md">
-                                @if ($row['answer'])
-                                    <div class="rte-content text-body-sm text-on-surface-variant">{!! $row['answer']->answer_text !!}</div>
+                            <div class="flex items-center gap-space-sm">
+                                @if ($canGrade && $row['attempt'])
+                                    <a
+                                        href="{{ route('assessments.final-exam.grade', [$assessment, $row['user']]) }}"
+                                        wire:navigate
+                                        class="px-space-md py-space-xs border border-outline rounded-lg font-label-sm text-label-sm text-on-surface hover:bg-surface-container transition"
+                                    >
+                                        Grade
+                                    </a>
                                 @endif
 
-                                <form wire:submit="submitGrade" class="space-y-space-md">
-                                    <div class="space-y-space-md">
-                                        <h4 class="font-label-md text-label-md text-on-surface">Question Scores</h4>
-                                        @foreach ($assessment->questions as $question)
-                                            @php($questionAnswer = $row['questionAnswers']->get($question->id))
-                                            <div>
-                                                <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
-                                                    Question {{ $loop->iteration }} ({{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts)
-                                                </label>
-
-                                                @if ($questionAnswer && $question->question_type->value === 'multiple_choice')
-                                                    <div class="rte-content text-body-sm text-on-surface-variant mb-space-xs">
-                                                        {!! optional($question->options->firstWhere('id', $questionAnswer->selected_option_id))->label ?? __('No answer submitted.') !!}
-                                                    </div>
-                                                    <p class="font-body-sm text-body-sm text-on-surface">
-                                                        {{ __('Auto-graded') }}: {{ rtrim(rtrim(number_format($questionAnswer->score ?? 0, 2), '0'), '.') }} / {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }}
-                                                    </p>
-                                                @else
-                                                    @if ($questionAnswer)
-                                                        <div class="rte-content text-body-sm text-on-surface-variant mb-space-xs">{!! $questionAnswer->answer_text ?? __('No answer submitted.') !!}</div>
-                                                    @endif
-                                                    <input
-                                                        type="number"
-                                                        step="0.01"
-                                                        min="0"
-                                                        max="{{ $question->points }}"
-                                                        wire:model="gradeQuestionScores.{{ $question->id }}"
-                                                        class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                                    />
-                                                    @error("gradeQuestionScores.{$question->id}") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
-                                                @endif
-                                            </div>
-                                        @endforeach
-                                    </div>
-
-                                    <div>
-                                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Feedback</label>
-                                        <textarea wire:model="gradeFeedback" rows="3" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"></textarea>
-                                    </div>
-
-                                    <div class="flex gap-space-md">
-                                        <button type="button" wire:click="cancelGrading" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
-                                            Cancel
-                                        </button>
-                                        <button type="submit" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
-                                            Save Grade
-                                        </button>
-                                    </div>
-                                </form>
+                                @if ($isLocal && $canGrade && $row['attempt'])
+                                    <button
+                                        type="button"
+                                        @click="confirmResetOpen = true"
+                                        class="px-space-md py-space-xs border border-error text-error rounded-lg font-label-sm text-label-sm hover:bg-error/10 transition"
+                                    >
+                                        Reset Exam (Dev)
+                                    </button>
+                                @endif
                             </div>
+                        </div>
+
+                        @if ($isLocal && $canGrade && $row['attempt'])
+                            <template x-teleport="body">
+                                <div
+                                    x-show="confirmResetOpen"
+                                    x-cloak
+                                    x-transition:enter="transition ease-out duration-200"
+                                    x-transition:enter-start="opacity-0"
+                                    x-transition:enter-end="opacity-100"
+                                    x-transition:leave="transition ease-in duration-150"
+                                    x-transition:leave-start="opacity-100"
+                                    x-transition:leave-end="opacity-0"
+                                    class="fixed inset-0 z-[130] flex items-center justify-center bg-black/50 px-gutter"
+                                    @click.self="confirmResetOpen = false"
+                                >
+                                    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg">
+                                        <h2 class="font-headline-sm text-headline-sm text-on-surface">Reset exam for {{ $row['user']->name }}?</h2>
+                                        <p class="font-body-md text-body-md text-secondary">
+                                            This permanently deletes this student's attempt(s), scores, and proctor recordings/screenshots from R2, so the exam shows as not submitted again. Dev-only, cannot be undone.
+                                        </p>
+                                        <div class="flex items-center justify-end gap-space-md">
+                                            <button type="button" @click="confirmResetOpen = false" class="px-space-lg py-space-sm font-label-md text-label-md text-secondary hover:underline">Cancel</button>
+                                            <button
+                                                type="button"
+                                                wire:click="resetStudentExam('{{ $row['user']->id }}')"
+                                                wire:loading.attr="disabled"
+                                                wire:target="resetStudentExam('{{ $row['user']->id }}')"
+                                                @click="confirmResetOpen = false"
+                                                class="px-space-lg py-space-sm bg-error text-white rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                            >
+                                                Reset Exam
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
                         @endif
+
                     </div>
                 @empty
                     <div class="bg-surface p-space-lg text-center text-body-sm text-on-surface-variant col-span-full">

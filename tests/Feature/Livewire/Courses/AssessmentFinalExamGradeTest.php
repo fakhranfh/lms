@@ -246,7 +246,7 @@ class AssessmentFinalExamGradeTest extends TestCase
         $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
 
         $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
-        ProctorSession::factory()->for($attempt, 'attempt')->create([
+        $session = ProctorSession::factory()->for($attempt, 'attempt')->create([
             'reviewed_at' => now(),
             'reviewed_by' => $this->teacher->id,
         ]);
@@ -255,7 +255,9 @@ class AssessmentFinalExamGradeTest extends TestCase
 
         Livewire::test(AssessmentFinalExamGrade::class, ['assessment' => $this->assessment, 'student' => $this->student])
             ->assertSeeHtml('confirmReReviewOpen = true')
-            ->assertSee('This proctoring session has already been reviewed');
+            ->assertSee('This proctoring session has already been reviewed')
+            ->assertSeeHtml('wire:model="reviewDecision.'.$session->id.'" disabled')
+            ->assertSeeHtml('wire:model="reviewNotes.'.$session->id.'" value="" disabled');
     }
 
     public function test_multiple_choice_shows_student_answer_correct_answer_and_correctness(): void

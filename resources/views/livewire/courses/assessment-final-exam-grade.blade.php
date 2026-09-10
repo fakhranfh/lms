@@ -177,7 +177,7 @@
                     <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg">
                         <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ __('This exam has already been graded') }}</h2>
                         <p class="font-body-md text-body-md text-secondary">
-                            {{ __('This exam has already been graded and cannot be graded again. To change the score, use Reset Exam (Dev) on the submissions page first.') }}
+                            {{ __('This exam has already been graded and cannot be graded again.') }}
                         </p>
                         <div class="flex items-center justify-end gap-space-md">
                             <button type="button" @click="confirmRegradeOpen = false" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">Close</button>
@@ -566,7 +566,7 @@
                     <div class="flex items-end gap-space-sm">
                         <div class="flex-1">
                             <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Decision</label>
-                            <select wire:model="reviewDecision.{{ $proctorSession->id }}" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-sm text-body-sm">
+                            <select wire:model="reviewDecision.{{ $proctorSession->id }}" @disabled($alreadyReviewed) class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-sm text-body-sm disabled:opacity-50 disabled:cursor-not-allowed">
                                 <option value="no_action" @selected(($proctorSession->review_decision?->value ?? 'no_action') === 'no_action')>No Action</option>
                                 <option value="warning" @selected($proctorSession->review_decision?->value === 'warning')>Warning</option>
                                 <option value="disqualified" @selected($proctorSession->review_decision?->value === 'disqualified')>Disqualified</option>
@@ -574,7 +574,7 @@
                         </div>
                         <div class="flex-1">
                             <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Notes</label>
-                            <input type="text" wire:model="reviewNotes.{{ $proctorSession->id }}" value="{{ $proctorSession->review_notes }}" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-sm text-body-sm" />
+                            <input type="text" wire:model="reviewNotes.{{ $proctorSession->id }}" value="{{ $proctorSession->review_notes }}" @disabled($alreadyReviewed) class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-sm text-body-sm disabled:opacity-50 disabled:cursor-not-allowed" />
                         </div>
                         <button
                             type="button"

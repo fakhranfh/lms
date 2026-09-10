@@ -2,16 +2,15 @@
 
 namespace App\Jobs;
 
+use App\Enums\AssessmentQuestionType;
 use App\Enums\ProctorSessionStatus;
-use App\Enums\QuizQuestionType;
 use App\Services\AssessmentAttemptService;
-use App\Services\AssessmentQuizAnswerService;
+use App\Services\AssessmentQuestionAnswerService;
+use App\Services\AssessmentQuestionAttemptScoringService;
 use App\Services\AssessmentService;
 use App\Services\GradebookScoringService;
 use App\Services\ProctorExamAnswersService;
 use App\Services\ProctorSessionService;
-use App\Services\QuizAttemptScoringService;
-use App\Services\QuizService;
 use App\Services\RichTextAttachmentCleanupService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -26,10 +25,9 @@ class FinalizeExamSubmissionJob implements ShouldQueue
 
     public function handle(
         AssessmentAttemptService $assessmentAttemptService,
-        AssessmentQuizAnswerService $assessmentQuizAnswerService,
-        QuizAttemptScoringService $quizAttemptScoringService,
+        AssessmentQuestionAnswerService $assessmentQuestionAnswerService,
+        AssessmentQuestionAttemptScoringService $assessmentQuestionAttemptScoringService,
         ProctorSessionService $proctorSessionService,
-        QuizService $quizService,
         AssessmentService $assessmentService,
         GradebookScoringService $gradebookScoringService,
         ProctorExamAnswersService $proctorExamAnswersService,
@@ -41,40 +39,35 @@ class FinalizeExamSubmissionJob implements ShouldQueue
             return;
         }
 
-        $quiz = $quizService->findByAssessment($attempt->assessment_id, ['questions.options']);
+        $assessment = $assessmentService->find($attempt->assessment_id, ['course', 'questions.options']);
 
-        if ($quiz === null) {
+        if ($assessment === null || $assessment->questions->isEmpty()) {
             return;
         }
 
         $answers = $proctorExamAnswersService->all($this->attemptId);
 
-        foreach ($quiz->questions as $question) {
+        foreach ($assessment->questions as $question) {
             $value = $answers[$question->id] ?? null;
 
-            $isObjective = in_array($question->question_type, [QuizQuestionType::MultipleChoice, QuizQuestionType::TrueFalse], true);
+            $isObjective = $question->question_type === AssessmentQuestionType::MultipleChoice;
 
-            $assessmentQuizAnswerService->create([
+            $assessmentQuestionAnswerService->create([
                 'assessment_attempt_id' => $this->attemptId,
-                'quiz_question_id' => $question->id,
+                'assessment_question_id' => $question->id,
                 'selected_option_id' => $isObjective ? ($value ?: null) : null,
                 'answer_text' => $isObjective ? null : ($value ? $richTextAttachmentCleanupService->promoteTempAttachments($value) : null),
-                'score' => $isObjective ? $quizAttemptScoringService->scoreObjectiveAnswer($question, $value ?: null) : null,
+                'score' => $isObjective ? $assessmentQuestionAttemptScoringService->scoreObjectiveAnswer($question, $value ?: null) : null,
             ]);
         }
 
-        $deadline = $quiz->time_limit_per_attempt
-            ? $attempt->started_at->copy()->addMinutes($quiz->time_limit_per_attempt)
-            : null;
-
         $assessmentAttemptService->update($this->attemptId, [
-            'submitted_at' => $deadline && now()->greaterThan($deadline) ? $deadline : now(),
+            'submitted_at' => now(),
         ]);
 
-        $quizAttemptScoringService->recomputeForUser($quiz, $attempt->assessment_id, $attempt->user_id);
+        $assessmentQuestionAttemptScoringService->recomputeForUser($attempt->assessment_id, $attempt->user_id);
 
-        $assessment = $assessmentService->find($attempt->assessment_id, ['course']);
-        if ($assessment !== null) {
+        if ($assessment->course !== null) {
             $gradebookScoringService->recomputeForUser($assessment->course, $attempt->user_id);
         }
 

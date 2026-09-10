@@ -12,6 +12,8 @@ use App\Jobs\FinalizeProctorDisqualificationJob;
 use App\Livewire\Courses\ProctorExamShow;
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
+use App\Models\AssessmentQuestion;
+use App\Models\AssessmentQuestionOption;
 use App\Models\Course;
 use App\Models\CoursePerson;
 use App\Models\ExamReferenceFile;
@@ -20,9 +22,6 @@ use App\Models\MediaLibraryItem;
 use App\Models\Period;
 use App\Models\ProctorSession;
 use App\Models\ProctorSnapshot;
-use App\Models\Quiz;
-use App\Models\QuizQuestion;
-use App\Models\QuizQuestionOption;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\Session;
@@ -44,11 +43,9 @@ class ProctorExamShowTest extends TestCase
 
     private Assessment $assessment;
 
-    private Quiz $quiz;
+    private AssessmentQuestion $mcQuestion;
 
-    private QuizQuestion $mcQuestion;
-
-    private QuizQuestionOption $correctOption;
+    private AssessmentQuestionOption $correctOption;
 
     protected function setUp(): void
     {
@@ -66,6 +63,7 @@ class ProctorExamShowTest extends TestCase
         $this->assessment = Assessment::factory()->for($this->course)->create([
             'type' => AssessmentType::TheoryFinalExam,
             'end_date' => now()->addWeek(),
+            'attempt_limit' => 2,
         ]);
 
         $period = Period::factory()->for($this->course)->create();
@@ -74,18 +72,13 @@ class ProctorExamShowTest extends TestCase
             'exam_type' => FinalExamType::OpenBook,
         ]);
 
-        $this->quiz = Quiz::factory()->for($this->assessment)->create([
-            'total_attempts' => 2,
-            'time_limit_per_attempt' => null,
-        ]);
-
-        $this->mcQuestion = QuizQuestion::factory()->for($this->quiz)->create([
+        $this->mcQuestion = AssessmentQuestion::factory()->for($this->assessment)->create([
             'question_type' => 'multiple_choice',
             'points' => 10,
             'order' => 1,
         ]);
-        $this->correctOption = QuizQuestionOption::factory()->for($this->mcQuestion, 'question')->create(['is_correct' => true, 'order' => 1]);
-        QuizQuestionOption::factory()->for($this->mcQuestion, 'question')->create(['is_correct' => false, 'order' => 2]);
+        $this->correctOption = AssessmentQuestionOption::factory()->for($this->mcQuestion, 'question')->create(['is_correct' => true, 'order' => 1]);
+        AssessmentQuestionOption::factory()->for($this->mcQuestion, 'question')->create(['is_correct' => false, 'order' => 2]);
     }
 
     /**
@@ -235,10 +228,52 @@ class ProctorExamShowTest extends TestCase
         $this->assertSame(ProctorSessionStatus::Completed, $session->status);
         $this->assertNotNull($session->ended_at);
 
-        $this->assertDatabaseHas('assessment_quiz_answers', [
+        $this->assertDatabaseHas('assessment_question_answers', [
             'assessment_attempt_id' => $attempt->id,
-            'quiz_question_id' => $this->mcQuestion->id,
+            'assessment_question_id' => $this->mcQuestion->id,
             'selected_option_id' => $this->correctOption->id,
+            'score' => 10,
+        ]);
+
+        // A fully multiple-choice exam is entirely auto-graded — no teacher
+        // review is required before the score counts.
+        $this->assertDatabaseHas('assessment_scores', [
+            'assessment_attempt_id' => $attempt->id,
+            'score' => 10,
+        ]);
+    }
+
+    public function test_finalize_exam_submission_job_leaves_score_pending_when_essay_question_is_ungraded(): void
+    {
+        $essayQuestion = AssessmentQuestion::factory()->for($this->assessment)->create([
+            'question_type' => 'essay',
+            'points' => 5,
+            'order' => 2,
+        ]);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        $this->passPreflight();
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $this->assessment])
+            ->call('startAttempt')
+            ->set("answers.{$this->mcQuestion->id}", $this->correctOption->id)
+            ->set("answers.{$essayQuestion->id}", '<p>My essay answer.</p>');
+
+        $attempt = AssessmentAttempt::where('assessment_id', $this->assessment->id)->where('user_id', $this->student->id)->firstOrFail();
+
+        app()->call([app(FinalizeExamSubmissionJob::class, ['attemptId' => $attempt->id]), 'handle']);
+
+        $this->assertDatabaseHas('assessment_question_answers', [
+            'assessment_attempt_id' => $attempt->id,
+            'assessment_question_id' => $essayQuestion->id,
+            'answer_text' => '<p>My essay answer.</p>',
+            'score' => null,
+        ]);
+
+        $this->assertDatabaseMissing('assessment_scores', [
+            'assessment_attempt_id' => $attempt->id,
         ]);
     }
 
@@ -555,22 +590,19 @@ class ProctorExamShowTest extends TestCase
         $closedBookAssessment = Assessment::factory()->for($this->course)->create([
             'type' => AssessmentType::TheoryFinalExam,
             'end_date' => now()->addWeek(),
+            'attempt_limit' => 2,
         ]);
         $period = Period::factory()->for($this->course)->create(['order' => 99]);
         FinalExam::factory()->for($closedBookAssessment)->create([
             'period_id' => $period->id,
             'exam_type' => FinalExamType::ClosedBook,
         ]);
-        $quiz = Quiz::factory()->for($closedBookAssessment)->create([
-            'total_attempts' => 2,
-            'time_limit_per_attempt' => null,
-        ]);
-        $question = QuizQuestion::factory()->for($quiz)->create([
+        $question = AssessmentQuestion::factory()->for($closedBookAssessment)->create([
             'question_type' => 'multiple_choice',
             'points' => 10,
             'order' => 1,
         ]);
-        QuizQuestionOption::factory()->for($question, 'question')->create(['is_correct' => true, 'order' => 1]);
+        AssessmentQuestionOption::factory()->for($question, 'question')->create(['is_correct' => true, 'order' => 1]);
 
         $session = Session::factory()->for($this->course)->create();
         $material = MediaLibraryItem::factory()->for($this->school)->create(['title' => 'Reference Sheet']);
@@ -593,22 +625,19 @@ class ProctorExamShowTest extends TestCase
         $closedBookAssessment = Assessment::factory()->for($this->course)->create([
             'type' => AssessmentType::TheoryFinalExam,
             'end_date' => now()->addWeek(),
+            'attempt_limit' => 2,
         ]);
         $period = Period::factory()->for($this->course)->create(['order' => 98]);
         FinalExam::factory()->for($closedBookAssessment)->create([
             'period_id' => $period->id,
             'exam_type' => FinalExamType::ClosedBook,
         ]);
-        $quiz = Quiz::factory()->for($closedBookAssessment)->create([
-            'total_attempts' => 2,
-            'time_limit_per_attempt' => null,
-        ]);
-        $question = QuizQuestion::factory()->for($quiz)->create([
+        $question = AssessmentQuestion::factory()->for($closedBookAssessment)->create([
             'question_type' => 'multiple_choice',
             'points' => 10,
             'order' => 1,
         ]);
-        QuizQuestionOption::factory()->for($question, 'question')->create(['is_correct' => true, 'order' => 1]);
+        AssessmentQuestionOption::factory()->for($question, 'question')->create(['is_correct' => true, 'order' => 1]);
 
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
         $this->actingAs($this->student);
@@ -660,6 +689,25 @@ class ProctorExamShowTest extends TestCase
         $this->actingAs($this->student);
 
         Livewire::test(ProctorExamShow::class, ['assessment' => $standardAssessment])
+            ->assertStatus(404);
+    }
+
+    public function test_open_book_exam_without_questions_returns_404(): void
+    {
+        $emptyAssessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryFinalExam,
+            'end_date' => now()->addWeek(),
+        ]);
+        $period = Period::factory()->for($this->course)->create(['order' => 97]);
+        FinalExam::factory()->for($emptyAssessment)->create([
+            'period_id' => $period->id,
+            'exam_type' => FinalExamType::OpenBook,
+        ]);
+
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+        $this->actingAs($this->student);
+
+        Livewire::test(ProctorExamShow::class, ['assessment' => $emptyAssessment])
             ->assertStatus(404);
     }
 }

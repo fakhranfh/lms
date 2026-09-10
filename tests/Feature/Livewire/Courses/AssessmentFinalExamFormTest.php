@@ -113,7 +113,7 @@ class AssessmentFinalExamFormTest extends TestCase
         $this->assertDatabaseMissing('assessments', ['title' => 'Take Home Exam']);
     }
 
-    public function test_creates_final_exam_with_multiple_choice_question_without_points(): void
+    public function test_creates_final_exam_with_multiple_choice_question_worth_one_point(): void
     {
         $this->teacher->givePermissionTo('assessment.create');
 
@@ -135,7 +135,7 @@ class AssessmentFinalExamFormTest extends TestCase
 
         $question = AssessmentQuestion::where('assessment_id', $assessment->id)->firstOrFail();
         $this->assertSame(AssessmentQuestionType::MultipleChoice, $question->question_type);
-        $this->assertSame(0.0, (float) $question->points);
+        $this->assertSame(1.0, (float) $question->points);
         $this->assertEquals(2, $question->options()->count());
         $this->assertTrue(AssessmentQuestionOption::where('assessment_question_id', $question->id)->where('label', '4')->firstOrFail()->is_correct);
     }

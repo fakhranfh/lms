@@ -437,7 +437,7 @@
                         <button
                             type="button"
                             @click="
-                                const devQuestions = @js($quiz->questions->map(fn ($question) => [
+                                const devQuestions = @js($assessment->questions->map(fn ($question) => [
                                     'id' => (string) $question->id,
                                     'isEssay' => $question->question_type->value === 'essay',
                                     'value' => in_array($question->question_type->value, ['multiple_choice', 'true_false'])
@@ -519,7 +519,7 @@
                             </div>
                         </div>
                         <div class="grid grid-cols-6 md:grid-cols-4 gap-space-xs">
-                            @foreach ($quiz->questions as $question)
+                            @foreach ($assessment->questions as $question)
                                 <button
                                     type="button"
                                     @click="currentQuestion = {{ $loop->index }}"
@@ -536,9 +536,9 @@
                 </div>
 
                 <div class="overflow-y-auto p-space-xl relative">
-                    @foreach ($quiz->questions as $question)
+                    @foreach ($assessment->questions as $question)
                         <div x-show="currentQuestion === {{ $loop->index }}" x-cloak class="space-y-space-lg max-w-2xl mx-auto">
-                            <p class="text-body-sm text-on-surface-variant">Question {{ $loop->iteration }} of {{ $quiz->questions->count() }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
+                            <p class="text-body-sm text-on-surface-variant">Question {{ $loop->iteration }} of {{ $assessment->questions->count() }} &middot; {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts</p>
                             <div class="rte-content prose prose-lg max-w-none text-on-surface">{!! $question->description !!}</div>
 
                             @if (in_array($question->question_type->value, ['multiple_choice', 'true_false']))
@@ -570,8 +570,8 @@
 
                         <button
                             type="button"
-                            x-show="currentQuestion < {{ $quiz->questions->count() - 1 }}"
-                            @click="currentQuestion = Math.min(currentQuestion + 1, {{ $quiz->questions->count() - 1 }})"
+                            x-show="currentQuestion < {{ $assessment->questions->count() - 1 }}"
+                            @click="currentQuestion = Math.min(currentQuestion + 1, {{ $assessment->questions->count() - 1 }})"
                             class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                         >
                             Next

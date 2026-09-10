@@ -21,8 +21,6 @@ use App\Models\Period;
 use App\Models\ProctorEvent;
 use App\Models\ProctorSession;
 use App\Models\ProctorSnapshot;
-use App\Models\Quiz;
-use App\Models\QuizQuestion;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
@@ -568,8 +566,10 @@ class AssessmentFinalExamShowTest extends TestCase
     {
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
 
-        $quiz = Quiz::factory()->for($this->assessment)->create();
-        QuizQuestion::factory()->for($quiz)->create(['question_type' => 'multiple_choice', 'order' => 1]);
+        AssessmentQuestion::factory()->for($this->assessment)->create([
+            'question_type' => AssessmentQuestionType::MultipleChoice,
+            'order' => 1,
+        ]);
 
         $attempt = AssessmentAttempt::factory()->for($this->assessment)->create([
             'user_id' => $this->student->id,
@@ -589,8 +589,10 @@ class AssessmentFinalExamShowTest extends TestCase
         $this->assessment->update(['attempt_limit' => 1]);
         $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
 
-        $quiz = Quiz::factory()->for($this->assessment)->create();
-        QuizQuestion::factory()->for($quiz)->create(['question_type' => 'multiple_choice', 'order' => 1]);
+        AssessmentQuestion::factory()->for($this->assessment)->create([
+            'question_type' => AssessmentQuestionType::MultipleChoice,
+            'order' => 1,
+        ]);
 
         AssessmentAttempt::factory()->for($this->assessment)->create([
             'user_id' => $this->student->id,
@@ -604,6 +606,22 @@ class AssessmentFinalExamShowTest extends TestCase
             ->assertSee('Continue Exam')
             ->assertDontSee('awaiting grading')
             ->assertDontSee('reached the maximum number of attempts');
+    }
+
+    public function test_student_can_start_closed_book_exam_with_assessment_questions_and_no_quiz(): void
+    {
+        $this->student->givePermissionTo(['assessment.view', 'assessment.submit']);
+
+        AssessmentQuestion::factory()->for($this->assessment)->create([
+            'question_type' => AssessmentQuestionType::MultipleChoice,
+            'order' => 1,
+        ]);
+
+        $this->actingAs($this->student);
+
+        Livewire::test(AssessmentFinalExamShow::class, ['assessment' => $this->assessment])
+            ->assertSee('Start Exam')
+            ->assertDontSee("This exam isn't ready yet");
     }
 
     public function test_wrong_type_returns_404(): void

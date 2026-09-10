@@ -372,7 +372,7 @@ class AssessmentFinalExamForm extends Component
                 $questionData = [
                     'assessment_id' => $assessment->id,
                     'description' => HtmlSanitizer::forum($this->promoteRichTextAttachments($question['description'])),
-                    'points' => $isMultipleChoice ? 0 : (float) $question['points'],
+                    'points' => $isMultipleChoice ? 1 : (float) $question['points'],
                     'question_type' => $questionType,
                     'order' => $index + 1,
                 ];

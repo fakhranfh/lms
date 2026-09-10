@@ -17,9 +17,9 @@ use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\ExamReferenceFile;
 use App\Models\MediaLibraryItem;
-use App\Models\Quiz;
 use App\Models\Session;
 use App\Services\AssessmentAttemptService;
+use App\Services\AssessmentService;
 use App\Services\CoursePersonService;
 use App\Services\ExamReferenceFileService;
 use App\Services\FinalExamService;
@@ -28,7 +28,6 @@ use App\Services\ProctorExamAnswersService;
 use App\Services\ProctorSessionService;
 use App\Services\ProctorSessionStatusService;
 use App\Services\ProctorSnapshotService;
-use App\Services\QuizService;
 use App\Services\R2StorageService;
 use App\Services\SessionService;
 use App\Support\CurrentSchool;
@@ -43,8 +42,6 @@ class ProctorExamShow extends Component
     public Course $course;
 
     public Assessment $assessment;
-
-    public Quiz $quiz;
 
     public FinalExamType $examType;
 
@@ -94,7 +91,7 @@ class ProctorExamShow extends Component
     public function mount(
         CurrentSchool $currentSchool,
         CoursePersonService $coursePersonService,
-        QuizService $quizService,
+        AssessmentService $assessmentService,
         FinalExamService $finalExamService,
         ?Course $course = null,
         ?Assessment $assessment = null,
@@ -116,12 +113,11 @@ class ProctorExamShow extends Component
         abort_if($finalExam === null, 404);
         abort_unless(in_array($finalExam->exam_type, [FinalExamType::OpenBook, FinalExamType::ClosedBook], true), 404);
 
-        $quiz = $quizService->findByAssessment($assessment->id, ['questions.options']);
-        abort_if($quiz === null, 404);
+        $assessment = $assessmentService->find($assessment->id, ['questions.options']);
+        abort_if($assessment === null || $assessment->questions->isEmpty(), 404);
 
         $this->course = $course;
         $this->assessment = $assessment;
-        $this->quiz = $quiz;
         $this->examType = $finalExam->exam_type;
 
         $inProgress = app(AssessmentAttemptService::class)->forAssessmentAndUser($assessment->id, auth()->id())
@@ -174,7 +170,7 @@ class ProctorExamShow extends Component
             return;
         }
 
-        if ($this->quiz->total_attempts !== null && $attempts->count() >= $this->quiz->total_attempts) {
+        if ($this->assessment->attempt_limit !== null && $attempts->count() >= $this->assessment->attempt_limit) {
             $this->errorMessage = __('You have reached the maximum number of attempts for this exam.');
 
             return;
@@ -458,7 +454,7 @@ class ProctorExamShow extends Component
 
         $canStart = ! $inProgress
             && ! $submitting
-            && (! $this->quiz->total_attempts || $attempts->count() < $this->quiz->total_attempts)
+            && (! $this->assessment->attempt_limit || $attempts->count() < $this->assessment->attempt_limit)
             && (! $this->assessment->end_date || ! $this->assessment->end_date->isPast());
 
         $examMaterials = [];
@@ -491,7 +487,6 @@ class ProctorExamShow extends Component
         return view('livewire.courses.proctor-exam-show', [
             'course' => $this->course,
             'assessment' => $this->assessment,
-            'quiz' => $this->quiz,
             'examType' => $this->examType,
             'inProgress' => $inProgress,
             'canStart' => $canStart,
@@ -501,9 +496,7 @@ class ProctorExamShow extends Component
             'examMaterials' => $examMaterials,
             'examSessions' => $examSessions,
             'referenceFiles' => $referenceFiles,
-            'deadlineIso' => ($inProgress && $this->quiz->time_limit_per_attempt)
-                ? $inProgress->started_at->copy()->addMinutes($this->quiz->time_limit_per_attempt)->toIso8601String()
-                : null,
+            'deadlineIso' => null,
         ])
             ->extends('layouts.app', ['skipTopbar' => true, 'skipSidebar' => true])
             ->section('app-content');

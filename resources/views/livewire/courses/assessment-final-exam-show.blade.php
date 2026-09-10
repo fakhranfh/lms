@@ -236,7 +236,7 @@
                     </div>
                 </div>
             @elseif ($canSubmit && $canResubmit && $finalExam && in_array($finalExam->exam_type->value, ['open_book', 'closed_book']))
-                @if ($assessment->quiz && $assessment->quiz->questions->isNotEmpty())
+                @if ($assessment->questions->isNotEmpty())
                     <div
                         x-data="{
                             confirmOpen: false,
@@ -1412,25 +1412,41 @@
 
                         @if ($gradingUserId === $row['user']->id)
                             <div class="mt-space-md pt-space-md border-t border-outline-variant space-y-space-md">
-                                <div class="rte-content text-body-sm text-on-surface-variant">{!! $row['answer']?->answer_text !!}</div>
+                                @if ($row['answer'])
+                                    <div class="rte-content text-body-sm text-on-surface-variant">{!! $row['answer']->answer_text !!}</div>
+                                @endif
 
                                 <form wire:submit="submitGrade" class="space-y-space-md">
                                     <div class="space-y-space-md">
                                         <h4 class="font-label-md text-label-md text-on-surface">Question Scores</h4>
                                         @foreach ($assessment->questions as $question)
+                                            @php($questionAnswer = $row['questionAnswers']->get($question->id))
                                             <div>
                                                 <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
                                                     Question {{ $loop->iteration }} ({{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts)
                                                 </label>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0"
-                                                    max="{{ $question->points }}"
-                                                    wire:model="gradeQuestionScores.{{ $question->id }}"
-                                                    class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                                />
-                                                @error("gradeQuestionScores.{$question->id}") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+
+                                                @if ($questionAnswer && $question->question_type->value === 'multiple_choice')
+                                                    <div class="rte-content text-body-sm text-on-surface-variant mb-space-xs">
+                                                        {!! optional($question->options->firstWhere('id', $questionAnswer->selected_option_id))->label ?? __('No answer submitted.') !!}
+                                                    </div>
+                                                    <p class="font-body-sm text-body-sm text-on-surface">
+                                                        {{ __('Auto-graded') }}: {{ rtrim(rtrim(number_format($questionAnswer->score ?? 0, 2), '0'), '.') }} / {{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }}
+                                                    </p>
+                                                @else
+                                                    @if ($questionAnswer)
+                                                        <div class="rte-content text-body-sm text-on-surface-variant mb-space-xs">{!! $questionAnswer->answer_text ?? __('No answer submitted.') !!}</div>
+                                                    @endif
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        max="{{ $question->points }}"
+                                                        wire:model="gradeQuestionScores.{{ $question->id }}"
+                                                        class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                                    />
+                                                    @error("gradeQuestionScores.{$question->id}") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
+                                                @endif
                                             </div>
                                         @endforeach
                                     </div>

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
 use App\Enums\MaterialType;
@@ -15,6 +16,7 @@ use App\Models\ExamReferenceFile;
 use App\Models\ProctorSnapshot;
 use App\Services\AssessmentAnswerService;
 use App\Services\AssessmentAttemptService;
+use App\Services\AssessmentQuestionAnswerService;
 use App\Services\AssessmentQuestionScoreService;
 use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
@@ -449,7 +451,7 @@ class AssessmentFinalExamShow extends Component
         ];
     }
 
-    public function openGrading(string $userId, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService): void
+    public function openGrading(string $userId, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, AssessmentQuestionAnswerService $assessmentQuestionAnswerService): void
     {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
 
@@ -461,12 +463,24 @@ class AssessmentFinalExamShow extends Component
 
         $existingScore = $assessmentScoreService->findByAttempt($attempt->id);
         $questionScores = $assessmentQuestionScoreService->findByAttempt($attempt->id);
+        $questionAnswers = $assessmentQuestionAnswerService->forAttempt($attempt->id);
 
         $this->gradingUserId = $userId;
         $this->gradeFeedback = $existingScore ? ($existingScore->feedback ?? '') : '';
 
         $this->gradeQuestionScores = [];
         foreach ($this->assessment->questions as $question) {
+            if ($question->question_type !== AssessmentQuestionType::Essay) {
+                continue;
+            }
+
+            $qAnswer = $questionAnswers->firstWhere('assessment_question_id', $question->id);
+            if ($qAnswer) {
+                $this->gradeQuestionScores[$question->id] = $qAnswer->score !== null ? (string) $qAnswer->score : '';
+
+                continue;
+            }
+
             $qScore = $questionScores->firstWhere('assessment_question_id', $question->id);
             $this->gradeQuestionScores[$question->id] = $qScore ? (string) $qScore->score : '';
         }
@@ -479,7 +493,7 @@ class AssessmentFinalExamShow extends Component
         $this->gradeFeedback = '';
     }
 
-    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, GradebookScoringService $gradebookScoringService): void
+    public function submitGrade(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, AssessmentQuestionAnswerService $assessmentQuestionAnswerService, GradebookScoringService $gradebookScoringService): void
     {
         abort_unless(auth()->user()->can('assessment.grade'), 403);
         abort_unless($this->gradingUserId !== null, 404);
@@ -491,8 +505,18 @@ class AssessmentFinalExamShow extends Component
         $attempt = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $this->gradingUserId)->last();
         abort_unless($attempt !== null, 404);
 
-        $totalScore = 0;
-        foreach ($this->assessment->questions as $question) {
+        $questionAnswers = $assessmentQuestionAnswerService->forAttempt($attempt->id);
+        $usesAnswerPipeline = $questionAnswers->isNotEmpty();
+
+        $gradableQuestions = $usesAnswerPipeline
+            ? $this->assessment->questions->filter(fn ($question) => $question->question_type === AssessmentQuestionType::Essay)
+            : $this->assessment->questions;
+
+        $totalScore = $usesAnswerPipeline
+            ? (float) $questionAnswers->filter(fn ($answer) => $answer->score !== null)->sum('score')
+            : 0.0;
+
+        foreach ($gradableQuestions as $question) {
             $score = $this->gradeQuestionScores[$question->id] ?? '';
             if ($score === '') {
                 $this->addError("gradeQuestionScores.{$question->id}", __('Score is required'));
@@ -513,8 +537,18 @@ class AssessmentFinalExamShow extends Component
             return;
         }
 
-        foreach ($this->assessment->questions as $question) {
+        foreach ($gradableQuestions as $question) {
             $score = (float) $this->gradeQuestionScores[$question->id];
+
+            if ($usesAnswerPipeline) {
+                $answer = $questionAnswers->firstWhere('assessment_question_id', $question->id);
+                if ($answer) {
+                    $assessmentQuestionAnswerService->update($answer->id, ['score' => $score]);
+                }
+
+                continue;
+            }
+
             $assessmentQuestionScoreService->updateOrCreate(
                 ['assessment_attempt_id' => $attempt->id, 'assessment_question_id' => $question->id],
                 ['score' => $score]
@@ -548,6 +582,7 @@ class AssessmentFinalExamShow extends Component
         AssessmentAnswerService $assessmentAnswerService,
         AssessmentScoreService $assessmentScoreService,
         AssessmentQuestionScoreService $assessmentQuestionScoreService,
+        AssessmentQuestionAnswerService $assessmentQuestionAnswerService,
         FinalExamService $finalExamService,
         ProctorSessionService $proctorSessionService,
         ExamReferenceFileService $examReferenceFileService,
@@ -640,12 +675,13 @@ class AssessmentFinalExamShow extends Component
                 )->values();
             }
 
-            $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentAnswerService, $assessmentScoreService, $assessmentQuestionScoreService, $proctorSessionService, $isProctored) {
+            $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentAnswerService, $assessmentScoreService, $assessmentQuestionScoreService, $assessmentQuestionAnswerService, $proctorSessionService, $isProctored) {
                 $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $coursePerson->user_id);
                 $latest = $attempts->last();
                 $score = $latest ? $assessmentScoreService->findByAttempt($latest->id) : null;
                 $answer = $latest ? $assessmentAnswerService->findByAttempt($latest->id) : null;
                 $questionScores = $latest ? $assessmentQuestionScoreService->findByAttempt($latest->id) : collect();
+                $questionAnswers = $latest ? $assessmentQuestionAnswerService->forAttempt($latest->id) : collect();
                 $proctorSession = ($isProctored && $latest)
                     ? $proctorSessionService->findByAttempt($latest->id, ['events', 'snapshots'])
                     : null;
@@ -672,6 +708,7 @@ class AssessmentFinalExamShow extends Component
                     'answer' => $answer,
                     'score' => $score,
                     'questionScores' => $questionScores->keyBy('assessment_question_id'),
+                    'questionAnswers' => $questionAnswers->keyBy('assessment_question_id'),
                     'proctorSession' => $proctorSession,
                     'pendingProctorReview' => $pendingProctorReview,
                     'cameraRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'webcam-recording'))->values(),

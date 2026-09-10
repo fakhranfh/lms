@@ -65,8 +65,11 @@ class FinalizeExamSubmissionJob implements ShouldQueue
             'submitted_at' => now(),
         ]);
 
-        $assessmentQuestionAttemptScoringService->recomputeForUser($attempt->assessment_id, $attempt->user_id);
-
+        // Auto-graded multiple-choice scores are stored per-question above,
+        // but the final AssessmentScore (and any feedback) is only written
+        // once a teacher saves it from the grade page — even for a fully
+        // multiple-choice exam, so they always get a chance to add
+        // feedback before it's finalized.
         if ($assessment->course !== null) {
             $gradebookScoringService->recomputeForUser($assessment->course, $attempt->user_id);
         }

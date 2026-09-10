@@ -165,6 +165,14 @@ class AssessmentFinalExamGrade extends Component
             $totalScore += (float) $score;
         }
 
+        // A fully multiple-choice exam has no natural "out of" total (each
+        // question's points are just relative weights), so its score is
+        // reported on a 0-100 scale instead of raw points.
+        if ($usesAnswerPipeline && $gradableQuestions->isEmpty()) {
+            $possiblePoints = $this->assessment->questions->sum('points');
+            $totalScore = $possiblePoints > 0 ? round(($totalScore / $possiblePoints) * 100, 2) : 0.0;
+        }
+
         if ($this->getErrorBag()->isNotEmpty()) {
             return;
         }

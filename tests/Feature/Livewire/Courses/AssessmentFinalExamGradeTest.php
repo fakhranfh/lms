@@ -294,6 +294,61 @@ class AssessmentFinalExamGradeTest extends TestCase
             ->assertSee('10 / 20');
     }
 
+    public function test_mc_only_exam_score_is_scaled_to_0_100_and_save_grade_stays_enabled(): void
+    {
+        $this->assessment->finalExam->update(['exam_type' => FinalExamType::OpenBook]);
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
+
+        $q1 = AssessmentQuestion::factory()->for($this->assessment)->create(['question_type' => 'multiple_choice', 'points' => 1]);
+        $correct1 = AssessmentQuestionOption::factory()->for($q1, 'question')->create(['is_correct' => true]);
+
+        $q2 = AssessmentQuestion::factory()->for($this->assessment)->create(['question_type' => 'multiple_choice', 'points' => 1]);
+        AssessmentQuestionOption::factory()->for($q2, 'question')->create(['is_correct' => true]);
+        $wrong2 = AssessmentQuestionOption::factory()->for($q2, 'question')->create(['is_correct' => false]);
+
+        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
+
+        AssessmentQuestionAnswer::factory()->for($attempt, 'attempt')->for($q1, 'question')->create([
+            'selected_option_id' => $correct1->id,
+            'score' => 1,
+        ]);
+        AssessmentQuestionAnswer::factory()->for($attempt, 'attempt')->for($q2, 'question')->create([
+            'selected_option_id' => $wrong2->id,
+            'score' => 0,
+        ]);
+
+        $this->actingAs($this->teacher);
+
+        // Nothing has auto-finalized the score yet — Save Grade is still
+        // enabled precisely so the teacher can attach feedback.
+        Livewire::test(AssessmentFinalExamGrade::class, ['assessment' => $this->assessment, 'student' => $this->student])
+            ->set('gradeFeedback', 'Nice try')
+            ->call('submitGrade')
+            ->assertRedirect(route('assessments.final-exam.grade', [$this->assessment, $this->student]));
+
+        // 1 of 2 questions correct (1 point each) scales to 50 out of 100,
+        // not the raw "1".
+        $this->assertDatabaseHas('assessment_scores', [
+            'assessment_attempt_id' => $attempt->id,
+            'score' => 50,
+            'feedback' => 'Nice try',
+        ]);
+    }
+
+    public function test_review_save_button_disables_while_request_in_flight(): void
+    {
+        $this->assessment->finalExam->update(['exam_type' => FinalExamType::ClosedBook]);
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
+
+        $attempt = AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
+        ProctorSession::factory()->for($attempt, 'attempt')->create(['reviewed_at' => null]);
+
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AssessmentFinalExamGrade::class, ['assessment' => $this->assessment, 'student' => $this->student])
+            ->assertSeeHtml('wire:target="reviewProctorSession"');
+    }
+
     public function test_without_attempt_returns_404(): void
     {
         $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);

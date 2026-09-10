@@ -578,9 +578,11 @@
                         </div>
                         <button
                             type="button"
+                            wire:loading.attr="disabled"
+                            wire:target="reviewProctorSession"
                             @click="@js($alreadyReviewed) ? confirmReReviewOpen = true : $wire.reviewProctorSession('{{ $proctorSession->id }}')"
                             :class="@js($alreadyReviewed) ? 'opacity-50 cursor-not-allowed' : ''"
-                            class="px-space-md py-space-sm bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity flex-shrink-0"
+                            class="px-space-md py-space-sm bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex-shrink-0"
                         >
                             Save
                         </button>

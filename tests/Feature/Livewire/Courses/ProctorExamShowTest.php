@@ -235,11 +235,12 @@ class ProctorExamShowTest extends TestCase
             'score' => 10,
         ]);
 
-        // A fully multiple-choice exam is entirely auto-graded — no teacher
-        // review is required before the score counts.
-        $this->assertDatabaseHas('assessment_scores', [
+        // Each MC answer is auto-scored per-question, but the final
+        // AssessmentScore is only written once a teacher saves it from the
+        // grade page — even for a fully multiple-choice exam, so they
+        // always get a chance to add feedback before it's finalized.
+        $this->assertDatabaseMissing('assessment_scores', [
             'assessment_attempt_id' => $attempt->id,
-            'score' => 10,
         ]);
     }
 

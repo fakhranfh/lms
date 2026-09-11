@@ -10,6 +10,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+// NOTE: Quiz questions live on the shared assessment_questions table (see
+// questions() below), scoped through the quiz's assessment_id rather than a
+// dedicated quiz_id column.
+
 #[Fillable(['assessment_id', 'start_date', 'due_date', 'total_question', 'total_attempts', 'scoring_method', 'time_limit_per_attempt'])]
 class Quiz extends Model
 {
@@ -34,10 +38,10 @@ class Quiz extends Model
     }
 
     /**
-     * @return HasMany<QuizQuestion, $this>
+     * @return HasMany<AssessmentQuestion, $this>
      */
     public function questions(): HasMany
     {
-        return $this->hasMany(QuizQuestion::class)->orderBy('order');
+        return $this->hasMany(AssessmentQuestion::class, 'assessment_id', 'assessment_id')->orderBy('order');
     }
 }

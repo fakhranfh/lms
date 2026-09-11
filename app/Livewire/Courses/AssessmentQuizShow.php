@@ -2,19 +2,19 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
-use App\Enums\QuizQuestionType;
 use App\Enums\RoleName;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\Quiz;
 use App\Services\AssessmentAttemptService;
-use App\Services\AssessmentQuizAnswerService;
+use App\Services\AssessmentQuestionAnswerService;
+use App\Services\AssessmentQuestionAttemptScoringService;
 use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
 use App\Services\GradebookScoringService;
-use App\Services\QuizAttemptScoringService;
 use App\Services\QuizInstructionService;
 use App\Services\QuizService;
 use App\Support\CourseTabs;
@@ -140,8 +140,8 @@ class AssessmentQuizShow extends Component
 
     public function submitAttempt(
         AssessmentAttemptService $assessmentAttemptService,
-        AssessmentQuizAnswerService $assessmentQuizAnswerService,
-        QuizAttemptScoringService $quizAttemptScoringService,
+        AssessmentQuestionAnswerService $assessmentQuestionAnswerService,
+        AssessmentQuestionAttemptScoringService $assessmentQuestionAttemptScoringService,
         GradebookScoringService $gradebookScoringService,
     ): void {
         abort_unless(auth()->user()->can('assessment.submit'), 403);
@@ -158,14 +158,14 @@ class AssessmentQuizShow extends Component
         foreach ($this->quiz->questions as $question) {
             $value = $this->answers[$question->id] ?? null;
 
-            $isObjective = in_array($question->question_type, [QuizQuestionType::MultipleChoice, QuizQuestionType::TrueFalse], true);
+            $isObjective = in_array($question->question_type, [AssessmentQuestionType::MultipleChoice, AssessmentQuestionType::TrueFalse], true);
 
-            $assessmentQuizAnswerService->create([
+            $assessmentQuestionAnswerService->create([
                 'assessment_attempt_id' => $attempt->id,
-                'quiz_question_id' => $question->id,
+                'assessment_question_id' => $question->id,
                 'selected_option_id' => $isObjective ? ($value ?: null) : null,
                 'answer_text' => $isObjective ? null : ($value ?: null),
-                'score' => $isObjective ? $quizAttemptScoringService->scoreObjectiveAnswer($question, $value ?: null) : null,
+                'score' => $isObjective ? $assessmentQuestionAttemptScoringService->scoreObjectiveAnswer($question, $value ?: null) : null,
             ]);
         }
 
@@ -177,7 +177,7 @@ class AssessmentQuizShow extends Component
             'submitted_at' => $deadline && now()->greaterThan($deadline) ? $deadline : now(),
         ]);
 
-        $quizAttemptScoringService->recomputeForUser($this->quiz, $this->assessment->id, auth()->id());
+        $assessmentQuestionAttemptScoringService->recomputeForUser($this->quiz, $this->assessment->id, auth()->id());
         $gradebookScoringService->recomputeForUser($this->course, auth()->id());
 
         $this->answers = [];
@@ -192,10 +192,10 @@ class AssessmentQuizShow extends Component
     public function render(
         CoursePersonService $coursePersonService,
         AssessmentAttemptService $assessmentAttemptService,
-        AssessmentQuizAnswerService $assessmentQuizAnswerService,
+        AssessmentQuestionAnswerService $assessmentQuestionAnswerService,
         AssessmentScoreService $assessmentScoreService,
         QuizInstructionService $quizInstructionService,
-        QuizAttemptScoringService $quizAttemptScoringService,
+        AssessmentQuestionAttemptScoringService $assessmentQuestionAttemptScoringService,
     ) {
         $viewData = [
             'course' => $this->course,
@@ -217,13 +217,13 @@ class AssessmentQuizShow extends Component
             $inProgress = $attempts->first(fn ($a) => $a->submitted_at === null);
             $submittedAttempts = $attempts->filter(fn ($a) => $a->submitted_at !== null)->values();
 
-            $attemptRows = $submittedAttempts->map(function ($attempt) use ($assessmentQuizAnswerService, $assessmentScoreService, $quizAttemptScoringService) {
+            $attemptRows = $submittedAttempts->map(function ($attempt) use ($assessmentQuestionAnswerService, $assessmentScoreService, $assessmentQuestionAttemptScoringService) {
                 return [
                     'attempt' => $attempt,
-                    'total' => $quizAttemptScoringService->attemptTotal($attempt->id),
-                    'pending' => $quizAttemptScoringService->hasPendingGrading($attempt->id),
+                    'total' => $assessmentQuestionAttemptScoringService->attemptTotal($attempt->id),
+                    'pending' => $assessmentQuestionAttemptScoringService->hasPendingGrading($attempt->id),
                     'score' => $assessmentScoreService->findByAttempt($attempt->id),
-                    'answers' => $assessmentQuizAnswerService->forAttempt($attempt->id)->keyBy('quiz_question_id'),
+                    'answers' => $assessmentQuestionAnswerService->forAttempt($attempt->id)->keyBy('assessment_question_id'),
                 ];
             })->reverse()->values();
 
@@ -251,22 +251,22 @@ class AssessmentQuizShow extends Component
                 )->values();
             }
 
-            $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentQuizAnswerService, $assessmentScoreService, $quizAttemptScoringService) {
+            $rows = $students->map(function ($coursePerson) use ($assessmentAttemptService, $assessmentQuestionAnswerService, $assessmentScoreService, $assessmentQuestionAttemptScoringService) {
                 $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $coursePerson->user_id)
                     ->filter(fn ($a) => $a->submitted_at !== null)
                     ->values();
                 $latest = $attempts->last();
                 $score = $latest ? $assessmentScoreService->findByAttempt($latest->id) : null;
-                $pending = $latest ? $quizAttemptScoringService->hasPendingGrading($latest->id) : false;
+                $pending = $latest ? $assessmentQuestionAttemptScoringService->hasPendingGrading($latest->id) : false;
 
                 return [
                     'user' => $coursePerson->user,
                     'attemptCount' => $attempts->count(),
                     'attempt' => $latest,
-                    'total' => $latest ? $quizAttemptScoringService->attemptTotal($latest->id) : null,
+                    'total' => $latest ? $assessmentQuestionAttemptScoringService->attemptTotal($latest->id) : null,
                     'score' => $score,
                     'pending' => $pending,
-                    'answers' => $latest ? $assessmentQuizAnswerService->forAttempt($latest->id)->keyBy('quiz_question_id') : collect(),
+                    'answers' => $latest ? $assessmentQuestionAnswerService->forAttempt($latest->id)->keyBy('assessment_question_id') : collect(),
                 ];
             })->values();
 

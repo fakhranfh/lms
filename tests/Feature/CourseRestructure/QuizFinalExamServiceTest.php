@@ -2,19 +2,19 @@
 
 use App\Enums\FinalExamType;
 use App\Models\Assessment;
+use App\Models\AssessmentQuestion;
+use App\Models\AssessmentQuestionOption;
 use App\Models\FinalExam;
 use App\Models\Period;
 use App\Models\Quiz;
-use App\Models\QuizQuestion;
-use App\Models\QuizQuestionOption;
 use App\Services\QuizService;
 
 test('quiz belongs to an assessment and has questions with options', function () {
     $assessment = Assessment::factory()->create(['type' => 'theory_quiz']);
     $quiz = Quiz::factory()->for($assessment)->create();
-    $question = QuizQuestion::factory()->for($quiz)->create(['order' => 1]);
-    QuizQuestionOption::factory()->for($question, 'question')->create(['is_correct' => true, 'order' => 1]);
-    QuizQuestionOption::factory()->for($question, 'question')->create(['is_correct' => false, 'order' => 2]);
+    $question = AssessmentQuestion::factory()->for($assessment)->create(['order' => 1]);
+    AssessmentQuestionOption::factory()->for($question, 'question')->create(['is_correct' => true, 'order' => 1]);
+    AssessmentQuestionOption::factory()->for($question, 'question')->create(['is_correct' => false, 'order' => 2]);
 
     expect(app(QuizService::class)->findByAssessment($assessment->id)->id)->toBe($quiz->id);
     expect($quiz->questions()->count())->toBe(1);

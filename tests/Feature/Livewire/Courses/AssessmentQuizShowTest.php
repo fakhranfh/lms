@@ -9,11 +9,11 @@ use App\Enums\RoleName;
 use App\Livewire\Courses\AssessmentQuizShow;
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
+use App\Models\AssessmentQuestion;
+use App\Models\AssessmentQuestionOption;
 use App\Models\Course;
 use App\Models\CoursePerson;
 use App\Models\Quiz;
-use App\Models\QuizQuestion;
-use App\Models\QuizQuestionOption;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
@@ -34,13 +34,13 @@ class AssessmentQuizShowTest extends TestCase
 
     private Quiz $quiz;
 
-    private QuizQuestion $mcQuestion;
+    private AssessmentQuestion $mcQuestion;
 
-    private QuizQuestionOption $correctOption;
+    private AssessmentQuestionOption $correctOption;
 
-    private QuizQuestionOption $wrongOption;
+    private AssessmentQuestionOption $wrongOption;
 
-    private QuizQuestion $essayQuestion;
+    private AssessmentQuestion $essayQuestion;
 
     protected function setUp(): void
     {
@@ -67,15 +67,15 @@ class AssessmentQuizShowTest extends TestCase
             'time_limit_per_attempt' => null,
         ]);
 
-        $this->mcQuestion = QuizQuestion::factory()->for($this->quiz)->create([
+        $this->mcQuestion = AssessmentQuestion::factory()->for($this->assessment)->create([
             'question_type' => 'multiple_choice',
             'points' => 10,
             'order' => 1,
         ]);
-        $this->correctOption = QuizQuestionOption::factory()->for($this->mcQuestion, 'question')->create(['is_correct' => true, 'order' => 1]);
-        $this->wrongOption = QuizQuestionOption::factory()->for($this->mcQuestion, 'question')->create(['is_correct' => false, 'order' => 2]);
+        $this->correctOption = AssessmentQuestionOption::factory()->for($this->mcQuestion, 'question')->create(['is_correct' => true, 'order' => 1]);
+        $this->wrongOption = AssessmentQuestionOption::factory()->for($this->mcQuestion, 'question')->create(['is_correct' => false, 'order' => 2]);
 
-        $this->essayQuestion = QuizQuestion::factory()->for($this->quiz)->create([
+        $this->essayQuestion = AssessmentQuestion::factory()->for($this->assessment)->create([
             'question_type' => 'essay',
             'points' => 20,
             'order' => 2,
@@ -99,14 +99,14 @@ class AssessmentQuizShowTest extends TestCase
             'attempt_number' => 1,
         ]);
 
-        $this->assertDatabaseHas('assessment_quiz_answers', [
-            'quiz_question_id' => $this->mcQuestion->id,
+        $this->assertDatabaseHas('assessment_question_answers', [
+            'assessment_question_id' => $this->mcQuestion->id,
             'selected_option_id' => $this->correctOption->id,
             'score' => 10,
         ]);
 
-        $this->assertDatabaseHas('assessment_quiz_answers', [
-            'quiz_question_id' => $this->essayQuestion->id,
+        $this->assertDatabaseHas('assessment_question_answers', [
+            'assessment_question_id' => $this->essayQuestion->id,
             'answer_text' => 'My essay answer',
             'score' => null,
         ]);
@@ -126,8 +126,8 @@ class AssessmentQuizShowTest extends TestCase
             ->set("answers.{$this->mcQuestion->id}", $this->wrongOption->id)
             ->call('submitAttempt');
 
-        $this->assertDatabaseHas('assessment_quiz_answers', [
-            'quiz_question_id' => $this->mcQuestion->id,
+        $this->assertDatabaseHas('assessment_question_answers', [
+            'assessment_question_id' => $this->mcQuestion->id,
             'selected_option_id' => $this->wrongOption->id,
             'score' => 0,
         ]);
@@ -205,8 +205,8 @@ class AssessmentQuizShowTest extends TestCase
             ->set("answers.{$this->essayQuestion->id}", 'My essay')
             ->call('submitAttempt');
 
-        $this->assertDatabaseHas('assessment_quiz_answers', [
-            'quiz_question_id' => $this->essayQuestion->id,
+        $this->assertDatabaseHas('assessment_question_answers', [
+            'assessment_question_id' => $this->essayQuestion->id,
             'answer_text' => 'My essay',
             'score' => null,
         ]);

@@ -56,7 +56,7 @@ class AttendanceScoringService
 
     /**
      * Derives the score and writes/updates a single AssessmentAttempt +
-     * AssessmentScore for the user, mirroring QuizAttemptScoringService's
+     * AssessmentScore for the user, mirroring AssessmentQuestionAttemptScoringService's
      * "single row per user" pattern.
      */
     public function recomputeForUser(Assessment $assessment, string $userId): AssessmentAttempt

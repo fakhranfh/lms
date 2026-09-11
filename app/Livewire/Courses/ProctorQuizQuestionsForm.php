@@ -2,15 +2,15 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
-use App\Enums\QuizQuestionType;
 use App\Enums\QuizScoringMethod;
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Services\AssessmentQuestionOptionService;
+use App\Services\AssessmentQuestionService;
 use App\Services\FinalExamService;
-use App\Services\QuizQuestionOptionService;
-use App\Services\QuizQuestionService;
 use App\Services\QuizService;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
@@ -136,8 +136,8 @@ class ProctorQuizQuestionsForm extends Component
 
     public function save(
         QuizService $quizService,
-        QuizQuestionService $quizQuestionService,
-        QuizQuestionOptionService $quizQuestionOptionService,
+        AssessmentQuestionService $assessmentQuestionService,
+        AssessmentQuestionOptionService $assessmentQuestionOptionService,
     ): mixed {
         abort_unless(auth()->user()->can('assessment.create') || auth()->user()->can('assessment.edit'), 403);
 
@@ -166,7 +166,7 @@ class ProctorQuizQuestionsForm extends Component
             return null;
         }
 
-        DB::transaction(function () use ($quizService, $quizQuestionService, $quizQuestionOptionService) {
+        DB::transaction(function () use ($quizService, $assessmentQuestionService, $assessmentQuestionOptionService) {
             $quizData = [
                 'assessment_id' => $this->assessment->id,
                 'start_date' => $this->assessment->start_date,
@@ -187,29 +187,29 @@ class ProctorQuizQuestionsForm extends Component
             $existingQuestionIds = collect($this->questions)->pluck('id')->filter()->all();
             foreach ($quiz->questions as $existingQuestion) {
                 if (! in_array($existingQuestion->id, $existingQuestionIds, true)) {
-                    $quizQuestionService->delete($existingQuestion->id);
+                    $assessmentQuestionService->delete($existingQuestion->id);
                 }
             }
 
             foreach ($this->questions as $index => $question) {
                 $questionData = [
-                    'quiz_id' => $quiz->id,
+                    'assessment_id' => $quiz->assessment_id,
                     'description' => HtmlSanitizer::forum($question['description']),
                     'points' => (float) $question['points'],
-                    'question_type' => QuizQuestionType::MultipleChoice,
+                    'question_type' => AssessmentQuestionType::MultipleChoice,
                     'order' => $index + 1,
                 ];
 
                 if ($question['id']) {
-                    $questionModel = $quizQuestionService->update($question['id'], $questionData);
+                    $questionModel = $assessmentQuestionService->update($question['id'], $questionData);
                 } else {
-                    $questionModel = $quizQuestionService->create($questionData);
+                    $questionModel = $assessmentQuestionService->create($questionData);
                 }
 
                 $existingOptionIds = collect($question['options'])->pluck('id')->filter()->all();
                 foreach ($questionModel->options as $existingOption) {
                     if (! in_array($existingOption->id, $existingOptionIds, true)) {
-                        $quizQuestionOptionService->delete($existingOption->id);
+                        $assessmentQuestionOptionService->delete($existingOption->id);
                     }
                 }
 
@@ -219,16 +219,16 @@ class ProctorQuizQuestionsForm extends Component
                     }
 
                     $optionData = [
-                        'quiz_question_id' => $questionModel->id,
+                        'assessment_question_id' => $questionModel->id,
                         'label' => $option['label'],
                         'is_correct' => $option['isCorrect'],
                         'order' => $optionIndex + 1,
                     ];
 
                     if ($option['id']) {
-                        $quizQuestionOptionService->update($option['id'], $optionData);
+                        $assessmentQuestionOptionService->update($option['id'], $optionData);
                     } else {
-                        $quizQuestionOptionService->create($optionData);
+                        $assessmentQuestionOptionService->create($optionData);
                     }
                 }
             }

@@ -3,25 +3,25 @@
 namespace Database\Seeders;
 
 use App\Enums\AssessmentAssignedTo;
+use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\CourseMembershipStatus;
 use App\Enums\FinalExamType;
-use App\Enums\QuizQuestionType;
 use App\Enums\QuizScoringMethod;
 use App\Enums\RoleInCourse;
 use App\Models\Assessment;
+use App\Models\AssessmentQuestion;
 use App\Models\Course;
 use App\Models\CoursePerson;
 use App\Models\FinalExam;
 use App\Models\Group;
 use App\Models\Period;
 use App\Models\Quiz;
-use App\Models\QuizQuestion;
 use App\Models\School;
 use App\Models\Session;
 use App\Models\User;
-use App\Services\QuizAttemptScoringService;
+use App\Services\AssessmentQuestionAttemptScoringService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -343,7 +343,7 @@ class AssessmentSeeder extends Seeder
             $question = $quiz->questions()->create([
                 'description' => $definition['description'],
                 'points' => $definition['points'],
-                'question_type' => QuizQuestionType::MultipleChoice,
+                'question_type' => AssessmentQuestionType::MultipleChoice,
                 'order' => $order,
             ]);
 
@@ -362,7 +362,7 @@ class AssessmentSeeder extends Seeder
             $quiz->questions()->create([
                 'description' => $definition['description'],
                 'points' => $definition['points'],
-                'question_type' => QuizQuestionType::Essay,
+                'question_type' => AssessmentQuestionType::Essay,
                 'order' => $order,
             ]);
         }
@@ -484,7 +484,7 @@ class AssessmentSeeder extends Seeder
     }
 
     /**
-     * @return Collection<int, QuizQuestion>
+     * @return Collection<int, AssessmentQuestion>
      */
     private function seedQuizQuestions(Quiz $quiz): Collection
     {
@@ -533,7 +533,7 @@ class AssessmentSeeder extends Seeder
             $question = $quiz->questions()->create([
                 'description' => $definition['description'],
                 'points' => $definition['points'],
-                'question_type' => QuizQuestionType::MultipleChoice,
+                'question_type' => AssessmentQuestionType::MultipleChoice,
                 'order' => $order + 1,
             ]);
 
@@ -554,12 +554,12 @@ class AssessmentSeeder extends Seeder
     }
 
     /**
-     * @param  Collection<int, QuizQuestion>  $questions
+     * @param  Collection<int, AssessmentQuestion>  $questions
      * @param  Collection<int, User>  $students
      */
     private function seedQuizAttempts(Assessment $assessment, Quiz $quiz, Collection $questions, Collection $students): void
     {
-        $scoringService = app(QuizAttemptScoringService::class);
+        $scoringService = app(AssessmentQuestionAttemptScoringService::class);
 
         foreach ($students as $student) {
             $outcome = $this->randomAttemptOutcome();
@@ -580,8 +580,8 @@ class AssessmentSeeder extends Seeder
                 $correctOption = $question->options->firstWhere('is_correct', true);
                 $selectedOption = random_int(1, 10) <= 7 ? $correctOption : $question->options->firstWhere('is_correct', false);
 
-                $attempt->quizAnswers()->create([
-                    'quiz_question_id' => $question->id,
+                $attempt->questionAnswers()->create([
+                    'assessment_question_id' => $question->id,
                     'selected_option_id' => $selectedOption?->id,
                     'score' => $scoringService->scoreObjectiveAnswer($question, $selectedOption?->id),
                 ]);

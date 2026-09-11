@@ -65,7 +65,7 @@ class ResetFinalExamAttempts extends Command
         $this->deleteSnapshotFiles($snapshots);
 
         // Deleting the attempt cascades (FK cascadeOnDelete) to
-        // assessment_scores, assessment_answers, assessment_quiz_answers,
+        // assessment_scores, assessment_answers, assessment_question_answers,
         // assessment_question_scores, and proctor_sessions/events/snapshots.
         $attempts->each->delete();
 

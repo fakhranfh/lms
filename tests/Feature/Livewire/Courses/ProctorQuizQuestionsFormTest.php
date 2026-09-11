@@ -83,7 +83,7 @@ class ProctorQuizQuestionsFormTest extends TestCase
             ->assertRedirect(route('assessments.final-exam.show', $this->assessment));
 
         $this->assertDatabaseHas('quizzes', ['assessment_id' => $this->assessment->id]);
-        $this->assertDatabaseHas('quiz_questions', ['description' => 'What is 2+2?', 'points' => 10]);
+        $this->assertDatabaseHas('assessment_questions', ['description' => 'What is 2+2?', 'points' => 10]);
     }
 
     public function test_existing_questions_are_prefilled(): void

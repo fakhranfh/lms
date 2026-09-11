@@ -5,10 +5,10 @@ namespace Tests\Feature\Livewire\Courses;
 use App\Enums\AssessmentType;
 use App\Livewire\Courses\AssessmentQuizForm;
 use App\Models\Assessment;
+use App\Models\AssessmentQuestion;
+use App\Models\AssessmentQuestionOption;
 use App\Models\Course;
 use App\Models\Quiz;
-use App\Models\QuizQuestion;
-use App\Models\QuizQuestionOption;
 use App\Models\School;
 use App\Models\Session;
 use App\Models\User;
@@ -108,7 +108,7 @@ class AssessmentQuizFormTest extends TestCase
             'time_limit_per_attempt' => 30,
         ]);
 
-        $question = QuizQuestion::where('description', 'What is 2 + 2?')->firstOrFail();
+        $question = AssessmentQuestion::where('description', 'What is 2 + 2?')->firstOrFail();
         $this->assertEquals(2, $question->options()->count());
         $this->assertEquals(1, $question->options()->where('is_correct', true)->count());
         $this->assertEquals(100.0, (float) $question->points);
@@ -152,9 +152,9 @@ class AssessmentQuizFormTest extends TestCase
             'type' => AssessmentType::TheoryQuiz,
         ]);
         $quiz = Quiz::factory()->for($assessment)->create();
-        $question = QuizQuestion::factory()->for($quiz)->create(['question_type' => 'multiple_choice']);
-        QuizQuestionOption::factory()->for($question, 'question')->create(['is_correct' => true]);
-        QuizQuestionOption::factory()->for($question, 'question')->create(['is_correct' => false]);
+        $question = AssessmentQuestion::factory()->for($assessment)->create(['question_type' => 'multiple_choice']);
+        AssessmentQuestionOption::factory()->for($question, 'question')->create(['is_correct' => true]);
+        AssessmentQuestionOption::factory()->for($question, 'question')->create(['is_correct' => false]);
 
         Livewire::test(AssessmentQuizForm::class, ['assessment' => $assessment])
             ->assertSet('questions.0.id', $question->id)
@@ -162,7 +162,7 @@ class AssessmentQuizFormTest extends TestCase
             ->call('save');
 
         $this->assertEquals(1, $quiz->questions()->count());
-        $this->assertDatabaseHas('quiz_questions', [
+        $this->assertDatabaseHas('assessment_questions', [
             'id' => $question->id,
             'description' => 'Updated description',
         ]);

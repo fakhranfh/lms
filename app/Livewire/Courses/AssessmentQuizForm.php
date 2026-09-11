@@ -2,17 +2,17 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
-use App\Enums\QuizQuestionType;
 use App\Enums\QuizScoringMethod;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Services\AssessmentQuestionOptionService;
+use App\Services\AssessmentQuestionService;
 use App\Services\AssessmentService;
 use App\Services\QuizInstructionService;
-use App\Services\QuizQuestionOptionService;
-use App\Services\QuizQuestionService;
 use App\Services\QuizService;
 use App\Services\SessionService;
 use App\Support\AssessmentTypeLabel;
@@ -245,12 +245,12 @@ class AssessmentQuizForm extends Component
     public function save(
         AssessmentService $assessmentService,
         QuizService $quizService,
-        QuizQuestionService $quizQuestionService,
-        QuizQuestionOptionService $quizQuestionOptionService,
+        AssessmentQuestionService $assessmentQuestionService,
+        AssessmentQuestionOptionService $assessmentQuestionOptionService,
         SessionService $sessionService,
     ): mixed {
         try {
-            $result = $this->persist($assessmentService, $quizService, $quizQuestionService, $quizQuestionOptionService, $sessionService);
+            $result = $this->persist($assessmentService, $quizService, $assessmentQuestionService, $assessmentQuestionOptionService, $sessionService);
         } catch (\Throwable $exception) {
             $this->dispatch('assessmentquizform-error');
 
@@ -267,8 +267,8 @@ class AssessmentQuizForm extends Component
     private function persist(
         AssessmentService $assessmentService,
         QuizService $quizService,
-        QuizQuestionService $quizQuestionService,
-        QuizQuestionOptionService $quizQuestionOptionService,
+        AssessmentQuestionService $assessmentQuestionService,
+        AssessmentQuestionOptionService $assessmentQuestionOptionService,
         SessionService $sessionService,
     ): mixed {
         $this->pruneRemoved();
@@ -303,7 +303,7 @@ class AssessmentQuizForm extends Component
         $session = $sessionService->find($this->sessionId);
         abort_if($session === null || $session->course_id !== $this->course->id, 404);
 
-        $result = DB::transaction(function () use ($assessmentService, $quizService, $quizQuestionService, $quizQuestionOptionService, $session) {
+        $result = DB::transaction(function () use ($assessmentService, $quizService, $assessmentQuestionService, $assessmentQuestionOptionService, $session) {
             $assessmentData = [
                 'course_id' => $this->course->id,
                 'session_id' => $session->id,
@@ -342,7 +342,7 @@ class AssessmentQuizForm extends Component
             $existingQuestionIds = collect($this->questions)->pluck('id')->filter()->all();
             foreach ($quiz->questions as $existingQuestion) {
                 if (! in_array($existingQuestion->id, $existingQuestionIds, true)) {
-                    $quizQuestionService->delete($existingQuestion->id);
+                    $assessmentQuestionService->delete($existingQuestion->id);
                 }
             }
 
@@ -350,23 +350,23 @@ class AssessmentQuizForm extends Component
 
             foreach ($this->questions as $index => $question) {
                 $questionData = [
-                    'quiz_id' => $quiz->id,
+                    'assessment_id' => $quiz->assessment_id,
                     'description' => HtmlSanitizer::forum($this->promoteRichTextAttachments($question['description'])),
                     'points' => $pointsByIndex[$index],
-                    'question_type' => QuizQuestionType::MultipleChoice,
+                    'question_type' => AssessmentQuestionType::MultipleChoice,
                     'order' => $index + 1,
                 ];
 
                 if ($question['id']) {
-                    $questionModel = $quizQuestionService->update($question['id'], $questionData);
+                    $questionModel = $assessmentQuestionService->update($question['id'], $questionData);
                 } else {
-                    $questionModel = $quizQuestionService->create($questionData);
+                    $questionModel = $assessmentQuestionService->create($questionData);
                 }
 
                 $existingOptionIds = collect($question['options'])->pluck('id')->filter()->all();
                 foreach ($questionModel->options as $existingOption) {
                     if (! in_array($existingOption->id, $existingOptionIds, true)) {
-                        $quizQuestionOptionService->delete($existingOption->id);
+                        $assessmentQuestionOptionService->delete($existingOption->id);
                     }
                 }
 
@@ -376,16 +376,16 @@ class AssessmentQuizForm extends Component
                     }
 
                     $optionData = [
-                        'quiz_question_id' => $questionModel->id,
+                        'assessment_question_id' => $questionModel->id,
                         'label' => $option['label'],
                         'is_correct' => $option['isCorrect'],
                         'order' => $optionIndex + 1,
                     ];
 
                     if ($option['id']) {
-                        $quizQuestionOptionService->update($option['id'], $optionData);
+                        $assessmentQuestionOptionService->update($option['id'], $optionData);
                     } else {
-                        $quizQuestionOptionService->create($optionData);
+                        $assessmentQuestionOptionService->create($optionData);
                     }
                 }
             }

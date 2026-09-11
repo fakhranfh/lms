@@ -73,11 +73,11 @@ class AssessmentAttempt extends Model
     }
 
     /**
-     * @return HasMany<AssessmentQuizAnswer, $this>
+     * @return HasMany<AssessmentQuestionAnswer, $this>
      */
-    public function quizAnswers(): HasMany
+    public function questionAnswers(): HasMany
     {
-        return $this->hasMany(AssessmentQuizAnswer::class);
+        return $this->hasMany(AssessmentQuestionAnswer::class);
     }
 
     /**

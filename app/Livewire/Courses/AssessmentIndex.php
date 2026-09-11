@@ -9,7 +9,6 @@ use App\Enums\AssessmentType;
 use App\Enums\DeliveryMode;
 use App\Enums\FinalExamType;
 use App\Enums\ProctorReviewDecision;
-use App\Enums\QuizQuestionType;
 use App\Enums\QuizScoringMethod;
 use App\Enums\RoleName;
 use App\Livewire\Concerns\WithDevMaterialAttachments;
@@ -18,6 +17,7 @@ use App\Models\Course;
 use App\Models\GroupMember;
 use App\Models\Session;
 use App\Services\AssessmentAttemptService;
+use App\Services\AssessmentQuestionAttemptScoringService;
 use App\Services\AssessmentQuestionOptionService;
 use App\Services\AssessmentQuestionService;
 use App\Services\AssessmentService;
@@ -30,9 +30,6 @@ use App\Services\GroupMemberService;
 use App\Services\GroupService;
 use App\Services\MediaLibraryService;
 use App\Services\ProctorSessionService;
-use App\Services\QuizAttemptScoringService;
-use App\Services\QuizQuestionOptionService;
-use App\Services\QuizQuestionService;
 use App\Services\QuizService;
 use App\Services\R2StorageService;
 use App\Services\SessionService;
@@ -362,7 +359,7 @@ class AssessmentIndex extends Component
      * multiple-choice questions worth the same GENERATED_QUESTION_POINTS
      * distribution used by the other dev generators.
      */
-    public function generateQuizzes(AssessmentService $assessmentService, QuizService $quizService, QuizQuestionService $quizQuestionService, QuizQuestionOptionService $quizQuestionOptionService, SessionService $sessionService): void
+    public function generateQuizzes(AssessmentService $assessmentService, QuizService $quizService, AssessmentQuestionService $assessmentQuestionService, AssessmentQuestionOptionService $assessmentQuestionOptionService, SessionService $sessionService): void
     {
         abort_unless(app()->environment(['local', 'testing']), 403);
         abort_unless(auth()->user()->can('assessment.create'), 403);
@@ -417,17 +414,17 @@ class AssessmentIndex extends Component
             ]);
 
             foreach ($questionContent as $index => $questionData) {
-                $question = $quizQuestionService->create([
-                    'quiz_id' => $quiz->id,
+                $question = $assessmentQuestionService->create([
+                    'assessment_id' => $assessment->id,
                     'description' => '<p>'.$questionData['description'].'</p>',
                     'points' => $equalPoints[$index],
-                    'question_type' => QuizQuestionType::MultipleChoice,
+                    'question_type' => AssessmentQuestionType::MultipleChoice,
                     'order' => $index + 1,
                 ]);
 
                 foreach ($questionData['options'] as $optionIndex => $label) {
-                    $quizQuestionOptionService->create([
-                        'quiz_question_id' => $question->id,
+                    $assessmentQuestionOptionService->create([
+                        'assessment_question_id' => $question->id,
                         'label' => $label,
                         'is_correct' => $optionIndex === 0,
                         'order' => $optionIndex + 1,
@@ -622,7 +619,7 @@ class AssessmentIndex extends Component
         }
     }
 
-    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, AttendanceDerivationService $attendanceDerivationService, ForumDiscussionScoringService $forumDiscussionScoringService, ProctorSessionService $proctorSessionService)
+    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, AssessmentQuestionAttemptScoringService $assessmentQuestionAttemptScoringService, AttendanceScoringService $attendanceScoringService, AttendanceDerivationService $attendanceDerivationService, ForumDiscussionScoringService $forumDiscussionScoringService, ProctorSessionService $proctorSessionService)
     {
         if (! $this->assessmentsLoaded) {
             return view('livewire.courses.assessment-index-placeholder', [
@@ -643,8 +640,8 @@ class AssessmentIndex extends Component
                 && $assessment->status === AssessmentStatus::Draft)->values();
         }
 
-        $rows = $assessments->mapWithKeys(function (Assessment $assessment) use ($assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService, $proctorSessionService) {
-            return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService, $quizAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService, $proctorSessionService)];
+        $rows = $assessments->mapWithKeys(function (Assessment $assessment) use ($assessmentAttemptService, $groupMemberService, $assessmentQuestionAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService, $proctorSessionService) {
+            return [$assessment->id => $this->rowStatus($assessment, $assessmentAttemptService, $groupMemberService, $assessmentQuestionAttemptScoringService, $attendanceScoringService, $forumDiscussionScoringService, $proctorSessionService)];
         })->all();
 
         $allSessions = $attendanceDerivationService->sessionsForCourse($this->course);
@@ -784,7 +781,7 @@ class AssessmentIndex extends Component
     /**
      * @return array{status: string, route: string|null, attemptCount: int, attemptLimit: string, score: float|null, isExpired: bool, statusConfig: array{bg: string, text: string, icon: string}}
      */
-    private function rowStatus(Assessment $assessment, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService, QuizAttemptScoringService $quizAttemptScoringService, AttendanceScoringService $attendanceScoringService, ForumDiscussionScoringService $forumDiscussionScoringService, ProctorSessionService $proctorSessionService): array
+    private function rowStatus(Assessment $assessment, AssessmentAttemptService $assessmentAttemptService, GroupMemberService $groupMemberService, AssessmentQuestionAttemptScoringService $assessmentQuestionAttemptScoringService, AttendanceScoringService $attendanceScoringService, ForumDiscussionScoringService $forumDiscussionScoringService, ProctorSessionService $proctorSessionService): array
     {
         $type = $assessment->type;
         $isExpired = $assessment->end_date && $assessment->end_date->isPast();
@@ -834,7 +831,7 @@ class AssessmentIndex extends Component
             }
 
             $scoredAttempt = $attempts->first(fn ($attempt) => $attempt->score !== null);
-            $pending = $attempts->contains(fn ($attempt) => $quizAttemptScoringService->hasPendingGrading($attempt->id));
+            $pending = $attempts->contains(fn ($attempt) => $assessmentQuestionAttemptScoringService->hasPendingGrading($attempt->id));
             $status = $pending ? 'submitted' : 'graded';
 
             return [

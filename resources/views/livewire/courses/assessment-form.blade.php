@@ -40,13 +40,13 @@
         x-data="{ submitting: false }"
         @submit.prevent="
             if (!window.validateAssessmentQuestionsTotal($el)) {
-                $nextTick(() => window.scrollToFirstFormError($el));
+                $nextTick(() => window.handleFormValidationErrors($el));
                 return;
             }
             submitting = true;
             $wire.save();
         "
-        @assessmentform-error.window="submitting = false; $nextTick(() => window.scrollToFirstFormError($el))"
+        @assessmentform-error.window="submitting = false; $nextTick(() => window.handleFormValidationErrors($el))"
         class="space-y-space-lg"
     >
         <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
@@ -115,11 +115,12 @@
                     Add Question
                 </button>
             </div>
-            <div id="questions-total-error" class="hidden border border-error ring-2 ring-error/30 rounded-lg p-space-md bg-error/5">
+            <p class="text-body-xs text-on-surface-variant">The total points across all questions must equal 100.</p>
+            <div id="questions-total-error" data-field-label="Questions" class="hidden border border-error ring-2 ring-error/30 rounded-lg p-space-md bg-error/5">
                 <p class="text-body-xs text-error">The total points of all questions must equal 100.</p>
             </div>
             @error('questions')
-                <div data-field-error class="border border-error ring-2 ring-error/30 rounded-lg p-space-md bg-error/5">
+                <div data-field-error data-field-label="Questions" class="border border-error ring-2 ring-error/30 rounded-lg p-space-md bg-error/5">
                     <p class="text-body-xs text-error">{{ $message }}</p>
                 </div>
             @enderror

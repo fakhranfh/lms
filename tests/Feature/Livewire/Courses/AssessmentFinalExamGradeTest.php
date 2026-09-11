@@ -150,9 +150,11 @@ class AssessmentFinalExamGradeTest extends TestCase
             ->call('submitGrade')
             ->assertRedirect(route('assessments.final-exam.grade', [$this->assessment, $this->student]));
 
+        // MC score is 10/10 = 100%, essay score is the raw 15 points earned;
+        // total is the average of the two: (100 + 15) / 2 = 57.5.
         $this->assertDatabaseHas('assessment_scores', [
             'assessment_attempt_id' => $attempt->id,
-            'score' => 25,
+            'score' => 57.5,
         ]);
 
         $this->assertDatabaseHas('assessment_question_answers', [
@@ -188,7 +190,7 @@ class AssessmentFinalExamGradeTest extends TestCase
             ->set("gradeQuestionScores.{$essayQuestion->id}", '15')
             ->call('submitGrade');
 
-        $this->assertDatabaseHas('assessment_scores', ['assessment_attempt_id' => $attempt->id, 'score' => 25]);
+        $this->assertDatabaseHas('assessment_scores', ['assessment_attempt_id' => $attempt->id, 'score' => 57.5]);
         $this->assertDatabaseCount('assessment_scores', 1);
 
         // A second save attempt must be blocked entirely — not recomputed,
@@ -198,7 +200,7 @@ class AssessmentFinalExamGradeTest extends TestCase
             ->call('submitGrade')
             ->assertSee('already been graded and cannot be graded again');
 
-        $this->assertDatabaseHas('assessment_scores', ['assessment_attempt_id' => $attempt->id, 'score' => 25]);
+        $this->assertDatabaseHas('assessment_scores', ['assessment_attempt_id' => $attempt->id, 'score' => 57.5]);
         $this->assertDatabaseCount('assessment_scores', 1);
     }
 

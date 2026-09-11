@@ -6,6 +6,7 @@ use App\Enums\AssessmentAssignedTo;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Livewire\Concerns\WithDevMaterialAttachments;
+use App\Livewire\Concerns\WithQuestionValidationAttributes;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
@@ -23,6 +24,7 @@ use Livewire\Component;
 class AssessmentForm extends Component
 {
     use WithDevMaterialAttachments;
+    use WithQuestionValidationAttributes;
     use WithRichTextEditor;
 
     public Course $course;
@@ -218,7 +220,7 @@ class AssessmentForm extends Component
                 'questions.*.description' => 'required|string',
                 'questions.*.points' => 'required|numeric|min:0',
             ] : []),
-        ]);
+        ], [], $this->questionValidationAttributes($this->questions, ['description', 'points']));
 
         $data = [
             'course_id' => $this->course->id,

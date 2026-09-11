@@ -67,6 +67,8 @@
         </div>
     </div>
 
+    <x-ui.error-snackbar />
+
     <script>
         document.getElementById('sidebar-toggle')?.addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');

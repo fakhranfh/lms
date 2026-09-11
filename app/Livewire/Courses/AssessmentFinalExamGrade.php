@@ -140,14 +140,19 @@ class AssessmentFinalExamGrade extends Component
             ? $this->assessment->questions->filter(fn ($question) => $question->question_type === AssessmentQuestionType::Essay)
             : $this->assessment->questions;
 
-        // Auto-graded (non-essay) answers only — essay scores are re-added
-        // fresh from the form below, so folding their already-saved score
-        // in here too would double-count them on every re-save.
-        $gradableQuestionIds = $gradableQuestions->pluck('id');
-        $totalScore = $usesAnswerPipeline
-            ? (float) $questionAnswers->reject(fn ($answer) => $gradableQuestionIds->contains($answer->assessment_question_id))->sum('score')
+        // MC score is the percentage of MC points earned (each question's
+        // points are relative weights, not an absolute scale), while essay
+        // score is the raw sum of awarded essay points — the two are on
+        // different scales, so they're kept separate and only combined
+        // (averaged) once both are known below.
+        $mcQuestions = $this->assessment->questions->filter(fn ($question) => $question->question_type === AssessmentQuestionType::MultipleChoice);
+        $mcPossible = $mcQuestions->sum('points');
+        $mcEarned = $usesAnswerPipeline
+            ? (float) $questionAnswers->whereIn('assessment_question_id', $mcQuestions->pluck('id'))->sum('score')
             : 0.0;
+        $mcScore = $mcPossible > 0 ? round(($mcEarned / $mcPossible) * 100, 2) : null;
 
+        $essayScore = 0.0;
         foreach ($gradableQuestions as $question) {
             $score = $this->gradeQuestionScores[$question->id] ?? '';
             if ($score === '') {
@@ -162,16 +167,14 @@ class AssessmentFinalExamGrade extends Component
                 continue;
             }
 
-            $totalScore += (float) $score;
+            $essayScore += (float) $score;
         }
 
-        // A fully multiple-choice exam has no natural "out of" total (each
-        // question's points are just relative weights), so its score is
-        // reported on a 0-100 scale instead of raw points.
-        if ($usesAnswerPipeline && $gradableQuestions->isEmpty()) {
-            $possiblePoints = $this->assessment->questions->sum('points');
-            $totalScore = $possiblePoints > 0 ? round(($totalScore / $possiblePoints) * 100, 2) : 0.0;
-        }
+        $totalScore = match (true) {
+            $mcScore !== null && $gradableQuestions->isNotEmpty() => round(($mcScore + $essayScore) / 2, 2),
+            $mcScore !== null => $mcScore,
+            default => round($essayScore, 2),
+        };
 
         if ($this->getErrorBag()->isNotEmpty()) {
             return;

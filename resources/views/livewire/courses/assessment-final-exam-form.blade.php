@@ -40,18 +40,32 @@
         </div>
     @endif
 
-    <form wire:submit="save" class="w-full space-y-space-lg">
+    <form
+        x-data="{ submitting: false }"
+        @submit.prevent="
+            if (!window.validateFinalExamForm($el)) {
+                $nextTick(() => window.handleFormValidationErrors($el));
+                return;
+            }
+            submitting = true;
+            $wire.save();
+        "
+        @assessmentfinalexamform-error.window="submitting = false; $nextTick(() => window.handleFormValidationErrors($el))"
+        class="w-full space-y-space-lg"
+    >
         <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
-            <div>
+            <div data-field="title" @error('title') data-field-error @enderror>
                 <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Title</label>
-                <input type="text" wire:model="title" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <input type="text" wire:model="title" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 @error('title') border-error ring-2 ring-error/30 @enderror" />
+                <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                 @error('title') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
             </div>
 
             <div class="grid grid-cols-2 gap-space-md">
-                <div>
+                <div data-field="weight" @error('weight') data-field-error @enderror>
                     <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Weight (%)</label>
-                    <input type="number" step="0.01" min="0" max="100" wire:model="weight" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <input type="number" step="0.01" min="0" max="100" wire:model="weight" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 @error('weight') border-error ring-2 ring-error/30 @enderror" />
+                    <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                     @error('weight') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                 </div>
 
@@ -69,20 +83,22 @@
             </div>
 
             <div class="grid grid-cols-2 gap-space-md">
-                <div>
+                <div data-field="startDate" @error('startDate') data-field-error @enderror>
                     <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Start Date</label>
-                    <input type="datetime-local" wire:model="startDate" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <input type="datetime-local" wire:model="startDate" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 @error('startDate') border-error ring-2 ring-error/30 @enderror" />
+                    <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                     @error('startDate') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                 </div>
 
-                <div>
+                <div data-field="endDate" @error('endDate') data-field-error @enderror>
                     <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">End Date</label>
-                    <input type="datetime-local" wire:model="endDate" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <input type="datetime-local" wire:model="endDate" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 @error('endDate') border-error ring-2 ring-error/30 @enderror" />
+                    <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                     @error('endDate') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                 </div>
             </div>
 
-            <div>
+            <div @error('examType') data-field-error @enderror>
                 <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Exam Type</label>
                 <div class="flex items-center gap-space-lg py-space-sm">
                     @foreach ($examTypes as $examTypeOption)
@@ -101,10 +117,12 @@
                 @error('examType') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
             </div>
 
-            <div>
+            <div @error('instructions') data-field-error @enderror>
                 <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Instructions</label>
                 <p class="text-body-xs text-on-surface-variant mb-space-xs">Shown to students before they start this exam. Tailor it to this exam type (e.g. what materials are allowed).</p>
-                <x-rich-text-editor id="final-exam-instructions" wire-model="instructions" :value="$instructions" />
+                <div @error('instructions') class="rounded-lg ring-2 ring-error/30 border border-error" @enderror>
+                    <x-rich-text-editor id="final-exam-instructions" wire-model="instructions" :value="$instructions" />
+                </div>
                 @error('instructions') <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
             </div>
         </div>
@@ -124,7 +142,15 @@
                 </button>
             </div>
             <p data-take-home-only class="text-body-xs text-on-surface-variant {{ $examType === 'take_home' ? '' : 'hidden' }}">Take-home exams are a single essay prompt.</p>
-            @error('questions') <p class="text-body-xs text-error">{{ $message }}</p> @enderror
+            <p data-take-home-hide class="text-body-xs text-on-surface-variant {{ $examType === 'take_home' ? 'hidden' : '' }}">Multiple-choice questions are worth 1 point each; the total points across all essay questions must equal 100.</p>
+            <div id="final-exam-essay-total-error" data-field-label="Questions" class="hidden border border-error ring-2 ring-error/30 rounded-lg p-space-md bg-error/5">
+                <p class="text-body-xs text-error">Essay points across all questions must total 100.</p>
+            </div>
+            @error('questions')
+                <div data-field-error data-field-label="Questions" class="border border-error ring-2 ring-error/30 rounded-lg p-space-md bg-error/5">
+                    <p class="text-body-xs text-error">{{ $message }}</p>
+                </div>
+            @enderror
 
             @foreach ($questions as $index => $question)
                 @continue($question === null)
@@ -136,13 +162,14 @@
                         @endif
                     </div>
 
-                    <div data-take-home-hide class="{{ $examType === 'take_home' ? 'hidden' : '' }}">
+                    <div data-take-home-hide class="{{ $examType === 'take_home' ? 'hidden' : '' }}" @error("questions.{$index}.questionType") data-field-error @enderror>
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Question Type</label>
                         <div class="flex items-center gap-space-lg py-space-sm">
                             @foreach ($questionTypes as $questionTypeOption)
                                 <label class="inline-flex items-center gap-space-xs cursor-pointer">
                                     <input
                                         type="radio"
+                                        data-question-type-radio
                                         wire:model="questions.{{ $index }}.questionType"
                                         value="{{ $questionTypeOption->value }}"
                                         class="w-4 h-4 text-primary border-outline focus:ring-primary/50"
@@ -155,9 +182,12 @@
                         @error("questions.{$index}.questionType") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                     </div>
 
-                    <div>
+                    <div data-field="description" @error("questions.{$index}.description") data-field-error @enderror>
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Description</label>
-                        <x-rich-text-editor id="question-{{ $index }}" wire-model="questions.{{ $index }}.description" :value="$question['description']" :allow-audio="true" />
+                        <div @error("questions.{$index}.description") class="rounded-lg ring-2 ring-error/30 border border-error" @enderror>
+                            <x-rich-text-editor id="question-{{ $index }}" wire-model="questions.{{ $index }}.description" :value="$question['description']" :allow-audio="true" />
+                        </div>
+                        <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                         @error("questions.{$index}.description") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                     </div>
 
@@ -198,12 +228,17 @@
                         >
                             Add Option
                         </button>
+                        <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                         @error("questions.{$index}.options") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                     </div>
 
-                    <div data-essay-fields class="w-40 {{ $question['questionType'] === \App\Enums\AssessmentQuestionType::MultipleChoice->value ? 'hidden' : '' }}">
-                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Points</label>
-                        <input type="number" step="0.01" min="0" wire:model="questions.{{ $index }}.points" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <div data-essay-fields class="{{ $question['questionType'] === \App\Enums\AssessmentQuestionType::MultipleChoice->value ? 'hidden' : '' }}" @error("questions.{$index}.points") data-field-error @enderror>
+                        <div class="w-40">
+                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Points</label>
+                            <input type="number" step="0.01" min="0" wire:model="questions.{{ $index }}.points" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 @error("questions.{$index}.points") border-error ring-2 ring-error/30 @enderror" />
+                        </div>
+                        <p class="w-full text-body-xs text-on-surface-variant mt-space-xs">Essay points across all questions must total 100.</p>
+                        <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                         @error("questions.{$index}.points") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
                     </div>
                 </div>
@@ -223,6 +258,7 @@
                                 <label class="inline-flex items-center gap-space-xs cursor-pointer">
                                     <input
                                         type="radio"
+                                        data-question-type-radio
                                         name="question-type-__NEW__"
                                         value="{{ $questionTypeOption->value }}"
                                         @checked($questionTypeOption === \App\Enums\AssessmentQuestionType::Essay)
@@ -235,9 +271,10 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div data-field="description">
                         <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Description</label>
                         <x-rich-text-editor id="question-__NEW__" wire-model="questions.__NEW__.description" :allow-audio="true" />
+                        <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                     </div>
 
                     <div data-mc-fields data-field="options" class="hidden">
@@ -265,17 +302,22 @@
                         >
                             Add Option
                         </button>
+                        <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                     </div>
 
-                    <div data-essay-fields class="w-40">
-                        <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Points</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            @input="$wire.set('questions.__NEW__.points', $event.target.value, false)"
-                            class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        />
+                    <div data-essay-fields>
+                        <div class="w-40">
+                            <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Points</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                @input="$wire.set('questions.__NEW__.points', $event.target.value, false)"
+                                class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            />
+                        </div>
+                        <p class="w-full text-body-xs text-on-surface-variant mt-space-xs">Essay points across all questions must total 100.</p>
+                        <p class="text-body-xs text-error mt-space-xs hidden" data-js-error></p>
                     </div>
                 </div>
             </template>

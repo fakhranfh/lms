@@ -6,6 +6,7 @@ use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\QuizScoringMethod;
+use App\Livewire\Concerns\WithQuestionValidationAttributes;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
@@ -23,6 +24,7 @@ use Livewire\Component;
 
 class AssessmentQuizForm extends Component
 {
+    use WithQuestionValidationAttributes;
     use WithRichTextEditor;
 
     public Course $course;
@@ -282,7 +284,7 @@ class AssessmentQuizForm extends Component
             'timeLimitPerAttempt' => 'nullable|integer|min:1',
             'questions' => 'array|min:1',
             'questions.*.description' => 'required|string',
-        ]);
+        ], [], $this->questionValidationAttributes($this->questions, ['description']));
 
         foreach ($this->questions as $index => $question) {
             $labelled = array_filter($question['options'], fn ($option) => trim($option['label']) !== '');

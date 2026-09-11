@@ -7,6 +7,7 @@ use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentStatus;
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
+use App\Livewire\Concerns\WithQuestionValidationAttributes;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Assessment;
 use App\Models\Course;
@@ -22,6 +23,7 @@ use Livewire\Component;
 
 class AssessmentFinalExamForm extends Component
 {
+    use WithQuestionValidationAttributes;
     use WithRichTextEditor;
 
     public Course $course;
@@ -292,7 +294,7 @@ class AssessmentFinalExamForm extends Component
             'questions.*.description' => 'required|string',
             'questions.*.questionType' => 'required|in:multiple_choice,essay',
             'questions.*.points' => 'required_if:questions.*.questionType,essay|nullable|numeric|min:0',
-        ]);
+        ], [], $this->questionValidationAttributes($this->questions, ['description', 'questionType', 'points']));
 
         if ($this->examType === 'take_home') {
             if (count($this->questions) !== 1 || $this->questions[0]['questionType'] !== AssessmentQuestionType::Essay->value) {
@@ -315,6 +317,14 @@ class AssessmentFinalExamForm extends Component
             $correctCount = count(array_filter($question['options'], fn ($option) => $option['isCorrect']));
             if ($correctCount !== 1) {
                 $this->addError("questions.{$index}.options", __('Exactly one option must be marked correct.'));
+            }
+        }
+
+        $essayQuestions = array_filter($this->questions, fn ($question) => $question['questionType'] === AssessmentQuestionType::Essay->value);
+        if ($essayQuestions !== []) {
+            $essayPoints = array_sum(array_map(fn ($question) => (float) $question['points'], $essayQuestions));
+            if (abs($essayPoints - 100.0) > 0.001) {
+                $this->addError('questions', __('The total points of all essay questions must equal 100.'));
             }
         }
 
@@ -426,7 +436,7 @@ class AssessmentFinalExamForm extends Component
             'pageTitle' => $this->assessment ? 'Edit Final Exam' : 'Create Final Exam',
             'statuses' => AssessmentStatus::cases(),
             'examTypes' => FinalExamType::cases(),
-            'questionTypes' => AssessmentQuestionType::cases(),
+            'questionTypes' => [AssessmentQuestionType::MultipleChoice, AssessmentQuestionType::Essay],
             'showUrl' => $this->assessment ? route('assessments.final-exam.show', $this->assessment) : null,
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->assessment ? 'Edit Assessment' : 'Create Assessment'])

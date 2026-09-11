@@ -5,7 +5,7 @@ import materialPicker from './material-picker';
 import { createReadingDetector } from './reading-detector';
 import { addSyllabusRow, removeSyllabusRow, setSyllabusRadio, toggleWireArrayValue } from './syllabus-form';
 import { addQuizOption, toggleFinalExamQuestionType, toggleFinalExamType } from './assessment-form';
-import { scrollToFirstFormError, validateAssessmentQuestionsTotal, validateQuizForm } from './form-error-scroll';
+import { scrollToFirstFormError, handleFormValidationErrors, validateAssessmentQuestionsTotal, validateFinalExamEssayTotal, validateFinalExamForm, validateQuizForm } from './form-error-scroll';
 
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('richTextEditor', richTextEditor);
@@ -28,8 +28,12 @@ window.toggleFinalExamQuestionType = toggleFinalExamQuestionType;
 window.toggleFinalExamType = toggleFinalExamType;
 window.toggleWireArrayValue = toggleWireArrayValue;
 
-// Exposed globally so forms can jump to their first invalid field on a
-// failed submit (inline @window event handlers, not Alpine.data components).
+// Exposed globally so forms can jump to their first invalid field (or show
+// the error snackbar for multiple) on a failed submit (inline @window event
+// handlers, not Alpine.data components).
 window.scrollToFirstFormError = scrollToFirstFormError;
+window.handleFormValidationErrors = handleFormValidationErrors;
 window.validateAssessmentQuestionsTotal = validateAssessmentQuestionsTotal;
+window.validateFinalExamEssayTotal = validateFinalExamEssayTotal;
+window.validateFinalExamForm = validateFinalExamForm;
 window.validateQuizForm = validateQuizForm;

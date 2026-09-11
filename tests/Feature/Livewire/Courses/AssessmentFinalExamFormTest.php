@@ -176,6 +176,25 @@ class AssessmentFinalExamFormTest extends TestCase
         $this->assertDatabaseMissing('assessments', ['title' => 'No Points Exam']);
     }
 
+    public function test_essay_points_must_total_100(): void
+    {
+        $this->teacher->givePermissionTo('assessment.create');
+
+        Livewire::test(AssessmentFinalExamForm::class, ['course' => $this->course])
+            ->set('title', 'Bad Essay Total Exam')
+            ->set('startDate', now()->format('Y-m-d\TH:i'))
+            ->set('endDate', now()->addWeek()->format('Y-m-d\TH:i'))
+            ->set('examType', FinalExamType::OpenBook->value)
+            ->set('questions', [
+                ['id' => null, 'description' => 'Q1', 'questionType' => AssessmentQuestionType::Essay->value, 'points' => '40', 'order' => 1, 'options' => []],
+                ['id' => null, 'description' => 'Q2', 'questionType' => AssessmentQuestionType::Essay->value, 'points' => '40', 'order' => 2, 'options' => []],
+            ])
+            ->call('save')
+            ->assertHasErrors('questions');
+
+        $this->assertDatabaseMissing('assessments', ['title' => 'Bad Essay Total Exam']);
+    }
+
     public function test_period_field_is_not_part_of_the_form(): void
     {
         $this->assertFalse(property_exists(AssessmentFinalExamForm::class, 'periodId'));
@@ -237,7 +256,7 @@ class AssessmentFinalExamFormTest extends TestCase
             'type' => AssessmentType::TheoryFinalExam,
         ]);
         $question = AssessmentQuestion::factory()->for($assessment)->create([
-            'points' => 50,
+            'points' => 100,
             'question_type' => AssessmentQuestionType::Essay,
         ]);
         $finalExam = FinalExam::factory()->for($assessment)->create([

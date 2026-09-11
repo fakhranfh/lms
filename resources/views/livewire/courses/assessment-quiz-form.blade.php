@@ -47,13 +47,13 @@
         x-data="{ submitting: false }"
         @submit.prevent="
             if (!window.validateQuizForm($el)) {
-                $nextTick(() => window.scrollToFirstFormError($el));
+                $nextTick(() => window.handleFormValidationErrors($el));
                 return;
             }
             submitting = true;
             $wire.save();
         "
-        @assessmentquizform-error.window="submitting = false; $nextTick(() => window.scrollToFirstFormError($el))"
+        @assessmentquizform-error.window="submitting = false; $nextTick(() => window.handleFormValidationErrors($el))"
         class="w-full space-y-space-lg"
     >
         <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
@@ -134,7 +134,11 @@
                     Add Question
                 </button>
             </div>
-            @error('questions') <p class="text-body-xs text-error">{{ $message }}</p> @enderror
+            @error('questions')
+                <div data-field-error data-field-label="Questions" class="border border-error ring-2 ring-error/30 rounded-lg p-space-md bg-error/5">
+                    <p class="text-body-xs text-error">{{ $message }}</p>
+                </div>
+            @enderror
 
             @foreach ($questions as $index => $question)
                 @continue($question === null)

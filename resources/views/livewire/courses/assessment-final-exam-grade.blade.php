@@ -81,7 +81,7 @@
         </div>
 
         <div x-show="tab === 'grade'" class="p-space-lg" x-data="{ confirmRegradeOpen: false }">
-            @if ($answer)
+            @if ($answer && ! $isTakeHome)
                 <div class="mb-space-lg">
                     <h4 class="font-label-md text-label-md text-on-surface mb-space-md">Answer</h4>
                     <div class="rte-content prose prose-sm max-w-none text-on-surface">{!! $answer->answer_text !!}</div>
@@ -106,11 +106,13 @@
                         <h4 class="font-label-md text-label-md text-on-surface">Question Scores</h4>
                     </div>
 
-                    <x-ui.pagination-links
-                        :paginator="$paginatedQuestions"
-                        perPageModel="questionsPerPage"
-                        :perPageOptions="[5, 10, 25, 50]"
-                    />
+                    @unless ($isTakeHome)
+                        <x-ui.pagination-links
+                            :paginator="$paginatedQuestions"
+                            perPageModel="questionsPerPage"
+                            :perPageOptions="[5, 10, 25, 50]"
+                        />
+                    @endunless
 
                     <div wire:loading.remove wire:target="previousPage,nextPage,gotoPage,questionsPerPage" class="space-y-space-md">
                         @foreach ($paginatedQuestions as $question)
@@ -133,11 +135,13 @@
                         @endfor
                     </div>
 
-                    <x-ui.pagination-links
-                        :paginator="$paginatedQuestions"
-                        perPageModel="questionsPerPage"
-                        :perPageOptions="[5, 10, 25, 50]"
-                    />
+                    @unless ($isTakeHome)
+                        <x-ui.pagination-links
+                            :paginator="$paginatedQuestions"
+                            perPageModel="questionsPerPage"
+                            :perPageOptions="[5, 10, 25, 50]"
+                        />
+                    @endunless
                 </div>
 
                 <div>

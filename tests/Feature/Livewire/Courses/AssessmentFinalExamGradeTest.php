@@ -376,6 +376,7 @@ class AssessmentFinalExamGradeTest extends TestCase
 
     public function test_questions_are_paginated_five_per_page(): void
     {
+        $this->assessment->finalExam->update(['exam_type' => FinalExamType::OpenBook]);
         $this->teacher->givePermissionTo(['assessment.view', 'assessment.grade']);
 
         AssessmentQuestion::factory()->for($this->assessment)->count(7)->sequence(

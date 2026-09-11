@@ -386,6 +386,7 @@ class AssessmentFinalExamGrade extends Component
         $finalScore = $attempt ? $assessmentScoreService->findByAttempt($attempt->id) : null;
 
         $finalExam = $finalExamService->findByAssessment($this->assessment->id);
+        $isTakeHome = $finalExam?->exam_type->value === 'take_home';
         $isProctored = $finalExam && in_array($finalExam->exam_type->value, ['open_book', 'closed_book'], true);
         $proctorSession = ($isProctored && $attempt)
             ? $proctorSessionService->findByAttempt($attempt->id, ['events', 'snapshots'])
@@ -401,11 +402,12 @@ class AssessmentFinalExamGrade extends Component
 
         $questions = $this->assessment->questions->loadMissing('options');
         $questionsPage = $this->getPage('questionsPage');
+        $questionsPerPage = $isTakeHome ? max($questions->count(), 1) : $this->questionsPerPage;
 
         $paginatedQuestions = new LengthAwarePaginator(
-            $questions->forPage($questionsPage, $this->questionsPerPage)->values(),
+            $questions->forPage($questionsPage, $questionsPerPage)->values(),
             $questions->count(),
-            $this->questionsPerPage,
+            $questionsPerPage,
             $questionsPage,
             ['path' => request()->url(), 'pageName' => 'questionsPage']
         );
@@ -435,6 +437,7 @@ class AssessmentFinalExamGrade extends Component
             'finalScore' => $finalScore,
             'alreadyGraded' => $finalScore !== null,
             'alreadyReviewed' => $proctorSession !== null && $proctorSession->reviewed_at !== null,
+            'isTakeHome' => $isTakeHome,
             'isProctored' => $isProctored,
             'proctorSession' => $proctorSession,
             'cameraRecordings' => $recordings->filter(fn ($s) => str_contains($s->file_url, 'webcam-recording'))->values(),

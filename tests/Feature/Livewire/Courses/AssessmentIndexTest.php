@@ -207,6 +207,26 @@ class AssessmentIndexTest extends TestCase
             ->assertStatus(403);
     }
 
+    public function test_teacher_can_publish_draft_final_exam(): void
+    {
+        $this->teacher->givePermissionTo(['assessment.view', 'assessment.edit']);
+        $this->actingAs($this->teacher);
+
+        $assessment = Assessment::factory()->for($this->course)->create([
+            'type' => AssessmentType::TheoryFinalExam,
+            'status' => AssessmentStatus::Draft,
+        ]);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->call('publishAssessment', $assessment->id);
+
+        $this->assertDatabaseHas('assessments', [
+            'id' => $assessment->id,
+            'status' => AssessmentStatus::Published->value,
+        ]);
+    }
+
     public function test_publish_ignored_for_non_assignment_types(): void
     {
         $this->teacher->givePermissionTo(['assessment.view', 'assessment.edit']);
@@ -220,7 +240,7 @@ class AssessmentIndexTest extends TestCase
         Livewire::test(AssessmentIndex::class, ['course' => $this->course])
             ->call('loadAssessments')
             ->call('publishAssessment', $assessment->id)
-            ->assertSee('Only personal assignments, team assignments, and quizzes');
+            ->assertSee('Only personal assignments, team assignments, quizzes, and final exams');
 
         $this->assertDatabaseHas('assessments', [
             'id' => $assessment->id,

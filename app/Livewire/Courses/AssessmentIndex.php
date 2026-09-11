@@ -156,8 +156,8 @@ class AssessmentIndex extends Component
             return;
         }
 
-        if (! in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::TheoryQuiz], true)) {
-            $this->errorMessage = __('Only personal assignments, team assignments, and quizzes can be published or unpublished.');
+        if (! in_array($assessment->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::TheoryQuiz, AssessmentType::TheoryFinalExam], true)) {
+            $this->errorMessage = __('Only personal assignments, team assignments, quizzes, and final exams can be published or unpublished.');
 
             return;
         }
@@ -694,7 +694,7 @@ class AssessmentIndex extends Component
                 'sessionPosition' => $a->session_id ? ($sessionPositions[$a->session_id] ?? null) : null,
                 'isReorderable' => ! $this->isStudent && ! $this->isAutoProvisionedType($a->type),
                 'isAutoProvisionedType' => $this->isAutoProvisionedType($a->type),
-                'isAssignmentType' => in_array($a->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::TheoryQuiz], true),
+                'isAssignmentType' => in_array($a->type, [AssessmentType::TheoryPersonalAssignment, AssessmentType::TheoryTeamAssignment, AssessmentType::TheoryQuiz, AssessmentType::TheoryFinalExam], true),
                 'isDraft' => $a->status === AssessmentStatus::Draft,
                 'editRoute' => $this->editRoute($a),
                 'publishWireTargets' => "publishAssessment('{$a->id}'),unpublishAssessment('{$a->id}')",

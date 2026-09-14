@@ -4,10 +4,12 @@ namespace Tests\Feature\Livewire\Courses;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\DeliveryMode;
+use App\Enums\RoleName;
 use App\Livewire\Courses\AttendanceIndex;
 use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\CoursePerson;
+use App\Models\Role;
 use App\Models\School;
 use App\Models\Session;
 use App\Models\User;
@@ -40,6 +42,9 @@ class AttendanceIndexTest extends TestCase
         $this->session = Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::Offline]);
 
         CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
+
+        $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]);
+        $this->student->assignRole($studentRole);
     }
 
     public function test_user_without_permission_cannot_view_attendance(): void

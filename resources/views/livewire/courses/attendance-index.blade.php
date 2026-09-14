@@ -185,16 +185,52 @@
                 :search="$studentSearch"
             />
 
+            @if ($canManage && ! $isLocked)
+                <div class="flex items-center gap-space-sm flex-wrap">
+                    <span class="text-body-sm text-on-surface-variant">Mark all students as:</span>
+                    <button
+                        type="button"
+                        wire:click="markAllAttendance('present')"
+                        wire:loading.attr="disabled"
+                        wire:target="markAllAttendance('present')"
+                        class="px-space-md py-space-xs rounded-lg border border-success/40 text-success font-label-sm text-label-sm hover:bg-success/10 transition disabled:opacity-50 inline-flex items-center gap-space-xs"
+                    >
+                        <span wire:loading wire:target="markAllAttendance('present')" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                        Present
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="markAllAttendance('late')"
+                        wire:loading.attr="disabled"
+                        wire:target="markAllAttendance('late')"
+                        class="px-space-md py-space-xs rounded-lg border border-warning/40 text-warning font-label-sm text-label-sm hover:bg-warning/10 transition disabled:opacity-50 inline-flex items-center gap-space-xs"
+                    >
+                        <span wire:loading wire:target="markAllAttendance('late')" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                        Late
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="markAllAttendance('absent')"
+                        wire:loading.attr="disabled"
+                        wire:target="markAllAttendance('absent')"
+                        class="px-space-md py-space-xs rounded-lg border border-error/40 text-error font-label-sm text-label-sm hover:bg-error/10 transition disabled:opacity-50 inline-flex items-center gap-space-xs"
+                    >
+                        <span wire:loading wire:target="markAllAttendance('absent')" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                        Absent
+                    </button>
+                </div>
+            @endif
+
             <!-- Skeleton Loading (shown while switching pages, sessions, searching, or saving) -->
             <div
                 wire:loading.class.remove="hidden"
-                wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,perPage,saveAllAttendance"
+                wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,perPage,saveAllAttendance,markAllAttendance('present'),markAllAttendance('late'),markAllAttendance('absent')"
                 class="hidden bg-surface border border-outline-variant rounded-lg overflow-hidden animate-pulse"
             >
                 <x-attendance.table-skeleton :is-student="false" :can-manage="$canManage" />
             </div>
 
-            <div wire:loading.remove wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,perPage,saveAllAttendance" x-data="{}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
+            <div wire:loading.remove wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,perPage,saveAllAttendance,markAllAttendance('present'),markAllAttendance('late'),markAllAttendance('absent')" x-data="{}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>

@@ -149,6 +149,36 @@ class AttendanceIndex extends Component
         $this->successMessage = __('Attendance saved and locked — it can no longer be changed.');
     }
 
+    /**
+     * Drafts every enrolled student's status as the given value in one go
+     * (not just the current page), so a teacher can bulk-mark a whole
+     * session before fine-tuning individual students and hitting Save All.
+     */
+    public function markAllAttendance(string $status, CoursePersonService $coursePersonService, AttendanceDraftService $attendanceDraftService): void
+    {
+        abort_unless(auth()->user()->can('attendance.manage'), 403);
+        abort_unless(in_array($status, ['present', 'absent', 'late'], true), 422);
+
+        $this->errorMessage = null;
+
+        $session = $this->selectedSessionId
+            ? $this->course->sessions()->whereKey($this->selectedSessionId)->first()
+            : null;
+
+        if (! $session) {
+            $this->errorMessage = __('Session not found.');
+
+            return;
+        }
+
+        abort_if($session->isAttendanceLocked(), 403);
+
+        foreach ($coursePersonService->studentsForCourse($this->course->id) as $coursePerson) {
+            $this->drafts[$coursePerson->user_id]['status'] = $status;
+            $attendanceDraftService->save($session->id, $coursePerson->user_id, 'status', $status);
+        }
+    }
+
     private function persistAttendance(string $sessionId, string $userId, string $status, string $notes, AttendanceService $attendanceService): void
     {
         $existing = $attendanceService->findBySessionAndUser($sessionId, $userId);

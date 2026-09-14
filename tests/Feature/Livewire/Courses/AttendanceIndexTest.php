@@ -392,4 +392,43 @@ class AttendanceIndexTest extends TestCase
             ->call('recordAttendance', $this->session->id, $this->student->id, 'present', '')
             ->assertStatus(403);
     }
+
+    public function test_mark_all_attendance_drafts_every_student_as_the_given_status(): void
+    {
+        $this->teacher->givePermissionTo(['attendance.view', 'attendance.manage']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->call('markAllAttendance', 'late')
+            ->assertSet("drafts.{$this->student->id}.status", 'late');
+
+        expect(app(AttendanceDraftService::class)->all($this->session->id))
+            ->toHaveKey($this->student->id);
+        expect(app(AttendanceDraftService::class)->all($this->session->id)[$this->student->id]['status'])
+            ->toBe('late');
+    }
+
+    public function test_mark_all_attendance_rejects_an_invalid_status(): void
+    {
+        $this->teacher->givePermissionTo(['attendance.view', 'attendance.manage']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->call('markAllAttendance', 'excused')
+            ->assertStatus(422);
+    }
+
+    public function test_mark_all_attendance_is_rejected_once_the_session_is_already_locked(): void
+    {
+        $this->teacher->givePermissionTo(['attendance.view', 'attendance.manage']);
+        $this->actingAs($this->teacher);
+        $this->session->update(['attendance_locked_at' => now()]);
+
+        Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->call('markAllAttendance', 'present')
+            ->assertStatus(403);
+    }
 }

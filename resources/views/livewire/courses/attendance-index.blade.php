@@ -352,7 +352,7 @@
             <x-ui.pagination-links :paginator="$studentRows" perPageModel="perPage" :perPageOptions="[10, 25, 50, 100]" />
 
             @if ($canManage)
-                <div class="h-16" aria-hidden="true"></div>
+                <div class="h-1" aria-hidden="true"></div>
 
                 <div class="relative sticky bottom-[-1.5rem] z-20 -mx-gutter px-gutter pt-space-md pb-space-lg bg-surface border-t border-outline-variant flex items-center justify-between gap-space-md before:content-[''] before:absolute before:left-0 before:right-0 before:-top-space-lg before:h-space-lg before:bg-surface before:-z-10">
                     @if ($isLocked)

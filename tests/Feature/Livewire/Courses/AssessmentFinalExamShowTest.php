@@ -131,7 +131,7 @@ class AssessmentFinalExamShowTest extends TestCase
         $this->teacher->givePermissionTo(['assessment.view']);
 
         $questions = AssessmentQuestion::factory()->for($this->assessment)->count(7)->sequence(
-            fn ($sequence) => ['description' => 'Question body '.$sequence->index]
+            fn ($sequence) => ['description' => 'Question body '.$sequence->index, 'order' => $sequence->index]
         )->create();
 
         $this->actingAs($this->teacher);

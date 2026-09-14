@@ -46,4 +46,9 @@ class AttendanceService
     {
         return $this->attendanceRepository->forUser($userId);
     }
+
+    public function deleteForCourse(string $courseId): int
+    {
+        return $this->attendanceRepository->deleteForCourse($courseId);
+    }
 }

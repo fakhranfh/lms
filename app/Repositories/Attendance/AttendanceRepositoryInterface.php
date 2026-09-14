@@ -20,4 +20,6 @@ interface AttendanceRepositoryInterface
     public function findBySessionAndUser(string $sessionId, string $userId): ?Attendance;
 
     public function forUser(string $userId): Collection;
+
+    public function deleteForCourse(string $courseId): int;
 }

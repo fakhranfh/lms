@@ -54,4 +54,9 @@ class AttendanceRepository implements AttendanceRepositoryInterface
     {
         return Attendance::where('user_id', $userId)->with('session')->get();
     }
+
+    public function deleteForCourse(string $courseId): int
+    {
+        return Attendance::whereHas('session', fn ($query) => $query->where('course_id', $courseId))->delete();
+    }
 }

@@ -11,7 +11,6 @@ use App\Models\Session;
 use App\Services\AttendanceDerivationService;
 use App\Services\AttendanceDraftService;
 use App\Services\AttendanceService;
-use App\Services\CourseAttendanceSettingService;
 use App\Services\CoursePersonService;
 use App\Services\SessionService;
 use App\Support\CourseTabs;
@@ -182,8 +181,28 @@ class AttendanceIndex extends Component
         $this->successMessage = null;
     }
 
+    /**
+     * Dev-only helper to wipe every attendance record for this course,
+     * unlock all of its sessions, and clear any pending drafts — so a
+     * developer can re-test the mark-attendance flow from a clean slate.
+     */
+    public function resetAllAttendance(AttendanceService $attendanceService, AttendanceDraftService $attendanceDraftService, SessionService $sessionService): void
+    {
+        abort_unless(app()->environment(['local', 'testing']), 403);
+        abort_unless(auth()->user()->can('attendance.manage'), 403);
+
+        $attendanceService->deleteForCourse($this->course->id);
+
+        foreach ($this->course->sessions()->get() as $session) {
+            $sessionService->update($session->id, ['attendance_locked_at' => null]);
+            $attendanceDraftService->clear($session->id);
+        }
+
+        $this->drafts = [];
+        $this->successMessage = __('All student attendance for this course has been reset.');
+    }
+
     public function render(
-        CourseAttendanceSettingService $courseAttendanceSettingService,
         AttendanceDerivationService $attendanceDerivationService,
         AttendanceService $attendanceService,
         CoursePersonService $coursePersonService,

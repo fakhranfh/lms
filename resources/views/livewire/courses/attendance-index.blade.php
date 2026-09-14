@@ -21,6 +21,63 @@
         <h1 class="font-headline-md text-headline-md text-on-surface">Attendance</h1>
     </div>
 
+    @if (app()->isLocal() && ! $isStudent && $canManage)
+        <div x-data="{ confirmResetOpen: false }" class="px-gutter py-space-md bg-secondary/10 border border-secondary/20 rounded-lg flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-secondary text-[20px]">science</span>
+            <p class="font-body-sm text-body-sm text-secondary flex-1">Dev only: reset all student attendance for this course.</p>
+            <button
+                type="button"
+                @click="confirmResetOpen = true"
+                wire:loading.attr="disabled"
+                wire:target="resetAllAttendance"
+                class="px-space-md py-space-xs rounded-lg border border-error text-error font-label-sm text-label-sm hover:bg-error/10 transition disabled:opacity-50 inline-flex items-center gap-space-xs"
+            >
+                <span wire:loading wire:target="resetAllAttendance" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                Reset All Attendance
+            </button>
+
+            <x-ui.modal show="confirmResetOpen" onClose="confirmResetOpen = false" maxWidth="max-w-sm">
+                <div class="bg-surface border border-outline-variant rounded-lg shadow-lg">
+                    <div class="p-space-lg space-y-space-lg">
+                        <div class="flex justify-center">
+                            <div class="flex items-center justify-center w-12 h-12 bg-error/10 rounded-full">
+                                <span class="material-symbols-outlined text-error text-[24px]" data-weight="fill">warning</span>
+                            </div>
+                        </div>
+
+                        <div class="text-center space-y-space-sm">
+                            <h3 class="font-headline-sm text-headline-sm text-on-surface">Reset All Attendance?</h3>
+                            <p class="font-body-sm text-body-sm text-on-surface-variant">
+                                This deletes every student's attendance record for this course and unlocks all sessions. This cannot be undone.
+                            </p>
+                        </div>
+
+                        <div class="flex gap-space-md pt-space-md">
+                            <button
+                                type="button"
+                                @click="confirmResetOpen = false"
+                                class="flex-1 px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                @click="confirmResetOpen = false"
+                                wire:click="resetAllAttendance"
+                                wire:loading.attr="disabled"
+                                wire:target="resetAllAttendance"
+                                class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center justify-center gap-space-sm"
+                            >
+                                <span wire:loading wire:target="resetAllAttendance" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </x-ui.modal>
+        </div>
+    @endif
+
     @if ($isStudent)
         <!-- Attendance Summary -->
         <div class="grid grid-cols-3 gap-space-md">
@@ -51,9 +108,9 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-outline-variant">
-                        @forelse ($sessionRows as $index => $row)
+                        @forelse ($sessionRows as $row)
                             <tr wire:key="session-{{ $row['session']->id }}">
-                                <td class="px-space-lg py-space-md font-label-md text-label-md text-on-surface">Session {{ $index + 1 }}</td>
+                                <td class="px-space-lg py-space-md font-label-md text-label-md text-on-surface">Session {{ $row['session']->order }}</td>
                                 <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ str($row['session']->delivery_mode->value)->replace('_', ' ')->title() }}</td>
                                 <td class="px-space-lg py-space-md text-body-sm text-on-surface">
                                     {{ $row['session']->date_start_display?->format('M j, Y, H:i') }} &ndash; {{ $row['session']->date_end_display?->format('H:i') }}
@@ -87,13 +144,14 @@
     @else
         <!-- Teacher: session tabs -->
         <div class="flex flex-wrap gap-space-xs border-b border-outline-variant">
-            @forelse ($sessions as $index => $session)
+            @forelse ($sessions as $session)
                 <button
                     type="button"
                     wire:click="selectSession('{{ $session->id }}')"
+                    onclick="this.closest('div').querySelectorAll('button').forEach(el => el.classList.remove('border-primary', 'text-primary')); this.closest('div').querySelectorAll('button').forEach(el => el.classList.add('border-transparent', 'text-on-surface-variant')); this.classList.remove('border-transparent', 'text-on-surface-variant'); this.classList.add('border-primary', 'text-primary');"
                     class="px-space-md py-space-sm rounded-t-lg border-b-2 font-label-sm text-label-sm transition {{ $selectedSession && $selectedSession->id === $session->id ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:bg-surface-container/50' }}"
                 >
-                    Session {{ $index + 1 }}
+                    Session {{ $session->order }}
                 </button>
             @empty
                 <p class="text-body-sm text-on-surface-variant py-space-md">No sessions yet.</p>
@@ -105,16 +163,16 @@
 
             <x-ui.pagination-links :paginator="$studentRows" />
 
-            <!-- Skeleton Loading (shown while switching pages, sessions, or searching) -->
+            <!-- Skeleton Loading (shown while switching pages, sessions, searching, or saving) -->
             <div
                 wire:loading.class.remove="hidden"
-                wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch"
+                wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,saveAllAttendance"
                 class="hidden bg-surface border border-outline-variant rounded-lg overflow-hidden animate-pulse"
             >
                 <x-attendance.table-skeleton :is-student="false" :can-manage="$canManage" />
             </div>
 
-            <div wire:loading.remove wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch" x-data="{}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
+            <div wire:loading.remove wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,saveAllAttendance" x-data="{}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
@@ -250,8 +308,11 @@
                             <button
                                 type="button"
                                 @click="confirmOpen = true"
+                                wire:loading.attr="disabled"
+                                wire:target="saveAllAttendance"
                                 class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm flex-shrink-0"
                             >
+                                <span wire:loading wire:target="saveAllAttendance" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
                                 Save All
                             </button>
 

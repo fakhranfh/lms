@@ -39,7 +39,7 @@ class AttendanceIndexTest extends TestCase
         $this->teacher = User::factory()->forSchool($this->school)->create();
         $this->student = User::factory()->forSchool($this->school)->create();
         $this->course = Course::factory()->for($this->school)->create();
-        $this->session = Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::Offline]);
+        $this->session = Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::Offline, 'order' => 1]);
 
         CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
 
@@ -89,6 +89,28 @@ class AttendanceIndexTest extends TestCase
             'recorded_by' => $this->teacher->id,
             'notes' => 'On time',
         ]);
+    }
+
+    public function test_teacher_can_reset_all_attendance_for_the_course(): void
+    {
+        $this->teacher->givePermissionTo(['attendance.view', 'attendance.manage']);
+        $this->actingAs($this->teacher);
+
+        Attendance::factory()->create([
+            'session_id' => $this->session->id,
+            'user_id' => $this->student->id,
+            'status' => AttendanceStatus::Present,
+        ]);
+
+        $this->session->update(['attendance_locked_at' => now()]);
+
+        Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->call('resetAllAttendance')
+            ->assertSet('errorMessage', null);
+
+        $this->assertDatabaseMissing('attendances', ['session_id' => $this->session->id]);
+        $this->assertNull($this->session->fresh()->attendance_locked_at);
     }
 
     public function test_student_cannot_record_attendance(): void

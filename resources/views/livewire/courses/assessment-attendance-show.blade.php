@@ -40,7 +40,7 @@
                         @forelse ($sessionRows as $index => $row)
                             <tr wire:key="session-{{ $row['session']->id }}">
                                 <td class="px-space-lg py-space-md">
-                                    <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $index + 1 }}</p>
+                                    <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $row['session']->order }}</p>
                                     <p class="font-label-md text-label-md text-on-surface">{{ $row['session']->title }}</p>
                                 </td>
                                 <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ $row['session']->date_start_display?->format('d M Y, H:i') }}</td>
@@ -69,7 +69,7 @@
                         @forelse ($sessionRows as $index => $row)
                             <tr wire:key="session-{{ $row['session']->id }}">
                                 <td class="px-space-lg py-space-md">
-                                    <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $index + 1 }}</p>
+                                    <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $row['session']->order }}</p>
                                     <p class="font-label-md text-label-md text-on-surface">{{ $row['session']->title }}</p>
                                 </td>
                                 <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ $row['session']->date_start_display?->format('d M Y, H:i') }}</td>

@@ -29,7 +29,7 @@
                     class="hover:bg-surface-container/30 transition cursor-pointer"
                 >
                     <td class="px-space-lg py-space-md">
-                        <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $row['sessionIndex'] + 1 }}</p>
+                        <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $row['session']->order }}</p>
                         <p class="font-label-md text-label-md text-on-surface">{{ $row['session']->title }}</p>
                     </td>
                     <td class="px-space-lg py-space-md text-body-sm text-on-surface">

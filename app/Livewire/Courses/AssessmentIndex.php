@@ -647,7 +647,7 @@ class AssessmentIndex extends Component
         $allSessions = $attendanceDerivationService->sessionsForCourse($this->course);
 
         $virtualClassSessions = $allSessions
-            ->filter(fn (Session $session) => $session->delivery_mode === DeliveryMode::VirtualClass)
+            ->filter(fn (Session $session) => in_array($session->delivery_mode, [DeliveryMode::VirtualClass, DeliveryMode::Offline], true))
             ->values();
 
         $onlineSessions = $allSessions

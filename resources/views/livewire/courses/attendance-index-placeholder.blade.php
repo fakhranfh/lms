@@ -4,24 +4,33 @@
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => $teacher])
 
     <div class="space-y-space-lg animate-pulse">
-        <div class="h-6 bg-surface-container rounded w-40"></div>
+        <x-ui.skeleton-box class="h-6 w-40" />
 
-        <div class="grid grid-cols-3 gap-space-md">
-            @for ($i = 0; $i < 3; $i++)
-                <div class="h-20 bg-surface-container rounded-lg"></div>
-            @endfor
-        </div>
-
-        <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
-            @for ($i = 0; $i < 4; $i++)
-                <div class="p-space-lg flex items-center gap-space-md">
-                    <div class="flex-1 space-y-space-xs">
-                        <div class="h-4 bg-surface-container rounded w-1/3"></div>
-                        <div class="h-3 bg-surface-container rounded w-1/4"></div>
+        @if ($isStudent)
+            <div class="grid grid-cols-3 gap-space-md">
+                @for ($i = 0; $i < 3; $i++)
+                    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-xs">
+                        <x-ui.skeleton-box class="h-3 w-24" />
+                        <x-ui.skeleton-box class="h-6 w-12" />
                     </div>
-                    <div class="w-20 h-6 bg-surface-container rounded-full flex-shrink-0"></div>
-                </div>
-            @endfor
-        </div>
+                @endfor
+            </div>
+
+            <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
+                <x-attendance.table-skeleton :is-student="true" />
+            </div>
+        @else
+            <div class="flex flex-wrap gap-space-xs border-b border-outline-variant pb-space-sm">
+                @for ($i = 0; $i < 3; $i++)
+                    <x-ui.skeleton-box class="h-9 w-24" />
+                @endfor
+            </div>
+
+            <x-ui.skeleton-box class="h-11 w-full max-w-sm rounded-lg" />
+
+            <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
+                <x-attendance.table-skeleton :is-student="false" :can-manage="$canManage" />
+            </div>
+        @endif
     </div>
 </div>

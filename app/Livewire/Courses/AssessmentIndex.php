@@ -743,6 +743,7 @@ class AssessmentIndex extends Component
                         'sessionIndex' => $index,
                         'attendedCount' => $attendedCount,
                         'totalStudents' => $students->count(),
+                        'href' => route('attendance.index', $this->course).'?session='.$session->id,
                         'wireKey' => 'attendance-session-'.$session->id,
                     ];
                 });

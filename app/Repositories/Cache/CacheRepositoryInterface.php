@@ -50,6 +50,8 @@ interface CacheRepositoryInterface
 
     public function hashSet(string $key, string $field, mixed $value): void;
 
+    public function hashDelete(string $key, string $field): void;
+
     public function flush(): void;
 
     /**

@@ -101,7 +101,20 @@
         </div>
 
         @if ($selectedSession)
-            <div x-data="{}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
+            <x-ui.search-input wire-model="studentSearch" placeholder="Search students..." class="max-w-sm" />
+
+            <x-ui.pagination-links :paginator="$studentRows" />
+
+            <!-- Skeleton Loading (shown while switching pages or sessions) -->
+            <div
+                wire:loading.delay.class.remove="hidden"
+                wire:target="gotoPage,previousPage,nextPage,selectSession"
+                class="hidden bg-surface border border-outline-variant rounded-lg overflow-hidden animate-pulse"
+            >
+                <x-attendance.table-skeleton :is-student="false" :can-manage="$canManage" />
+            </div>
+
+            <div wire:loading.remove wire:target="gotoPage,previousPage,nextPage,selectSession" x-data="{}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
@@ -109,28 +122,30 @@
                                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Student</th>
                                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Delivery</th>
                                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attendance Requirement</th>
-                                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Computed</th>
+                                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Status</th>
                                 @if ($canManage)
-                                    <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Override</th>
+                                    <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Mark Attendance</th>
                                 @endif
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-outline-variant">
                             @forelse ($studentRows as $row)
-                                <tr
-                                    wire:key="student-{{ $row['user']->id }}"
-                                    x-data="{
-                                        status: @js($row['attendance']?->status?->value ?? 'absent'),
-                                        notes: @js($row['attendance']?->notes ?? ''),
-                                    }"
-                                >
-                                    <td class="px-space-lg py-space-md font-label-md text-label-md text-on-surface">{{ $row['user']->name }}</td>
+                                <tr wire:key="student-{{ $row['user']->id }}">
+                                    <td class="px-space-lg py-space-md">
+                                        <div class="flex items-center gap-space-sm">
+                                            <x-avatar :user="$row['user']" size="8" />
+                                            <span class="font-label-md text-label-md text-on-surface">{{ $row['user']->name }}</span>
+                                        </div>
+                                    </td>
                                     <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ str($selectedSession->delivery_mode->value)->replace('_', ' ')->title() }}</td>
                                     <td class="px-space-lg py-space-md text-body-xs text-on-surface-variant">
                                         {{ $row['requirement'] }}
                                     </td>
                                     <td class="px-space-lg py-space-md">
-                                        @if ($row['attend'])
+                                        @if ($row['selfAttendedAt'])
+                                            <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-success/10 text-success">Present (self check-in)</span>
+                                            <p class="text-body-xs text-on-surface-variant mt-1">{{ $row['selfAttendedAt']->format('d M Y, H:i') }}</p>
+                                        @elseif ($row['attend'])
                                             <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-success/10 text-success">Present</span>
                                         @else
                                             <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-error/10 text-error">Not Attended</span>
@@ -138,36 +153,97 @@
                                     </td>
                                     @if ($canManage)
                                         <td class="px-space-lg py-space-md">
-                                            <div class="flex items-center gap-space-xs">
-                                                <select x-model="status" class="px-space-sm py-1 border border-outline rounded-lg font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                            <div
+                                                class="flex items-center gap-space-md"
+                                                x-data="{ status: @entangle('drafts.'.$row['user']->id.'.status').live, notesModalOpen: false }"
+                                            >
+                                                <div class="flex flex-col items-start gap-1">
                                                     @foreach ($statuses as $statusOption)
-                                                        <option value="{{ $statusOption->value }}">{{ str($statusOption->value)->title() }}</option>
+                                                        <label class="inline-flex items-center gap-1 text-body-xs text-on-surface cursor-pointer">
+                                                            <input
+                                                                type="radio"
+                                                                name="status-{{ $row['user']->id }}"
+                                                                value="{{ $statusOption->value }}"
+                                                                x-model="status"
+                                                                class="w-3.5 h-3.5 accent-primary"
+                                                            />
+                                                            {{ str($statusOption->value)->title() }}
+                                                        </label>
                                                     @endforeach
-                                                </select>
-                                                <input type="text" x-model="notes" placeholder="Notes" class="px-space-sm py-1 border border-outline rounded-lg font-body-sm text-body-sm w-32 focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                                                <button
-                                                    type="button"
-                                                    @click="$wire.recordAttendance('{{ $selectedSession->id }}', '{{ $row['user']->id }}', status, notes)"
-                                                    wire:loading.attr="disabled"
-                                                    wire:target="recordAttendance"
-                                                    class="px-space-sm py-1 bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-xs"
-                                                >
-                                                    <span wire:loading wire:target="recordAttendance" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-                                                    Save
-                                                </button>
+
+                                                    <button
+                                                        type="button"
+                                                        x-show="status === 'excused'"
+                                                        x-cloak
+                                                        @click="notesModalOpen = true"
+                                                        class="mt-1 inline-flex items-center gap-1 text-body-xs text-primary hover:underline"
+                                                    >
+                                                        <span class="material-symbols-outlined text-[14px]">note_add</span>
+                                                        Add Notes
+                                                    </button>
+                                                </div>
+
+                                                <div x-show="notesModalOpen" x-cloak class="fixed inset-0 z-50">
+                                                    <div @click="notesModalOpen = false" class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+                                                    <div class="fixed inset-0 flex items-center justify-center p-4">
+                                                        <div @click.stop class="bg-surface border border-outline-variant rounded-lg shadow-lg max-w-lg w-full">
+                                                            <div class="p-space-lg space-y-space-md">
+                                                                <h3 class="font-headline-sm text-headline-sm text-on-surface">Excuse Notes &mdash; {{ $row['user']->name }}</h3>
+
+                                                                <x-rich-text-editor
+                                                                    id="attendance-notes-{{ $row['user']->id }}"
+                                                                    wire-model="drafts.{{ $row['user']->id }}.notes"
+                                                                    :value="$this->drafts[$row['user']->id]['notes'] ?? ''"
+                                                                    :allow-attachments="false"
+                                                                />
+
+                                                                <div class="flex justify-end pt-space-sm">
+                                                                    <button
+                                                                        type="button"
+                                                                        @click="notesModalOpen = false"
+                                                                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                                                                    >
+                                                                        Done
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </td>
                                     @endif
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No students enrolled yet.</td>
+                                    <td colspan="5" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No students found.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <x-ui.pagination-links :paginator="$studentRows" />
+
+            @if ($canManage)
+                <div class="h-16" aria-hidden="true"></div>
+
+                <div class="relative sticky bottom-[-1.5rem] z-20 -mx-gutter px-gutter pt-space-md pb-space-lg bg-surface border-t border-outline-variant flex items-center justify-between gap-space-md before:content-[''] before:absolute before:left-0 before:right-0 before:-top-space-lg before:h-space-lg before:bg-surface before:-z-10">
+                    <p class="font-body-sm text-body-sm text-on-surface-variant">Mark attendance changes are saved as drafts &mdash; click Save All to apply them.</p>
+                    <button
+                        type="button"
+                        wire:click="saveAllAttendance"
+                        wire:loading.attr="disabled"
+                        wire:target="saveAllAttendance"
+                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm flex-shrink-0"
+                    >
+                        <span wire:loading wire:target="saveAllAttendance" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                        Save All
+                    </button>
+                </div>
+            @endif
         @endif
     @endif
 </div>

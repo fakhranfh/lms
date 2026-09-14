@@ -131,6 +131,46 @@ test('online session forum post count sums threads and comments together', funct
     expect(app(AttendanceDerivationService::class)->isSessionAttended($session, $user->id))->toBeTrue();
 });
 
+test('self attended at returns null when the student never joined the video conference', function () {
+    $session = Session::factory()->create(['delivery_mode' => DeliveryMode::VirtualClass]);
+    VideoConference::factory()->create(['session_id' => $session->id]);
+    $user = User::factory()->create();
+    $session->load('videoConferences.participations');
+
+    expect(app(AttendanceDerivationService::class)->selfAttendedAt($session, $user->id))->toBeNull();
+});
+
+test('self attended at returns the join datetime when the student joined the video conference', function () {
+    $session = Session::factory()->create(['delivery_mode' => DeliveryMode::VirtualClass]);
+    $conference = VideoConference::factory()->create(['session_id' => $session->id]);
+    $user = User::factory()->create();
+    $joinedAt = now()->subMinutes(10);
+
+    VideoConferenceParticipation::factory()->create([
+        'video_conference_id' => $conference->id,
+        'user_id' => $user->id,
+        'joined_at' => $joinedAt,
+        'left_at' => null,
+    ]);
+    $session->load('videoConferences.participations');
+
+    $result = app(AttendanceDerivationService::class)->selfAttendedAt($session, $user->id);
+
+    expect($result)->not->toBeNull();
+    expect($result->timestamp)->toBe($joinedAt->timestamp);
+});
+
+test('self attended at returns null when only a teacher manually marked the student present', function () {
+    $session = Session::factory()->create(['delivery_mode' => DeliveryMode::VirtualClass]);
+    VideoConference::factory()->create(['session_id' => $session->id]);
+    $user = User::factory()->create();
+
+    Attendance::factory()->create(['session_id' => $session->id, 'user_id' => $user->id, 'status' => AttendanceStatus::Present]);
+    $session->load('videoConferences.participations');
+
+    expect(app(AttendanceDerivationService::class)->selfAttendedAt($session, $user->id))->toBeNull();
+});
+
 test('summary for student counts sessions across all delivery modes', function () {
     $course = Course::factory()->create();
     $user = User::factory()->create();

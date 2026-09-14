@@ -1,7 +1,9 @@
 {{--
-    Molecule: read-only per-session attendance summary shown to teachers for
-    the auto-provisioned Attendance assessment. Each row in `rows` is
-    `['session', 'sessionIndex', 'attendedCount', 'totalStudents', 'wireKey']`.
+    Molecule: per-session attendance summary shown to teachers for the
+    auto-provisioned Attendance assessment. Each row in `rows` is
+    `['session', 'sessionIndex', 'attendedCount', 'totalStudents', 'href',
+    'wireKey']`. Clicking a row opens the per-student attendance table on
+    the Attendance page, where presence can be marked.
 --}}
 @props([
     'rows',
@@ -20,7 +22,11 @@
         </thead>
         <tbody class="divide-y divide-outline-variant">
             @forelse ($rows as $row)
-                <tr wire:key="{{ $row['wireKey'] }}">
+                <tr
+                    wire:key="{{ $row['wireKey'] }}"
+                    @click="window.location = '{{ $row['href'] }}'"
+                    class="hover:bg-surface-container/30 transition cursor-pointer"
+                >
                     <td class="px-space-lg py-space-md">
                         <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $row['sessionIndex'] + 1 }}</p>
                         <p class="font-label-md text-label-md text-on-surface">{{ $row['session']->title }}</p>

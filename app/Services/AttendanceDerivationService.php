@@ -7,6 +7,7 @@ use App\Enums\DeliveryMode;
 use App\Models\Course;
 use App\Models\Session;
 use App\Models\VideoConference;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 class AttendanceDerivationService
@@ -52,6 +53,24 @@ class AttendanceDerivationService
         return $session->videoConferences->contains(
             fn (VideoConference $conference) => $conference->participations->contains('user_id', $userId)
         );
+    }
+
+    /**
+     * The datetime a student joined a virtual class session's video
+     * conference on their own, i.e. self-recorded attendance rather than a
+     * teacher's manual mark. Null when the student never joined.
+     */
+    public function selfAttendedAt(Session $session, string $userId): ?CarbonInterface
+    {
+        foreach ($session->videoConferences as $conference) {
+            $participation = $conference->participations->firstWhere('user_id', $userId);
+
+            if ($participation !== null) {
+                return $participation->joined_at_display;
+            }
+        }
+
+        return null;
     }
 
     private function isManuallyCheckedIn(Session $session, string $userId): bool

@@ -7,7 +7,12 @@ use Database\Factories\VideoConferenceParticipationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property-read Carbon $joined_at_display
+ * @property-read Carbon $left_at_display
+ */
 #[Fillable(['video_conference_id', 'user_id', 'joined_at', 'left_at'])]
 class VideoConferenceParticipation extends Model
 {

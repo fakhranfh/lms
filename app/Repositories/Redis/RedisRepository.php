@@ -93,6 +93,11 @@ class RedisRepository implements CacheRepositoryInterface
         Redis::hset($key, $field, $value);
     }
 
+    public function hashDelete(string $key, string $field): void
+    {
+        Redis::hdel($key, $field);
+    }
+
     public function flush(): void
     {
         Redis::flushdb();

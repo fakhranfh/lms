@@ -3,6 +3,7 @@
 namespace App\Livewire\Courses;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\DeliveryMode;
 use App\Enums\RoleName;
 use App\Models\Course;
 use App\Models\CoursePerson;
@@ -12,6 +13,7 @@ use App\Services\AttendanceDraftService;
 use App\Services\AttendanceService;
 use App\Services\CourseAttendanceSettingService;
 use App\Services\CoursePersonService;
+use App\Services\SessionService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -90,6 +92,8 @@ class AttendanceIndex extends Component
             return;
         }
 
+        abort_if($session->isAttendanceLocked(), 403);
+
         $this->persistAttendance($session->id, $userId, $status, $notes, $attendanceService);
 
         $attendanceDraftService->forgetUser($session->id, $userId);
@@ -99,10 +103,12 @@ class AttendanceIndex extends Component
     }
 
     /**
-     * Persists every drafted status/notes change for the selected session
-     * in one go, backing the sticky "Save All" footer.
+     * Persists every drafted status/notes change for the selected session in
+     * one go, then locks the session so it can no longer be edited — backs
+     * the sticky "Save All" footer, which the UI only reaches after the
+     * user confirms the "this can't be changed afterwards" warning.
      */
-    public function saveAllAttendance(AttendanceService $attendanceService, AttendanceDraftService $attendanceDraftService): void
+    public function saveAllAttendance(AttendanceService $attendanceService, AttendanceDraftService $attendanceDraftService, SessionService $sessionService): void
     {
         abort_unless(auth()->user()->can('attendance.manage'), 403);
 
@@ -118,6 +124,8 @@ class AttendanceIndex extends Component
             return;
         }
 
+        abort_if($session->isAttendanceLocked(), 403);
+
         foreach ($this->drafts as $userId => $draft) {
             if (! isset($draft['status'])) {
                 continue;
@@ -126,10 +134,12 @@ class AttendanceIndex extends Component
             $this->persistAttendance($session->id, $userId, $draft['status'], $draft['notes'] ?? '', $attendanceService);
         }
 
+        $sessionService->update($session->id, ['attendance_locked_at' => now()]);
+
         $attendanceDraftService->clear($session->id);
         $this->drafts = [];
 
-        $this->successMessage = __('Attendance saved.');
+        $this->successMessage = __('Attendance saved and locked — it can no longer be changed.');
     }
 
     private function persistAttendance(string $sessionId, string $userId, string $status, string $notes, AttendanceService $attendanceService): void
@@ -195,7 +205,9 @@ class AttendanceIndex extends Component
                 ->section('app-content');
         }
 
-        $sessions = $attendanceDerivationService->sessionsForCourse($this->course);
+        $sessions = $attendanceDerivationService->sessionsForCourse($this->course)
+            ->filter(fn (Session $session) => in_array($session->delivery_mode, [DeliveryMode::VirtualClass, DeliveryMode::Offline], true))
+            ->values();
 
         if ($this->isStudent) {
             $userId = auth()->id();
@@ -214,6 +226,7 @@ class AttendanceIndex extends Component
                 ? $sessions->firstWhere('id', $this->selectedSessionId)
                 : $sessions->first();
             $viewData['selectedSession'] = $selectedSession;
+            $viewData['isLocked'] = $selectedSession?->isAttendanceLocked() ?? false;
 
             if ($selectedSession) {
                 $this->selectedSessionId = $selectedSession->id;
@@ -264,6 +277,9 @@ class AttendanceIndex extends Component
                 'attend' => $attendanceDerivationService->isSessionAttended($selectedSession, $coursePerson->user_id),
                 'requirement' => $attendanceDerivationService->attendanceRequirementDescriptionForSession($selectedSession),
                 'selfAttendedAt' => $attendanceDerivationService->selfAttendedAt($selectedSession, $coursePerson->user_id),
+                'teacherRecordedAt' => ($attendance !== null && $attendance->status === AttendanceStatus::Present)
+                    ? $attendance->recorded_at_display
+                    : null,
             ];
         })->values();
 

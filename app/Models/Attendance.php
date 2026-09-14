@@ -8,7 +8,11 @@ use Database\Factories\AttendanceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property-read Carbon $recorded_at_display
+ */
 #[Fillable(['session_id', 'user_id', 'status', 'recorded_by', 'recorded_at', 'notes'])]
 class Attendance extends Model
 {

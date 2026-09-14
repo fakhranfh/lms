@@ -105,16 +105,16 @@
 
             <x-ui.pagination-links :paginator="$studentRows" />
 
-            <!-- Skeleton Loading (shown while switching pages or sessions) -->
+            <!-- Skeleton Loading (shown while switching pages, sessions, or searching) -->
             <div
-                wire:loading.delay.class.remove="hidden"
-                wire:target="gotoPage,previousPage,nextPage,selectSession"
+                wire:loading.class.remove="hidden"
+                wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch"
                 class="hidden bg-surface border border-outline-variant rounded-lg overflow-hidden animate-pulse"
             >
                 <x-attendance.table-skeleton :is-student="false" :can-manage="$canManage" />
             </div>
 
-            <div wire:loading.remove wire:target="gotoPage,previousPage,nextPage,selectSession" x-data="{}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
+            <div wire:loading.remove wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch" x-data="{}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
@@ -145,6 +145,9 @@
                                         @if ($row['selfAttendedAt'])
                                             <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-success/10 text-success">Present (self check-in)</span>
                                             <p class="text-body-xs text-on-surface-variant mt-1">{{ $row['selfAttendedAt']->format('d M Y, H:i') }}</p>
+                                        @elseif ($row['teacherRecordedAt'])
+                                            <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-success/10 text-success">Present (marked by teacher)</span>
+                                            <p class="text-body-xs text-on-surface-variant mt-1">{{ $row['teacherRecordedAt']->format('d M Y, H:i') }}</p>
                                         @elseif ($row['attend'])
                                             <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-success/10 text-success">Present</span>
                                         @else
@@ -155,17 +158,23 @@
                                         <td class="px-space-lg py-space-md">
                                             <div
                                                 class="flex items-center gap-space-md"
-                                                x-data="{ status: @entangle('drafts.'.$row['user']->id.'.status').live, notesModalOpen: false }"
+                                                x-data="{
+                                                    status: @entangle('drafts.'.$row['user']->id.'.status').live,
+                                                    notes: @entangle('drafts.'.$row['user']->id.'.notes'),
+                                                    notesModalOpen: false,
+                                                    get hasNotes() { return !!(this.notes && this.notes.replace(/<[^>]*>/g, '').trim() !== ''); },
+                                                }"
                                             >
                                                 <div class="flex flex-col items-start gap-1">
                                                     @foreach ($statuses as $statusOption)
-                                                        <label class="inline-flex items-center gap-1 text-body-xs text-on-surface cursor-pointer">
+                                                        <label class="inline-flex items-center gap-1 text-body-xs text-on-surface {{ $isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer' }}">
                                                             <input
                                                                 type="radio"
                                                                 name="status-{{ $row['user']->id }}"
                                                                 value="{{ $statusOption->value }}"
                                                                 x-model="status"
-                                                                class="w-3.5 h-3.5 accent-primary"
+                                                                @disabled($isLocked)
+                                                                class="w-3.5 h-3.5 accent-primary disabled:cursor-not-allowed"
                                                             />
                                                             {{ str($statusOption->value)->title() }}
                                                         </label>
@@ -176,41 +185,40 @@
                                                         x-show="status === 'excused'"
                                                         x-cloak
                                                         @click="notesModalOpen = true"
-                                                        class="mt-1 inline-flex items-center gap-1 text-body-xs text-primary hover:underline"
+                                                        @disabled($isLocked)
+                                                        class="mt-1 inline-flex items-center gap-1 text-body-xs hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:no-underline"
+                                                        :class="hasNotes ? 'text-success' : 'text-primary'"
                                                     >
-                                                        <span class="material-symbols-outlined text-[14px]">note_add</span>
-                                                        Add Notes
+                                                        <span class="material-symbols-outlined text-[14px]" x-text="hasNotes ? 'check_circle' : 'note_add'"></span>
+                                                        <span x-text="hasNotes ? 'Notes added' : 'Add Notes'"></span>
                                                     </button>
                                                 </div>
 
-                                                <div x-show="notesModalOpen" x-cloak class="fixed inset-0 z-50">
-                                                    <div @click="notesModalOpen = false" class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+                                                <x-ui.modal show="notesModalOpen" onClose="notesModalOpen = false" maxWidth="max-w-lg">
+                                                    <div class="bg-surface border border-outline-variant rounded-lg shadow-lg">
+                                                        <div class="p-space-lg space-y-space-md">
+                                                            <h3 class="font-headline-sm text-headline-sm text-on-surface">Excuse Notes &mdash; {{ $row['user']->name }}</h3>
 
-                                                    <div class="fixed inset-0 flex items-center justify-center p-4">
-                                                        <div @click.stop class="bg-surface border border-outline-variant rounded-lg shadow-lg max-w-lg w-full">
-                                                            <div class="p-space-lg space-y-space-md">
-                                                                <h3 class="font-headline-sm text-headline-sm text-on-surface">Excuse Notes &mdash; {{ $row['user']->name }}</h3>
+                                                            <x-rich-text-editor
+                                                                id="attendance-notes-{{ $row['user']->id }}"
+                                                                wire-model="drafts.{{ $row['user']->id }}.notes"
+                                                                :value="$this->drafts[$row['user']->id]['notes'] ?? ''"
+                                                                :allow-attachments="false"
+                                                                :disabled="$isLocked"
+                                                            />
 
-                                                                <x-rich-text-editor
-                                                                    id="attendance-notes-{{ $row['user']->id }}"
-                                                                    wire-model="drafts.{{ $row['user']->id }}.notes"
-                                                                    :value="$this->drafts[$row['user']->id]['notes'] ?? ''"
-                                                                    :allow-attachments="false"
-                                                                />
-
-                                                                <div class="flex justify-end pt-space-sm">
-                                                                    <button
-                                                                        type="button"
-                                                                        @click="notesModalOpen = false"
-                                                                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
-                                                                    >
-                                                                        Done
-                                                                    </button>
-                                                                </div>
+                                                            <div class="flex justify-end pt-space-sm">
+                                                                <button
+                                                                    type="button"
+                                                                    @click="notesModalOpen = false"
+                                                                    class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                                                                >
+                                                                    Done
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                </x-ui.modal>
                                             </div>
                                         </td>
                                     @endif
@@ -231,17 +239,63 @@
                 <div class="h-16" aria-hidden="true"></div>
 
                 <div class="relative sticky bottom-[-1.5rem] z-20 -mx-gutter px-gutter pt-space-md pb-space-lg bg-surface border-t border-outline-variant flex items-center justify-between gap-space-md before:content-[''] before:absolute before:left-0 before:right-0 before:-top-space-lg before:h-space-lg before:bg-surface before:-z-10">
-                    <p class="font-body-sm text-body-sm text-on-surface-variant">Mark attendance changes are saved as drafts &mdash; click Save All to apply them.</p>
-                    <button
-                        type="button"
-                        wire:click="saveAllAttendance"
-                        wire:loading.attr="disabled"
-                        wire:target="saveAllAttendance"
-                        class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm flex-shrink-0"
-                    >
-                        <span wire:loading wire:target="saveAllAttendance" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-                        Save All
-                    </button>
+                    @if ($isLocked)
+                        <p class="font-body-sm text-body-sm text-on-surface-variant inline-flex items-center gap-space-xs">
+                            <span class="material-symbols-outlined text-[18px] text-success">lock</span>
+                            Attendance for this session has been saved and locked &mdash; it can no longer be changed.
+                        </p>
+                    @else
+                        <div x-data="{ confirmOpen: false }" class="contents">
+                            <p class="font-body-sm text-body-sm text-on-surface-variant">Mark attendance changes are saved as drafts &mdash; click Save All to apply them.</p>
+                            <button
+                                type="button"
+                                @click="confirmOpen = true"
+                                class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center gap-space-sm flex-shrink-0"
+                            >
+                                Save All
+                            </button>
+
+                            <x-ui.modal show="confirmOpen" onClose="confirmOpen = false" maxWidth="max-w-sm">
+                                <div class="bg-surface border border-outline-variant rounded-lg shadow-lg">
+                                    <div class="p-space-lg space-y-space-lg">
+                                        <div class="flex justify-center">
+                                            <div class="flex items-center justify-center w-12 h-12 bg-warning/10 rounded-full">
+                                                <span class="material-symbols-outlined text-warning text-[24px]" data-weight="fill">warning</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="text-center space-y-space-sm">
+                                            <h3 class="font-headline-sm text-headline-sm text-on-surface">Save and Lock Attendance?</h3>
+                                            <p class="font-body-sm text-body-sm text-on-surface-variant">
+                                                Once saved, attendance for this session can no longer be changed. Make sure every student's status is correct before continuing.
+                                            </p>
+                                        </div>
+
+                                        <div class="flex gap-space-md pt-space-md">
+                                            <button
+                                                type="button"
+                                                @click="confirmOpen = false"
+                                                class="flex-1 px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                @click="confirmOpen = false"
+                                                wire:click="saveAllAttendance"
+                                                wire:loading.attr="disabled"
+                                                wire:target="saveAllAttendance"
+                                                class="flex-1 px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 inline-flex items-center justify-center gap-space-sm"
+                                            >
+                                                <span wire:loading wire:target="saveAllAttendance" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                                                Save & Lock
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </x-ui.modal>
+                        </div>
+                    @endif
                 </div>
             @endif
         @endif

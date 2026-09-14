@@ -108,17 +108,35 @@ class AttendanceIndexTest extends TestCase
             ->assertSee('Teacher mark');
     }
 
-    public function test_online_sessions_are_included_in_the_attendance_table(): void
+    public function test_online_sessions_are_excluded_from_the_attendance_table(): void
     {
-        $onlineSession = Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::Online]);
+        Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::Online]);
 
-        $this->student->givePermissionTo('attendance.view');
-        $this->actingAs($this->student);
+        $this->teacher->givePermissionTo(['attendance.view', 'attendance.manage']);
+        $this->actingAs($this->teacher);
 
-        Livewire::test(AttendanceIndex::class, ['course' => $this->course])
-            ->call('loadData')
-            ->assertSee('Session 1')
-            ->assertSee('Session 2');
+        $component = Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData');
+
+        expect($component->viewData('sessions')->pluck('delivery_mode'))
+            ->each->not->toBe(DeliveryMode::Online);
+    }
+
+    public function test_only_virtual_class_and_offline_sessions_appear_as_teacher_tabs(): void
+    {
+        Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::VirtualClass]);
+        Session::factory()->create(['course_id' => $this->course->id, 'delivery_mode' => DeliveryMode::Online]);
+
+        $this->teacher->givePermissionTo(['attendance.view', 'attendance.manage']);
+        $this->actingAs($this->teacher);
+
+        $component = Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData');
+
+        $deliveryModes = $component->viewData('sessions')->pluck('delivery_mode');
+
+        expect($deliveryModes)->toHaveCount(2);
+        expect($deliveryModes)->each->not->toBe(DeliveryMode::Online);
     }
 
     public function test_session_query_string_preselects_the_session_tab(): void
@@ -302,5 +320,49 @@ class AttendanceIndexTest extends TestCase
         ]);
 
         expect(app(AttendanceDraftService::class)->all($this->session->id))->toBe([]);
+    }
+
+    public function test_save_all_locks_the_session_so_it_cannot_be_edited_again(): void
+    {
+        $this->teacher->givePermissionTo(['attendance.view', 'attendance.manage']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->set("drafts.{$this->student->id}.status", 'present')
+            ->call('saveAllAttendance')
+            ->assertSet('errorMessage', null);
+
+        $this->assertTrue($this->session->fresh()->isAttendanceLocked());
+
+        Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->assertSee('has been saved and locked')
+            ->assertSee('disabled', false);
+    }
+
+    public function test_save_all_is_rejected_once_the_session_is_already_locked(): void
+    {
+        $this->teacher->givePermissionTo(['attendance.view', 'attendance.manage']);
+        $this->actingAs($this->teacher);
+        $this->session->update(['attendance_locked_at' => now()]);
+
+        Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->set("drafts.{$this->student->id}.status", 'present')
+            ->call('saveAllAttendance')
+            ->assertStatus(403);
+    }
+
+    public function test_record_attendance_is_rejected_once_the_session_is_already_locked(): void
+    {
+        $this->teacher->givePermissionTo(['attendance.view', 'attendance.manage']);
+        $this->actingAs($this->teacher);
+        $this->session->update(['attendance_locked_at' => now()]);
+
+        Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->call('recordAttendance', $this->session->id, $this->student->id, 'present', '')
+            ->assertStatus(403);
     }
 }

@@ -16,7 +16,7 @@ use Illuminate\Support\Carbon;
  * @property-read Carbon $date_start_display
  * @property-read Carbon $date_end_display
  */
-#[Fillable(['course_id', 'title', 'learning_outcome', 'date_start', 'date_end', 'delivery_mode', 'required_forum_posts', 'order'])]
+#[Fillable(['course_id', 'title', 'learning_outcome', 'date_start', 'date_end', 'delivery_mode', 'required_forum_posts', 'order', 'attendance_locked_at'])]
 class Session extends Model
 {
     /** @use HasFactory<SessionFactory> */
@@ -33,6 +33,7 @@ class Session extends Model
         'delivery_mode' => DeliveryMode::class,
         'required_forum_posts' => 'integer',
         'order' => 'integer',
+        'attendance_locked_at' => 'datetime',
     ];
 
     /**
@@ -96,5 +97,10 @@ class Session extends Model
     public function isOngoing(): bool
     {
         return now()->between($this->date_start, $this->date_end);
+    }
+
+    public function isAttendanceLocked(): bool
+    {
+        return $this->attendance_locked_at !== null;
     }
 }

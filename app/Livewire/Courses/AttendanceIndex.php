@@ -26,7 +26,7 @@ class AttendanceIndex extends Component
 {
     use WithPagination;
 
-    private const STUDENTS_PER_PAGE = 10;
+    private const DEFAULT_STUDENTS_PER_PAGE = 10;
 
     public Course $course;
 
@@ -39,6 +39,9 @@ class AttendanceIndex extends Component
 
     #[Url(as: 'q')]
     public string $studentSearch = '';
+
+    #[Url(as: 'perPage')]
+    public int $perPage = self::DEFAULT_STUDENTS_PER_PAGE;
 
     /**
      * In-progress "mark attendance" edits for the selected session, keyed
@@ -75,6 +78,11 @@ class AttendanceIndex extends Component
     }
 
     public function updatingStudentSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingPerPage(): void
     {
         $this->resetPage();
     }
@@ -264,7 +272,7 @@ class AttendanceIndex extends Component
 
             $viewData['studentRows'] = $selectedSession
                 ? $this->paginateStudentRows($students, $selectedSession, $attendanceDerivationService, $attendanceService)
-                : new LengthAwarePaginator([], 0, self::STUDENTS_PER_PAGE);
+                : new LengthAwarePaginator([], 0, $this->perPage);
 
             $viewData['statuses'] = AttendanceStatus::cases();
         }
@@ -285,7 +293,7 @@ class AttendanceIndex extends Component
     ): LengthAwarePaginator {
         $page = $this->getPage();
 
-        $rows = $students->forPage($page, self::STUDENTS_PER_PAGE)->map(function ($coursePerson) use ($selectedSession, $attendanceDerivationService, $attendanceService) {
+        $rows = $students->forPage($page, $this->perPage)->map(function ($coursePerson) use ($selectedSession, $attendanceDerivationService, $attendanceService) {
             $attendance = $attendanceService->findBySessionAndUser($selectedSession->id, $coursePerson->user_id);
 
             $this->drafts[$coursePerson->user_id]['status'] ??= $attendance !== null ? $attendance->status->value : 'absent';
@@ -305,7 +313,7 @@ class AttendanceIndex extends Component
         return new LengthAwarePaginator(
             $rows,
             $students->count(),
-            self::STUDENTS_PER_PAGE,
+            $this->perPage,
             $page,
             ['path' => Paginator::resolveCurrentPath()],
         );

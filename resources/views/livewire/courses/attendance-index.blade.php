@@ -110,7 +110,10 @@
                     <tbody class="divide-y divide-outline-variant">
                         @forelse ($sessionRows as $row)
                             <tr wire:key="session-{{ $row['session']->id }}">
-                                <td class="px-space-lg py-space-md font-label-md text-label-md text-on-surface">Session {{ $row['session']->order }}</td>
+                                <td class="px-space-lg py-space-md">
+                                    <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $row['session']->order }}</p>
+                                    <p class="font-label-md text-label-md text-on-surface">{{ $row['session']->title }}</p>
+                                </td>
                                 <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ str($row['session']->delivery_mode->value)->replace('_', ' ')->title() }}</td>
                                 <td class="px-space-lg py-space-md text-body-sm text-on-surface">
                                     {{ $row['session']->date_start_display?->format('M j, Y, H:i') }} &ndash; {{ $row['session']->date_end_display?->format('H:i') }}
@@ -159,20 +162,39 @@
         </div>
 
         @if ($selectedSession)
-            <x-ui.search-input wire-model="studentSearch" placeholder="Search students..." class="max-w-sm" />
+            <div
+                wire:loading.class.remove="hidden"
+                wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,perPage,saveAllAttendance"
+                class="hidden h-7 w-48 rounded bg-surface-container animate-pulse"
+            ></div>
 
-            <x-ui.pagination-links :paginator="$studentRows" />
+            <p
+                wire:loading.class="hidden"
+                wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,perPage,saveAllAttendance"
+                class="font-headline-sm text-headline-sm text-on-surface"
+            >
+                {{ $selectedSession->title }}
+            </p>
+
+            <x-ui.pagination-links
+                :paginator="$studentRows"
+                perPageModel="perPage"
+                :perPageOptions="[10, 25, 50, 100]"
+                searchModel="studentSearch"
+                searchPlaceholder="Search students..."
+                :search="$studentSearch"
+            />
 
             <!-- Skeleton Loading (shown while switching pages, sessions, searching, or saving) -->
             <div
                 wire:loading.class.remove="hidden"
-                wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,saveAllAttendance"
+                wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,perPage,saveAllAttendance"
                 class="hidden bg-surface border border-outline-variant rounded-lg overflow-hidden animate-pulse"
             >
                 <x-attendance.table-skeleton :is-student="false" :can-manage="$canManage" />
             </div>
 
-            <div wire:loading.remove wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,saveAllAttendance" x-data="{}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
+            <div wire:loading.remove wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,perPage,saveAllAttendance" x-data="{}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
@@ -291,7 +313,7 @@
                 </div>
             </div>
 
-            <x-ui.pagination-links :paginator="$studentRows" />
+            <x-ui.pagination-links :paginator="$studentRows" perPageModel="perPage" :perPageOptions="[10, 25, 50, 100]" />
 
             @if ($canManage)
                 <div class="h-16" aria-hidden="true"></div>

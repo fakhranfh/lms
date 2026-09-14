@@ -124,7 +124,15 @@
                             </div>
                         @endif
 
-                        @if (($group['type'] === \App\Enums\AssessmentType::Attendance || $group['type'] === \App\Enums\AssessmentType::ForumDiscussion) && $isStudent)
+                        @if ($group['type'] === \App\Enums\AssessmentType::Attendance)
+                            <div class="bg-surface border border-t-0 border-outline-variant rounded-b-lg overflow-hidden">
+                                @if ($isStudent)
+                                    <x-assessments.session-table :rows="$group['sessionTableRows']" :empty-message="$group['sessionTableEmptyMessage']" />
+                                @else
+                                    <x-assessments.attendance-summary-table :rows="$group['sessionTableRows']" :empty-message="$group['sessionTableEmptyMessage']" />
+                                @endif
+                            </div>
+                        @elseif ($group['type'] === \App\Enums\AssessmentType::ForumDiscussion && $isStudent)
                             <div class="bg-surface border border-t-0 border-outline-variant rounded-b-lg overflow-hidden">
                                 <x-assessments.session-table :rows="$group['sessionTableRows']" :empty-message="$group['sessionTableEmptyMessage']" />
                             </div>

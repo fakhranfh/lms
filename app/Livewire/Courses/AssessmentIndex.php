@@ -659,7 +659,7 @@ class AssessmentIndex extends Component
             ->all();
 
         $grouped = collect(AssessmentType::cases())
-            ->map(fn (AssessmentType $type) => $this->buildTypeGroup($type, $assessments, $rows, $attendanceDerivationService, $virtualClassSessions, $onlineSessions, $forumDiscussionScoringService, $sessionPositions))
+            ->map(fn (AssessmentType $type) => $this->buildTypeGroup($type, $assessments, $rows, $attendanceDerivationService, $virtualClassSessions, $onlineSessions, $forumDiscussionScoringService, $sessionPositions, $coursePersonService))
             ->all();
 
         return view('livewire.courses.assessment-index', [
@@ -684,7 +684,7 @@ class AssessmentIndex extends Component
      * @param  array<string, int>  $sessionPositions
      * @return array<string, mixed>
      */
-    private function buildTypeGroup(AssessmentType $type, Collection $assessments, array $rows, AttendanceDerivationService $attendanceDerivationService, Collection $virtualClassSessions, Collection $onlineSessions, ForumDiscussionScoringService $forumDiscussionScoringService, array $sessionPositions): array
+    private function buildTypeGroup(AssessmentType $type, Collection $assessments, array $rows, AttendanceDerivationService $attendanceDerivationService, Collection $virtualClassSessions, Collection $onlineSessions, ForumDiscussionScoringService $forumDiscussionScoringService, array $sessionPositions, CoursePersonService $coursePersonService): array
     {
         $group = [
             'type' => $type,
@@ -714,21 +714,40 @@ class AssessmentIndex extends Component
             ->pluck('data.id')
             ->values();
 
-        if ($type === AssessmentType::Attendance && $this->isStudent) {
-            $group['sessionTableRows'] = $virtualClassSessions->values()->map(function (Session $session, int $index) use ($attendanceDerivationService) {
-                $attended = $attendanceDerivationService->isSessionAttended($session, auth()->id());
+        if ($type === AssessmentType::Attendance) {
+            if ($this->isStudent) {
+                $group['sessionTableRows'] = $virtualClassSessions->values()->map(function (Session $session, int $index) use ($attendanceDerivationService) {
+                    $attended = $attendanceDerivationService->isSessionAttended($session, auth()->id());
 
-                return [
-                    'session' => $session,
-                    'sessionIndex' => $index,
-                    'met' => $attended,
-                    'metLabel' => 'Completed',
-                    'notMetLabel' => 'Not attended',
-                    'points' => $attended ? '100 pts' : '0 pts',
-                    'href' => route('sessions.index', $this->course).'?session='.$session->id,
-                    'wireKey' => 'attendance-session-'.$session->id,
-                ];
-            });
+                    return [
+                        'session' => $session,
+                        'sessionIndex' => $index,
+                        'met' => $attended,
+                        'metLabel' => 'Completed',
+                        'notMetLabel' => 'Not attended',
+                        'points' => $attended ? '100 pts' : '0 pts',
+                        'href' => route('sessions.index', $this->course).'?session='.$session->id,
+                        'wireKey' => 'attendance-session-'.$session->id,
+                    ];
+                });
+            } else {
+                $students = $coursePersonService->studentsForCourse($this->course->id);
+
+                $group['sessionTableRows'] = $virtualClassSessions->values()->map(function (Session $session, int $index) use ($students, $attendanceDerivationService) {
+                    $attendedCount = $students->filter(
+                        fn ($coursePerson) => $attendanceDerivationService->isSessionAttended($session, $coursePerson->user_id)
+                    )->count();
+
+                    return [
+                        'session' => $session,
+                        'sessionIndex' => $index,
+                        'attendedCount' => $attendedCount,
+                        'totalStudents' => $students->count(),
+                        'wireKey' => 'attendance-session-'.$session->id,
+                    ];
+                });
+            }
+
             $group['sessionTableEmptyMessage'] = __('No virtual class sessions yet.');
         }
 

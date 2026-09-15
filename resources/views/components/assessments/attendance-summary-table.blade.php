@@ -29,7 +29,6 @@
                 >
                     <td class="px-space-lg py-space-md">
                         <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $row['session']->order }}</p>
-                        <p class="font-label-md text-label-md text-on-surface">{{ $row['session']->title }}</p>
                     </td>
                     <td class="px-space-lg py-space-md text-body-sm text-on-surface">
                         {{ $row['session']->date_start_display?->format('d M Y,') }}<br>

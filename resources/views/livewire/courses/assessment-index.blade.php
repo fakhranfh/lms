@@ -132,9 +132,13 @@
                                     <x-assessments.attendance-summary-table :rows="$group['sessionTableRows']" :empty-message="$group['sessionTableEmptyMessage']" />
                                 @endif
                             </div>
-                        @elseif ($group['type'] === \App\Enums\AssessmentType::ForumDiscussion && $isStudent)
+                        @elseif ($group['type'] === \App\Enums\AssessmentType::ForumDiscussion)
                             <div class="bg-surface border border-t-0 border-outline-variant rounded-b-lg overflow-hidden">
-                                <x-assessments.session-table :rows="$group['sessionTableRows']" :empty-message="$group['sessionTableEmptyMessage']" />
+                                @if ($isStudent)
+                                    <x-assessments.session-table :rows="$group['sessionTableRows']" :empty-message="$group['sessionTableEmptyMessage']" />
+                                @else
+                                    <x-assessments.forum-discussion-summary-table :rows="$group['sessionTableRows']" :empty-message="$group['sessionTableEmptyMessage']" />
+                                @endif
                             </div>
                         @elseif ($group['assessments']->isNotEmpty())
                             @unless ($isStudent)

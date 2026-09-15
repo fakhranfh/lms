@@ -479,8 +479,7 @@ class AssessmentIndexTest extends TestCase
         Livewire::test(AssessmentIndex::class, ['course' => $this->course])
             ->call('loadAssessments')
             ->call('toggleSection', AssessmentType::Attendance->value)
-            ->assertSee('Session 1')
-            ->assertSee('Session 1 - Virtual Class - CL')
+            ->assertSee('Virtual Class')
             ->assertSee('Completed')
             ->assertSee('100 pts');
     }

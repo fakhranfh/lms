@@ -752,21 +752,41 @@ class AssessmentIndex extends Component
             $group['sessionTableEmptyMessage'] = __('No virtual class sessions yet.');
         }
 
-        if ($type === AssessmentType::ForumDiscussion && $this->isStudent) {
-            $group['sessionTableRows'] = $onlineSessions->values()->map(function (Session $session, int $index) use ($forumDiscussionScoringService) {
-                $met = $forumDiscussionScoringService->hasMetForumPostRequirement($session, auth()->id());
+        if ($type === AssessmentType::ForumDiscussion) {
+            if ($this->isStudent) {
+                $group['sessionTableRows'] = $onlineSessions->values()->map(function (Session $session, int $index) use ($forumDiscussionScoringService) {
+                    $met = $forumDiscussionScoringService->hasMetForumPostRequirement($session, auth()->id());
 
-                return [
-                    'session' => $session,
-                    'sessionIndex' => $index,
-                    'met' => $met,
-                    'metLabel' => 'Completed',
-                    'notMetLabel' => $forumDiscussionScoringService->requiredForumPosts($session).' posts required',
-                    'points' => $met ? '100 pts' : '0 pts',
-                    'href' => route('forum.index', $this->course).'?session='.$session->id,
-                    'wireKey' => 'forum-discussion-session-'.$session->id,
-                ];
-            });
+                    return [
+                        'session' => $session,
+                        'sessionIndex' => $index,
+                        'met' => $met,
+                        'metLabel' => 'Completed',
+                        'notMetLabel' => $forumDiscussionScoringService->requiredForumPosts($session).' posts required',
+                        'points' => $met ? '100 pts' : '0 pts',
+                        'href' => route('forum.index', $this->course).'?session='.$session->id,
+                        'wireKey' => 'forum-discussion-session-'.$session->id,
+                    ];
+                });
+            } else {
+                $students = $coursePersonService->studentsForCourse($this->course->id);
+
+                $group['sessionTableRows'] = $onlineSessions->values()->map(function (Session $session, int $index) use ($students, $forumDiscussionScoringService) {
+                    $metCount = $students->filter(
+                        fn ($coursePerson) => $forumDiscussionScoringService->hasMetForumPostRequirement($session, $coursePerson->user_id)
+                    )->count();
+
+                    return [
+                        'session' => $session,
+                        'sessionIndex' => $index,
+                        'metCount' => $metCount,
+                        'totalStudents' => $students->count(),
+                        'href' => route('forum.index', $this->course).'?session='.$session->id,
+                        'wireKey' => 'forum-discussion-session-'.$session->id,
+                    ];
+                });
+            }
+
             $group['sessionTableEmptyMessage'] = __('No online sessions yet.');
         }
 

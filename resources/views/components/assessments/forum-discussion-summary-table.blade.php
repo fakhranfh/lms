@@ -1,9 +1,9 @@
 {{--
-    Molecule: per-session attendance summary shown to teachers for the
-    auto-provisioned Attendance assessment. Each row in `rows` is
-    `['session', 'sessionIndex', 'attendedCount', 'totalStudents', 'href',
-    'wireKey']`. Clicking a row opens the per-student attendance table on
-    the Attendance page, where presence can be marked.
+    Molecule: per-session forum discussion summary shown to teachers for the
+    auto-provisioned Forum Discussion assessment. Each row in `rows` is
+    `['session', 'sessionIndex', 'metCount', 'totalStudents', 'href',
+    'wireKey']`. Clicking a row opens the forum page filtered to that
+    session.
 --}}
 @props([
     'rows',
@@ -17,7 +17,7 @@
                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Title</th>
                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Start Date</th>
                 <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Due Date</th>
-                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attendance</th>
+                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Participation</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-outline-variant">
@@ -46,7 +46,7 @@
                         @endif
                     </td>
                     <td class="px-space-lg py-space-md font-label-md text-label-md text-on-surface">
-                        {{ $row['attendedCount'] }} of {{ $row['totalStudents'] }} students attended
+                        {{ $row['metCount'] }} of {{ $row['totalStudents'] }} students posted
                     </td>
                 </tr>
             @empty

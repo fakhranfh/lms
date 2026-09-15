@@ -18,6 +18,9 @@ use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\CoursePerson;
 use App\Models\FinalExam;
+use App\Models\Forum;
+use App\Models\ForumComment;
+use App\Models\ForumThread;
 use App\Models\Period;
 use App\Models\ProctorSession;
 use App\Models\Role;
@@ -482,6 +485,31 @@ class AssessmentIndexTest extends TestCase
             ->assertSee('Virtual Class')
             ->assertSee('Completed')
             ->assertSee('100 pts');
+    }
+
+    public function test_student_sees_own_forum_posts_embedded_for_view_posts_modal(): void
+    {
+        $this->student->givePermissionTo('assessment.view');
+        $this->actingAs($this->student);
+
+        CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
+
+        $session = Session::factory()->create([
+            'course_id' => $this->course->id,
+            'delivery_mode' => DeliveryMode::Online,
+        ]);
+
+        Assessment::factory()->for($this->course)->create(['type' => AssessmentType::ForumDiscussion]);
+
+        $forum = Forum::factory()->create(['course_id' => $this->course->id, 'session_id' => $session->id]);
+        $thread = ForumThread::factory()->for($forum)->create(['user_id' => $this->student->id, 'title' => 'My Assessment Thread']);
+        ForumComment::factory()->for($thread, 'thread')->create(['user_id' => $this->student->id, 'body' => 'My assessment comment']);
+
+        Livewire::test(AssessmentIndex::class, ['course' => $this->course])
+            ->call('loadAssessments')
+            ->call('toggleSection', AssessmentType::ForumDiscussion->value)
+            ->assertSee('My Assessment Thread')
+            ->assertSee('My assessment comment');
     }
 
     public function test_quiz_row_links_to_quiz_show(): void

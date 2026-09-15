@@ -14,6 +14,8 @@ use App\Enums\RoleName;
 use App\Livewire\Concerns\WithDevMaterialAttachments;
 use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\ForumComment;
+use App\Models\ForumThread;
 use App\Models\GroupMember;
 use App\Models\Session;
 use App\Services\AssessmentAttemptService;
@@ -25,7 +27,9 @@ use App\Services\AttendanceDerivationService;
 use App\Services\AttendanceScoringService;
 use App\Services\CoursePersonService;
 use App\Services\FinalExamService;
+use App\Services\ForumCommentService;
 use App\Services\ForumDiscussionScoringService;
+use App\Services\ForumThreadService;
 use App\Services\GroupMemberService;
 use App\Services\GroupService;
 use App\Services\MediaLibraryService;
@@ -619,7 +623,7 @@ class AssessmentIndex extends Component
         }
     }
 
-    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, AssessmentQuestionAttemptScoringService $assessmentQuestionAttemptScoringService, AttendanceScoringService $attendanceScoringService, AttendanceDerivationService $attendanceDerivationService, ForumDiscussionScoringService $forumDiscussionScoringService, ProctorSessionService $proctorSessionService)
+    public function render(AssessmentService $assessmentService, AssessmentAttemptService $assessmentAttemptService, CoursePersonService $coursePersonService, GroupMemberService $groupMemberService, AssessmentQuestionAttemptScoringService $assessmentQuestionAttemptScoringService, AttendanceScoringService $attendanceScoringService, AttendanceDerivationService $attendanceDerivationService, ForumDiscussionScoringService $forumDiscussionScoringService, ProctorSessionService $proctorSessionService, ForumThreadService $forumThreadService, ForumCommentService $forumCommentService)
     {
         if (! $this->assessmentsLoaded) {
             return view('livewire.courses.assessment-index-placeholder', [
@@ -659,7 +663,7 @@ class AssessmentIndex extends Component
             ->all();
 
         $grouped = collect(AssessmentType::cases())
-            ->map(fn (AssessmentType $type) => $this->buildTypeGroup($type, $assessments, $rows, $attendanceDerivationService, $virtualClassSessions, $onlineSessions, $forumDiscussionScoringService, $sessionPositions, $coursePersonService))
+            ->map(fn (AssessmentType $type) => $this->buildTypeGroup($type, $assessments, $rows, $attendanceDerivationService, $virtualClassSessions, $onlineSessions, $forumDiscussionScoringService, $sessionPositions, $coursePersonService, $forumThreadService, $forumCommentService))
             ->all();
 
         return view('livewire.courses.assessment-index', [
@@ -684,7 +688,7 @@ class AssessmentIndex extends Component
      * @param  array<string, int>  $sessionPositions
      * @return array<string, mixed>
      */
-    private function buildTypeGroup(AssessmentType $type, Collection $assessments, array $rows, AttendanceDerivationService $attendanceDerivationService, Collection $virtualClassSessions, Collection $onlineSessions, ForumDiscussionScoringService $forumDiscussionScoringService, array $sessionPositions, CoursePersonService $coursePersonService): array
+    private function buildTypeGroup(AssessmentType $type, Collection $assessments, array $rows, AttendanceDerivationService $attendanceDerivationService, Collection $virtualClassSessions, Collection $onlineSessions, ForumDiscussionScoringService $forumDiscussionScoringService, array $sessionPositions, CoursePersonService $coursePersonService, ForumThreadService $forumThreadService, ForumCommentService $forumCommentService): array
     {
         $group = [
             'type' => $type,
@@ -754,8 +758,11 @@ class AssessmentIndex extends Component
 
         if ($type === AssessmentType::ForumDiscussion) {
             if ($this->isStudent) {
-                $group['sessionTableRows'] = $onlineSessions->values()->map(function (Session $session, int $index) use ($forumDiscussionScoringService) {
+                $group['sessionTableRows'] = $onlineSessions->values()->map(function (Session $session, int $index) use ($forumDiscussionScoringService, $forumThreadService, $forumCommentService) {
                     $met = $forumDiscussionScoringService->hasMetForumPostRequirement($session, auth()->id());
+
+                    $threads = $forumThreadService->forUserInSession(auth()->id(), $session->id);
+                    $comments = $forumCommentService->forUserInSession(auth()->id(), $session->id, ['thread']);
 
                     return [
                         'session' => $session,
@@ -766,6 +773,18 @@ class AssessmentIndex extends Component
                         'points' => $met ? '100 pts' : '0 pts',
                         'href' => route('forum.index', $this->course).'?session='.$session->id,
                         'wireKey' => 'forum-discussion-session-'.$session->id,
+                        'threadsJson' => $threads->map(fn (ForumThread $thread) => [
+                            'id' => $thread->id,
+                            'title' => $thread->title,
+                            'createdAt' => $thread->created_at_display->format('d M Y, H:i'),
+                        ])->values()->all(),
+                        'commentsJson' => $comments->map(fn (ForumComment $comment) => [
+                            'id' => $comment->id,
+                            'threadId' => $comment->thread_id,
+                            'body' => str($comment->body)->stripTags()->limit(200)->toString(),
+                            'threadTitle' => $comment->thread->title,
+                            'createdAt' => $comment->created_at_display->format('d M Y, H:i'),
+                        ])->values()->all(),
                     ];
                 });
             } else {

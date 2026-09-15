@@ -25,7 +25,11 @@
             @forelse ($rows as $row)
                 <tr
                     wire:key="{{ $row['wireKey'] }}"
-                    @click="window.location = '{{ $row['href'] }}'"
+                    @if (isset($row['threadsJson']))
+                        @click="viewPosts(@js(['name' => 'You']), @js($row['threadsJson']), @js($row['commentsJson']))"
+                    @else
+                        @click="window.location = '{{ $row['href'] }}'"
+                    @endif
                     class="hover:bg-surface-container/30 transition cursor-pointer"
                 >
                     <td class="px-space-lg py-space-md">

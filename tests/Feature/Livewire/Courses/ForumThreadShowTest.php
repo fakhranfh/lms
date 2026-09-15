@@ -218,6 +218,111 @@ class ForumThreadShowTest extends TestCase
         $this->assertDatabaseHas('forum_comments', ['id' => $comment->id]);
     }
 
+    public function test_teacher_cannot_edit_students_comment(): void
+    {
+        $this->teacher->givePermissionTo(['forum.view', 'forum.moderate']);
+
+        $comment = ForumComment::factory()->for($this->thread, 'thread')->create(['user_id' => $this->student->id, 'body' => 'Original']);
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread])
+            ->call('loadComments')
+            ->set('editCommentBody', 'Edited by teacher')
+            ->call('updateComment', $comment->id)
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('forum_comments', ['id' => $comment->id, 'body' => 'Original']);
+    }
+
+    public function test_student_cannot_edit_teachers_comment(): void
+    {
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+        $comment = ForumComment::factory()->for($this->thread, 'thread')->create(['user_id' => $this->teacher->id, 'body' => 'Original']);
+
+        $this->actingAs($this->student);
+        $this->student->givePermissionTo(['forum.view', 'forum.create']);
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread])
+            ->call('loadComments')
+            ->set('editCommentBody', 'Edited by student')
+            ->call('updateComment', $comment->id)
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('forum_comments', ['id' => $comment->id, 'body' => 'Original']);
+    }
+
+    public function test_comment_cannot_be_edited_or_deleted_outside_scheduled_session_window(): void
+    {
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        $pastSession = Session::factory()->for($this->course)->create([
+            'date_start' => now()->subWeeks(2),
+            'date_end' => now()->subWeek(),
+        ]);
+        $pastForum = Forum::factory()->for($this->course)->create(['session_id' => $pastSession->id]);
+        $pastThread = ForumThread::factory()->for($pastForum)->create(['user_id' => $this->teacher->id]);
+        $comment = ForumComment::factory()->for($pastThread, 'thread')->create(['user_id' => $this->teacher->id, 'body' => 'Original']);
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $pastThread])
+            ->call('loadComments')
+            ->set('editCommentBody', 'Too late')
+            ->call('updateComment', $comment->id)
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('forum_comments', ['id' => $comment->id, 'body' => 'Original']);
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $pastThread])
+            ->call('loadComments')
+            ->call('deleteComment', $comment->id)
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('forum_comments', ['id' => $comment->id]);
+    }
+
+    public function test_dev_bypass_allows_edit_and_delete_outside_scheduled_window_in_local_env(): void
+    {
+        $this->app->detectEnvironment(fn () => 'local');
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        $pastSession = Session::factory()->for($this->course)->create([
+            'date_start' => now()->subWeeks(2),
+            'date_end' => now()->subWeek(),
+        ]);
+        $pastForum = Forum::factory()->for($this->course)->create(['session_id' => $pastSession->id]);
+        $pastThread = ForumThread::factory()->for($pastForum)->create(['user_id' => $this->teacher->id]);
+        $comment = ForumComment::factory()->for($pastThread, 'thread')->create(['user_id' => $this->teacher->id, 'body' => 'Original']);
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $pastThread])
+            ->call('loadComments')
+            ->set('devBypassEditDelete', true)
+            ->set('editCommentBody', 'Now editable')
+            ->call('updateComment', $comment->id);
+
+        $this->assertDatabaseHas('forum_comments', ['id' => $comment->id, 'body' => 'Now editable']);
+    }
+
+    public function test_dev_bypass_has_no_effect_outside_local_or_testing_env(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        $pastSession = Session::factory()->for($this->course)->create([
+            'date_start' => now()->subWeeks(2),
+            'date_end' => now()->subWeek(),
+        ]);
+        $pastForum = Forum::factory()->for($this->course)->create(['session_id' => $pastSession->id]);
+        $pastThread = ForumThread::factory()->for($pastForum)->create(['user_id' => $this->teacher->id]);
+        $comment = ForumComment::factory()->for($pastThread, 'thread')->create(['user_id' => $this->teacher->id, 'body' => 'Original']);
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $pastThread])
+            ->call('loadComments')
+            ->set('devBypassEditDelete', true)
+            ->set('editCommentBody', 'Should not save')
+            ->call('updateComment', $comment->id)
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('forum_comments', ['id' => $comment->id, 'body' => 'Original']);
+    }
+
     public function test_owner_can_delete_thread_and_is_redirected(): void
     {
         $this->teacher->givePermissionTo('forum.view');
@@ -487,6 +592,31 @@ class ForumThreadShowTest extends TestCase
                 ->set('sortBy', $sortBy)
                 ->assertOk();
         }
+    }
+
+    public function test_mounting_with_comment_query_param_jumps_to_the_correct_page(): void
+    {
+        $this->teacher->givePermissionTo('forum.view');
+
+        // Default sort is 'latest_comment' (newest first) with perPage=10.
+        // The oldest of 11 top-level comments sits at index 10, i.e. page 2.
+        $target = ForumComment::factory()->for($this->thread, 'thread')->create(['created_at' => now()->subDay()]);
+        ForumComment::factory()->for($this->thread, 'thread')->count(10)->create();
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread, 'highlightCommentId' => $target->id])
+            ->assertSet('page', 2);
+    }
+
+    public function test_mounting_with_a_reply_comment_query_param_jumps_to_its_parents_page(): void
+    {
+        $this->teacher->givePermissionTo('forum.view');
+
+        $parent = ForumComment::factory()->for($this->thread, 'thread')->create(['created_at' => now()->subDay()]);
+        $reply = ForumComment::factory()->for($this->thread, 'thread')->create(['parent_id' => $parent->id]);
+        ForumComment::factory()->for($this->thread, 'thread')->count(10)->create();
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread, 'highlightCommentId' => $reply->id])
+            ->assertSet('page', 2);
     }
 
     public function test_generate_comments_bulk_creates_fake_comments_in_local_env(): void

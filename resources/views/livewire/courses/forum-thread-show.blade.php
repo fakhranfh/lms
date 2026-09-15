@@ -1,6 +1,20 @@
 @section('title', $thread->title)
 
-<div class="space-y-space-lg" x-data="{ deleteCommentId: null, showDeleteCommentModal: false, showDeleteThreadModal: false, editingCommentId: null, replyingCommentId: null }" x-on:comment-updated.window="editingCommentId = null" x-on:reply-added.window="replyingCommentId = null">
+<div
+    class="space-y-space-lg"
+    x-data="{ deleteCommentId: null, showDeleteCommentModal: false, showDeleteThreadModal: false, editingCommentId: null, replyingCommentId: null }"
+    x-on:comment-updated.window="editingCommentId = null"
+    x-on:reply-added.window="replyingCommentId = null"
+    x-on:scroll-to-comment.window="
+        setTimeout(() => {
+            const el = document.getElementById('comment-' + $event.detail.id);
+            if (! el) { return; }
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('ring-2', 'ring-primary');
+            setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 2000);
+        }, 150)
+    "
+>
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => null])
 
     <a href="{{ route('forum.index', [$course, 'session' => $thread->forum->session_id]) }}" wire:navigate class="inline-flex items-center gap-space-xs text-body-sm text-on-surface-variant hover:text-on-surface">
@@ -29,6 +43,10 @@
                 <span wire:loading wire:target="generateComments" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
                 Generate Comments
             </button>
+            <label class="inline-flex items-center gap-space-xs text-body-sm text-secondary cursor-pointer">
+                <input type="checkbox" wire:model.live="devBypassEditDelete" class="w-4 h-4 accent-secondary" />
+                Allow edit/delete outside scheduled date
+            </label>
         </div>
     @endif
 
@@ -50,13 +68,17 @@
             </div>
 
             <div class="flex items-center gap-space-sm flex-shrink-0 text-on-surface-variant">
-                @if (! $editingThread && ($thread->user_id === auth()->id() || $canModerate))
-                    <button wire:click="startEditThread" type="button" class="p-space-sm hover:text-primary transition">
-                        <span class="material-symbols-outlined text-[20px]">edit</span>
-                    </button>
-                    <button @click="showDeleteThreadModal = true" type="button" class="p-space-sm hover:text-error transition">
-                        <span class="material-symbols-outlined text-[20px]">delete</span>
-                    </button>
+                @if (! $editingThread && $canEditOrDelete)
+                    @if ($thread->user_id === auth()->id())
+                        <button wire:click="startEditThread" type="button" class="p-space-sm hover:text-primary transition">
+                            <span class="material-symbols-outlined text-[20px]">edit</span>
+                        </button>
+                    @endif
+                    @if ($thread->user_id === auth()->id() || $canModerate)
+                        <button @click="showDeleteThreadModal = true" type="button" class="p-space-sm hover:text-error transition">
+                            <span class="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+                    @endif
                 @endif
                 <span class="inline-flex items-center gap-1">
                     <span class="material-symbols-outlined text-[20px]">forum</span>
@@ -147,8 +169,8 @@
             </div>
         @else
             @if ($pagination && $pagination['total'] > 0)
-                <div class="flex flex-wrap items-center justify-end gap-space-md pb-space-sm border-b border-outline-variant">
-                    <div class="flex items-center gap-space-lg">
+                <div class="flex flex-wrap items-center justify-between gap-space-md pb-space-sm border-b border-outline-variant">
+                    <div class="flex items-center gap-space-lg flex-wrap">
                         <label class="flex items-center gap-space-sm">
                             <span class="text-body-sm text-on-surface-variant">Sort by:</span>
                             <select wire:model.live="sortBy" class="h-[36px] px-2 rounded-lg border border-outline-variant bg-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
@@ -158,33 +180,33 @@
                             </select>
                         </label>
 
-                        <label class="flex items-center gap-space-sm">
-                            <span class="text-body-sm text-on-surface-variant">Show:</span>
-                            <select wire:model.live="perPage" class="h-[36px] px-2 rounded-lg border border-outline-variant bg-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                            </select>
-                        </label>
-
                         @if ($pagination['lastPage'] > 1)
                             <div class="flex items-center gap-space-xs">
                                 <button wire:click="gotoPage(1)" type="button" class="w-8 h-8 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container disabled:opacity-40" @disabled($pagination['onFirstPage'])>«</button>
                                 <button wire:click="gotoPage({{ $pagination['currentPage'] - 1 }})" type="button" class="w-8 h-8 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container disabled:opacity-40" @disabled($pagination['onFirstPage'])>‹</button>
+
+                                @for ($i = $pagination['windowStart']; $i <= $pagination['windowEnd']; $i++)
+                                    @if ($i === $pagination['currentPage'])
+                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 border border-primary text-primary font-bold text-body-sm">{{ $i }}</span>
+                                    @else
+                                        <button wire:click="gotoPage({{ $i }})" type="button" class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container-lowest transition text-body-sm">{{ $i }}</button>
+                                    @endif
+                                @endfor
+
                                 <button wire:click="gotoPage({{ $pagination['currentPage'] + 1 }})" type="button" class="w-8 h-8 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container disabled:opacity-40" @disabled(! $pagination['hasMorePages'])>›</button>
                                 <button wire:click="gotoPage({{ $pagination['lastPage'] }})" type="button" class="w-8 h-8 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container disabled:opacity-40" @disabled(! $pagination['hasMorePages'])>»</button>
                             </div>
-
-                            <label class="flex items-center gap-space-sm">
-                                <span class="text-body-sm text-on-surface-variant">Page:</span>
-                                <select wire:model.live="page" class="h-[36px] px-2 rounded-lg border border-outline-variant bg-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                    @for ($i = 1; $i <= $pagination['lastPage']; $i++)
-                                        <option value="{{ $i }}">{{ $i }}</option>
-                                    @endfor
-                                </select>
-                            </label>
                         @endif
                     </div>
+
+                    <label class="flex items-center gap-space-sm">
+                        <span class="text-body-sm text-on-surface-variant">Show:</span>
+                        <select wire:model.live="perPage" class="h-[36px] px-2 rounded-lg border border-outline-variant bg-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                        </select>
+                    </label>
                 </div>
             @endif
 
@@ -211,7 +233,7 @@
             @else
                 <div class="space-y-space-md">
                     @foreach ($comments as $comment)
-                        <div wire:key="comment-{{ $comment->id }}" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
+                        <div id="comment-{{ $comment->id }}" wire:key="comment-{{ $comment->id }}" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-sm">
                             <div wire:loading wire:target="deleteComment('{{ $comment->id }}')" class="w-full space-y-space-sm animate-pulse">
                                 <div class="flex items-start justify-between gap-space-md">
                                     <div class="h-3 bg-surface-container rounded w-1/3"></div>
@@ -256,10 +278,12 @@
                                     </div>
 
                                     <div class="flex items-center gap-space-xs flex-shrink-0">
-                                        @if ($comment->user_id === auth()->id() || $canModerate)
+                                        @if ($comment->user_id === auth()->id() && $canEditOrDelete)
                                             <button @click="editingCommentId = '{{ $comment->id }}'" type="button" class="text-on-surface-variant hover:text-primary transition">
                                                 <span class="material-symbols-outlined text-[18px]">edit</span>
                                             </button>
+                                        @endif
+                                        @if (($comment->user_id === auth()->id() || $canModerate) && $canEditOrDelete)
                                             <button
                                                 @click="deleteCommentId = @js($comment->id); showDeleteCommentModal = true"
                                                 type="button"
@@ -363,10 +387,12 @@
                                                     </div>
 
                                                     <div class="flex items-center gap-space-xs flex-shrink-0">
-                                                        @if ($reply->user_id === auth()->id() || $canModerate)
+                                                        @if ($reply->user_id === auth()->id() && $canEditOrDelete)
                                                             <button @click="editingCommentId = '{{ $reply->id }}'" type="button" class="text-on-surface-variant hover:text-primary transition">
                                                                 <span class="material-symbols-outlined text-[16px]">edit</span>
                                                             </button>
+                                                        @endif
+                                                        @if (($reply->user_id === auth()->id() || $canModerate) && $canEditOrDelete)
                                                             <button
                                                                 @click="deleteCommentId = @js($reply->id); showDeleteCommentModal = true"
                                                                 type="button"
@@ -411,6 +437,24 @@
                 </div>
             @endif
             </div>
+
+            @if ($pagination && $pagination['lastPage'] > 1)
+                <div class="flex items-center justify-end gap-space-xs pt-space-sm">
+                    <button wire:click="gotoPage(1)" type="button" class="w-8 h-8 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container disabled:opacity-40" @disabled($pagination['onFirstPage'])>«</button>
+                    <button wire:click="gotoPage({{ $pagination['currentPage'] - 1 }})" type="button" class="w-8 h-8 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container disabled:opacity-40" @disabled($pagination['onFirstPage'])>‹</button>
+
+                    @for ($i = $pagination['windowStart']; $i <= $pagination['windowEnd']; $i++)
+                        @if ($i === $pagination['currentPage'])
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 border border-primary text-primary font-bold text-body-sm">{{ $i }}</span>
+                        @else
+                            <button wire:click="gotoPage({{ $i }})" type="button" class="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container-lowest transition text-body-sm">{{ $i }}</button>
+                        @endif
+                    @endfor
+
+                    <button wire:click="gotoPage({{ $pagination['currentPage'] + 1 }})" type="button" class="w-8 h-8 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container disabled:opacity-40" @disabled(! $pagination['hasMorePages'])>›</button>
+                    <button wire:click="gotoPage({{ $pagination['lastPage'] }})" type="button" class="w-8 h-8 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container disabled:opacity-40" @disabled(! $pagination['hasMorePages'])>»</button>
+                </div>
+            @endif
         @endif
     </div>
 

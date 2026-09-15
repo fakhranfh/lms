@@ -18,6 +18,7 @@
                             <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Comments</th>
                             <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Total Posts</th>
                             <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Requirement</th>
+                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-outline-variant">
@@ -33,6 +34,7 @@
                                 <td class="px-space-lg py-space-md"><x-ui.skeleton-box class="h-4 w-8" /></td>
                                 <td class="px-space-lg py-space-md"><x-ui.skeleton-box class="h-4 w-8" /></td>
                                 <td class="px-space-lg py-space-md"><x-ui.skeleton-box class="h-6 w-24 rounded-full" /></td>
+                                <td class="px-space-lg py-space-md"><x-ui.skeleton-box class="h-4 w-16" /></td>
                             </tr>
                         @endfor
                     </tbody>

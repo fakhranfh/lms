@@ -85,4 +85,20 @@ class ForumCommentService
     {
         return $this->forumCommentRepository->countForUserInSession($userId, $sessionId);
     }
+
+    /**
+     * @return Collection<int, ForumComment>
+     */
+    public function forUserInSession(string $userId, string $sessionId, array $with = []): Collection
+    {
+        return $this->forumCommentRepository->forUserInSession($userId, $sessionId, $with);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function orderedTopLevelIdsForThread(string $threadId, string $sortBy): array
+    {
+        return $this->forumCommentRepository->orderedTopLevelIdsForThread($threadId, $sortBy);
+    }
 }

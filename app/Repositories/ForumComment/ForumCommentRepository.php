@@ -3,6 +3,7 @@
 namespace App\Repositories\ForumComment;
 
 use App\Models\ForumComment;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -74,6 +75,22 @@ class ForumCommentRepository implements ForumCommentRepositoryInterface
             ->whereNull('parent_id')
             ->with($with);
 
+        $this->applyTopLevelSort($query, $sortBy);
+
+        return $query->paginate($perPage, ['*'], 'page', $page);
+    }
+
+    public function orderedTopLevelIdsForThread(string $threadId, string $sortBy): array
+    {
+        $query = ForumComment::where('thread_id', $threadId)->whereNull('parent_id');
+
+        $this->applyTopLevelSort($query, $sortBy);
+
+        return $query->pluck('id')->all();
+    }
+
+    private function applyTopLevelSort(Builder $query, string $sortBy): void
+    {
         match ($sortBy) {
             'oldest_comment' => $query->oldest(),
             'most_liked_comment' => $query->orderByDesc('likes_count'),
@@ -88,8 +105,6 @@ class ForumCommentRepository implements ForumCommentRepositoryInterface
             ),
             default => $query->latest(),
         };
-
-        return $query->paginate($perPage, ['*'], 'page', $page);
     }
 
     public function countForUserInSession(string $userId, string $sessionId): int
@@ -97,5 +112,14 @@ class ForumCommentRepository implements ForumCommentRepositoryInterface
         return ForumComment::where('user_id', $userId)
             ->whereHas('thread.forum', fn ($query) => $query->where('session_id', $sessionId))
             ->count();
+    }
+
+    public function forUserInSession(string $userId, string $sessionId, array $with = []): Collection
+    {
+        return ForumComment::where('user_id', $userId)
+            ->whereHas('thread.forum', fn ($query) => $query->where('session_id', $sessionId))
+            ->with($with)
+            ->latest()
+            ->get();
     }
 }

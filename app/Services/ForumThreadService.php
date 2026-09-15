@@ -76,4 +76,12 @@ class ForumThreadService
     {
         return $this->forumThreadRepository->countForUserInSession($userId, $sessionId);
     }
+
+    /**
+     * @return Collection<int, ForumThread>
+     */
+    public function forUserInSession(string $userId, string $sessionId, array $with = []): Collection
+    {
+        return $this->forumThreadRepository->forUserInSession($userId, $sessionId, $with);
+    }
 }

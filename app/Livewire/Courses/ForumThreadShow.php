@@ -13,6 +13,7 @@ use App\Services\ForumThreadService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 class ForumThreadShow extends Component
@@ -57,7 +58,19 @@ class ForumThreadShow extends Component
 
     public int $generateCommentCount = 5;
 
-    public function mount(CurrentSchool $currentSchool, Course $course, ForumThread $thread, ForumThreadReadService $forumThreadReadService): void
+    #[Url(as: 'comment')]
+    public ?string $highlightCommentId = null;
+
+    /**
+     * Dev-only toggle to bypass the "session must be ongoing" restriction on
+     * editing/deleting threads and comments, so a developer can test those
+     * actions outside the scheduled session window. Enforced server-side via
+     * canEditOrDelete()'s environment check, so tampering with this property
+     * client-side has no effect outside local/testing.
+     */
+    public bool $devBypassEditDelete = false;
+
+    public function mount(CurrentSchool $currentSchool, Course $course, ForumThread $thread, ForumThreadReadService $forumThreadReadService, ForumCommentService $forumCommentService): void
     {
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
         abort_unless(auth()->user()->can('forum.view') && $course->school_id === $schoolId, 403);
@@ -67,11 +80,56 @@ class ForumThreadShow extends Component
         $this->thread = $thread->loadMissing('forum.session', 'user.roles');
 
         $forumThreadReadService->markRead($thread->id, auth()->id());
+
+        if ($this->highlightCommentId !== null) {
+            $this->page = $this->pageForComment($this->highlightCommentId, $forumCommentService);
+        }
+    }
+
+    /**
+     * Locates which page of the (paginated, top-level) comment list contains
+     * the given comment, jumping to its parent's page if it's a reply, so
+     * "scroll to this comment" links land on the right page before the
+     * highlight/scroll JS runs.
+     */
+    private function pageForComment(string $commentId, ForumCommentService $forumCommentService): int
+    {
+        $comment = $forumCommentService->find($commentId);
+
+        if (! $comment) {
+            return 1;
+        }
+
+        $topLevelId = $comment->parent_id ?? $comment->id;
+
+        $orderedIds = $forumCommentService->orderedTopLevelIdsForThread($this->thread->id, $this->sortBy);
+        $index = array_search($topLevelId, $orderedIds, true);
+
+        if ($index === false) {
+            return 1;
+        }
+
+        return intdiv($index, $this->perPage) + 1;
+    }
+
+    /**
+     * Threads and comments can only be edited or deleted while their
+     * session is still ongoing — except in local/testing, where the dev
+     * bypass toggle lets a developer test those actions anytime.
+     */
+    private function canEditOrDelete(): bool
+    {
+        return $this->thread->forum->session->isOngoing()
+            || ($this->devBypassEditDelete && app()->environment(['local', 'testing']));
     }
 
     public function loadComments(): void
     {
         $this->commentsLoaded = true;
+
+        if ($this->highlightCommentId !== null) {
+            $this->dispatch('scroll-to-comment', id: $this->highlightCommentId);
+        }
     }
 
     public function updatedPerPage(): void
@@ -167,6 +225,7 @@ class ForumThreadShow extends Component
         }
 
         abort_unless($comment->user_id === auth()->id() || auth()->user()->can('forum.moderate'), 403);
+        abort_unless($this->canEditOrDelete(), 403);
 
         $forumCommentService->delete($commentId);
         $this->thread->refresh();
@@ -180,7 +239,8 @@ class ForumThreadShow extends Component
             return;
         }
 
-        abort_unless($comment->user_id === auth()->id() || auth()->user()->can('forum.moderate'), 403);
+        abort_unless($comment->user_id === auth()->id(), 403);
+        abort_unless($this->canEditOrDelete(), 403);
 
         $this->validate([
             'editCommentBody' => 'required|string|max:5000',
@@ -225,6 +285,7 @@ class ForumThreadShow extends Component
     public function startEditThread(): void
     {
         abort_unless($this->thread->user_id === auth()->id() || auth()->user()->can('forum.moderate'), 403);
+        abort_unless($this->canEditOrDelete(), 403);
 
         $this->editingThread = true;
         $this->editThreadTitle = $this->thread->title;
@@ -242,6 +303,7 @@ class ForumThreadShow extends Component
     public function updateThread(ForumThreadService $forumThreadService): void
     {
         abort_unless($this->thread->user_id === auth()->id() || auth()->user()->can('forum.moderate'), 403);
+        abort_unless($this->canEditOrDelete(), 403);
 
         $this->validate([
             'editThreadTitle' => 'required|string|max:255',
@@ -260,6 +322,7 @@ class ForumThreadShow extends Component
     public function deleteThread(ForumThreadService $forumThreadService)
     {
         abort_unless($this->thread->user_id === auth()->id() || auth()->user()->can('forum.moderate'), 403);
+        abort_unless($this->canEditOrDelete(), 403);
 
         $forumThreadService->delete($this->thread->id);
 
@@ -294,6 +357,8 @@ class ForumThreadShow extends Component
                 'lastPage' => $paginatedComments->lastPage(),
                 'onFirstPage' => $paginatedComments->onFirstPage(),
                 'hasMorePages' => $paginatedComments->hasMorePages(),
+                'windowStart' => max($paginatedComments->currentPage() - 2, 1),
+                'windowEnd' => min($paginatedComments->currentPage() + 2, $paginatedComments->lastPage()),
             ];
         }
 
@@ -306,6 +371,7 @@ class ForumThreadShow extends Component
             'canCreate' => auth()->user()->can('forum.create'),
             'forumWindowOpen' => $this->thread->forum->session->isOngoing(),
             'canModerate' => auth()->user()->can('forum.moderate'),
+            'canEditOrDelete' => $this->canEditOrDelete(),
             'courseTabs' => CourseTabs::build($this->course, 'forum'),
         ])
             ->extends('layouts.app', ['topbarTitle' => $this->course->title])

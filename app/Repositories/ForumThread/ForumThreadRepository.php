@@ -103,4 +103,13 @@ class ForumThreadRepository implements ForumThreadRepositoryInterface
             ->whereHas('forum', fn ($query) => $query->where('session_id', $sessionId))
             ->count();
     }
+
+    public function forUserInSession(string $userId, string $sessionId, array $with = []): Collection
+    {
+        return ForumThread::where('user_id', $userId)
+            ->whereHas('forum', fn ($query) => $query->where('session_id', $sessionId))
+            ->with($with)
+            ->latest()
+            ->get();
+    }
 }

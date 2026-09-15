@@ -43,7 +43,33 @@
     </div>
 
     <!-- Grouped Collapsible Tables -->
-    <div class="space-y-space-lg" x-data="{ deleteId: null, deleteMode: 'single', showDeleteModal: false, selectedIds: [], deletingIds: [], bulkDeleting: false }">
+    <div
+        class="space-y-space-lg"
+        x-data="{
+            deleteId: null, deleteMode: 'single', showDeleteModal: false, selectedIds: [], deletingIds: [], bulkDeleting: false,
+            viewingUser: null,
+            viewingThreads: [],
+            viewingComments: [],
+            viewingLoading: false,
+            viewPosts(user, threads, comments) {
+                this.viewingUser = user;
+                this.viewingLoading = true;
+                this.viewingThreads = [];
+                this.viewingComments = [];
+                setTimeout(() => {
+                    this.viewingThreads = threads;
+                    this.viewingComments = comments;
+                    this.viewingLoading = false;
+                }, 300);
+            },
+            closePosts() {
+                this.viewingUser = null;
+                this.viewingThreads = [];
+                this.viewingComments = [];
+                this.viewingLoading = false;
+            },
+        }"
+    >
         @foreach ($groupedAssessments as $index => $group)
             <div x-data="{ open: true }">
                 <!-- Collapsible Header -->
@@ -209,6 +235,88 @@
                             >
                                 Delete
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Posts Modal (read-only for students) -->
+        <div x-show="viewingUser" x-cloak class="fixed inset-0 z-50">
+            <div @click="closePosts()" class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+
+            <div class="fixed inset-0 flex items-center justify-center p-4">
+                <div class="bg-surface border border-outline-variant rounded-lg shadow-lg max-w-lg w-full max-h-[80vh] flex flex-col">
+                    <div class="p-space-lg border-b border-outline-variant flex items-center justify-between gap-space-md flex-shrink-0">
+                        <h3 class="font-headline-sm text-headline-sm text-on-surface">Your Posts</h3>
+                        <button type="button" @click="closePosts()" class="text-on-surface-variant hover:text-on-surface flex-shrink-0">
+                            <span class="material-symbols-outlined text-[22px]">close</span>
+                        </button>
+                    </div>
+
+                    <div class="p-space-lg space-y-space-lg overflow-y-auto">
+                        <!-- Skeleton Loading -->
+                        <div x-show="viewingLoading" x-cloak class="space-y-space-lg animate-pulse">
+                            <div>
+                                <x-ui.skeleton-box class="h-4 w-24 mb-space-sm" />
+                                @for ($i = 0; $i < 2; $i++)
+                                    <div class="flex items-start justify-between gap-space-md py-space-sm border-b border-outline-variant last:border-0">
+                                        <div class="min-w-0 flex-1 space-y-space-xs">
+                                            <x-ui.skeleton-box class="h-4 w-2/3" />
+                                            <x-ui.skeleton-box class="h-3 w-1/3" />
+                                        </div>
+                                    </div>
+                                @endfor
+                            </div>
+
+                            <div>
+                                <x-ui.skeleton-box class="h-4 w-28 mb-space-sm" />
+                                @for ($i = 0; $i < 2; $i++)
+                                    <div class="flex items-start justify-between gap-space-md py-space-sm border-b border-outline-variant last:border-0">
+                                        <div class="min-w-0 flex-1 space-y-space-xs">
+                                            <x-ui.skeleton-box class="h-4 w-full" />
+                                            <x-ui.skeleton-box class="h-3 w-1/2" />
+                                        </div>
+                                    </div>
+                                @endfor
+                            </div>
+                        </div>
+
+                        <!-- Loaded content -->
+                        <div x-show="! viewingLoading" x-cloak class="space-y-space-lg">
+                            <div>
+                                <p class="font-label-md text-label-md text-on-surface-variant mb-space-sm">Threads (<span x-text="viewingThreads.length"></span>)</p>
+
+                                <template x-for="thread in viewingThreads" :key="thread.id">
+                                    <a
+                                        :href="'{{ route('forum.thread.show', [$course, '__ID__']) }}'.replace('__ID__', thread.id)"
+                                        class="block py-space-sm border-b border-outline-variant last:border-0 hover:underline"
+                                    >
+                                        <p class="font-label-md text-label-md text-on-surface truncate" x-text="thread.title"></p>
+                                        <p class="text-body-xs text-on-surface-variant" x-text="thread.createdAt"></p>
+                                    </a>
+                                </template>
+
+                                <p class="text-body-sm text-on-surface-variant" x-show="viewingThreads.length === 0">No threads.</p>
+                            </div>
+
+                            <div>
+                                <p class="font-label-md text-label-md text-on-surface-variant mb-space-sm">Comments (<span x-text="viewingComments.length"></span>)</p>
+
+                                <template x-for="comment in viewingComments" :key="comment.id">
+                                    <a
+                                        :href="'{{ route('forum.thread.show', [$course, '__ID__']) }}'.replace('__ID__', comment.threadId) + '?comment=' + comment.id + '#comment-' + comment.id"
+                                        class="block py-space-sm border-b border-outline-variant last:border-0 hover:underline"
+                                    >
+                                        <p class="text-body-sm text-on-surface line-clamp-2" x-text="comment.body"></p>
+                                        <p class="text-body-xs text-on-surface-variant mt-1">
+                                            on "<span x-text="comment.threadTitle"></span>" &middot; <span x-text="comment.createdAt"></span>
+                                        </p>
+                                    </a>
+                                </template>
+
+                                <p class="text-body-sm text-on-surface-variant" x-show="viewingComments.length === 0">No comments.</p>
+                            </div>
                         </div>
                     </div>
                 </div>

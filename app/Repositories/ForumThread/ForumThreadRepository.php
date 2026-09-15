@@ -6,6 +6,7 @@ use App\Models\ForumComment;
 use App\Models\ForumThread;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class ForumThreadRepository implements ForumThreadRepositoryInterface
 {
@@ -54,7 +55,9 @@ class ForumThreadRepository implements ForumThreadRepositoryInterface
 
     public function decrementCommentsCount(string $id, int $by = 1): void
     {
-        ForumThread::whereKey($id)->decrement('comments_count', $by);
+        ForumThread::whereKey($id)->update([
+            'comments_count' => DB::raw('GREATEST(comments_count - '.(int) $by.', 0)'),
+        ]);
     }
 
     public function forForums(array $forumIds, array $with = []): Collection

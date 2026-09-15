@@ -30,6 +30,7 @@ use App\Livewire\Courses\CourseComingSoon;
 use App\Livewire\Courses\CourseForm;
 use App\Livewire\Courses\CoursesIndex;
 use App\Livewire\Courses\ForumIndex;
+use App\Livewire\Courses\ForumMonitoringIndex;
 use App\Livewire\Courses\ForumThreadShow;
 use App\Livewire\Courses\GradebookIndex;
 use App\Livewire\Courses\HeadMovementTest;
@@ -110,6 +111,7 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
         Route::get('/courses/{course}/forum', ForumIndex::class)->middleware('permission:forum.view')->name('forum.index');
         Route::get('/courses/{course}/forum/threads/{thread}', ForumThreadShow::class)->middleware('permission:forum.view')->name('forum.thread.show');
         Route::post('/forum/comments/{comment}/toggle-like', [ForumCommentLikeController::class, 'toggle'])->middleware('permission:forum.create')->name('forum.comment.toggle-like');
+        Route::get('/courses/{course}/forum-monitoring', ForumMonitoringIndex::class)->middleware('permission:forum.moderate')->name('forum.monitoring.index');
 
         Route::get('/courses/{course}/assessments', AssessmentIndex::class)->middleware('permission:assessment.view')->name('assessments.index');
         Route::get('/courses/{course}/assessments/create/{type}', AssessmentForm::class)->whereIn('type', ['personal', 'team'])->middleware('permission:assessment.create')->name('assessments.create');

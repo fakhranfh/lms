@@ -118,7 +118,20 @@
     <div wire:loading.remove wire:target="selectSession" class="w-full space-y-space-lg">
         <!-- Header info -->
         <div class="space-y-space-sm">
-            <h1 class="font-headline-md text-headline-md text-on-surface">{{ $activeTitle }}</h1>
+            <div class="flex items-center justify-between gap-space-md">
+                <h1 class="font-headline-md text-headline-md text-on-surface">{{ $activeTitle }}</h1>
+
+                @if ($canModerate)
+                    <a
+                        href="{{ route('forum.monitoring.index', [$course, 'session' => $activeSession->id]) }}"
+                        wire:navigate
+                        class="flex-shrink-0 px-space-md py-space-xs rounded-lg border border-outline text-on-surface font-label-sm text-label-sm hover:bg-surface-container transition-colors inline-flex items-center gap-space-xs"
+                    >
+                        <span class="material-symbols-outlined text-[18px]">monitoring</span>
+                        Monitor Students
+                    </a>
+                @endif
+            </div>
 
             <div class="flex flex-wrap gap-space-xl">
                 <div>

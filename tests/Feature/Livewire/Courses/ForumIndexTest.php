@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\DeliveryMode;
 use App\Livewire\Courses\ForumIndex;
 use App\Models\Course;
 use App\Models\Forum;
@@ -38,6 +39,7 @@ class ForumIndexTest extends TestCase
         $this->session = Session::factory()->for($this->course)->create([
             'date_start' => now()->subDay(),
             'date_end' => now()->addDay(),
+            'delivery_mode' => DeliveryMode::Online,
         ]);
         $this->forum = Forum::factory()->for($this->course)->create(['session_id' => $this->session->id]);
 
@@ -100,7 +102,7 @@ class ForumIndexTest extends TestCase
 
         ForumThread::factory()->for($this->forum)->create(['title' => 'Session-one thread']);
 
-        $otherSession = Session::factory()->for($this->course)->create();
+        $otherSession = Session::factory()->for($this->course)->create(['delivery_mode' => DeliveryMode::Online]);
         $otherForum = Forum::factory()->for($this->course)->create(['session_id' => $otherSession->id]);
         ForumThread::factory()->for($otherForum)->create(['title' => 'Session-two thread']);
 
@@ -145,6 +147,7 @@ class ForumIndexTest extends TestCase
         $pastSession = Session::factory()->for($this->course)->create([
             'date_start' => now()->subWeeks(2),
             'date_end' => now()->subWeek(),
+            'delivery_mode' => DeliveryMode::Online,
         ]);
         $pastForum = Forum::factory()->for($this->course)->create(['session_id' => $pastSession->id]);
 

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\DeliveryMode;
 use App\Enums\RoleName;
 use App\Livewire\Concerns\WithRichTextEditor;
 use App\Models\Course;
@@ -150,7 +151,9 @@ class ForumIndex extends Component
                 ->section('app-content');
         }
 
-        $sessions = $sessionService->forCourse($this->course->id);
+        $sessions = $sessionService->forCourse($this->course->id)
+            ->filter(fn (Session $session) => $session->delivery_mode === DeliveryMode::Online)
+            ->values();
 
         if ($sessions->isEmpty()) {
             return view('livewire.courses.forum-index-empty', [

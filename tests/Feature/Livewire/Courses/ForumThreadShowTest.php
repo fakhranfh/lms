@@ -488,4 +488,44 @@ class ForumThreadShowTest extends TestCase
                 ->assertOk();
         }
     }
+
+    public function test_generate_comments_bulk_creates_fake_comments_in_local_env(): void
+    {
+        $this->app->detectEnvironment(fn () => 'local');
+
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread])
+            ->call('loadComments')
+            ->set('generateCommentCount', 4)
+            ->call('generateComments');
+
+        $this->assertSame(4, ForumComment::where('thread_id', $this->thread->id)->where('user_id', $this->teacher->id)->count());
+    }
+
+    public function test_generate_comments_caps_count_at_fifty(): void
+    {
+        $this->app->detectEnvironment(fn () => 'local');
+
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread])
+            ->call('loadComments')
+            ->set('generateCommentCount', 999)
+            ->call('generateComments');
+
+        $this->assertSame(50, ForumComment::where('thread_id', $this->thread->id)->count());
+    }
+
+    public function test_generate_comments_is_forbidden_outside_local_or_testing_env(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        Livewire::test(ForumThreadShow::class, ['course' => $this->course, 'thread' => $this->thread])
+            ->call('loadComments')
+            ->call('generateComments')
+            ->assertStatus(403);
+    }
 }

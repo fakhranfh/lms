@@ -4,19 +4,58 @@
     class="space-y-space-lg"
     x-data="{
         deleteId: null, deleteName: null, showDeleteModal: false,
+        showBulkDeleteModal: false,
+        selectedThreadIds: [],
         showOverflow: false,
         showThreadForm: false,
         pendingSessionId: null,
         async selectSession(id) {
             this.pendingSessionId = id;
             this.showThreadForm = false;
+            this.selectedThreadIds = [];
             await this.$wire.selectSession(id);
             this.pendingSessionId = null;
+        },
+        toggleSelectAllOnPage(checked, pageIds) {
+            if (checked) {
+                this.selectedThreadIds = [...new Set([...this.selectedThreadIds, ...pageIds])];
+            } else {
+                this.selectedThreadIds = this.selectedThreadIds.filter(id => ! pageIds.includes(id));
+            }
+        },
+        confirmBulkDelete() {
+            this.showBulkDeleteModal = false;
+            this.$wire.call('bulkDeleteThreads', this.selectedThreadIds);
+            this.selectedThreadIds = [];
         },
     }"
     x-on:thread-created.window="showThreadForm = false"
 >
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => $teacher])
+
+    @if (app()->isLocal() && $canCreate)
+        <div class="px-gutter py-space-md bg-secondary/10 border border-secondary/20 rounded-lg flex items-center gap-space-md flex-wrap">
+            <span class="material-symbols-outlined text-secondary text-[20px]">science</span>
+            <p class="font-body-sm text-body-sm text-secondary">Dev only: generate fake threads for this session's forum.</p>
+            <input
+                type="number"
+                min="1"
+                max="50"
+                wire:model="generateThreadCount"
+                class="w-20 h-9 px-space-sm rounded-lg border border-outline-variant bg-surface text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <button
+                type="button"
+                wire:click="generateThreads"
+                wire:loading.attr="disabled"
+                wire:target="generateThreads"
+                class="px-space-md py-space-xs rounded-lg border border-secondary text-secondary font-label-sm text-label-sm hover:bg-secondary/10 transition disabled:opacity-50 inline-flex items-center gap-space-xs"
+            >
+                <span wire:loading wire:target="generateThreads" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                Generate Threads
+            </button>
+        </div>
+    @endif
 
     <!-- Session tab bar -->
     <div class="flex gap-space-xs overflow-x-auto pb-space-xs border-b border-outline-variant">
@@ -268,10 +307,36 @@
                     @endif
                 </div>
             @else
+                @if ($canModerate)
+                    <div class="flex items-center justify-between gap-space-md mb-space-sm flex-wrap">
+                        <label class="inline-flex items-center gap-space-xs text-body-sm text-on-surface-variant cursor-pointer">
+                            <input
+                                type="checkbox"
+                                @change="toggleSelectAllOnPage($event.target.checked, @js($currentPageThreadIds))"
+                                :checked="@js($currentPageThreadIds).length > 0 && @js($currentPageThreadIds).every(id => selectedThreadIds.includes(id))"
+                                class="w-4 h-4 accent-primary"
+                            />
+                            Select all on this page
+                        </label>
+
+                        <div class="flex items-center gap-space-sm" x-show="selectedThreadIds.length > 0" x-cloak>
+                            <span class="text-body-sm text-on-surface-variant" x-text="selectedThreadIds.length + ' selected'"></span>
+                            <button
+                                type="button"
+                                @click="showBulkDeleteModal = true"
+                                class="px-space-md py-space-xs rounded-lg border border-error text-error font-label-sm text-label-sm hover:bg-error/10 transition inline-flex items-center gap-space-xs"
+                            >
+                                <span class="material-symbols-outlined text-[16px]">delete</span>
+                                Delete Selected
+                            </button>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
                     @foreach ($threadRows as $row)
                         <div wire:key="thread-{{ $row['id'] }}" class="p-space-lg border-b border-outline-variant last:border-0">
-                            <div wire:loading wire:target="confirmDeleteThread('{{ $row['id'] }}')" class="w-full flex items-start gap-space-md animate-pulse">
+                            <div wire:loading wire:target="confirmDeleteThread('{{ $row['id'] }}'), bulkDeleteThreads" class="w-full flex items-start gap-space-md animate-pulse">
                                 <div class="w-10 h-10 rounded-full bg-surface-container flex-shrink-0"></div>
                                 <div class="min-w-0 flex-1 space-y-space-xs">
                                     <div class="h-3 bg-surface-container rounded w-1/4"></div>
@@ -280,7 +345,15 @@
                                 </div>
                                 <div class="h-4 w-8 bg-surface-container rounded flex-shrink-0"></div>
                             </div>
-                            <div wire:loading.remove wire:target="confirmDeleteThread('{{ $row['id'] }}')" class="flex items-start gap-space-md">
+                            <div wire:loading.remove wire:target="confirmDeleteThread('{{ $row['id'] }}'), bulkDeleteThreads" class="flex items-start gap-space-md">
+                            @if ($canModerate)
+                                <input
+                                    type="checkbox"
+                                    value="{{ $row['id'] }}"
+                                    x-model="selectedThreadIds"
+                                    class="w-4 h-4 mt-space-sm accent-primary flex-shrink-0"
+                                />
+                            @endif
                             <div class="relative flex-shrink-0">
                                 @if ($row['isUnread'])
                                     <span class="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-error border-2 border-surface z-10"></span>
@@ -364,6 +437,51 @@
                         </button>
                         <button
                             @click="showDeleteModal = false; $wire.call('confirmDeleteThread', deleteId)"
+                            type="button"
+                            class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Delete Confirmation Modal -->
+    <div x-show="showBulkDeleteModal" x-cloak class="fixed inset-0 z-50">
+        <div
+            @click="showBulkDeleteModal = false"
+            class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        ></div>
+
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+            <div class="bg-surface border border-outline-variant rounded-lg shadow-lg max-w-sm w-full">
+                <div class="p-space-lg space-y-space-lg">
+                    <div class="flex justify-center">
+                        <div class="flex items-center justify-center w-12 h-12 bg-error/10 rounded-full">
+                            <span class="material-symbols-outlined text-error text-[24px]" data-weight="fill">delete</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center space-y-space-sm">
+                        <h3 class="font-headline-sm text-headline-sm text-on-surface">Delete Confirmation</h3>
+                        <p class="font-body-sm text-body-sm text-on-surface-variant">
+                            Are you sure you want to delete <span class="font-medium" x-text="selectedThreadIds.length"></span> selected thread<span x-text="selectedThreadIds.length === 1 ? '' : 's'"></span>?
+                            This action cannot be undone.
+                        </p>
+                    </div>
+
+                    <div class="flex gap-space-md pt-space-md">
+                        <button
+                            @click="showBulkDeleteModal = false"
+                            type="button"
+                            class="flex-1 px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            @click="confirmBulkDelete()"
                             type="button"
                             class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                         >

@@ -161,6 +161,66 @@ class ForumIndexTest extends TestCase
         $this->assertDatabaseMissing('forum_threads', ['title' => 'Too late', 'forum_id' => $pastForum->id]);
     }
 
+    public function test_generate_threads_bulk_creates_fake_threads_in_local_env(): void
+    {
+        $this->app->detectEnvironment(fn () => 'local');
+
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        Livewire::test(ForumIndex::class, ['course' => $this->course])
+            ->call('loadForum')
+            ->set('generateThreadCount', 3)
+            ->call('generateThreads');
+
+        $this->assertDatabaseCount('forum_threads', 3);
+        $this->assertSame(3, ForumThread::where('forum_id', $this->forum->id)->where('user_id', $this->teacher->id)->count());
+    }
+
+    public function test_generate_threads_caps_count_at_fifty(): void
+    {
+        $this->app->detectEnvironment(fn () => 'local');
+
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        Livewire::test(ForumIndex::class, ['course' => $this->course])
+            ->call('loadForum')
+            ->set('generateThreadCount', 999)
+            ->call('generateThreads');
+
+        $this->assertDatabaseCount('forum_threads', 50);
+    }
+
+    public function test_generate_threads_is_forbidden_outside_local_or_testing_env(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        Livewire::test(ForumIndex::class, ['course' => $this->course])
+            ->call('loadForum')
+            ->call('generateThreads')
+            ->assertStatus(403);
+    }
+
+    public function test_generate_threads_titles_are_not_lorem_ipsum(): void
+    {
+        $this->app->detectEnvironment(fn () => 'local');
+
+        $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
+
+        Livewire::test(ForumIndex::class, ['course' => $this->course])
+            ->call('loadForum')
+            ->set('generateThreadCount', 3)
+            ->call('generateThreads');
+
+        $titles = ForumThread::where('forum_id', $this->forum->id)->pluck('title');
+
+        foreach ($titles as $title) {
+            $this->assertStringNotContainsStringIgnoringCase('lorem', $title);
+            $this->assertStringNotContainsStringIgnoringCase('ipsum', $title);
+        }
+    }
+
     public function test_owner_can_delete_own_thread(): void
     {
         $this->teacher->givePermissionTo(['forum.view', 'forum.create']);
@@ -185,6 +245,53 @@ class ForumIndexTest extends TestCase
             ->call('confirmDeleteThread', $thread->id);
 
         $this->assertDatabaseMissing('forum_threads', ['id' => $thread->id]);
+    }
+
+    public function test_teacher_can_bulk_delete_selected_threads(): void
+    {
+        $this->teacher->givePermissionTo(['forum.view', 'forum.moderate']);
+
+        $threadOne = ForumThread::factory()->for($this->forum)->create();
+        $threadTwo = ForumThread::factory()->for($this->forum)->create();
+        $keepThread = ForumThread::factory()->for($this->forum)->create();
+
+        Livewire::test(ForumIndex::class, ['course' => $this->course])
+            ->call('loadForum')
+            ->call('bulkDeleteThreads', [$threadOne->id, $threadTwo->id]);
+
+        $this->assertDatabaseMissing('forum_threads', ['id' => $threadOne->id]);
+        $this->assertDatabaseMissing('forum_threads', ['id' => $threadTwo->id]);
+        $this->assertDatabaseHas('forum_threads', ['id' => $keepThread->id]);
+    }
+
+    public function test_bulk_delete_threads_is_forbidden_without_moderate_permission(): void
+    {
+        $this->teacher->givePermissionTo(['forum.view']);
+
+        $thread = ForumThread::factory()->for($this->forum)->create(['user_id' => $this->teacher->id]);
+
+        Livewire::test(ForumIndex::class, ['course' => $this->course])
+            ->call('loadForum')
+            ->call('bulkDeleteThreads', [$thread->id])
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('forum_threads', ['id' => $thread->id]);
+    }
+
+    public function test_bulk_delete_ignores_thread_ids_from_a_different_forum(): void
+    {
+        $this->teacher->givePermissionTo(['forum.view', 'forum.moderate']);
+
+        $otherSession = Session::factory()->for($this->course)->create(['delivery_mode' => DeliveryMode::Online]);
+        $otherForum = Forum::factory()->for($this->course)->create(['session_id' => $otherSession->id]);
+        $otherThread = ForumThread::factory()->for($otherForum)->create();
+
+        Livewire::test(ForumIndex::class, ['course' => $this->course])
+            ->call('loadForum')
+            ->call('selectSession', $this->session->id)
+            ->call('bulkDeleteThreads', [$otherThread->id]);
+
+        $this->assertDatabaseHas('forum_threads', ['id' => $otherThread->id]);
     }
 
     public function test_student_cannot_delete_others_thread_without_moderate(): void

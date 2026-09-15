@@ -8,6 +8,30 @@
         Back to Forum
     </a>
 
+    @if (app()->isLocal() && $canCreate)
+        <div class="px-gutter py-space-md bg-secondary/10 border border-secondary/20 rounded-lg flex items-center gap-space-md flex-wrap">
+            <span class="material-symbols-outlined text-secondary text-[20px]">science</span>
+            <p class="font-body-sm text-body-sm text-secondary">Dev only: generate fake comments for this thread.</p>
+            <input
+                type="number"
+                min="1"
+                max="50"
+                wire:model="generateCommentCount"
+                class="w-20 h-9 px-space-sm rounded-lg border border-outline-variant bg-surface text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <button
+                type="button"
+                wire:click="generateComments"
+                wire:loading.attr="disabled"
+                wire:target="generateComments"
+                class="px-space-md py-space-xs rounded-lg border border-secondary text-secondary font-label-sm text-label-sm hover:bg-secondary/10 transition disabled:opacity-50 inline-flex items-center gap-space-xs"
+            >
+                <span wire:loading wire:target="generateComments" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                Generate Comments
+            </button>
+        </div>
+    @endif
+
     <!-- Thread -->
     <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
         <div class="flex items-start justify-between gap-space-md pb-space-md border-b border-outline-variant">

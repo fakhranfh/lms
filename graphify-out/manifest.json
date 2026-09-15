@@ -4970,13 +4970,13 @@
     "semantic_hash": "d9061d3da8601932e98f79ec8ba1c877"
   },
   "app/Livewire/Courses/ForumIndex.php": {
-    "mtime": 1789445651.109629,
-    "ast_hash": "05b347f548050c0d0ce34c382f85f2b1",
+    "mtime": 1789447668.4725256,
+    "ast_hash": "3f3b320e39ae590332978be0c8d9ccbf",
     "semantic_hash": ""
   },
   "app/Livewire/Courses/ForumThreadShow.php": {
-    "mtime": 1786503627.4402661,
-    "ast_hash": "fbffe72e96d8ca41801a50abe0502f79",
+    "mtime": 1789447314.6284769,
+    "ast_hash": "861789dee340cd49cf1499d2dc1b363a",
     "semantic_hash": ""
   },
   "database/migrations/2026_08_06_000001_add_forum_permissions.php": {
@@ -4990,23 +4990,23 @@
     "semantic_hash": ""
   },
   "resources/views/livewire/courses/forum-index.blade.php": {
-    "mtime": 1789446163.6833947,
-    "ast_hash": "e7a9a254fb69a14874e989882b437ad3",
+    "mtime": 1789447764.8478913,
+    "ast_hash": "c29b815ba70e46cc8ae98c336431a129",
     "semantic_hash": ""
   },
   "resources/views/livewire/courses/forum-thread-show.blade.php": {
-    "mtime": 1786341035.8629405,
-    "ast_hash": "6a37263b3a9662c72f3de4ab25ebe871",
+    "mtime": 1789447333.975222,
+    "ast_hash": "48a899f0cbd61fab0d4976d783335b42",
     "semantic_hash": ""
   },
   "tests/Feature/Livewire/Courses/ForumIndexTest.php": {
-    "mtime": 1789445676.5714972,
-    "ast_hash": "9c849f68c50800e54248a4fa917fd0f0",
+    "mtime": 1789447810.1668677,
+    "ast_hash": "858f38a00228fcaeefbb9e3d418bc88c",
     "semantic_hash": ""
   },
   "tests/Feature/Livewire/Courses/ForumThreadShowTest.php": {
-    "mtime": 1786338660.0939503,
-    "ast_hash": "d9ddf7d2f9c0c56f2a5a910f0136b31f",
+    "mtime": 1789447384.3724446,
+    "ast_hash": "2a0a69b5068ca7c5c5aa3e72e0c2ec02",
     "semantic_hash": ""
   },
   "docs/dusk/images/change-password-page.png": {
@@ -6460,8 +6460,8 @@
     "semantic_hash": ""
   },
   "resources/views/livewire/courses/forum-monitoring-index.blade.php": {
-    "mtime": 1789446150.5201902,
-    "ast_hash": "b8c1bfecfc4986c6c2d7fa7cb1358403",
+    "mtime": 1789446574.9926054,
+    "ast_hash": "08a71dd9a32fe92f6c69b1e8a7a5cf1f",
     "semantic_hash": ""
   },
   "tests/Feature/CourseRestructure/AssessmentQuestionAttemptScoringServiceTest.php": {

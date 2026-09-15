@@ -118,15 +118,24 @@
                 <label for="deliveryMode" class="block text-label-md text-on-surface mb-space-sm font-label-md">
                     Delivery Mode <span class="text-error">*</span>
                 </label>
-                <select
-                    id="deliveryMode"
-                    wire:model.live="deliveryMode"
-                    class="w-full px-space-lg py-space-md border border-outline rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
-                >
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
                     @foreach ($deliveryModes as $mode)
-                        <option value="{{ $mode->value }}">{{ str($mode->value)->replace('_', ' ')->title() }}</option>
+                        <label
+                            class="flex items-center gap-space-sm px-space-lg py-space-md border rounded-lg cursor-pointer transition-colors"
+                            :class="$wire.deliveryMode === '{{ $mode->value }}' ? 'border-primary bg-primary/5' : 'border-outline'"
+                        >
+                            <input
+                                type="radio"
+                                id="deliveryMode-{{ $mode->value }}"
+                                name="deliveryMode"
+                                value="{{ $mode->value }}"
+                                wire:model.live="deliveryMode"
+                                class="text-primary focus:ring-primary/50"
+                            />
+                            <span class="text-body-md text-on-surface">{{ str($mode->value)->replace('_', ' ')->title() }}</span>
+                        </label>
                     @endforeach
-                </select>
+                </div>
             </div>
 
             <!-- Subtopics -->

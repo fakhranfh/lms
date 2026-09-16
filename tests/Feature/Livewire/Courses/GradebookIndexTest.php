@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\RoleName;
 use App\Livewire\Courses\GradebookIndex;
 use App\Models\Assessment;
 use App\Models\AssessmentAttempt;
@@ -9,6 +10,7 @@ use App\Models\AssessmentQuestion;
 use App\Models\AssessmentScore;
 use App\Models\Course;
 use App\Models\CoursePerson;
+use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
 use Livewire\Livewire;
@@ -31,6 +33,7 @@ class GradebookIndexTest extends TestCase
         $this->school = School::factory()->create();
         $this->teacher = User::factory()->forSchool($this->school)->create();
         $this->student = User::factory()->forSchool($this->school)->create();
+        $this->student->assignRole(Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]));
         $this->course = Course::factory()->for($this->school)->create();
 
         CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $this->student->id]);
@@ -60,7 +63,7 @@ class GradebookIndexTest extends TestCase
             ->assertSee('THEORY: Personal Assignment');
     }
 
-    public function test_teacher_sees_student_roster_and_can_drill_down(): void
+    public function test_teacher_sees_student_grid_with_link_to_detail_page(): void
     {
         $this->teacher->givePermissionTo(['gradebook.view', 'gradebook.manage']);
         $this->actingAs($this->teacher);
@@ -68,7 +71,24 @@ class GradebookIndexTest extends TestCase
         Livewire::test(GradebookIndex::class, ['course' => $this->course])
             ->call('loadData')
             ->assertSee($this->student->name)
-            ->call('selectStudent', $this->student->id)
-            ->assertSet('selectedStudentId', $this->student->id);
+            ->assertSee(route('gradebook.show', [$this->course, $this->student]), false);
+    }
+
+    public function test_teacher_student_grid_is_paginated(): void
+    {
+        $this->teacher->givePermissionTo(['gradebook.view', 'gradebook.manage']);
+        $this->actingAs($this->teacher);
+
+        $extraStudents = User::factory()->forSchool($this->school)->count(15)->create();
+        foreach ($extraStudents as $extraStudent) {
+            CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $extraStudent->id]);
+        }
+
+        Livewire::test(GradebookIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->set('perPage', 12)
+            ->assertViewHas('studentRows', fn ($studentRows) => $studentRows->count() === 12 && $studentRows->total() === 16)
+            ->call('gotoPage', 2)
+            ->assertViewHas('studentRows', fn ($studentRows) => $studentRows->count() === 4);
     }
 }

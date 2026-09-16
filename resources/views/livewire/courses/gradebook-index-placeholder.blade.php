@@ -6,18 +6,24 @@
     <div class="space-y-space-lg animate-pulse">
         <div class="h-6 bg-surface-container rounded w-40"></div>
 
-        <div class="h-24 bg-surface-container rounded-lg"></div>
+        @if ($isStudent)
+            <div class="h-24 bg-surface-container rounded-lg"></div>
 
-        <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
-            @for ($i = 0; $i < 4; $i++)
-                <div class="p-space-lg flex items-center gap-space-md">
-                    <div class="flex-1 space-y-space-xs">
-                        <div class="h-4 bg-surface-container rounded w-1/3"></div>
-                        <div class="h-3 bg-surface-container rounded w-1/4"></div>
+            <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
+                @for ($i = 0; $i < 4; $i++)
+                    <div class="p-space-lg flex items-center gap-space-md">
+                        <div class="flex-1 space-y-space-xs">
+                            <div class="h-4 bg-surface-container rounded w-1/3"></div>
+                            <div class="h-3 bg-surface-container rounded w-1/4"></div>
+                        </div>
+                        <div class="w-20 h-6 bg-surface-container rounded-full flex-shrink-0"></div>
                     </div>
-                    <div class="w-20 h-6 bg-surface-container rounded-full flex-shrink-0"></div>
-                </div>
-            @endfor
-        </div>
+                @endfor
+            </div>
+        @else
+            <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
+                <x-ui.person-grid-skeleton :rows="9" />
+            </div>
+        @endif
     </div>
 </div>

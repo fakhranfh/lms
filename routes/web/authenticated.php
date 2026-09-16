@@ -33,6 +33,8 @@ use App\Livewire\Courses\ForumIndex;
 use App\Livewire\Courses\ForumMonitoringIndex;
 use App\Livewire\Courses\ForumThreadShow;
 use App\Livewire\Courses\GradebookIndex;
+use App\Livewire\Courses\GradebookShow;
+use App\Livewire\Courses\GradebookWeights;
 use App\Livewire\Courses\HeadMovementTest;
 use App\Livewire\Courses\PeopleIndex;
 use App\Livewire\Courses\ProctorExamShow;
@@ -141,6 +143,8 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
 
         Route::get('/courses/{course}/attendance', AttendanceIndex::class)->middleware('permission:attendance.view')->name('attendance.index');
         Route::get('/courses/{course}/gradebook', GradebookIndex::class)->middleware('permission:gradebook.view')->name('gradebook.index');
+        Route::get('/courses/{course}/gradebook/students/{student}', GradebookShow::class)->middleware('permission:gradebook.view')->name('gradebook.show');
+        Route::get('/courses/{course}/gradebook/weights', GradebookWeights::class)->middleware('permission:gradebook.manage')->name('gradebook.weights');
         Route::get('/courses/{course}/gradebook/types/{type}/sessions', GradebookSessionBreakdownController::class)->middleware('permission:gradebook.view')->name('gradebook.sessions');
 
         Route::get('/courses/{course}/tabs/{tab}', CourseComingSoon::class)->middleware('permission:courses.view')->name('course-tabs.coming-soon');

@@ -42,10 +42,11 @@ class GradebookScoringService
         private ForumDiscussionScoringService $forumDiscussionScoringService,
         private GradebookEntryService $gradebookEntryService,
         private GradebookSessionEntryService $gradebookSessionEntryService,
+        private CoursePersonService $coursePersonService,
     ) {}
 
     /**
-     * @return array{final: array{score: ?float, last_updated_at: ?Carbon}, types: array<int, array{type: AssessmentType, weight: float, score: ?float, last_updated_at: ?Carbon, sessions: array<int, array{session: Session, weight: float, score: float}>}>}
+     * @return array{final: array{score: ?float, last_updated_at: ?Carbon}, types: array<int, array{type: AssessmentType, weight: float, assessment_id: ?string, score: ?float, last_updated_at: ?Carbon, sessions: array<int, array{session: Session, weight: float, score: float}>}>}
      */
     public function computeForUser(Course $course, string $userId): array
     {
@@ -63,6 +64,7 @@ class GradebookScoringService
             }
 
             $weight = (float) $typeAssessments->sum('weight');
+            $assessmentId = $typeAssessments->count() === 1 ? $typeAssessments->first()->id : null;
 
             $contributions = $typeAssessments
                 ->map(fn (Assessment $assessment) => $this->percentageForAssessment($assessment, $type, $userId))
@@ -73,6 +75,7 @@ class GradebookScoringService
                 $types[] = [
                     'type' => $type,
                     'weight' => $weight,
+                    'assessment_id' => $assessmentId,
                     'score' => null,
                     'last_updated_at' => null,
                     'sessions' => [],
@@ -93,6 +96,7 @@ class GradebookScoringService
             $types[] = [
                 'type' => $type,
                 'weight' => $weight,
+                'assessment_id' => $assessmentId,
                 'score' => $score,
                 'last_updated_at' => $contributions->pluck('last_updated_at')->filter()->max(),
                 'sessions' => $sessions,
@@ -221,6 +225,50 @@ class GradebookScoringService
                     $this->gradebookSessionEntryService->delete($existingSessionEntry->id);
                 }
             }
+        }
+    }
+
+    /**
+     * Updates several AssessmentTypes' total weight in one go and recomputes
+     * + persists every enrolled student's Gradebook entries for the course
+     * exactly once afterwards, since a weight change shifts every student's
+     * final score, not just one.
+     *
+     * When a type has multiple Assessments, each one's weight is scaled
+     * proportionally to its current share of the type's total (or split
+     * evenly if every Assessment currently has a zero weight), so their
+     * relative balance is preserved.
+     *
+     * @param  array<string, float>  $weightsByType  AssessmentType value => new total weight
+     */
+    public function updateTypeWeights(Course $course, array $weightsByType): void
+    {
+        $assessmentsByType = $this->assessmentService->forCourse($course->id)->groupBy(
+            fn (Assessment $assessment) => $assessment->type->value
+        );
+
+        foreach ($weightsByType as $typeValue => $weight) {
+            $typeAssessments = $assessmentsByType->get($typeValue, collect());
+
+            if ($typeAssessments->isEmpty()) {
+                continue;
+            }
+
+            $currentTotal = (float) $typeAssessments->sum('weight');
+
+            foreach ($typeAssessments as $assessment) {
+                $share = $currentTotal > 0.0
+                    ? ((float) $assessment->weight) / $currentTotal
+                    : 1 / $typeAssessments->count();
+
+                $this->assessmentService->update($assessment->id, ['weight' => round($weight * $share, 2)]);
+            }
+        }
+
+        $studentIds = $this->coursePersonService->studentsForCourse($course->id)->pluck('user_id');
+
+        foreach ($studentIds as $studentId) {
+            $this->recomputeForUser($course, $studentId);
         }
     }
 

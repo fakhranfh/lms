@@ -60,6 +60,21 @@ class GradebookWeightsTest extends TestCase
             ->assertSee('20');
     }
 
+    public function test_draft_assessments_are_still_manageable_on_the_weights_page(): void
+    {
+        $this->teacher->givePermissionTo(['gradebook.view', 'gradebook.manage']);
+        $this->actingAs($this->teacher);
+
+        Assessment::factory()->for($this->course)->create(['type' => 'theory_personal_assignment', 'title' => 'Published Assignment', 'weight' => 20, 'status' => 'published']);
+        Assessment::factory()->for($this->course)->create(['type' => 'theory_personal_assignment', 'title' => 'Draft Assignment', 'weight' => 10, 'status' => 'draft']);
+
+        Livewire::test(GradebookWeights::class, ['course' => $this->course])
+            ->call('loadData')
+            ->assertSee('Published Assignment')
+            ->assertSee('Draft Assignment')
+            ->assertSee('30');
+    }
+
     public function test_teacher_sees_assessment_title_for_a_type_with_a_single_assessment(): void
     {
         $this->teacher->givePermissionTo(['gradebook.view', 'gradebook.manage']);

@@ -91,7 +91,7 @@
                             </template>
                             <template x-if="!loading">
                                 <div class="divide-y divide-outline-variant">
-                                    <template x-for="row in items" :key="row.label">
+                                    <template x-for="(row, index) in items" :key="index">
                                         <div class="pl-space-lg py-space-sm grid grid-cols-[1fr_4rem_4rem_4rem] gap-space-lg items-center">
                                             <p class="min-w-0 font-label-md text-label-md text-on-surface" x-text="row.label"></p>
                                             <div class="text-center">

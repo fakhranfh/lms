@@ -55,8 +55,10 @@ class ForumThreadRepository implements ForumThreadRepositoryInterface
 
     public function decrementCommentsCount(string $id, int $by = 1): void
     {
+        $cast = DB::connection()->getDriverName() === 'mysql' ? 'SIGNED' : 'BIGINT';
+
         ForumThread::whereKey($id)->update([
-            'comments_count' => DB::raw('GREATEST(comments_count - '.(int) $by.', 0)'),
+            'comments_count' => DB::raw("GREATEST(CAST(comments_count AS {$cast}) - ".(int) $by.', 0)'),
         ]);
     }
 

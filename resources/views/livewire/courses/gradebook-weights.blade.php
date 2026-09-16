@@ -43,21 +43,38 @@
     <div class="space-y-space-lg">
         <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden divide-y divide-outline-variant">
             @forelse ($typeRows as $typeRow)
-                <div wire:key="type-{{ $typeRow['key'] }}" class="p-space-lg flex items-center justify-between gap-space-md">
-                    <label for="weight-{{ $typeRow['key'] }}" class="font-title-sm text-title-sm text-on-surface">{{ $typeRow['label'] }}</label>
-                    <div class="flex-shrink-0 relative w-24">
-                        <input
-                            id="weight-{{ $typeRow['key'] }}"
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            x-model.number="weights['{{ $typeRow['key'] }}']"
-                            :class="(weights['{{ $typeRow['key'] }}'] === '' || weights['{{ $typeRow['key'] }}'] === null || Number(weights['{{ $typeRow['key'] }}']) < 0 || Number(weights['{{ $typeRow['key'] }}']) > 100) ? 'border-error' : 'border-outline'"
-                            class="w-full text-right pr-7 pl-space-md py-space-xs border rounded-full font-label-sm text-label-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        />
-                        <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-label-sm text-on-surface-variant">%</span>
+                <div wire:key="type-{{ $typeRow['key'] }}" class="p-space-lg space-y-space-md">
+                    <div class="flex items-center justify-between gap-space-md">
+                        <label for="weight-{{ $typeRow['key'] }}" class="font-title-sm text-title-sm text-on-surface">{{ $typeRow['label'] }}</label>
+                        <div class="flex-shrink-0 relative w-24">
+                            <input
+                                id="weight-{{ $typeRow['key'] }}"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                x-model.number="weights['{{ $typeRow['key'] }}']"
+                                :class="(weights['{{ $typeRow['key'] }}'] === '' || weights['{{ $typeRow['key'] }}'] === null || Number(weights['{{ $typeRow['key'] }}']) < 0 || Number(weights['{{ $typeRow['key'] }}']) > 100) ? 'border-error' : 'border-outline'"
+                                class="w-full text-right pr-7 pl-space-md py-space-xs border rounded-full font-label-sm text-label-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            />
+                            <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-label-sm text-on-surface-variant">%</span>
+                        </div>
                     </div>
+
+                    @if (count($typeRow['items']) > 0)
+                        <div
+                            x-data="{ share: 0 }"
+                            x-init="$watch('weights[\'{{ $typeRow['key'] }}\']', (v) => share = (Number(v) || 0) / {{ count($typeRow['items']) }}); share = (Number(weights['{{ $typeRow['key'] }}']) || 0) / {{ count($typeRow['items']) }}"
+                            class="pl-gutter space-y-space-xs"
+                        >
+                            @foreach ($typeRow['items'] as $label)
+                                <div class="flex items-center justify-between gap-space-md">
+                                    <p class="font-body-sm text-body-sm text-on-surface-variant truncate">{{ $label }}</p>
+                                    <span class="flex-shrink-0 font-label-sm text-label-sm text-on-surface-variant" x-text="share.toFixed(2) + '%'"></span>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
             @empty
                 <p class="p-space-lg text-center text-body-sm text-on-surface-variant">No assessments yet.</p>

@@ -234,10 +234,8 @@ class GradebookScoringService
      * exactly once afterwards, since a weight change shifts every student's
      * final score, not just one.
      *
-     * When a type has multiple Assessments, each one's weight is scaled
-     * proportionally to its current share of the type's total (or split
-     * evenly if every Assessment currently has a zero weight), so their
-     * relative balance is preserved.
+     * When a type has multiple Assessments, the type's total weight is
+     * split evenly across them.
      *
      * @param  array<string, float>  $weightsByType  AssessmentType value => new total weight
      */
@@ -254,14 +252,10 @@ class GradebookScoringService
                 continue;
             }
 
-            $currentTotal = (float) $typeAssessments->sum('weight');
+            $share = round($weight / $typeAssessments->count(), 2);
 
             foreach ($typeAssessments as $assessment) {
-                $share = $currentTotal > 0.0
-                    ? ((float) $assessment->weight) / $currentTotal
-                    : 1 / $typeAssessments->count();
-
-                $this->assessmentService->update($assessment->id, ['weight' => round($weight * $share, 2)]);
+                $this->assessmentService->update($assessment->id, ['weight' => $share]);
             }
         }
 

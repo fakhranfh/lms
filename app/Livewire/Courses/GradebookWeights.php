@@ -4,11 +4,16 @@ namespace App\Livewire\Courses;
 
 use App\Enums\AssessmentType;
 use App\Livewire\Courses\Concerns\BuildsGradebookViewData;
+use App\Models\Assessment;
 use App\Models\Course;
+use App\Models\Session;
 use App\Services\AssessmentService;
+use App\Services\AttendanceScoringService;
+use App\Services\ForumDiscussionScoringService;
 use App\Services\GradebookScoringService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class GradebookWeights extends Component
@@ -70,8 +75,11 @@ class GradebookWeights extends Component
         $this->successMessage = __('Weights updated and scores recalculated for every student.');
     }
 
-    public function render(AssessmentService $assessmentService)
-    {
+    public function render(
+        AssessmentService $assessmentService,
+        AttendanceScoringService $attendanceScoringService,
+        ForumDiscussionScoringService $forumDiscussionScoringService,
+    ) {
         $viewData = [
             'course' => $this->course,
             'courseTabs' => CourseTabs::build($this->course, 'gradebook'),
@@ -89,15 +97,51 @@ class GradebookWeights extends Component
 
         $viewData['typeRows'] = collect(AssessmentType::cases())
             ->filter(fn (AssessmentType $type) => $assessmentsByType->has($type->value))
-            ->map(fn (AssessmentType $type) => [
-                'key' => $type->value,
-                'label' => $this->typeLabel($type->value),
-                'weight' => (float) $assessmentsByType->get($type->value)->sum('weight'),
-            ])
+            ->map(function (AssessmentType $type) use ($assessmentsByType, $attendanceScoringService, $forumDiscussionScoringService) {
+                $typeAssessments = $assessmentsByType->get($type->value);
+
+                return [
+                    'key' => $type->value,
+                    'label' => $this->typeLabel($type->value),
+                    'weight' => (float) $typeAssessments->sum('weight'),
+                    'items' => $this->itemsForType($type, $typeAssessments, $attendanceScoringService, $forumDiscussionScoringService),
+                ];
+            })
             ->values();
 
         return view('livewire.courses.gradebook-weights', $viewData)
             ->extends('layouts.app', ['topbarTitle' => $this->course->title])
             ->section('app-content');
+    }
+
+    /**
+     * For Attendance/Forum Discussion (session-based, auto-provisioned as a
+     * single Assessment), lists that Assessment's in-scope Sessions instead
+     * of the Assessment itself, matching AssessmentIndex's session listing.
+     *
+     * @param  Collection<int, Assessment>  $typeAssessments
+     * @return Collection<int, non-falsy-string>
+     */
+    private function itemsForType(
+        AssessmentType $type,
+        Collection $typeAssessments,
+        AttendanceScoringService $attendanceScoringService,
+        ForumDiscussionScoringService $forumDiscussionScoringService,
+    ): Collection {
+        if (! in_array($type, [AssessmentType::Attendance, AssessmentType::ForumDiscussion], true)) {
+            return $typeAssessments->pluck('title')->values();
+        }
+
+        $sessions = $typeAssessments->flatMap(
+            fn (Assessment $assessment) => $type === AssessmentType::Attendance
+                ? $attendanceScoringService->sessionsInScope($assessment)
+                : $forumDiscussionScoringService->sessionsInScope($assessment)
+        )->unique('id')->values();
+
+        return $sessions->map(
+            function (Session $session): string {
+                return 'Session '.$session->order.' - '.str($session->delivery_mode->value)->replace('_', ' ')->title();
+            }
+        )->values();
     }
 }

@@ -113,6 +113,42 @@ class AttendanceIndexTest extends TestCase
         $this->assertNull($this->session->fresh()->attendance_locked_at);
     }
 
+    public function test_teacher_can_generate_random_attendance_for_selected_session(): void
+    {
+        $this->teacher->givePermissionTo(['attendance.view', 'attendance.manage']);
+        $this->actingAs($this->teacher);
+
+        $this->session->update([
+            'date_start' => now()->subHours(2),
+            'date_end' => now()->subHour(),
+        ]);
+
+        Livewire::test(AttendanceIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->set('selectedSessionId', $this->session->id)
+            ->call('generateRandomAttendance')
+            ->assertSet('errorMessage', null);
+
+        $attendance = Attendance::query()
+            ->where('session_id', $this->session->id)
+            ->where('user_id', $this->student->id)
+            ->first();
+
+        $this->assertNotNull($attendance);
+
+        if ($attendance->recorded_at !== null) {
+            $this->assertTrue($attendance->recorded_at->betweenIncluded($this->session->date_start, $this->session->date_end));
+        }
+
+        if ($attendance->status === AttendanceStatus::Present) {
+            $this->assertSame($this->student->id, $attendance->recorded_by);
+        } else {
+            $this->assertSame($this->teacher->id, $attendance->recorded_by);
+        }
+
+        $this->assertNull($this->session->fresh()->attendance_locked_at);
+    }
+
     public function test_student_cannot_record_attendance(): void
     {
         $this->student->givePermissionTo('attendance.view');

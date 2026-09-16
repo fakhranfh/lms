@@ -76,6 +76,22 @@
                 </div>
             </x-ui.modal>
         </div>
+
+        <div class="px-gutter py-space-md bg-secondary/10 border border-secondary/20 rounded-lg flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-secondary text-[20px]">science</span>
+            <p class="font-body-sm text-body-sm text-secondary flex-1">Dev only: generate random attendance for the selected session (random status, random timestamp within its schedule).</p>
+            <button
+                type="button"
+                wire:click="generateRandomAttendance"
+                wire:loading.attr="disabled"
+                wire:target="generateRandomAttendance"
+                @disabled(($isLocked ?? false) || ! ($selectedSession ?? null))
+                class="px-space-md py-space-xs rounded-lg border border-secondary text-secondary font-label-sm text-label-sm hover:bg-secondary/10 transition disabled:opacity-50 inline-flex items-center gap-space-xs"
+            >
+                <span wire:loading wire:target="generateRandomAttendance" class="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+                Generate Random Attendance
+            </button>
+        </div>
     @endif
 
     @if ($isStudent)

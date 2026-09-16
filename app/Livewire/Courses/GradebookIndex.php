@@ -75,6 +75,8 @@ class GradebookIndex extends Component
         if ($this->isStudent) {
             $result = $gradebookScoringService->computeForUser($this->course, auth()->id());
             $viewData['result'] = $result;
+            $viewData['finalGrade'] = $this->letterGrade($result['final']['score']);
+            $viewData['finalLastUpdatedLabel'] = $this->lastUpdatedLabel($result['final']['last_updated_at']);
             $viewData['typeRows'] = $this->typeRows($result, null);
         } else {
             $students = $coursePersonService->studentsForCourse($this->course->id);
@@ -94,11 +96,15 @@ class GradebookIndex extends Component
 
             $viewData['selectedStudent'] = $selectedStudent?->user;
             $viewData['result'] = null;
+            $viewData['finalGrade'] = null;
+            $viewData['finalLastUpdatedLabel'] = null;
             $viewData['typeRows'] = [];
 
             if ($selectedStudent !== null) {
                 $result = $gradebookScoringService->computeForUser($this->course, $selectedStudent->user_id);
                 $viewData['result'] = $result;
+                $viewData['finalGrade'] = $this->letterGrade($result['final']['score']);
+                $viewData['finalLastUpdatedLabel'] = $this->lastUpdatedLabel($result['final']['last_updated_at']);
                 $viewData['typeRows'] = $this->typeRows($result, $selectedStudent->user_id);
             }
         }
@@ -114,7 +120,7 @@ class GradebookIndex extends Component
      * view only binds variables (per this repo's Blade conventions).
      *
      * @param  array{final: array, types: array<int, array{type: AssessmentType, weight: float, score: ?float, last_updated_at: ?Carbon, sessions: array}>}  $result
-     * @return array<int, array{key: string, label: string, weight: float, score: ?float, last_updated_at: ?Carbon, expandable: bool, sessions_url: ?string}>
+     * @return array<int, array{key: string, label: string, weight: float, score: ?float, last_updated_label: ?string, expandable: bool, sessions_url: ?string}>
      */
     private function typeRows(array $result, ?string $studentId): array
     {
@@ -124,15 +130,55 @@ class GradebookIndex extends Component
 
             return [
                 'key' => $key,
-                'label' => str($key)->replace('_', ' ')->title()->toString(),
+                'label' => $this->typeLabel($key),
                 'weight' => $typeRow['weight'],
                 'score' => $typeRow['score'],
-                'last_updated_at' => $typeRow['last_updated_at'],
+                'last_updated_label' => $this->lastUpdatedLabel($typeRow['last_updated_at']),
                 'expandable' => $expandable,
                 'sessions_url' => $expandable
                     ? route('gradebook.sessions', [$this->course, $key]).($studentId ? '?student_id='.$studentId : '')
                     : null,
             ];
         })->all();
+    }
+
+    private function typeLabel(string $key): string
+    {
+        if ($key === 'theory_final_exam') {
+            return 'THEORY: FINAL EXAM';
+        }
+
+        if (str($key)->startsWith('theory_')) {
+            return 'THEORY: '.str($key)->after('theory_')->replace('_', ' ')->title();
+        }
+
+        return str($key)->replace('_', ' ')->title()->toString();
+    }
+
+    private function lastUpdatedLabel(?Carbon $lastUpdatedAt): ?string
+    {
+        if ($lastUpdatedAt === null) {
+            return null;
+        }
+
+        $timezone = auth()->user()->timezone ?: config('app.timezone');
+        $viewerDate = $lastUpdatedAt->clone()->setTimezone($timezone);
+
+        return $viewerDate->translatedFormat('j M Y, H:i').' GMT'.$viewerDate->format('P');
+    }
+
+    private function letterGrade(?float $score): ?string
+    {
+        if ($score === null) {
+            return null;
+        }
+
+        return match (true) {
+            $score >= 90 => 'A',
+            $score >= 80 => 'B',
+            $score >= 70 => 'C',
+            $score >= 60 => 'D',
+            default => 'E',
+        };
     }
 }

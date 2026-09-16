@@ -57,7 +57,7 @@ class GradebookIndexTest extends TestCase
         Livewire::test(GradebookIndex::class, ['course' => $this->course])
             ->call('loadData')
             ->assertSee('Final Score')
-            ->assertSee('Theory Personal Assignment');
+            ->assertSee('THEORY: Personal Assignment');
     }
 
     public function test_teacher_sees_student_roster_and_can_drill_down(): void

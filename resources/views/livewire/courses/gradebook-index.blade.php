@@ -60,15 +60,29 @@
     @endif
 
     @if ($result)
-        <!-- Final Score card -->
-        <div class="grid grid-cols-2 gap-space-md">
-            <div class="bg-surface border border-outline-variant rounded-lg p-space-lg">
-                <p class="text-body-sm text-on-surface-variant">Final Score</p>
-                <p class="font-headline-sm text-headline-sm text-on-surface mt-space-xs">{{ $result['final']['score'] !== null ? number_format($result['final']['score'], 2) : '—' }}</p>
+        <!-- Final Score banner -->
+        <div class="rounded-lg p-space-lg bg-primary flex items-center justify-between gap-space-md flex-wrap">
+            <div>
+                <p class="font-title-md text-title-md text-on-primary">Final Score</p>
+                @if ($finalLastUpdatedLabel)
+                    <p class="text-body-xs text-on-primary/80">Last updated: {{ $finalLastUpdatedLabel }}</p>
+                @endif
             </div>
-            <div class="bg-surface border border-outline-variant rounded-lg p-space-lg">
-                <p class="text-body-sm text-on-surface-variant">Last Updated</p>
-                <p class="font-headline-sm text-headline-sm text-on-surface mt-space-xs">{{ $result['final']['last_updated_at']?->diffForHumans() ?? '—' }}</p>
+            <div class="flex items-center gap-space-xl">
+                <div class="text-center">
+                    <p class="text-body-xs text-on-primary/80">Weight</p>
+                    <div class="mt-space-xs w-11 h-11 rounded-full bg-black/20 flex items-center justify-center">
+                        <span class="font-label-sm text-label-sm text-on-primary">100%</span>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <p class="text-body-xs text-on-primary/80">Score</p>
+                    <p class="font-headline-sm text-headline-sm text-on-primary mt-space-xs">{{ $result['final']['score'] !== null ? number_format($result['final']['score'], 0) : '—' }}</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-body-xs text-on-primary/80">Grade</p>
+                    <p class="font-headline-sm text-headline-sm text-on-primary mt-space-xs">{{ $finalGrade ?? '—' }}</p>
+                </div>
             </div>
         </div>
 
@@ -102,19 +116,27 @@
                 >
                     <div
                         @if ($typeRow['expandable']) @click="toggle()" @endif
-                        class="p-space-lg flex items-center gap-space-md {{ $typeRow['expandable'] ? 'cursor-pointer hover:bg-surface-container/50' : '' }}"
+                        class="p-space-lg flex items-center gap-space-lg {{ $typeRow['expandable'] ? 'cursor-pointer hover:bg-surface-container/50' : '' }}"
                     >
-                        <div class="flex-1">
-                            <p class="font-label-md text-label-md text-on-surface">{{ $typeRow['label'] }}</p>
-                            <p class="text-body-xs text-on-surface-variant">Weight {{ number_format($typeRow['weight'], 2) }}%</p>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-title-sm text-title-sm text-on-surface flex items-center gap-space-xs">
+                                {{ $typeRow['label'] }}
+                                @if ($typeRow['expandable'])
+                                    <span class="material-symbols-outlined text-on-surface-variant text-[18px]" x-text="expanded ? 'expand_less' : 'expand_more'"></span>
+                                @endif
+                            </p>
+                            @if ($typeRow['last_updated_label'])
+                                <p class="text-body-xs text-on-surface-variant">Last updated: {{ $typeRow['last_updated_label'] }}</p>
+                            @endif
                         </div>
-                        <div class="text-right">
-                            <p class="font-label-md text-label-md text-on-surface">{{ $typeRow['score'] !== null ? number_format($typeRow['score'], 2) : 'Not graded yet' }}</p>
-                            <p class="text-body-xs text-on-surface-variant">{{ $typeRow['last_updated_at']?->diffForHumans() ?? '' }}</p>
+                        <div class="text-center w-16 shrink-0">
+                            <div class="w-11 h-11 mx-auto rounded-full bg-surface-container flex items-center justify-center">
+                                <span class="font-label-sm text-label-sm text-on-surface">{{ number_format($typeRow['weight'], 0) }}%</span>
+                            </div>
                         </div>
-                        @if ($typeRow['expandable'])
-                            <span class="material-symbols-outlined text-on-surface-variant text-[20px]" x-text="expanded ? 'expand_less' : 'expand_more'"></span>
-                        @endif
+                        <div class="w-16 text-left shrink-0">
+                            <p class="font-title-sm text-title-sm text-on-surface">{{ $typeRow['score'] !== null ? number_format($typeRow['score'], 0) : '—' }}</p>
+                        </div>
                     </div>
 
                     @if ($typeRow['expandable'])

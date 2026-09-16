@@ -154,7 +154,7 @@
                                                 <p class="min-w-0 font-label-md text-label-md text-on-surface" x-text="row.label"></p>
                                                 <div class="text-center">
                                                     <div class="w-8 h-8 mx-auto rounded-full bg-surface-container flex items-center justify-center">
-                                                        <span class="text-[10px] leading-none tracking-normal text-on-surface" x-text="Math.round(row.weight) + '%'"></span>
+                                                        <span class="text-[10px] leading-none tracking-normal text-on-surface text-label-sm" x-text="Math.round(row.weight) + '%'"></span>
                                                     </div>
                                                 </div>
                                                 <div class="text-center">

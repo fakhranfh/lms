@@ -141,6 +141,34 @@ class GradebookScoringService
     }
 
     /**
+     * Lean lookup for a single type's per-Assessment breakdown (Personal/Team
+     * Assignment, Quiz, Final Exam), used by the accordion's lazy-loaded
+     * expand endpoint for types that aren't session-based.
+     *
+     * @return array<int, array{assessment: Assessment, weight: float, score: ?float, last_updated_at: ?Carbon}>
+     */
+    public function assessmentBreakdownForType(Course $course, string $userId, AssessmentType $type): array
+    {
+        if (in_array($type, [AssessmentType::Attendance, AssessmentType::ForumDiscussion], true)) {
+            return [];
+        }
+
+        return $this->assessmentService->forCourse($course->id)
+            ->filter(fn (Assessment $assessment) => $assessment->type === $type)
+            ->values()
+            ->map(function (Assessment $assessment) use ($type, $userId) {
+                $contribution = $this->percentageForAssessment($assessment, $type, $userId);
+
+                return [
+                    'assessment' => $assessment,
+                    'weight' => (float) $assessment->weight,
+                    'score' => $contribution['percentage'] ?? null,
+                    'last_updated_at' => $contribution['last_updated_at'] ?? null,
+                ];
+            })->all();
+    }
+
+    /**
      * Recomputes and persists the GradebookEntry/GradebookSessionEntry rows
      * for a user, called after any grading action changes an AssessmentScore.
      */

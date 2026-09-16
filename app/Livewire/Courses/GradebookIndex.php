@@ -126,7 +126,8 @@ class GradebookIndex extends Component
     {
         return collect($result['types'])->map(function (array $typeRow) use ($studentId) {
             $key = $typeRow['type']->value;
-            $expandable = in_array($key, ['attendance', 'forum_discussion'], true) && count($typeRow['sessions']) > 0;
+            $isSessionBased = in_array($key, ['attendance', 'forum_discussion'], true);
+            $expandable = $isSessionBased ? count($typeRow['sessions']) > 0 : true;
 
             return [
                 'key' => $key,
@@ -164,7 +165,13 @@ class GradebookIndex extends Component
         $timezone = auth()->user()->timezone ?: config('app.timezone');
         $viewerDate = $lastUpdatedAt->clone()->setTimezone($timezone);
 
-        return $viewerDate->translatedFormat('j M Y, H:i').' GMT'.$viewerDate->format('P');
+        $offsetMinutes = $viewerDate->utcOffset();
+        $sign = $offsetMinutes < 0 ? '-' : '+';
+        $hours = intdiv(abs($offsetMinutes), 60);
+        $minutes = abs($offsetMinutes) % 60;
+        $gmtOffset = $sign.$hours.($minutes > 0 ? ':'.str_pad((string) $minutes, 2, '0', STR_PAD_LEFT) : '');
+
+        return $viewerDate->translatedFormat('j M Y, H:i').' GMT'.$gmtOffset;
     }
 
     private function letterGrade(?float $score): ?string

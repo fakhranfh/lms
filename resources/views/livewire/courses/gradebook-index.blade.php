@@ -61,28 +61,26 @@
 
     @if ($result)
         <!-- Final Score banner -->
-        <div class="rounded-lg p-space-lg bg-primary flex items-center justify-between gap-space-md flex-wrap">
-            <div>
+        <div class="rounded-lg p-space-lg bg-primary grid grid-cols-[1fr_4rem_4rem_4rem] gap-space-lg items-start">
+            <div class="min-w-0">
                 <p class="font-title-md text-title-md text-on-primary">Final Score</p>
                 @if ($finalLastUpdatedLabel)
                     <p class="text-body-xs text-on-primary/80">Last updated: {{ $finalLastUpdatedLabel }}</p>
                 @endif
             </div>
-            <div class="flex items-center gap-space-xl">
-                <div class="text-center">
-                    <p class="text-body-xs text-on-primary/80">Weight</p>
-                    <div class="mt-space-xs w-11 h-11 rounded-full bg-black/20 flex items-center justify-center">
-                        <span class="font-label-sm text-label-sm text-on-primary">100%</span>
-                    </div>
+            <div class="text-center">
+                <p class="text-body-xs text-on-primary/80">Weight</p>
+                <div class="mt-space-xs w-11 h-11 mx-auto rounded-full bg-black/20 flex items-center justify-center">
+                    <span class="font-label-sm text-label-sm text-on-primary">100%</span>
                 </div>
-                <div class="text-center">
-                    <p class="text-body-xs text-on-primary/80">Score</p>
-                    <p class="font-headline-sm text-headline-sm text-on-primary mt-space-xs">{{ $result['final']['score'] !== null ? number_format($result['final']['score'], 0) : '—' }}</p>
-                </div>
-                <div class="text-center">
-                    <p class="text-body-xs text-on-primary/80">Grade</p>
-                    <p class="font-headline-sm text-headline-sm text-on-primary mt-space-xs">{{ $finalGrade ?? '—' }}</p>
-                </div>
+            </div>
+            <div class="text-center">
+                <p class="text-body-xs text-on-primary/80">Score</p>
+                <p class="font-headline-sm text-headline-sm text-on-primary mt-space-xs">{{ $result['final']['score'] !== null ? number_format($result['final']['score'], 0) : '—' }}</p>
+            </div>
+            <div class="text-center">
+                <p class="text-body-xs text-on-primary/80">Grade</p>
+                <p class="font-headline-sm text-headline-sm text-on-primary mt-space-xs">{{ $finalGrade ?? '—' }}</p>
             </div>
         </div>
 
@@ -96,29 +94,29 @@
                             expanded: false,
                             loading: false,
                             loaded: false,
-                            sessions: [],
-                            async toggle() {
-                                this.expanded = !this.expanded;
-                                if (this.expanded && !this.loaded) {
-                                    this.loading = true;
-                                    try {
-                                        const response = await fetch('{{ $typeRow['sessions_url'] }}', { headers: { 'Accept': 'application/json' } });
-                                        const data = await response.json();
-                                        this.sessions = data.sessions;
-                                        this.loaded = true;
-                                    } finally {
-                                        this.loading = false;
-                                    }
+                            items: [],
+                            async load() {
+                                if (this.loaded) {
+                                    return;
+                                }
+                                this.loading = true;
+                                try {
+                                    const response = await fetch('{{ $typeRow['sessions_url'] }}', { headers: { 'Accept': 'application/json' } });
+                                    const data = await response.json();
+                                    this.items = data.items;
+                                    this.loaded = true;
+                                } finally {
+                                    this.loading = false;
                                 }
                             },
                         }"
                     @endif
                 >
                     <div
-                        @if ($typeRow['expandable']) @click="toggle()" @endif
-                        class="p-space-lg flex items-center gap-space-lg {{ $typeRow['expandable'] ? 'cursor-pointer hover:bg-surface-container/50' : '' }}"
+                        @if ($typeRow['expandable']) @click="expanded = !expanded; load()" @endif
+                        class="p-space-lg grid grid-cols-[1fr_4rem_4rem_4rem] gap-space-lg items-center {{ $typeRow['expandable'] ? 'cursor-pointer' : '' }}"
                     >
-                        <div class="flex-1 min-w-0">
+                        <div class="min-w-0">
                             <p class="font-title-sm text-title-sm text-on-surface flex items-center gap-space-xs">
                                 {{ $typeRow['label'] }}
                                 @if ($typeRow['expandable'])
@@ -129,45 +127,47 @@
                                 <p class="text-body-xs text-on-surface-variant">Last updated: {{ $typeRow['last_updated_label'] }}</p>
                             @endif
                         </div>
-                        <div class="text-center w-16 shrink-0">
+                        <div class="text-center">
                             <div class="w-11 h-11 mx-auto rounded-full bg-surface-container flex items-center justify-center">
                                 <span class="font-label-sm text-label-sm text-on-surface">{{ number_format($typeRow['weight'], 0) }}%</span>
                             </div>
                         </div>
-                        <div class="w-16 text-left shrink-0">
+                        <div class="text-center">
                             <p class="font-title-sm text-title-sm text-on-surface">{{ $typeRow['score'] !== null ? number_format($typeRow['score'], 0) : '—' }}</p>
                         </div>
                     </div>
 
                     @if ($typeRow['expandable'])
-                        <div x-show="expanded" x-cloak class="bg-surface-container/30 px-space-lg pb-space-md">
-                            <template x-if="loading">
-                                <div class="animate-pulse space-y-space-xs py-space-sm">
-                                    <div class="h-4 bg-surface-container rounded w-full"></div>
-                                    <div class="h-4 bg-surface-container rounded w-full"></div>
-                                    <div class="h-4 bg-surface-container rounded w-2/3"></div>
-                                </div>
-                            </template>
-                            <template x-if="!loading">
-                                <table class="w-full">
-                                    <thead>
-                                        <tr>
-                                            <th class="py-space-xs text-left font-label-sm text-label-sm text-on-surface-variant">Session</th>
-                                            <th class="py-space-xs text-left font-label-sm text-label-sm text-on-surface-variant">Weight</th>
-                                            <th class="py-space-xs text-left font-label-sm text-label-sm text-on-surface-variant">Score</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-outline-variant">
-                                        <template x-for="row in sessions" :key="row.index">
-                                            <tr>
-                                                <td class="py-space-xs text-body-sm text-on-surface" x-text="'Session ' + row.index + ' – ' + row.delivery_mode"></td>
-                                                <td class="py-space-xs text-body-sm text-on-surface" x-text="row.weight.toFixed(2) + '%'"></td>
-                                                <td class="py-space-xs text-body-sm text-on-surface" x-text="row.score.toFixed(2)"></td>
-                                            </tr>
+                        <div x-show="expanded" x-cloak class="px-space-lg pb-space-lg">
+                            <div class="bg-surface-container/40 border border-t-0 border-outline-variant rounded-b-lg overflow-hidden">
+                                <template x-if="loading">
+                                    <div class="animate-pulse space-y-space-xs p-space-md">
+                                        <div class="h-4 bg-surface rounded w-full"></div>
+                                        <div class="h-4 bg-surface rounded w-full"></div>
+                                        <div class="h-4 bg-surface rounded w-2/3"></div>
+                                    </div>
+                                </template>
+                                <template x-if="!loading">
+                                    <div class="divide-y divide-outline-variant">
+                                        <template x-for="row in items" :key="row.label">
+                                            <div class="pl-space-lg py-space-sm grid grid-cols-[1fr_4rem_4rem_4rem] gap-space-lg items-center">
+                                                <p class="min-w-0 font-label-md text-label-md text-on-surface" x-text="row.label"></p>
+                                                <div class="text-center">
+                                                    <div class="w-8 h-8 mx-auto rounded-full bg-surface-container flex items-center justify-center">
+                                                        <span class="text-[10px] leading-none tracking-normal text-on-surface" x-text="Math.round(row.weight) + '%'"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="text-center">
+                                                    <p class="font-title-sm text-title-sm text-on-surface" x-text="row.score !== null ? Math.round(row.score) : '—'"></p>
+                                                </div>
+                                            </div>
                                         </template>
-                                    </tbody>
-                                </table>
-                            </template>
+                                        <template x-if="items.length === 0">
+                                            <p class="px-space-lg py-space-sm text-center text-body-sm text-on-surface-variant">No data yet.</p>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     @endif
                 </div>

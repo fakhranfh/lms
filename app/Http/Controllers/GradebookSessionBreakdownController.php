@@ -45,12 +45,23 @@ class GradebookSessionBreakdownController extends Controller
             }
         }
 
-        $sessions = $gradebookScoringService->sessionBreakdownForType($course, $userId, $assessmentType);
+        if (in_array($assessmentType, [AssessmentType::Attendance, AssessmentType::ForumDiscussion], true)) {
+            $sessions = $gradebookScoringService->sessionBreakdownForType($course, $userId, $assessmentType);
+
+            return response()->json([
+                'items' => collect($sessions)->values()->map(fn (array $row) => [
+                    'label' => 'Session '.$row['session']->order.' - '.str($row['session']->delivery_mode->value)->replace('_', ' ')->title(),
+                    'weight' => $row['weight'],
+                    'score' => $row['score'],
+                ]),
+            ]);
+        }
+
+        $assessments = $gradebookScoringService->assessmentBreakdownForType($course, $userId, $assessmentType);
 
         return response()->json([
-            'sessions' => collect($sessions)->values()->map(fn (array $row, int $index) => [
-                'index' => $index + 1,
-                'delivery_mode' => str($row['session']->delivery_mode->value)->replace('_', ' ')->title()->toString(),
+            'items' => collect($assessments)->values()->map(fn (array $row) => [
+                'label' => $row['assessment']->title,
                 'weight' => $row['weight'],
                 'score' => $row['score'],
             ]),

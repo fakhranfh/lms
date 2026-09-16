@@ -26,7 +26,7 @@ test('student can fetch their own session breakdown for an expandable type', fun
 
     $response = $this->actingAs($student)->getJson(route('gradebook.sessions', [$course, 'attendance']));
 
-    $response->assertOk()->assertJsonCount(1, 'sessions')
+    $response->assertOk()->assertJsonCount(1, 'items')
         ->assertJsonFragment(['weight' => 10.0, 'score' => 100.0]);
 });
 
@@ -40,7 +40,7 @@ test('a type with no sessions in scope returns an empty list', function () {
 
     $response = $this->actingAs($student)->getJson(route('gradebook.sessions', [$course, 'attendance']));
 
-    $response->assertOk()->assertJsonCount(0, 'sessions');
+    $response->assertOk()->assertJsonCount(0, 'items');
 });
 
 test('student cannot fetch another students breakdown via student_id', function () {
@@ -61,7 +61,7 @@ test('student cannot fetch another students breakdown via student_id', function 
 
     // student_id is ignored for a Student caller — the session is still in scope
     // (it exists course-wide), but the score reflects the caller's own attendance, not the other student's.
-    $response->assertOk()->assertJsonCount(1, 'sessions')
+    $response->assertOk()->assertJsonCount(1, 'items')
         ->assertJsonFragment(['weight' => 10.0, 'score' => 0.0]);
 });
 
@@ -80,7 +80,7 @@ test('teacher can fetch a specific students breakdown via student_id', function 
 
     $response = $this->actingAs($teacher)->getJson(route('gradebook.sessions', [$course, 'attendance']).'?student_id='.$student->id);
 
-    $response->assertOk()->assertJsonCount(1, 'sessions');
+    $response->assertOk()->assertJsonCount(1, 'items');
 });
 
 test('an unknown assessment type returns 404', function () {

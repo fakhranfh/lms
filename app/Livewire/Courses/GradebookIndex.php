@@ -37,8 +37,11 @@ class GradebookIndex extends Component
 
     public string $studentSearch = '';
 
+    /**
+     * @var array<int, string>
+     */
     #[Url(as: 'grade')]
-    public string $gradeFilter = '';
+    public array $gradeFilter = [];
 
     public function mount(CurrentSchool $currentSchool, Course $course): void
     {
@@ -53,6 +56,15 @@ class GradebookIndex extends Component
     public function loadData(): void
     {
         $this->dataLoaded = true;
+    }
+
+    /**
+     * @param  array<int, string>  $grades
+     */
+    public function applyGradeFilter(array $grades): void
+    {
+        $this->gradeFilter = array_values(array_intersect(['A', 'B', 'C', 'D', 'E'], $grades));
+        $this->resetPage();
     }
 
     public function render(
@@ -118,8 +130,8 @@ class GradebookIndex extends Component
             ];
         })->values();
 
-        if ($this->gradeFilter !== '') {
-            $rows = $rows->filter(fn (array $row) => $row['grade'] === $this->gradeFilter)->values();
+        if ($this->gradeFilter !== []) {
+            $rows = $rows->filter(fn (array $row) => in_array($row['grade'], $this->gradeFilter, true))->values();
         }
 
         $page = $this->getPage();

@@ -323,11 +323,15 @@ class GradebookIndexTest extends TestCase
             ->call('randomizeScores')
             ->assertViewHas('studentRows', fn ($studentRows) => $studentRows->total() === 5);
 
-        $component->set('gradeFilter', 'A')
+        $component->call('applyGradeFilter', ['A'])
             ->assertViewHas('studentRows', fn ($studentRows) => $studentRows->total() === 1
                 && $studentRows->every(fn (array $row) => $row['grade'] === 'A'));
 
-        $component->set('gradeFilter', '')
+        $component->call('applyGradeFilter', ['A', 'B'])
+            ->assertViewHas('studentRows', fn ($studentRows) => $studentRows->total() === 2
+                && $studentRows->every(fn (array $row) => in_array($row['grade'], ['A', 'B'], true)));
+
+        $component->call('applyGradeFilter', [])
             ->assertViewHas('studentRows', fn ($studentRows) => $studentRows->total() === 5);
     }
 }

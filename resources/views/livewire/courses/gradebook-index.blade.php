@@ -56,6 +56,30 @@
         @include('livewire.courses.partials.gradebook-breakdown')
     @else
         <!-- Teacher: per-student Final Score grid -->
+        <div class="flex items-center gap-space-sm">
+            <label for="gradeFilter-select" class="text-body-sm text-on-surface-variant">{{ __('Grade') }}</label>
+            <select
+                id="gradeFilter-select"
+                wire:model.live="gradeFilter"
+                class="h-9 px-space-sm rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none"
+            >
+                <option value="">{{ __('All grades') }}</option>
+                @foreach (['A', 'B', 'C', 'D', 'E'] as $grade)
+                    <option value="{{ $grade }}">{{ $grade }}</option>
+                @endforeach
+            </select>
+
+            @if ($gradeFilter !== '')
+                <button
+                    type="button"
+                    wire:click="$set('gradeFilter', '')"
+                    class="text-body-sm text-primary font-medium hover:underline flex-shrink-0"
+                >
+                    {{ __('Clear filter') }}
+                </button>
+            @endif
+        </div>
+
         <x-ui.pagination-links
             :paginator="$studentRows"
             perPageModel="perPage"
@@ -68,7 +92,7 @@
         <!-- Skeleton Loading (shown while paginating, searching, changing per-page, or randomizing/resetting scores) -->
         <div
             wire:loading.class.remove="hidden"
-            wire:target="gotoPage,previousPage,nextPage,studentSearch,perPage,randomizeScores,resetScores,delete-confirmed"
+            wire:target="gotoPage,previousPage,nextPage,studentSearch,gradeFilter,perPage,randomizeScores,resetScores,delete-confirmed"
             class="hidden bg-surface border border-outline-variant rounded-lg overflow-hidden"
         >
             <x-ui.person-grid-skeleton :rows="$perPage" />
@@ -76,7 +100,7 @@
 
         <div
             wire:loading.remove
-            wire:target="gotoPage,previousPage,nextPage,studentSearch,perPage,randomizeScores,resetScores,delete-confirmed"
+            wire:target="gotoPage,previousPage,nextPage,studentSearch,gradeFilter,perPage,randomizeScores,resetScores,delete-confirmed"
             class="bg-surface border border-outline-variant rounded-lg overflow-hidden"
         >
             <x-ui.person-grid>

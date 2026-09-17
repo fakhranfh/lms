@@ -255,4 +255,31 @@ class GradebookIndexTest extends TestCase
 
         $this->assertSame(['A', 'B', 'C', 'D', 'E'], $grades->all());
     }
+
+    public function test_teacher_can_filter_student_grid_by_grade(): void
+    {
+        $this->teacher->givePermissionTo(['gradebook.view', 'gradebook.manage']);
+        $this->actingAs($this->teacher);
+
+        // 4 more students so there are 5 total, one per A-E grade band.
+        $extraStudents = User::factory()->forSchool($this->school)->count(4)->create();
+        foreach ($extraStudents as $extraStudent) {
+            CoursePerson::factory()->for($this->course)->student()->create(['user_id' => $extraStudent->id]);
+        }
+
+        $assessment = Assessment::factory()->for($this->course)->create(['type' => AssessmentType::TheoryPersonalAssignment, 'weight' => 100]);
+        AssessmentQuestion::factory()->for($assessment)->create(['points' => 100]);
+
+        $component = Livewire::test(GradebookIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->call('randomizeScores')
+            ->assertViewHas('studentRows', fn ($studentRows) => $studentRows->total() === 5);
+
+        $component->set('gradeFilter', 'A')
+            ->assertViewHas('studentRows', fn ($studentRows) => $studentRows->total() === 1
+                && $studentRows->every(fn (array $row) => $row['grade'] === 'A'));
+
+        $component->set('gradeFilter', '')
+            ->assertViewHas('studentRows', fn ($studentRows) => $studentRows->total() === 5);
+    }
 }

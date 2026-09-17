@@ -53,6 +53,9 @@ class GradebookIndex extends Component
 
     public string $studentSearch = '';
 
+    #[Url(as: 'grade')]
+    public string $gradeFilter = '';
+
     public function mount(CurrentSchool $currentSchool, Course $course): void
     {
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
@@ -406,6 +409,7 @@ class GradebookIndex extends Component
                 )->values();
             }
 
+            $viewData['gradeFilter'] = $this->gradeFilter;
             $viewData['studentRows'] = $this->paginateStudentRows($students, $gradebookScoringService);
         }
 
@@ -419,9 +423,7 @@ class GradebookIndex extends Component
      */
     private function paginateStudentRows(Collection $students, GradebookScoringService $gradebookScoringService): LengthAwarePaginator
     {
-        $page = $this->getPage();
-
-        $rows = $students->forPage($page, $this->perPage)->map(function (CoursePerson $coursePerson) use ($gradebookScoringService) {
+        $rows = $students->map(function (CoursePerson $coursePerson) use ($gradebookScoringService) {
             $result = $gradebookScoringService->computeForUser($this->course, $coursePerson->user_id);
 
             return [
@@ -431,9 +433,15 @@ class GradebookIndex extends Component
             ];
         })->values();
 
+        if ($this->gradeFilter !== '') {
+            $rows = $rows->filter(fn (array $row) => $row['grade'] === $this->gradeFilter)->values();
+        }
+
+        $page = $this->getPage();
+
         return new LengthAwarePaginator(
-            $rows,
-            $students->count(),
+            $rows->forPage($page, $this->perPage)->values(),
+            $rows->count(),
             $this->perPage,
             $page,
             ['path' => Paginator::resolveCurrentPath()],

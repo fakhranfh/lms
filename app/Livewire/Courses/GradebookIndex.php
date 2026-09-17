@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Courses;
 
+use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentType;
 use App\Enums\AttendanceStatus;
 use App\Enums\RoleName;
@@ -12,6 +13,7 @@ use App\Models\CoursePerson;
 use App\Models\Group;
 use App\Models\Session;
 use App\Services\AssessmentAttemptService;
+use App\Services\AssessmentQuestionService;
 use App\Services\AssessmentScoreService;
 use App\Services\AssessmentService;
 use App\Services\AttendanceScoringService;
@@ -21,6 +23,7 @@ use App\Services\ForumDiscussionScoringService;
 use App\Services\ForumService;
 use App\Services\ForumThreadService;
 use App\Services\GradebookScoringService;
+use App\Services\GroupMemberService;
 use App\Services\GroupService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
@@ -75,8 +78,10 @@ class GradebookIndex extends Component
         AssessmentService $assessmentService,
         AssessmentAttemptService $assessmentAttemptService,
         AssessmentScoreService $assessmentScoreService,
+        AssessmentQuestionService $assessmentQuestionService,
         CoursePersonService $coursePersonService,
         GroupService $groupService,
+        GroupMemberService $groupMemberService,
         AttendanceService $attendanceService,
         AttendanceScoringService $attendanceScoringService,
         ForumService $forumService,
@@ -99,12 +104,17 @@ class GradebookIndex extends Component
         $graderId = auth()->id();
         $targetPercentages = $this->assignGradeBandTargets($students);
 
+        $hasTeamAssignment = $assessments->contains(fn (Assessment $assessment) => $assessment->type === AssessmentType::TheoryTeamAssignment);
+        $groups = $hasTeamAssignment
+            ? $this->ensureGroupsForCourse($students, $groupService, $groupMemberService)
+            : collect();
+
         foreach ($assessments as $assessment) {
             match ($assessment->type) {
                 AssessmentType::Attendance => $this->randomizeAttendance($assessment, $students, $targetPercentages, $graderId, $attendanceService, $attendanceScoringService),
                 AssessmentType::ForumDiscussion => $this->randomizeForumDiscussion($assessment, $students, $targetPercentages, $forumService, $forumThreadService, $forumDiscussionScoringService),
-                AssessmentType::TheoryTeamAssignment => $this->randomizeTeamAssignment($assessment, $groupService, $targetPercentages, $assessmentAttemptService, $assessmentScoreService, $graderId),
-                default => $this->randomizeIndividualAssessment($assessment, $students, $targetPercentages, $assessmentAttemptService, $assessmentScoreService, $graderId),
+                AssessmentType::TheoryTeamAssignment => $this->randomizeTeamAssignment($assessment, $groups, $targetPercentages, $assessmentAttemptService, $assessmentScoreService, $assessmentQuestionService, $graderId),
+                default => $this->randomizeIndividualAssessment($assessment, $students, $targetPercentages, $assessmentAttemptService, $assessmentScoreService, $assessmentQuestionService, $graderId),
             };
         }
 
@@ -267,17 +277,57 @@ class GradebookIndex extends Component
     }
 
     /**
+     * Team Assignment scoring is keyed by Group, not by student, so without
+     * any Group set up for the course there is nothing to grade and the
+     * gradebook row stays empty. For a dev-only randomizer that's not
+     * useful, so when the course has no groups yet, split enrolled students
+     * into groups of up to 4 before grading.
+     *
+     * @param  Collection<int, CoursePerson>  $students
+     * @return Collection<int, Group>
+     */
+    private function ensureGroupsForCourse(Collection $students, GroupService $groupService, GroupMemberService $groupMemberService): Collection
+    {
+        $groups = $groupService->forCourse($this->course->id);
+
+        if ($groups->isNotEmpty()) {
+            return $groups;
+        }
+
+        $creatorId = auth()->id();
+
+        foreach ($students->values()->chunk(4) as $index => $chunk) {
+            $group = $groupService->create([
+                'course_id' => $this->course->id,
+                'name' => 'Randomly generated group '.($index + 1),
+                'created_by' => $creatorId,
+            ]);
+
+            foreach ($chunk as $coursePerson) {
+                $groupMemberService->create([
+                    'group_id' => $group->id,
+                    'user_id' => $coursePerson->user_id,
+                    'joined_at' => now(),
+                ]);
+            }
+        }
+
+        return $groupService->forCourse($this->course->id);
+    }
+
+    /**
+     * @param  Collection<int, Group>  $groups
      * @param  array<string, int>  $targetPercentages
      */
-    private function randomizeTeamAssignment(Assessment $assessment, GroupService $groupService, array $targetPercentages, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, ?string $graderId): void
+    private function randomizeTeamAssignment(Assessment $assessment, Collection $groups, array $targetPercentages, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionService $assessmentQuestionService, ?string $graderId): void
     {
-        $totalPoints = (float) $assessment->questions->sum('points');
+        $totalPoints = $this->ensureGradableQuestionPoints($assessment, $assessmentQuestionService);
 
         if ($totalPoints <= 0.0) {
             return;
         }
 
-        foreach ($groupService->forCourse($assessment->course_id) as $group) {
+        foreach ($groups as $group) {
             $percentage = $this->groupTargetPercentage($group, $targetPercentages);
             $this->gradeAttempt($assessment, $totalPoints, $percentage, $assessmentAttemptService, $assessmentScoreService, $graderId, groupId: $group->id, userId: null, submittedBy: $this->firstMemberId($group));
         }
@@ -304,9 +354,9 @@ class GradebookIndex extends Component
      * @param  Collection<int, CoursePerson>  $students
      * @param  array<string, int>  $targetPercentages
      */
-    private function randomizeIndividualAssessment(Assessment $assessment, Collection $students, array $targetPercentages, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, ?string $graderId): void
+    private function randomizeIndividualAssessment(Assessment $assessment, Collection $students, array $targetPercentages, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionService $assessmentQuestionService, ?string $graderId): void
     {
-        $totalPoints = (float) $assessment->questions->sum('points');
+        $totalPoints = $this->ensureGradableQuestionPoints($assessment, $assessmentQuestionService);
 
         if ($totalPoints <= 0.0) {
             return;
@@ -321,6 +371,37 @@ class GradebookIndex extends Component
     private function firstMemberId(Group $group): ?string
     {
         return $group->members->first()?->user_id;
+    }
+
+    /**
+     * Personal/Team Assignment, Quiz and Final Exam scores are computed as
+     * (AssessmentScore.score / sum of AssessmentQuestion.points), so an
+     * assessment with no questions yet (common for a freshly created
+     * Personal/Team Assignment, since those are graded free-form rather
+     * than answered question-by-question) can never produce a percentage
+     * and always shows "-" in the gradebook, even after grading. For the
+     * dev-only randomizer, auto-create a single grading criterion so the
+     * assessment becomes gradable.
+     */
+    private function ensureGradableQuestionPoints(Assessment $assessment, AssessmentQuestionService $assessmentQuestionService): float
+    {
+        $totalPoints = (float) $assessment->questions->sum('points');
+
+        if ($totalPoints > 0.0 || $assessment->questions->isNotEmpty()) {
+            return $totalPoints;
+        }
+
+        $question = $assessmentQuestionService->create([
+            'assessment_id' => $assessment->id,
+            'description' => 'Randomly generated grading criterion for development purposes.',
+            'points' => 100,
+            'question_type' => AssessmentQuestionType::Essay,
+            'order' => 1,
+        ]);
+
+        $assessment->setRelation('questions', collect([$question]));
+
+        return (float) $question->points;
     }
 
     private function gradeAttempt(

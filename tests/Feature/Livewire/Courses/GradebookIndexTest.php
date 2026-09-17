@@ -136,6 +136,30 @@ class GradebookIndexTest extends TestCase
         $this->assertLessThanOrEqual(100, $attempt->score->score);
     }
 
+    public function test_randomize_scores_auto_creates_a_grading_question_when_assessment_has_none(): void
+    {
+        $this->teacher->givePermissionTo(['gradebook.view', 'gradebook.manage']);
+        $this->actingAs($this->teacher);
+
+        // Personal/Team Assignments are graded free-form and commonly have
+        // zero AssessmentQuestion rows, which previously meant totalPoints
+        // was 0 and randomizeScores silently skipped grading them.
+        $assessment = Assessment::factory()->for($this->course)->create(['type' => AssessmentType::TheoryPersonalAssignment, 'weight' => 20]);
+        $this->assertSame(0, $assessment->questions()->count());
+
+        Livewire::test(GradebookIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->call('randomizeScores');
+
+        $this->assertGreaterThan(0, $assessment->questions()->count());
+
+        $attempt = AssessmentAttempt::where('assessment_id', $assessment->id)->where('user_id', $this->student->id)->first();
+
+        $this->assertNotNull($attempt);
+        $this->assertNotNull($attempt->score);
+        $this->assertGreaterThan(0, $attempt->score->score);
+    }
+
     public function test_randomize_scores_grades_a_team_assignment(): void
     {
         $this->teacher->givePermissionTo(['gradebook.view', 'gradebook.manage']);
@@ -149,6 +173,30 @@ class GradebookIndexTest extends TestCase
         Livewire::test(GradebookIndex::class, ['course' => $this->course])
             ->call('loadData')
             ->call('randomizeScores');
+
+        $attempt = AssessmentAttempt::where('assessment_id', $assessment->id)->where('group_id', $group->id)->first();
+
+        $this->assertNotNull($attempt);
+        $this->assertNotNull($attempt->score);
+    }
+
+    public function test_randomize_scores_auto_creates_groups_for_team_assignment_when_none_exist(): void
+    {
+        $this->teacher->givePermissionTo(['gradebook.view', 'gradebook.manage']);
+        $this->actingAs($this->teacher);
+
+        $assessment = Assessment::factory()->for($this->course)->create(['type' => AssessmentType::TheoryTeamAssignment, 'weight' => 15]);
+        AssessmentQuestion::factory()->for($assessment)->create(['points' => 50]);
+
+        $this->assertSame(0, Group::where('course_id', $this->course->id)->count());
+
+        Livewire::test(GradebookIndex::class, ['course' => $this->course])
+            ->call('loadData')
+            ->call('randomizeScores');
+
+        $group = Group::where('course_id', $this->course->id)->first();
+        $this->assertNotNull($group);
+        $this->assertTrue(GroupMember::where('group_id', $group->id)->where('user_id', $this->student->id)->exists());
 
         $attempt = AssessmentAttempt::where('assessment_id', $assessment->id)->where('group_id', $group->id)->first();
 

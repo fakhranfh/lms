@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckFeatureAccess;
 use App\Http\Middleware\EnsureLocalEnvironment;
+use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\PreservePasswordUpdateErrors;
 use App\Http\Middleware\RedirectIfNoSchool;
 use App\Http\Middleware\RedirectLmsLocalToHttps;
@@ -43,6 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'feature' => CheckFeatureAccess::class,
             'local-only' => EnsureLocalEnvironment::class,
+            'must-change-password' => EnsurePasswordIsChanged::class,
             'permission' => PermissionMiddleware::class,
             'redirect-if-no-school' => RedirectIfNoSchool::class,
             'require-school' => RequireSchool::class,

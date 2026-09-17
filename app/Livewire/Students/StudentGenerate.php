@@ -1,0 +1,84 @@
+<?php
+
+namespace App\Livewire\Students;
+
+use App\Enums\RoleName;
+use App\Repositories\Role\RoleRepositoryInterface;
+use App\Services\UserLoginLinkService;
+use App\Services\UserService;
+use App\Support\CurrentSchool;
+use Illuminate\Support\Str;
+use Livewire\Component;
+
+class StudentGenerate extends Component
+{
+    public int $count = 5;
+
+    public int $loginLinkTtlDays = 2;
+
+    /** @var array<int, array{name: string, email: string, loginUrl: string}> */
+    public array $generatedStudents = [];
+
+    public function mount(): void
+    {
+        $this->loginLinkTtlDays = (int) ceil(config('students.login_link_ttl_minutes', 2880) / 1440);
+    }
+
+    protected function rules(): array
+    {
+        return [
+            'count' => ['required', 'integer', 'min:1', 'max:200'],
+            'loginLinkTtlDays' => ['required', 'integer', 'min:1', 'max:365'],
+        ];
+    }
+
+    private function currentSchoolId(): ?string
+    {
+        return app(CurrentSchool::class)->getSchoolId() ?? auth()->user()->school_id;
+    }
+
+    public function generate(UserService $userService, UserLoginLinkService $userLoginLinkService): void
+    {
+        abort_unless(auth()->user()->can('students.create'), 403);
+
+        $this->validate();
+
+        $this->generatedStudents = [];
+
+        $schoolId = $this->currentSchoolId();
+        $roleId = $schoolId ? app(RoleRepositoryInterface::class)
+            ->get(['school_id' => $schoolId, 'name' => RoleName::Student->value])
+            ->first()?->id : null;
+        $roleIds = $roleId ? [$roleId] : [];
+
+        for ($i = 0; $i < $this->count; $i++) {
+            $name = fake()->name();
+            $email = Str::uuid().'@'.fake()->safeEmailDomain();
+
+            $student = $userService->createUser([
+                'name' => $name,
+                'email' => $email,
+                'password' => Str::random(24),
+                'school_id' => $schoolId,
+                'must_change_password' => true,
+            ], null, $roleIds);
+
+            $link = $userLoginLinkService->createLink($student, $this->loginLinkTtlDays * 1440);
+
+            $this->generatedStudents[] = [
+                'name' => $student->name,
+                'email' => $student->email,
+                'loginUrl' => $userLoginLinkService->buildLoginUrl($link),
+            ];
+        }
+    }
+
+    public function render()
+    {
+        $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
+
+        return view('livewire.students.student-generate')
+            ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => 'Generate Students'])
+            ->section($isAdminUser ? 'admin-content' : 'app-content');
+    }
+}

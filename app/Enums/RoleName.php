@@ -50,6 +50,7 @@ enum RoleName: string
                 'attendance.view', 'attendance.manage',
                 'gradebook.view', 'gradebook.manage',
                 'people.view',
+                'students.view', 'students.create', 'students.edit', 'students.delete', 'students.import',
             ],
             self::Student => [
                 'courses.view',

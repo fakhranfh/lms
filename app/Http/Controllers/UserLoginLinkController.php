@@ -27,6 +27,10 @@ class UserLoginLinkController extends Controller
 
         $link->update(['used_at' => now()]);
 
+        if ($link->user->must_change_password) {
+            return redirect()->route('password.force-change');
+        }
+
         return redirect()->route('dashboard');
     }
 }

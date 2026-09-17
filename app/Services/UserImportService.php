@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\RoleName;
+use App\Models\User;
 use App\Repositories\Role\RoleRepositoryInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
@@ -18,6 +19,7 @@ class UserImportService
     public function __construct(
         private readonly UserService $userService,
         private readonly RoleRepositoryInterface $roleRepository,
+        private readonly UserLoginLinkService $userLoginLinkService,
     ) {}
 
     public function validateColumns(UploadedFile $file): ?string
@@ -72,14 +74,16 @@ class UserImportService
 
     /**
      * @param  array<int, array{row:int,name:string,email:string,photoUrl?:string|null}>  $rows
-     * @return array{created:int, errors: array<int,string>}
+     * @return array{created:int, errors: array<int,string>, createdUsers: array<int, User>, createdLoginUrls: array<string, string>}
      */
-    public function createUsers(array $rows, RoleName $role, string $schoolId): array
+    public function createUsers(array $rows, RoleName $role, string $schoolId, bool $generateLoginLinks = false, int $loginLinkTtlMinutes = 15): array
     {
         $roleId = $this->roleRepository->get(['school_id' => $schoolId, 'name' => $role->value])->first()?->id;
 
         $created = 0;
         $errors = [];
+        $createdUsers = [];
+        $createdLoginUrls = [];
 
         foreach ($rows as $row) {
             if ($conflict = $this->userService->emailConflictMessage($row['email'], $schoolId)) {
@@ -92,7 +96,7 @@ class UserImportService
                 $trashedUser = $this->userService->findTrashedInSchool($row['email'], $schoolId);
 
                 if ($trashedUser) {
-                    $this->userService->restoreUser($trashedUser, [
+                    $user = $this->userService->restoreUser($trashedUser, [
                         'name' => $row['name'],
                         'password' => Str::random(24),
                     ], null, $roleId ? [$roleId] : []);
@@ -101,12 +105,19 @@ class UserImportService
                         $this->userService->updateProfilePhotoFromUrl($trashedUser, $row['photoUrl']);
                     }
                 } else {
-                    $this->userService->createUserWithPhotoUrl([
+                    $user = $this->userService->createUserWithPhotoUrl([
                         'name' => $row['name'],
                         'email' => $row['email'],
                         'password' => Str::random(24),
                         'school_id' => $schoolId,
                     ], $row['photoUrl'] ?? null, $roleId ? [$roleId] : []);
+                }
+
+                if ($generateLoginLinks) {
+                    $this->userService->updateProfile($user, ['must_change_password' => true]);
+                    $link = $this->userLoginLinkService->createLink($user, $loginLinkTtlMinutes);
+                    $createdUsers[] = $user;
+                    $createdLoginUrls[$user->id] = $this->userLoginLinkService->buildLoginUrl($link);
                 }
 
                 $created++;
@@ -117,6 +128,6 @@ class UserImportService
             }
         }
 
-        return ['created' => $created, 'errors' => $errors];
+        return ['created' => $created, 'errors' => $errors, 'createdUsers' => $createdUsers, 'createdLoginUrls' => $createdLoginUrls];
     }
 }

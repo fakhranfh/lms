@@ -11,6 +11,7 @@ use App\Http\Controllers\SchoolPaymentController;
 use App\Http\Controllers\TierChangeController;
 use App\Http\Controllers\UserAvailabilityController;
 use App\Http\Controllers\UserLoginLinkController;
+use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Livewire\ChangePassword;
 use App\Livewire\Courses\AssessmentAttendanceShow;
 use App\Livewire\Courses\AssessmentFinalExamForm;
@@ -52,6 +53,11 @@ use App\Livewire\MyTransactions;
 use App\Livewire\Roles\RoleCreate;
 use App\Livewire\Roles\RoleEdit;
 use App\Livewire\Roles\RoleIndex;
+use App\Livewire\Students\ForcePasswordChange;
+use App\Livewire\Students\StudentForm;
+use App\Livewire\Students\StudentGenerate;
+use App\Livewire\Students\StudentImport;
+use App\Livewire\Students\StudentIndex;
 use App\Livewire\Users\UserForm;
 use App\Livewire\Users\UserImport;
 use App\Livewire\Users\UserIndex;
@@ -69,7 +75,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/transactions', MyTransactions::class)->name('transactions.index');
 });
 
-Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function () {
+Route::middleware(['auth', 'verified', 'redirect-if-no-school', EnsurePasswordIsChanged::class])->group(function () {
+    Route::get('/force-password-change', ForcePasswordChange::class)->name('password.force-change');
+
     Route::get('/edit-profile', EditProfile::class)->name('edit-profile');
     Route::get('/edit-profile/verify-email', [ProfileController::class, 'verifyEmailChange'])->name('profile.verify-email-change');
 
@@ -91,6 +99,12 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school'])->group(function
     Route::get('/users/photos', UserPhotoUpload::class)->middleware('permission:users.edit')->name('users.photos');
     Route::get('/users/{id}/edit', UserForm::class)->middleware('permission:users.edit')->name('users.edit');
     Route::get('/users/{id}/roles', UserRoles::class)->middleware('permission:users.assign-roles')->name('users.roles.edit');
+
+    Route::get('/students', StudentIndex::class)->middleware('permission:students.view')->name('students.index');
+    Route::get('/students/create', StudentForm::class)->middleware('permission:students.create')->name('students.create');
+    Route::get('/students/import', StudentImport::class)->middleware('permission:students.import')->name('students.import');
+    Route::get('/students/generate', StudentGenerate::class)->middleware('permission:students.create')->name('students.generate');
+    Route::get('/students/{id}/edit', StudentForm::class)->middleware('permission:students.edit')->name('students.edit');
 
     Route::get('/tier-management', [TierChangeController::class, 'show'])->name('tier-management.show');
     Route::post('/tier-management/change', [TierChangeController::class, 'initiate'])->name('tier-management.change');

@@ -18,6 +18,14 @@ return [
         'exclude_role' => 'School Admin',
     ],
     [
+        'label' => 'Students',
+        'route' => 'students.index',
+        'icon' => 'groups',
+        'active_pattern' => 'students.*',
+        'requires_permission' => 'students.view',
+        'requires_school' => true,
+    ],
+    [
         'label' => 'Media Library',
         'route' => 'media-library.index',
         'icon' => 'perm_media',

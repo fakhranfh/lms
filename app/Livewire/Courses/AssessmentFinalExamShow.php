@@ -8,6 +8,7 @@ use App\Enums\MaterialType;
 use App\Enums\ProctorReviewDecision;
 use App\Enums\RoleName;
 use App\Livewire\Concerns\WithRichTextEditor;
+use App\Livewire\Courses\Concerns\HasAssessmentFinalExamShowDevTools;
 use App\Models\Assessment;
 use App\Models\Course;
 use App\Models\ExamReferenceFile;
@@ -18,7 +19,6 @@ use App\Services\CoursePersonService;
 use App\Services\ExamReferenceFileService;
 use App\Services\FinalExamService;
 use App\Services\ProctorSessionService;
-use App\Services\R2StorageService;
 use App\Support\CourseTabs;
 use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
@@ -29,6 +29,7 @@ use Livewire\WithPagination;
 
 class AssessmentFinalExamShow extends Component
 {
+    use HasAssessmentFinalExamShowDevTools;
     use WithPagination, WithRichTextEditor;
 
     public Course $course;
@@ -269,34 +270,6 @@ class AssessmentFinalExamShow extends Component
         $this->assertNotInProgress($assessmentAttemptService);
 
         $examReferenceFileService->deleteAllForAssessmentAndUser($this->assessment->id, auth()->id());
-    }
-
-    /**
-     * Dev-only convenience for re-testing the exam flow without a database
-     * reset: wipes a student's attempt(s) for this final exam, including
-     * their R2 proctor recordings/screenshots, so they show as not
-     * submitted again. FK cascadeOnDelete on assessment_attempts takes
-     * care of scores, answers, question answers/scores, and proctor
-     * sessions/events/snapshots.
-     */
-    public function resetStudentExam(string $userId, AssessmentAttemptService $assessmentAttemptService, R2StorageService $r2StorageService): void
-    {
-        abort_unless(app()->isLocal(), 404);
-        abort_unless(auth()->user()->can('assessment.grade'), 403);
-
-        $attempts = $assessmentAttemptService->forAssessmentAndUser($this->assessment->id, $userId);
-
-        foreach ($attempts as $attempt) {
-            $attempt->loadMissing('proctorSession.snapshots');
-
-            $attempt->proctorSession?->snapshots->each(
-                fn ($snapshot) => $r2StorageService->delete($snapshot->file_url)
-            );
-
-            $assessmentAttemptService->delete($attempt->id);
-        }
-
-        $this->successMessage = __('Exam attempt reset for this student.');
     }
 
     public function render(

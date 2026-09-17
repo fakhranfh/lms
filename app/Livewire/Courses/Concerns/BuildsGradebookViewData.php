@@ -77,10 +77,10 @@ trait BuildsGradebookViewData
         }
 
         return match (true) {
-            $score >= 90 => 'A',
-            $score >= 80 => 'B',
-            $score >= 70 => 'C',
-            $score >= 60 => 'D',
+            $score >= $this->course->grade_band_a_min => 'A',
+            $score >= $this->course->grade_band_b_min => 'B',
+            $score >= $this->course->grade_band_c_min => 'C',
+            $score >= $this->course->grade_band_d_min => 'D',
             default => 'E',
         };
     }

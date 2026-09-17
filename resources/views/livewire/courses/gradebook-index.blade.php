@@ -41,6 +41,14 @@
                     </button>
                 @endif
                 <a
+                    href="{{ route('gradebook.grade-bands', $course) }}"
+                    wire:navigate
+                    class="px-space-md py-space-sm rounded-lg bg-secondary-container text-on-secondary-container font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm"
+                >
+                    <span class="material-symbols-outlined text-[18px]">tune</span>
+                    Edit Grade Range
+                </a>
+                <a
                     href="{{ route('gradebook.weights', $course) }}"
                     wire:navigate
                     class="px-space-md py-space-sm rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm"

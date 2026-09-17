@@ -1,7 +1,7 @@
 @section('title', $course ? 'Edit Course' : 'Create Course')
 
 <div class="min-h-screen bg-background py-space-xl px-gutter">
-    <div class="max-w-2xl mx-auto">
+    <div class="max-w-full mx-auto">
         <!-- Header -->
         <div class="mb-space-xl">
             <h1 class="font-headline-md text-headline-md text-on-surface">

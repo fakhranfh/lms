@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 interface ForumRepositoryInterface
 {
+    /**
+     * @return Collection<int, Forum>
+     */
     public function get(array $filters = [], array $with = []): Collection;
 
     public function find(string $id, array $with = []): ?Forum;

@@ -1,19 +1,54 @@
 @section('title', $course->title)
 
 <div class="space-y-space-lg">
+    @if ($successMessage)
+        <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
+            <p class="font-body-md text-body-md text-success">{{ $successMessage }}</p>
+        </div>
+    @endif
+
     @include('livewire.courses.partials.course-header', ['course' => $course, 'courseTabs' => $courseTabs, 'teacher' => $teacher])
 
     <div class="flex items-start justify-between">
         <h1 class="font-headline-md text-headline-md text-on-surface">Gradebook</h1>
         @if ($canManage)
-            <a
-                href="{{ route('gradebook.weights', $course) }}"
-                wire:navigate
-                class="flex-shrink-0 px-space-md py-space-sm rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm"
-            >
-                <span class="material-symbols-outlined text-[18px]">percent</span>
-                Change Weights
-            </a>
+            <div class="flex-shrink-0 flex items-center gap-space-sm">
+                @if ($isLocalEnv)
+                    <button
+                        type="button"
+                        wire:click="randomizeScores"
+                        wire:loading.attr="disabled"
+                        wire:target="randomizeScores"
+                        class="px-space-md py-space-sm rounded-lg bg-secondary text-on-secondary font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm disabled:opacity-50"
+                        title="Randomize gradebook scores (dev only)"
+                    >
+                        <span wire:loading.remove wire:target="randomizeScores" class="material-symbols-outlined text-[18px]">casino</span>
+                        <span wire:loading wire:target="randomizeScores" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                        Randomize Scores
+                    </button>
+                    <button
+                        type="button"
+                        @click="$dispatch('open-delete-confirm', { id: '{{ $course->id }}', type: 'gradebook-scores' })"
+                        wire:loading.attr="disabled"
+                        wire:target="resetScores,delete-confirmed"
+                        class="px-space-md py-space-sm rounded-lg bg-error text-on-error font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm disabled:opacity-50"
+                        title="Reset all gradebook scores (dev only)"
+                    >
+                        <span wire:loading.remove wire:target="resetScores,delete-confirmed" class="material-symbols-outlined text-[18px]">restart_alt</span>
+                        <span wire:loading wire:target="resetScores,delete-confirmed" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                        Reset Scores
+                    </button>
+                @endif
+                <a
+                    href="{{ route('gradebook.weights', $course) }}"
+                    wire:navigate
+                    class="px-space-md py-space-sm rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm"
+                >
+                    <span class="material-symbols-outlined text-[18px]">percent</span>
+                    Change Weights
+                </a>
+            </div>
         @endif
     </div>
 
@@ -30,10 +65,10 @@
             :search="$studentSearch"
         />
 
-        <!-- Skeleton Loading (shown while paginating, searching, or changing per-page) -->
+        <!-- Skeleton Loading (shown while paginating, searching, changing per-page, or randomizing/resetting scores) -->
         <div
             wire:loading.class.remove="hidden"
-            wire:target="gotoPage,previousPage,nextPage,studentSearch,perPage"
+            wire:target="gotoPage,previousPage,nextPage,studentSearch,perPage,randomizeScores,resetScores,delete-confirmed"
             class="hidden bg-surface border border-outline-variant rounded-lg overflow-hidden"
         >
             <x-ui.person-grid-skeleton :rows="$perPage" />
@@ -41,7 +76,7 @@
 
         <div
             wire:loading.remove
-            wire:target="gotoPage,previousPage,nextPage,studentSearch,perPage"
+            wire:target="gotoPage,previousPage,nextPage,studentSearch,perPage,randomizeScores,resetScores,delete-confirmed"
             class="bg-surface border border-outline-variant rounded-lg overflow-hidden"
         >
             <x-ui.person-grid>

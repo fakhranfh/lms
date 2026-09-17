@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 class ForumRepository implements ForumRepositoryInterface
 {
+    /**
+     * @return Collection<int, Forum>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         $query = Forum::query();

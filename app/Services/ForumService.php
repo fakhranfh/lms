@@ -12,6 +12,9 @@ class ForumService
         private ForumRepositoryInterface $forumRepository
     ) {}
 
+    /**
+     * @return Collection<int, Forum>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         return $this->forumRepository->get($filters, $with);

@@ -43,6 +43,13 @@
                     <span wire:loading wire:target="exportPdf">Exporting...</span>
                 </button>
             @endcan
+            @can('students.edit')
+                <a href="{{ route('students.photos') }}"
+                    class="px-space-lg py-space-sm border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors inline-flex items-center gap-space-2xs">
+                    <span class="material-symbols-outlined text-[18px]">add_a_photo</span>
+                    Bulk Upload Photos
+                </a>
+            @endcan
             @can('students.import')
                 <a href="{{ route('students.import') }}"
                     class="px-space-lg py-space-sm border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors inline-flex items-center gap-space-2xs">

@@ -59,6 +59,7 @@ use App\Livewire\Students\StudentForm;
 use App\Livewire\Students\StudentGenerate;
 use App\Livewire\Students\StudentImport;
 use App\Livewire\Students\StudentIndex;
+use App\Livewire\Students\StudentPhotoUpload;
 use App\Livewire\Users\UserForm;
 use App\Livewire\Users\UserImport;
 use App\Livewire\Users\UserIndex;
@@ -105,6 +106,7 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school', EnsurePasswordIs
     Route::get('/students/create', StudentForm::class)->middleware('permission:students.create')->name('students.create');
     Route::get('/students/import', StudentImport::class)->middleware('permission:students.import')->name('students.import');
     Route::get('/students/generate', StudentGenerate::class)->middleware('permission:students.create')->name('students.generate');
+    Route::get('/students/photos', StudentPhotoUpload::class)->middleware('permission:students.edit')->name('students.photos');
     Route::get('/students/selection', [StudentSelectionController::class, 'show'])->middleware('permission:students.view')->name('students.selection.show');
     Route::post('/students/selection', [StudentSelectionController::class, 'update'])->middleware('permission:students.view')->name('students.selection.update');
     Route::post('/students/selection/batch', [StudentSelectionController::class, 'updateMany'])->middleware('permission:students.view')->name('students.selection.update-many');

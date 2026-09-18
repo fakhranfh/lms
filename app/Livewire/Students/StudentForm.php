@@ -9,6 +9,7 @@ use App\Services\UserLoginLinkService;
 use App\Services\UserService;
 use App\Support\CurrentSchool;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
@@ -64,6 +65,25 @@ class StudentForm extends Component
     {
         $this->photo = null;
         $this->resetErrorBag('photo');
+    }
+
+    public function canAutofill(): bool
+    {
+        return app()->environment(['local', 'testing']) && ! $this->isEditing();
+    }
+
+    public function autofill(): void
+    {
+        abort_unless($this->canAutofill(), 403);
+
+        $password = Str::password(12);
+
+        $this->name = fake()->name();
+        $this->email = Str::uuid().'@'.fake()->safeEmailDomain();
+        $this->password = $password;
+        $this->password_confirmation = $password;
+
+        $this->dispatch('student-autofilled', password: $password);
     }
 
     protected function rules(): array

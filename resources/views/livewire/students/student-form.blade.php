@@ -31,7 +31,10 @@
             this.$refs.photoPreview.src = this.savedPhotoSrc;
         },
     }"
-    x-init="$wire.$on('show-error-modal', ({ message }) => { errorMessage = message; showErrorModal = true })">
+    x-init="
+        $wire.$on('show-error-modal', ({ message }) => { errorMessage = message; showErrorModal = true });
+        $wire.$on('student-autofilled', ({ password: pwd }) => { password = pwd; passwordConfirmation = pwd });
+    ">
 
     @if ($loginUrl)
         <div class="mb-space-lg px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg space-y-space-sm" x-data="{ copied: false }">
@@ -74,6 +77,17 @@
                 @enderror
             </div>
         </div>
+
+        @if ($this->canAutofill())
+            <div class="flex justify-end">
+                <button type="button" wire:click="autofill" wire:loading.attr="disabled" wire:target="autofill"
+                    class="px-space-md py-space-xs border border-outline-variant rounded-lg font-label-sm text-label-sm text-secondary hover:text-on-surface hover:bg-surface-container-low transition-colors inline-flex items-center gap-space-xs">
+                    <span class="material-symbols-outlined text-[16px]">auto_fix_high</span>
+                    <span wire:loading.remove wire:target="autofill">Autofill</span>
+                    <span wire:loading wire:target="autofill">Filling...</span>
+                </button>
+            </div>
+        @endif
 
         <div>
             <label for="name" class="block font-label-md text-label-md text-on-surface mb-space-xs">Name</label>

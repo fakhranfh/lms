@@ -142,6 +142,27 @@ test('creating a student without permission is forbidden', function () {
         ->assertForbidden();
 });
 
+test('autofill fills name, email and matching passwords when creating a student', function () {
+    $actor = actingAsStudentManager(['students.create']);
+
+    $component = Livewire::actingAs($actor)->test(StudentForm::class)
+        ->call('autofill');
+
+    expect($component->get('name'))->not->toBeEmpty();
+    expect($component->get('email'))->not->toBeEmpty();
+    expect($component->get('password'))->not->toBeEmpty();
+    expect($component->get('password'))->toBe($component->get('password_confirmation'));
+});
+
+test('autofill is unavailable when editing a student', function () {
+    $actor = actingAsStudentManager(['students.edit']);
+    $student = makeStudent($actor);
+
+    Livewire::actingAs($actor)->test(StudentForm::class, ['id' => $student->id])
+        ->call('autofill')
+        ->assertForbidden();
+});
+
 test('editing a student updates their profile', function () {
     $actor = actingAsStudentManager(['students.edit']);
     $student = makeStudent($actor, ['name' => 'Old Name', 'email' => 'old@example.com']);

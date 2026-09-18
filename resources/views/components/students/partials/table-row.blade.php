@@ -34,12 +34,11 @@
             <x-ui.skeleton-box class="h-4 w-16 ml-auto" />
         </td>
     </template>
-    <td x-show="!isDeleting" class="px-space-lg py-space-md text-right whitespace-nowrap space-x-space-xs">
+    <td x-show="!isDeleting" class="px-space-lg py-space-md text-right whitespace-nowrap space-x-space-md">
         @can('students.edit')
             <button type="button" wire:click="regenerateLoginLink('{{ $student->id }}')" wire:loading.attr="disabled" wire:target="regenerateLoginLink('{{ $student->id }}')"
-                class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors disabled:opacity-50"
-                title="Generate new login link" aria-label="Generate new login link for {{ $student->name }}">
-                <span class="material-symbols-outlined text-[18px]">refresh</span>
+                class="font-label-md text-label-md text-primary hover:underline disabled:opacity-50">
+                Generate Link
             </button>
             <a href="{{ route('students.edit', $student) }}"
                 class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-primary hover:bg-surface-container transition-colors"

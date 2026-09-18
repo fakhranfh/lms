@@ -205,6 +205,18 @@ test('bulk delete removes selected students', function () {
     expect(User::withTrashed()->find($studentTwo->id)->trashed())->toBeTrue();
 });
 
+test('matching ids returns every student id matching the current filters', function () {
+    $actor = actingAsStudentManager(['students.view']);
+    $studentOne = makeStudent($actor, ['name' => 'Match One']);
+    $studentTwo = makeStudent($actor, ['name' => 'Match Two']);
+    makeStudent($actor, ['name' => 'Other Student']);
+
+    Livewire::actingAs($actor)->test(StudentIndex::class)
+        ->set('search', 'Match')
+        ->call('matchingIds')
+        ->assertReturned(fn (array $ids) => collect($ids)->sort()->values()->all() === collect([$studentOne->id, $studentTwo->id])->sort()->values()->all());
+});
+
 test('destroy all matching removes every student matching the current filters, not just the current page', function () {
     $actor = actingAsStudentManager(['students.view', 'students.delete']);
     makeStudent($actor, ['name' => 'Match One']);

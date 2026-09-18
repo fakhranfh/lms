@@ -47,19 +47,56 @@
         toggleStudent(id, checked) {
             if (this.selectAllMatching) {
                 this.selectAllMatching = false;
-                this.selected = checked ? [id] : [];
-            } else {
-                const previous = this.selected;
-                this.selected = checked
-                    ? [...new Set([...this.selected, id])]
-                    : this.selected.filter(existing => existing !== id);
 
-                fetch('{{ route('students.selection.update') }}', {
+                if (checked) {
+                    this.selected = [id];
+                    this.persistSelection(this.selected);
+
+                    return;
+                }
+
+                // Unchecking one row while 'all matching' was active means
+                // 'everything except this one' — fetch the full matching id
+                // list rather than losing the rest of the selection.
+                $wire.call('matchingIds').then(ids => {
+                    this.selected = ids.filter(existing => existing !== id);
+                    this.persistSelection(this.selected);
+                });
+
+                return;
+            }
+
+            const previous = this.selected;
+            this.selected = checked
+                ? [...new Set([...this.selected, id])]
+                : this.selected.filter(existing => existing !== id);
+
+            fetch('{{ route('students.selection.update') }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrfToken(), 'Accept': 'application/json' },
+                body: JSON.stringify({ id, checked }),
+            }).catch(() => { this.selected = previous; });
+        },
+        /**
+         * Replaces the persisted selection wholesale — used when the exact
+         * set of ids is already known client-side (e.g. dropping out of
+         * 'select all matching') rather than toggling one id at a time.
+         */
+        persistSelection(ids) {
+            fetch('{{ route('students.selection.clear') }}', {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': this.csrfToken(), 'Accept': 'application/json' },
+            }).then(() => {
+                if (ids.length === 0) {
+                    return;
+                }
+
+                return fetch('{{ route('students.selection.update-many') }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrfToken(), 'Accept': 'application/json' },
-                    body: JSON.stringify({ id, checked }),
-                }).catch(() => { this.selected = previous; });
-            }
+                    body: JSON.stringify({ ids, checked: true }),
+                });
+            }).catch(() => {});
         },
         clearSelection() {
             this.selected = [];

@@ -120,16 +120,36 @@ class StudentIndex extends Component
     {
         abort_unless(auth()->user()->can('students.delete'), 403);
 
-        $ids = $userService->idsMatching([
-            'search' => $this->search,
-            'role_id' => $this->studentRoleId(),
-        ]);
-
-        $this->deleteMany($ids, $userService);
+        $this->deleteMany($userService->idsMatching($this->matchingFilters()), $userService);
 
         $this->selectAllMatching = false;
 
         unset($this->students);
+    }
+
+    /**
+     * IDs of every student matching the current filters, not just those on
+     * the currently visible page — called from the client when a single
+     * checkbox is unchecked while "select all matching" is active, so the
+     * selection can fall back to "all of these except that one" instead of
+     * losing the rest of the selection entirely.
+     *
+     * @return array<int, string>
+     */
+    public function matchingIds(UserService $userService): array
+    {
+        return $userService->idsMatching($this->matchingFilters());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function matchingFilters(): array
+    {
+        return [
+            'search' => $this->search,
+            'role_id' => $this->studentRoleId(),
+        ];
     }
 
     /**

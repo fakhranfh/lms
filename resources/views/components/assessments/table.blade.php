@@ -12,7 +12,6 @@
 ])
 
 <div
-    class="overflow-x-auto"
     x-data="{
         dragId: null,
         currentOrder() {
@@ -75,8 +74,9 @@
         },
     }"
 >
-    <table class="w-full">
-        <thead>
+    <x-ui.data-table-shell :bare="true">
+        <x-slot:head>
+            <thead>
             <tr class="border-b border-outline-variant bg-surface-container/50">
                 @unless ($isStudent)
                     {{--
@@ -112,7 +112,9 @@
                     <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Actions</th>
                 @endif
             </tr>
-        </thead>
+            </thead>
+        </x-slot:head>
+
         <tbody class="divide-y divide-outline-variant" x-ref="assessmentList">
             @foreach ($group['assessments'] as $item)
                 <tr
@@ -312,5 +314,5 @@
                 </tr>
             @endforeach
         </tbody>
-    </table>
+    </x-ui.data-table-shell>
 </div>

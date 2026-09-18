@@ -111,55 +111,51 @@
             </div>
         </div>
 
-        <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-outline-variant bg-surface-container/50">
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Session</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Delivery</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Dates</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attend</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attendance Requirement</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-outline-variant">
-                        @forelse ($sessionRows as $row)
-                            <tr wire:key="session-{{ $row['session']->id }}">
-                                <td class="px-space-lg py-space-md">
-                                    <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $row['session']->order }}</p>
-                                    <p class="font-label-md text-label-md text-on-surface">{{ $row['session']->title }}</p>
-                                </td>
-                                <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ str($row['session']->delivery_mode->value)->replace('_', ' ')->title() }}</td>
-                                <td class="px-space-lg py-space-md text-body-sm text-on-surface">
-                                    {{ $row['session']->date_start_display?->format('M j, Y, H:i') }} &ndash; {{ $row['session']->date_end_display?->format('H:i') }}
-                                </td>
-                                <td class="px-space-lg py-space-md">
-                                    @if ($row['attend'])
-                                        <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-success/10 text-success">
-                                            <span class="material-symbols-outlined text-[16px]">check_circle</span>
-                                            Present
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-error/10 text-error">
-                                            <span class="material-symbols-outlined text-[16px]">cancel</span>
-                                            Not Attended
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-space-lg py-space-md text-body-xs text-on-surface-variant">
-                                    {{ $row['requirement'] }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No sessions yet.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <x-ui.livewire-data-table
+            :columns="[
+                ['key' => 'session', 'label' => 'Session', 'sortable' => false],
+                ['key' => 'delivery', 'label' => 'Delivery', 'sortable' => false],
+                ['key' => 'dates', 'label' => 'Dates', 'sortable' => false],
+                ['key' => 'attend', 'label' => 'Attend', 'sortable' => false],
+                ['key' => 'requirement', 'label' => 'Attendance Requirement', 'sortable' => false],
+            ]"
+            :items="$sessionRows"
+            :showPagination="false"
+            :showActionsColumn="false"
+        >
+            @forelse ($sessionRows as $row)
+                <tr wire:key="session-{{ $row['session']->id }}">
+                    <td class="px-space-lg py-space-md">
+                        <p class="font-label-xs text-label-xs text-on-surface-variant">Session {{ $row['session']->order }}</p>
+                        <p class="font-label-md text-label-md text-on-surface">{{ $row['session']->title }}</p>
+                    </td>
+                    <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ str($row['session']->delivery_mode->value)->replace('_', ' ')->title() }}</td>
+                    <td class="px-space-lg py-space-md text-body-sm text-on-surface">
+                        {{ $row['session']->date_start_display?->format('M j, Y, H:i') }} &ndash; {{ $row['session']->date_end_display?->format('H:i') }}
+                    </td>
+                    <td class="px-space-lg py-space-md">
+                        @if ($row['attend'])
+                            <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-success/10 text-success">
+                                <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                Present
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-error/10 text-error">
+                                <span class="material-symbols-outlined text-[16px]">cancel</span>
+                                Not Attended
+                            </span>
+                        @endif
+                    </td>
+                    <td class="px-space-lg py-space-md text-body-xs text-on-surface-variant">
+                        {{ $row['requirement'] }}
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No sessions yet.</td>
+                </tr>
+            @endforelse
+        </x-ui.livewire-data-table>
     @else
         <!-- Teacher: session tabs -->
         <div class="flex flex-wrap gap-space-xs border-b border-outline-variant">
@@ -237,31 +233,27 @@
                 </div>
             @endif
 
-            <!-- Skeleton Loading (shown while switching pages, sessions, searching, or saving) -->
-            <div
-                wire:loading.class.remove="hidden"
-                wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,perPage,saveAllAttendance,markAllAttendance('present'),markAllAttendance('late'),markAllAttendance('absent')"
-                class="hidden bg-surface border border-outline-variant rounded-lg overflow-hidden animate-pulse"
+            <x-ui.data-table-shell
+                :columnCount="$canManage ? 5 : 4"
+                loadingTarget="gotoPage,previousPage,nextPage,selectSession,studentSearch,perPage,saveAllAttendance,markAllAttendance('present'),markAllAttendance('late'),markAllAttendance('absent')"
+                x-data="{}"
             >
-                <x-attendance.table-skeleton :is-student="false" :can-manage="$canManage" />
-            </div>
+                <x-slot:head>
+                    <thead>
+                    <tr class="border-b border-outline-variant bg-surface-container/50">
+                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Student</th>
+                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Delivery</th>
+                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attendance Requirement</th>
+                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Status</th>
+                        @if ($canManage)
+                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Mark Attendance</th>
+                        @endif
+                    </tr>
+                    </thead>
+                </x-slot:head>
 
-            <div wire:loading.remove wire:target="gotoPage,previousPage,nextPage,selectSession,studentSearch,perPage,saveAllAttendance,markAllAttendance('present'),markAllAttendance('late'),markAllAttendance('absent')" x-data="{}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b border-outline-variant bg-surface-container/50">
-                                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Student</th>
-                                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Delivery</th>
-                                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Attendance Requirement</th>
-                                <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Status</th>
-                                @if ($canManage)
-                                    <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Mark Attendance</th>
-                                @endif
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-outline-variant">
-                            @forelse ($studentRows as $row)
+                <tbody class="divide-y divide-outline-variant">
+                    @forelse ($studentRows as $row)
                                 <tr wire:key="student-{{ $row['user']->id }}">
                                     <td class="px-space-lg py-space-md">
                                         <div class="flex items-center gap-space-sm">
@@ -355,15 +347,13 @@
                                         </td>
                                     @endif
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No students found.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No students found.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </x-ui.data-table-shell>
 
             <x-ui.pagination-links :paginator="$studentRows" perPageModel="perPage" :perPageOptions="[10, 25, 50, 100]" />
 

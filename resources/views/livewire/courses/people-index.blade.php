@@ -54,14 +54,14 @@
                 @for ($i = 0; $i < 2; $i++)
                     <div class="border border-outline-variant rounded-lg p-space-lg space-y-space-md">
                         <div class="h-4 bg-surface-container rounded w-24"></div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                        <x-ui.entity-grid>
                             @for ($j = 0; $j < 4; $j++)
                                 <div class="flex items-center gap-space-sm">
                                     <div class="w-8 h-8 rounded-full bg-surface-container flex-shrink-0"></div>
                                     <div class="h-4 bg-surface-container rounded w-2/3"></div>
                                 </div>
                             @endfor
-                        </div>
+                        </x-ui.entity-grid>
                     </div>
                 @endfor
             </div>
@@ -304,7 +304,7 @@
                             @if ($ownGroup)
                                 <div class="border border-outline-variant rounded-lg p-space-lg">
                                     <p class="font-label-lg text-label-lg text-on-surface mb-space-md">{{ $ownGroup->name }}</p>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                                    <x-ui.entity-grid>
                                         @forelse ($ownGroup->members as $member)
                                             <div class="flex items-center gap-space-sm">
                                                 <x-avatar :user="$member->user" size="8" />
@@ -313,7 +313,7 @@
                                         @empty
                                             <p class="text-body-sm text-on-surface-variant">No members yet.</p>
                                         @endforelse
-                                    </div>
+                                    </x-ui.entity-grid>
                                 </div>
                             @else
                                 <p class="text-body-sm text-on-surface-variant">You are not in a group yet.</p>
@@ -382,14 +382,14 @@
                                 @for ($i = 0; $i < 2; $i++)
                                     <div class="border border-outline-variant rounded-lg p-space-lg space-y-space-md">
                                         <div class="h-4 bg-surface-container rounded w-24"></div>
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                                        <x-ui.entity-grid>
                                             @for ($j = 0; $j < 4; $j++)
                                                 <div class="flex items-center gap-space-sm">
                                                     <div class="w-8 h-8 rounded-full bg-surface-container flex-shrink-0"></div>
                                                     <div class="h-4 bg-surface-container rounded w-2/3"></div>
                                                 </div>
                                             @endfor
-                                        </div>
+                                        </x-ui.entity-grid>
                                     </div>
                                 @endfor
                             </div>
@@ -398,14 +398,14 @@
                                 @if ($visibleUnassignedStudents->isNotEmpty())
                                     <div class="bg-surface-container/50 border border-outline-variant rounded-lg p-space-md">
                                         <p class="font-label-sm text-label-sm text-secondary mb-space-md">Unassigned Students ({{ $visibleUnassignedStudents->count() }})</p>
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-space-md">
+                                        <x-ui.entity-grid :cols="3">
                                             @foreach ($visibleUnassignedStudents as $coursePerson)
                                                 <div class="flex items-center gap-space-sm">
                                                     <x-avatar :user="$coursePerson->user" size="8" />
                                                     <p class="font-label-md text-label-md text-on-surface">{{ $coursePerson->user->name }}</p>
                                                 </div>
                                             @endforeach
-                                        </div>
+                                        </x-ui.entity-grid>
                                     </div>
                                 @endif
 
@@ -418,14 +418,14 @@
                                     >
                                         <div x-show="deletingIds.includes('{{ $group->id }}')" x-cloak class="p-space-lg space-y-space-md animate-pulse">
                                             <div class="h-5 bg-surface-container rounded w-32"></div>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                                            <x-ui.entity-grid>
                                                 @for ($i = 0; $i < 4; $i++)
                                                     <div class="flex items-center gap-space-sm">
                                                         <div class="w-8 h-8 rounded-full bg-surface-container flex-shrink-0"></div>
                                                         <div class="h-4 bg-surface-container rounded w-2/3"></div>
                                                     </div>
                                                 @endfor
-                                            </div>
+                                            </x-ui.entity-grid>
                                         </div>
                                         <div x-show="!deletingIds.includes('{{ $group->id }}')">
                                         <div
@@ -493,7 +493,7 @@
                                         </div>
 
                                         <div x-show="open" x-transition class="p-space-lg space-y-space-md">
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                                            <x-ui.entity-grid>
                                                 @forelse ($group->members as $member)
                                                     <div class="flex items-center justify-between gap-space-sm">
                                                         <div x-show="removingMemberId === '{{ $member->id }}'" x-cloak class="flex items-center gap-space-sm animate-pulse">
@@ -521,7 +521,7 @@
                                                 @empty
                                                     <p class="text-body-sm text-on-surface-variant">No members yet.</p>
                                                 @endforelse
-                                            </div>
+                                            </x-ui.entity-grid>
 
                                             @if ($canManageGroups)
                                                 @php($candidates = $this->candidateStudentsForGroup($group->id))

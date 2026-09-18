@@ -51,7 +51,7 @@ class LivewireIndexViewStubGenerator
         </div>
     </div>
 
-    <x-livewire-data-table
+    <x-ui.livewire-data-table
         :columns="[
 {$tableColumns}
         ]"
@@ -72,7 +72,7 @@ class LivewireIndexViewStubGenerator
                 <td colspan="{$colspan}" class="px-space-lg py-space-lg text-center font-body-md text-body-md text-secondary">No records yet.</td>
             </tr>
         @endforelse
-    </x-livewire-data-table>
+    </x-ui.livewire-data-table>
 </div>
 BLADE;
     }

@@ -21,68 +21,65 @@
     @endif
 
     <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-        @unless ($hasItems)
-            <div>
-                <div class="grid border-b border-outline-variant bg-surface-container-lowest" style="grid-template-columns: repeat({{ $columnCount }}, minmax(0, 1fr));">
-                    @for ($i = 0; $i < $columnCount; $i++)
-                        <div class="px-space-lg py-space-md"><div class="h-4 w-full rounded bg-outline-variant/60 animate-pulse"></div></div>
-                    @endfor
-                </div>
-                @for ($row = 0; $row < 5; $row++)
-                    <div class="grid border-b border-outline-variant last:border-0" style="grid-template-columns: repeat({{ $columnCount }}, minmax(0, 1fr));">
-                        @for ($i = 0; $i < $columnCount; $i++)
-                            <div class="px-space-lg py-space-md"><div class="h-4 w-full rounded bg-outline-variant/40 animate-pulse"></div></div>
-                        @endfor
-                    </div>
-                @endfor
-            </div>
-        @else
-            <div wire:loading.block wire:target="{{ $loadingTarget }}">
-                <div class="grid border-b border-outline-variant bg-surface-container-lowest" style="grid-template-columns: repeat({{ $columnCount }}, minmax(0, 1fr));">
-                    @for ($i = 0; $i < $columnCount; $i++)
-                        <div class="px-space-lg py-space-md"><div class="h-4 w-full rounded bg-outline-variant/60 animate-pulse"></div></div>
-                    @endfor
-                </div>
-                @for ($row = 0; $row < 5; $row++)
-                    <div class="grid border-b border-outline-variant last:border-0" style="grid-template-columns: repeat({{ $columnCount }}, minmax(0, 1fr));">
-                        @for ($i = 0; $i < $columnCount; $i++)
-                            <div class="px-space-lg py-space-md"><div class="h-4 w-full rounded bg-outline-variant/40 animate-pulse"></div></div>
-                        @endfor
-                    </div>
-                @endfor
-            </div>
-
-            <div wire:loading.remove wire:target="{{ $loadingTarget }}" class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-outline-variant bg-surface-container-lowest">
-                            @if ($selectable)
-                                <th scope="col" class="px-space-lg py-space-md w-[1%]">
-                                    {{ $selectAll ?? '' }}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-outline-variant bg-primary/20">
+                        @if ($selectable)
+                            <th scope="col" class="px-space-lg py-space-md w-[1%]">
+                                {{ $selectAll ?? '' }}
+                            </th>
+                        @endif
+                        @foreach ($columns as $column)
+                            @if ($column['sortable'] ?? true)
+                                <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-primary uppercase cursor-pointer select-none" wire:click="sortBy('{{ $column['key'] }}')">
+                                    <span class="inline-flex items-center gap-space-2xs">
+                                        {{ $column['label'] }}
+                                        @if ($sort === $column['key'])
+                                            <span class="material-symbols-outlined text-[16px] text-primary">{{ $direction === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</span>
+                                        @else
+                                            <span class="material-symbols-outlined text-[16px] text-primary/50">unfold_more</span>
+                                        @endif
+                                    </span>
                                 </th>
+                            @else
+                                <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-primary uppercase">{{ $column['label'] }}</th>
                             @endif
-                            @foreach ($columns as $column)
-                                @if ($column['sortable'] ?? true)
-                                    <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase cursor-pointer select-none" wire:click="sortBy('{{ $column['key'] }}')">
-                                        <span class="inline-flex items-center gap-space-2xs">
-                                            {{ $column['label'] }}
-                                            @if ($sort === $column['key'])
-                                                <span class="material-symbols-outlined text-[16px] text-primary">{{ $direction === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</span>
-                                            @else
-                                                <span class="material-symbols-outlined text-[16px] text-secondary/50">unfold_more</span>
-                                            @endif
-                                        </span>
-                                    </th>
-                                @else
-                                    <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">{{ $column['label'] }}</th>
+                        @endforeach
+                        @if ($showActionsColumn)
+                            <th scope="col" class="px-space-lg py-space-md text-right font-label-md text-label-md text-primary uppercase">Actions</th>
+                        @endif
+                    </tr>
+                </thead>
+
+                @unless ($hasItems)
+                    <tbody class="divide-y divide-outline-variant">
+                        @for ($row = 0; $row < 5; $row++)
+                            <tr>
+                                @if ($selectable)
+                                    <td class="px-space-lg py-space-md w-[1%]"><div class="h-4 w-4 rounded bg-outline-variant/40 animate-pulse"></div></td>
                                 @endif
-                            @endforeach
-                            @if ($showActionsColumn)
-                                <th scope="col" class="px-space-lg py-space-md text-right font-label-md text-label-md text-secondary uppercase">Actions</th>
-                            @endif
-                        </tr>
-                    </thead>
-                    <tbody>
+                                @for ($i = 0; $i < $columnCount - ($selectable ? 1 : 0); $i++)
+                                    <td class="px-space-lg py-space-md"><div class="h-4 w-full rounded bg-outline-variant/40 animate-pulse"></div></td>
+                                @endfor
+                            </tr>
+                        @endfor
+                    </tbody>
+                @else
+                    <tbody wire:loading.class.remove="hidden" wire:target="{{ $loadingTarget }}" class="hidden divide-y divide-outline-variant">
+                        @for ($row = 0; $row < 5; $row++)
+                            <tr>
+                                @if ($selectable)
+                                    <td class="px-space-lg py-space-md w-[1%]"><div class="h-4 w-4 rounded bg-outline-variant/40 animate-pulse"></div></td>
+                                @endif
+                                @for ($i = 0; $i < $columnCount - ($selectable ? 1 : 0); $i++)
+                                    <td class="px-space-lg py-space-md"><div class="h-4 w-full rounded bg-outline-variant/40 animate-pulse"></div></td>
+                                @endfor
+                            </tr>
+                        @endfor
+                    </tbody>
+
+                    <tbody wire:loading.class="hidden" wire:target="{{ $loadingTarget }}" class="divide-y divide-outline-variant">
                         @isset($bulkBar)
                             <tr x-show="selected.length > 0" x-cloak>
                                 <td colspan="{{ $columnCount }}" class="px-space-lg py-space-sm bg-surface-container">
@@ -92,9 +89,9 @@
                         @endisset
                         {{ $slot }}
                     </tbody>
-                </table>
-            </div>
-        @endunless
+                @endunless
+            </table>
+        </div>
     </div>
 
     @if ($showPagination && $hasItems && $isPaginated && $items->hasPages())

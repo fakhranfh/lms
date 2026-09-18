@@ -6585,8 +6585,8 @@
     "semantic_hash": ""
   },
   "resources/views/components/ui/livewire-data-table.blade.php": {
-    "mtime": 1789703302.6223295,
-    "ast_hash": "a74db852bc68e828236fd7af0c112f02",
+    "mtime": 1789707038.7360814,
+    "ast_hash": "823a1ffe7865a8f446748c028e96893a",
     "semantic_hash": ""
   },
   "resources/views/livewire/courses/gradebook-grade-bands-placeholder.blade.php": {

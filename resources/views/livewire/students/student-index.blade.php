@@ -4,15 +4,71 @@
         deleteId: null, showDeleteModal: false,
         showGenerateModal: false,
         selected: [],
+        selectAllMatching: @entangle('selectAllMatching'),
+        matchingCount: @entangle('matchingCount'),
+        pageIds: @entangle('pageIds'),
+        csrfToken() {
+            return document.querySelector('meta[name=csrf-token]').content;
+        },
+        init() {
+            fetch('{{ route('students.selection.show') }}', { headers: { 'Accept': 'application/json' } })
+                .then(response => response.json())
+                .then(data => { this.selected = data.selected ?? []; })
+                .catch(() => {});
+        },
         get allOnPageSelected() {
-            const ids = Array.from(document.querySelectorAll('[data-student-checkbox]')).map(el => el.value);
-            return ids.length > 0 && ids.every(id => this.selected.includes(id));
+            if (this.selectAllMatching) {
+                return true;
+            }
+
+            return this.pageIds.length > 0 && this.pageIds.every(id => this.selected.includes(id));
         },
         toggleSelectAll(checked) {
-            const ids = Array.from(document.querySelectorAll('[data-student-checkbox]')).map(el => el.value);
+            if (this.selectAllMatching) {
+                if (! checked) {
+                    this.clearSelection();
+                }
+
+                return;
+            }
+
+            const ids = this.pageIds;
+            const previous = this.selected;
             this.selected = checked
                 ? [...new Set([...this.selected, ...ids])]
                 : this.selected.filter(id => ! ids.includes(id));
+
+            fetch('{{ route('students.selection.update-many') }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrfToken(), 'Accept': 'application/json' },
+                body: JSON.stringify({ ids, checked }),
+            }).catch(() => { this.selected = previous; });
+        },
+        toggleStudent(id, checked) {
+            if (this.selectAllMatching) {
+                this.selectAllMatching = false;
+                this.selected = checked ? [id] : [];
+            } else {
+                const previous = this.selected;
+                this.selected = checked
+                    ? [...new Set([...this.selected, id])]
+                    : this.selected.filter(existing => existing !== id);
+
+                fetch('{{ route('students.selection.update') }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrfToken(), 'Accept': 'application/json' },
+                    body: JSON.stringify({ id, checked }),
+                }).catch(() => { this.selected = previous; });
+            }
+        },
+        clearSelection() {
+            this.selected = [];
+            this.selectAllMatching = false;
+
+            fetch('{{ route('students.selection.clear') }}', {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': this.csrfToken(), 'Accept': 'application/json' },
+            }).catch(() => {});
         },
     }">
     @if ($successMessage)
@@ -53,17 +109,6 @@
             @endcan
         </div>
     </div>
-
-    @can('students.delete')
-        <div x-show="selected.length > 0" x-cloak class="flex items-center justify-between px-gutter py-space-md bg-surface-container rounded-lg border border-outline-variant">
-            <p class="font-label-md text-label-md text-on-surface"><span x-text="selected.length"></span> selected</p>
-            <button type="button" @click="deleteId = null; showDeleteModal = true"
-                class="px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm">
-                <span class="material-symbols-outlined text-[18px]">delete</span>
-                Delete Selected
-            </button>
-        </div>
-    @endcan
 
     @if ($studentsLoaded)
         <x-ui.pagination-links
@@ -123,7 +168,7 @@
 
                     <div class="text-center space-y-space-sm">
                         <h3 class="font-headline-sm text-headline-sm text-on-surface" x-text="deleteId === null ? 'Delete Selected Students' : 'Delete Student'"></h3>
-                        <p class="font-body-sm text-body-sm text-on-surface-variant" x-text="deleteId === null ? `Are you sure you want to delete ${selected.length} selected student(s)? This action cannot be undone.` : 'Are you sure you want to delete this student? This action cannot be undone.'"></p>
+                        <p class="font-body-sm text-body-sm text-on-surface-variant" x-text="deleteId === null ? (selectAllMatching ? `Are you sure you want to delete all ${matchingCount} students matching your search? This action cannot be undone.` : `Are you sure you want to delete ${selected.length} selected student(s)? This action cannot be undone.`) : 'Are you sure you want to delete this student? This action cannot be undone.'"></p>
                     </div>
 
                     <div class="flex gap-space-md pt-space-md">
@@ -135,7 +180,7 @@
                             Cancel
                         </button>
                         <button
-                            @click="showDeleteModal = false; if (deleteId === null) { $wire.call('destroySelected', selected); selected = [] } else { $wire.call('destroy', deleteId) }"
+                            @click="showDeleteModal = false; if (deleteId === null) { const deletion = selectAllMatching ? $wire.call('destroyAllMatching') : $wire.call('destroySelected', selected); deletion.then(() => clearSelection()) } else { $wire.call('destroy', deleteId) }"
                             type="button"
                             class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                         >

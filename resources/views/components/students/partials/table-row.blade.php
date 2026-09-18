@@ -3,7 +3,7 @@
 <tr wire:key="student-{{ $student->id }}" class="hover:bg-surface-container-lowest transition-colors">
     @can('students.delete')
         <td class="px-space-lg py-space-md">
-            <input type="checkbox" x-model="selected" value="{{ $student->id }}" data-student-checkbox aria-label="Select {{ $student->name }}">
+            <input type="checkbox" :checked="selectAllMatching || selected.includes('{{ $student->id }}')" @change="toggleStudent('{{ $student->id }}', $event.target.checked)" aria-label="Select {{ $student->name }}">
         </td>
     @endcan
     <td class="px-space-lg py-space-md text-body-md text-on-surface">{{ $student->name }}</td>

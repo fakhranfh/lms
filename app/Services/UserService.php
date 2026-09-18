@@ -151,6 +151,15 @@ class UserService
         return $this->userRepository->paginate($filters, $with, $perPage);
     }
 
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<int, string>
+     */
+    public function idsMatching(array $filters = []): array
+    {
+        return $this->userRepository->idsMatching($filters);
+    }
+
     public function find(string $id): ?User
     {
         return $this->userRepository->find($id);

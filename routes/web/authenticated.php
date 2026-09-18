@@ -8,6 +8,7 @@ use App\Http\Controllers\ProctorSpeedTestController;
 use App\Http\Controllers\ProctorSubmissionStatusController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SchoolPaymentController;
+use App\Http\Controllers\StudentSelectionController;
 use App\Http\Controllers\TierChangeController;
 use App\Http\Controllers\UserAvailabilityController;
 use App\Http\Controllers\UserLoginLinkController;
@@ -104,6 +105,10 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school', EnsurePasswordIs
     Route::get('/students/create', StudentForm::class)->middleware('permission:students.create')->name('students.create');
     Route::get('/students/import', StudentImport::class)->middleware('permission:students.import')->name('students.import');
     Route::get('/students/generate', StudentGenerate::class)->middleware('permission:students.create')->name('students.generate');
+    Route::get('/students/selection', [StudentSelectionController::class, 'show'])->middleware('permission:students.view')->name('students.selection.show');
+    Route::post('/students/selection', [StudentSelectionController::class, 'update'])->middleware('permission:students.view')->name('students.selection.update');
+    Route::post('/students/selection/batch', [StudentSelectionController::class, 'updateMany'])->middleware('permission:students.view')->name('students.selection.update-many');
+    Route::delete('/students/selection', [StudentSelectionController::class, 'clear'])->middleware('permission:students.view')->name('students.selection.clear');
     Route::get('/students/{id}/edit', StudentForm::class)->middleware('permission:students.edit')->name('students.edit');
 
     Route::get('/tier-management', [TierChangeController::class, 'show'])->name('tier-management.show');

@@ -30,6 +30,15 @@ interface UserRepositoryInterface
      */
     public function paginate(array $filters = [], array $with = [], int $perPage = 15): LengthAwarePaginator;
 
+    /**
+     * Get every user id matching the given filters, ignoring pagination —
+     * backs "select all matching" bulk actions.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<int, string>
+     */
+    public function idsMatching(array $filters = []): array;
+
     public function find(string $id): ?User;
 
     public function syncRoles(User $user, array $roleIds): void;

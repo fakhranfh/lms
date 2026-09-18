@@ -74,6 +74,23 @@ test('students index paginates results', function () {
     expect($component->get('students')->count())->toBe(10);
 });
 
+test('students index supports navigating pages via gotoPage', function () {
+    $actor = actingAsStudentManager(['students.view']);
+
+    User::factory()->count(20)->create(['school_id' => $actor->school_id])
+        ->each(function (User $student) use ($actor) {
+            $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $actor->school_id]);
+            $student->assignRole($studentRole);
+        });
+
+    $component = Livewire::actingAs($actor)->test(StudentIndex::class)
+        ->call('loadUsers')
+        ->set('perPage', 10)
+        ->call('gotoPage', 2);
+
+    expect($component->get('students')->currentPage())->toBe(2);
+});
+
 test('students index search filters by name or email', function () {
     $actor = actingAsStudentManager(['students.view']);
     makeStudent($actor, ['name' => 'Findable Student', 'email' => 'findable@example.com']);
@@ -186,6 +203,31 @@ test('bulk delete removes selected students', function () {
 
     expect(User::withTrashed()->find($studentOne->id)->trashed())->toBeTrue();
     expect(User::withTrashed()->find($studentTwo->id)->trashed())->toBeTrue();
+});
+
+test('destroy all matching removes every student matching the current filters, not just the current page', function () {
+    $actor = actingAsStudentManager(['students.view', 'students.delete']);
+    makeStudent($actor, ['name' => 'Match One']);
+    makeStudent($actor, ['name' => 'Match Two']);
+    $unrelated = makeStudent($actor, ['name' => 'Other Student']);
+
+    Livewire::actingAs($actor)->test(StudentIndex::class)
+        ->set('search', 'Match')
+        ->call('destroyAllMatching');
+
+    expect(User::withTrashed()->where('name', 'like', 'Match%')->get()->every(fn (User $user) => $user->trashed()))->toBeTrue();
+    expect($unrelated->fresh()->trashed())->toBeFalse();
+});
+
+test('destroy all matching requires students.delete permission', function () {
+    $actor = actingAsStudentManager(['students.view']);
+    $student = makeStudent($actor);
+
+    Livewire::actingAs($actor)->test(StudentIndex::class)
+        ->call('destroyAllMatching')
+        ->assertForbidden();
+
+    expect($student->fresh()->trashed())->toBeFalse();
 });
 
 test('generating students creates the requested number with login links', function () {

@@ -4,6 +4,7 @@ namespace App\Repositories\User;
 
 use App\Models\Scopes\SchoolScope;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Spatie\Permission\Models\Role;
@@ -28,6 +29,28 @@ class UserRepository implements UserRepositoryInterface
      */
     public function paginate(array $filters = [], array $with = [], int $perPage = 15): LengthAwarePaginator
     {
+        return $this->filteredQuery($filters, $with)->paginate($perPage);
+    }
+
+    /**
+     * Get every user id matching the given filters, ignoring pagination —
+     * backs "select all matching" bulk actions where the user wants to act
+     * on the whole filtered result set, not just the current page.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<int, string>
+     */
+    public function idsMatching(array $filters = []): array
+    {
+        return $this->filteredQuery($filters)->pluck('id')->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @param  array<string>  $with
+     */
+    private function filteredQuery(array $filters, array $with = []): Builder
+    {
         $query = User::with($with);
 
         if (! empty($filters['search'])) {
@@ -51,7 +74,7 @@ class UserRepository implements UserRepositoryInterface
             $query->orderBy($filters['sort'], $filters['direction']);
         }
 
-        return $query->paginate($perPage);
+        return $query;
     }
 
     public function setPendingEmail(User $user, string $pendingEmail): void

@@ -10,12 +10,15 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 /**
  * @property-read LengthAwarePaginator $students
  */
 class StudentIndex extends Component
 {
+    use WithPagination;
+
     public ?string $search = null;
 
     public string $sort = 'name';
@@ -34,6 +37,30 @@ class StudentIndex extends Component
      * instantly with a skeleton in place of the table.
      */
     public bool $studentsLoaded = false;
+
+    /**
+     * Whether the bulk-delete selection has been expanded to every student
+     * matching the current filters, not just those checked on this page.
+     */
+    public bool $selectAllMatching = false;
+
+    /**
+     * Total number of students matching the current filters, kept in sync
+     * on every render so the "select all matching" prompt can compare it
+     * against the current page's selection count.
+     */
+    public int $matchingCount = 0;
+
+    /**
+     * IDs of the students on the currently rendered page, kept in sync on
+     * every render via @entangle so the "select all on page" checkbox
+     * reactively recomputes after pagination — reading the DOM directly
+     * for this doesn't trigger Alpine's reactivity when Livewire morphs in
+     * a new page of rows without any of the entangled properties changing.
+     *
+     * @var array<int, string>
+     */
+    public array $pageIds = [];
 
     public function mount(): void
     {
@@ -77,6 +104,39 @@ class StudentIndex extends Component
     {
         abort_unless(auth()->user()->can('students.delete'), 403);
 
+        $this->deleteMany($ids, $userService);
+
+        $this->selectAllMatching = false;
+
+        unset($this->students);
+    }
+
+    /**
+     * Deletes every student matching the current filters, not just those
+     * on the currently visible page — backs the "select all matching"
+     * bulk-delete option.
+     */
+    public function destroyAllMatching(UserService $userService): void
+    {
+        abort_unless(auth()->user()->can('students.delete'), 403);
+
+        $ids = $userService->idsMatching([
+            'search' => $this->search,
+            'role_id' => $this->studentRoleId(),
+        ]);
+
+        $this->deleteMany($ids, $userService);
+
+        $this->selectAllMatching = false;
+
+        unset($this->students);
+    }
+
+    /**
+     * @param  array<int, string>  $ids
+     */
+    private function deleteMany(array $ids, UserService $userService): void
+    {
         $this->successMessage = null;
         $this->errorMessage = null;
 
@@ -105,8 +165,6 @@ class StudentIndex extends Component
         if ($errors !== []) {
             $this->errorMessage = collect($errors)->unique()->join(' ');
         }
-
-        unset($this->students);
     }
 
     public function updating(string $property): void
@@ -114,6 +172,12 @@ class StudentIndex extends Component
         if ($property === 'search') {
             $this->sort = 'name';
             $this->direction = 'asc';
+            $this->selectAllMatching = false;
+            $this->resetPage();
+        }
+
+        if ($property === 'perPage') {
+            $this->resetPage();
         }
     }
 
@@ -159,8 +223,12 @@ class StudentIndex extends Component
     {
         $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
 
+        $students = $this->studentsLoaded ? $this->students : null;
+        $this->matchingCount = $students?->total() ?? 0;
+        $this->pageIds = $students?->pluck('id')->values()->all() ?? [];
+
         return view('livewire.students.student-index', [
-            'students' => $this->studentsLoaded ? $this->students : null,
+            'students' => $students,
         ])
             ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => 'Students'])
             ->section($isAdminUser ? 'admin-content' : 'app-content');

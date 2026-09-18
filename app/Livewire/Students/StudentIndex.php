@@ -4,6 +4,7 @@ namespace App\Livewire\Students;
 
 use App\Enums\RoleName;
 use App\Repositories\Role\RoleRepositoryInterface;
+use App\Services\UserLoginLinkService;
 use App\Services\UserService;
 use App\Support\CurrentSchool;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -31,6 +32,8 @@ class StudentIndex extends Component
     public ?string $successMessage = null;
 
     public ?string $errorMessage = null;
+
+    public ?string $regeneratedLoginUrl = null;
 
     /**
      * Whether the students table has been loaded yet. Kept false through
@@ -80,6 +83,17 @@ class StudentIndex extends Component
         $this->errorMessage = null;
 
         unset($this->students);
+    }
+
+    public function regenerateLoginLink(string $id, UserService $userService, UserLoginLinkService $userLoginLinkService): void
+    {
+        abort_unless(auth()->user()->can('students.edit'), 403);
+
+        $student = $userService->find($id);
+        abort_if($student === null, 404);
+
+        $link = $userLoginLinkService->createLink($student, config('students.login_link_ttl_minutes', 2880));
+        $this->regeneratedLoginUrl = $userLoginLinkService->buildLoginUrl($link);
     }
 
     private function currentSchoolId(): ?string

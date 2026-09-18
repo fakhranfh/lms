@@ -175,6 +175,54 @@ test('editing a student updates their profile', function () {
     expect($student->refresh()->name)->toBe('New Name');
 });
 
+test('regenerating a login link sets a new login url for the student', function () {
+    $actor = actingAsStudentManager(['students.edit']);
+    $student = makeStudent($actor);
+
+    $component = Livewire::actingAs($actor)->test(StudentForm::class, ['id' => $student->id])
+        ->call('regenerateLoginLink');
+
+    expect($component->get('loginUrl'))->not->toBeNull();
+    expect(UserLoginLink::where('user_id', $student->id)->exists())->toBeTrue();
+});
+
+test('regenerating a login link without permission is forbidden', function () {
+    $actor = actingAsStudentManager(['students.view']);
+    $student = makeStudent($actor);
+
+    Livewire::actingAs($actor)->test(StudentForm::class, ['id' => $student->id])
+        ->call('regenerateLoginLink')
+        ->assertForbidden();
+});
+
+test('regenerating a login link is unavailable when creating a student', function () {
+    $actor = actingAsStudentManager(['students.create', 'students.edit']);
+
+    Livewire::actingAs($actor)->test(StudentForm::class)
+        ->call('regenerateLoginLink')
+        ->assertNotFound();
+});
+
+test('regenerating a login link from the students index sets a new login url', function () {
+    $actor = actingAsStudentManager(['students.view', 'students.edit']);
+    $student = makeStudent($actor);
+
+    $component = Livewire::actingAs($actor)->test(StudentIndex::class)
+        ->call('regenerateLoginLink', $student->id);
+
+    expect($component->get('regeneratedLoginUrl'))->not->toBeNull();
+    expect(UserLoginLink::where('user_id', $student->id)->exists())->toBeTrue();
+});
+
+test('regenerating a login link from the students index without permission is forbidden', function () {
+    $actor = actingAsStudentManager(['students.view']);
+    $student = makeStudent($actor);
+
+    Livewire::actingAs($actor)->test(StudentIndex::class)
+        ->call('regenerateLoginLink', $student->id)
+        ->assertForbidden();
+});
+
 test('editing a student without permission is forbidden', function () {
     $actor = actingAsStudentManager(['students.view']);
     $student = makeStudent($actor);

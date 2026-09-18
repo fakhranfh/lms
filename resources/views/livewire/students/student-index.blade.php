@@ -66,37 +66,40 @@
         />
     @endif
 
+    <!-- Regenerated Login Link Modal -->
+    @if ($regeneratedLoginUrl)
+        <div wire:key="login-url-modal-{{ md5($regeneratedLoginUrl) }}" x-data="{ copied: false, show: true }">
+            <x-ui.modal show="show" onClose="show = false" maxWidth="max-w-lg">
+                <div class="bg-surface border border-outline-variant rounded-lg shadow-lg p-space-lg space-y-space-md">
+                    <h3 class="font-headline-sm text-headline-sm text-on-surface">New Login Link Generated</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant">Share this one-time login link with the student:</p>
+                    <div class="flex items-center gap-space-sm">
+                        <input type="text" readonly value="{{ $regeneratedLoginUrl }}" x-ref="loginUrlInput"
+                            class="flex-1 px-space-md py-space-sm border border-outline-variant rounded-lg font-body-sm text-body-sm bg-surface">
+                        <button type="button"
+                            @click="navigator.clipboard.writeText($refs.loginUrlInput.value); copied = true; setTimeout(() => copied = false, 2000)"
+                            class="px-space-md py-space-sm bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity">
+                            <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                        </button>
+                    </div>
+                    <div class="flex justify-end pt-space-sm">
+                        <button type="button" @click="show = false" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </x-ui.modal>
+        </div>
+    @endif
+
     <!-- Generate Students Modal -->
     @if (app()->environment(['local', 'testing']))
         @can('students.create')
-            <div x-show="showGenerateModal" x-cloak class="fixed inset-0 z-50">
-                <div
-                    @click="showGenerateModal = false"
-                    class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-                    x-transition:enter="ease-out duration-300"
-                    x-transition:enter-start="opacity-0"
-                    x-transition:enter-end="opacity-100"
-                    x-transition:leave="ease-in duration-200"
-                    x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                ></div>
-
-                <div
-                    class="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto"
-                    x-transition:enter="ease-out duration-300"
-                    x-transition:enter-start="opacity-0 scale-95"
-                    x-transition:enter-end="opacity-100 scale-100"
-                    x-transition:leave="ease-in duration-200"
-                    x-transition:leave-start="opacity-100 scale-100"
-                    x-transition:leave-end="opacity-0 scale-95"
-                >
-                    <div class="bg-surface border border-outline-variant rounded-lg shadow-lg max-w-2xl w-full my-space-lg" @click.stop>
-                        <div class="p-space-lg">
-                            <livewire:students.student-generate :embedded="true" wire:key="student-generate-modal" />
-                        </div>
-                    </div>
+            <x-ui.modal show="showGenerateModal" onClose="showGenerateModal = false" maxWidth="max-w-2xl">
+                <div class="bg-surface border border-outline-variant rounded-lg shadow-lg p-space-lg">
+                    <livewire:students.student-generate :embedded="true" wire:key="student-generate-modal" />
                 </div>
-            </div>
+            </x-ui.modal>
         @endcan
     @endif
 </div>

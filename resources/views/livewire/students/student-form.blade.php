@@ -1,14 +1,8 @@
 @section('title', $this->isEditing() ? 'Edit Student' : 'New Student')
 
-@php
-    $userInitial = strtoupper(substr($name ?: 'S', 0, 1));
-    $defaultAvatar = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%231E3A8A%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22 font-size=%2250%22 font-weight=%22bold%22%3E' . $userInitial . '%3C/text%3E%3C/svg%3E';
-    $savedPhotoSrc = $photoPath ?: $defaultAvatar;
-@endphp
-
 <div class="w-full" x-data="{
         showErrorModal: false, errorMessage: '',
-        savedPhotoSrc: @js($savedPhotoSrc),
+        savedPhotoSrc: @js($this->savedPhotoSrc()),
         password: @js($password),
         passwordConfirmation: @js($password_confirmation),
         isEditing: @js($this->isEditing()),
@@ -38,7 +32,7 @@
 
     @if ($loginUrl)
         <div class="mb-space-lg px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg space-y-space-sm" x-data="{ copied: false }">
-            <p class="font-label-md text-label-md text-success">Student created. Share this one-time login link:</p>
+            <p class="font-label-md text-label-md text-success">{{ $this->isEditing() ? 'New login link generated. Share this one-time login link:' : 'Student created. Share this one-time login link:' }}</p>
             <div class="flex items-center gap-space-sm">
                 <input type="text" readonly value="{{ $loginUrl }}" x-ref="loginUrlInput"
                     class="flex-1 px-space-md py-space-sm border border-outline-variant rounded-lg font-body-sm text-body-sm bg-surface">
@@ -56,7 +50,7 @@
         <div class="flex flex-col md:flex-row items-center md:items-start gap-space-lg pb-space-lg border-b border-outline-variant">
             <label for="photo" class="relative group/avatar cursor-pointer flex-shrink-0">
                 <div class="w-24 h-24 rounded-full overflow-hidden border-4 border-surface-container-low shadow-sm relative hover:shadow-lg transition-shadow">
-                    <img x-ref="photoPreview" src="{{ $savedPhotoSrc }}" alt="Photo" class="w-full h-full object-cover">
+                    <img x-ref="photoPreview" src="{{ $this->savedPhotoSrc() }}" alt="Photo" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-on-surface/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-200">
                         <span class="material-symbols-outlined text-surface text-[28px]">photo_camera</span>
                     </div>
@@ -139,21 +133,35 @@
             @enderror
         </div>
 
-        @unless ($this->isEditing())
-            <div>
-                <label for="loginLinkTtlDays" class="block font-label-md text-label-md text-on-surface mb-space-xs">
-                    Login link valid for (days)
-                </label>
-                <input type="number" wire:model="loginLinkTtlDays" id="loginLinkTtlDays" min="1" max="365"
-                    class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md border-outline-variant">
+        <div>
+            <label for="loginLinkTtlDays" class="block font-label-md text-label-md text-on-surface mb-space-xs">
+                Login link valid for (days)
+            </label>
+            <input type="number" wire:model="loginLinkTtlDays" id="loginLinkTtlDays" min="1" max="365"
+                class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md border-outline-variant">
+            @if ($this->isEditing())
+                @can('students.edit')
+                    <div class="mt-space-sm flex items-center gap-space-md">
+                        <button type="button" wire:click="regenerateLoginLink" wire:loading.attr="disabled" wire:target="regenerateLoginLink"
+                            class="px-space-md py-space-xs border border-outline-variant rounded-lg font-label-sm text-label-sm text-primary hover:bg-surface-container-low transition-colors inline-flex items-center gap-space-xs">
+                            <span class="material-symbols-outlined text-[16px]">refresh</span>
+                            <span wire:loading.remove wire:target="regenerateLoginLink">Generate New Login Link</span>
+                            <span wire:loading wire:target="regenerateLoginLink">Generating...</span>
+                        </button>
+                    </div>
+                @endcan
+                <p class="mt-space-xs font-body-sm text-body-sm text-secondary">
+                    Generate a new one-time link if the student needs another way to log in and set their password.
+                </p>
+            @else
                 <p class="mt-space-xs font-body-sm text-body-sm text-secondary">
                     The student will use this one-time link to log in and set their own password.
                 </p>
-                @error('loginLinkTtlDays')
-                    <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
-                @enderror
-            </div>
-        @endunless
+            @endif
+            @error('loginLinkTtlDays')
+                <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
+            @enderror
+        </div>
 
         <div class="flex items-center gap-space-md">
             <button type="submit" :disabled="formInvalid" wire:loading.attr="disabled" wire:target="save,photo" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center gap-space-sm">

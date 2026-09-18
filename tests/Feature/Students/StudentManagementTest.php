@@ -383,3 +383,11 @@ test('force password change requires matching confirmation', function () {
         ->call('save')
         ->assertHasErrors(['password']);
 });
+
+test('force password change page offers a logout option', function () {
+    $user = User::factory()->create(['must_change_password' => true]);
+
+    Livewire::actingAs($user)->test(ForcePasswordChange::class)
+        ->assertSeeHtml(route('logout'))
+        ->assertSee('Logout');
+});

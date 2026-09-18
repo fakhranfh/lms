@@ -1,17 +1,15 @@
-<x-full-page-form
-    max-width="max-w-md"
-    x-data="{
+@section('title', 'Set a New Password')
+
+<x-full-page-form max-width="max-w-md">
+<div x-data="{
         password: @js($password),
         passwordConfirmation: @js($password_confirmation),
-        passwordTouched: false,
-        passwordConfirmationTouched: false,
         submitAttempted: false,
         get passwordMismatch() { return this.passwordConfirmation.length > 0 && this.password !== this.passwordConfirmation },
-        get passwordInvalid() { return this.password === '' || window.PasswordPolicy.invalid(this.password) },
+        get passwordInvalid() { return this.password === '' || window.PasswordPolicy?.invalid(this.password) },
         get passwordConfirmationInvalid() { return this.passwordMismatch || this.passwordConfirmation === '' },
         get formInvalid() { return this.passwordInvalid || this.passwordConfirmationInvalid },
-    }"
->
+    }" class="space-y-space-lg">
     <div>
         <h1 class="font-headline-sm text-headline-sm text-on-surface">Set a New Password</h1>
         <p class="font-body-sm text-body-sm text-secondary mt-space-xs">
@@ -23,10 +21,10 @@
         <div>
             <label for="password" class="block font-label-md text-label-md text-on-surface mb-space-xs">New Password</label>
             <input type="password" wire:model="password" id="password" autocomplete="new-password"
-                x-on:input="password = $event.target.value" x-on:blur="passwordTouched = true"
+                x-on:input="password = $event.target.value"
                 class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md"
-                :class="(passwordTouched || submitAttempted) && passwordInvalid ? 'border-error' : 'border-outline-variant'">
-            <p x-show="(passwordTouched || submitAttempted) && passwordInvalid" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error" x-text="window.PasswordPolicy.message">
+                :class="submitAttempted && passwordInvalid ? 'border-error' : 'border-outline-variant'">
+            <p x-show="submitAttempted && passwordInvalid" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error" x-text="window.PasswordPolicy?.message ?? 'Password does not meet the requirements.'">
             </p>
             @error('password')
                 <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
@@ -36,10 +34,10 @@
         <div>
             <label for="password_confirmation" class="block font-label-md text-label-md text-on-surface mb-space-xs">Confirm Password</label>
             <input type="password" wire:model="password_confirmation" id="password_confirmation" autocomplete="new-password"
-                x-on:input="passwordConfirmation = $event.target.value" x-on:blur="passwordConfirmationTouched = true"
+                x-on:input="passwordConfirmation = $event.target.value"
                 class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md"
-                :class="(passwordConfirmationTouched || submitAttempted) && passwordConfirmationInvalid ? 'border-error' : 'border-outline-variant'">
-            <p x-show="(passwordConfirmationTouched || submitAttempted) && passwordConfirmationInvalid" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error">
+                :class="submitAttempted && passwordConfirmationInvalid ? 'border-error' : 'border-outline-variant'">
+            <p x-show="submitAttempted && passwordConfirmationInvalid" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error">
                 Passwords must match.
             </p>
             @error('password_confirmation')
@@ -57,4 +55,12 @@
             <span wire:loading wire:target="save">Saving...</span>
         </button>
     </form>
+
+    <form method="POST" action="{{ route('logout') }}" class="mt-space-md">
+        @csrf
+        <button type="submit" class="w-full px-space-lg py-space-sm border border-outline-variant rounded-lg font-label-md text-label-md text-secondary hover:bg-surface-container-low transition-colors">
+            Logout
+        </button>
+    </form>
+</div>
 </x-full-page-form>

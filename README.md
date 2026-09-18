@@ -2,7 +2,7 @@
 
 A production-ready Laravel starter kit built for developers who need **full control** over their application — not an opinionated admin panel.
 
-This boilerplate generates clean, conventional Laravel code (controllers, Blade views, form requests) that you own and can freely customize without being locked into a third-party component ecosystem. It follows a strict **Repository Pattern** architecture, ships with server-side DataTables, and includes a complete testing suite (Pest, Dusk, K6) — giving you a solid foundation for long-term, maintainable applications.
+This boilerplate generates clean, conventional Laravel code (controllers, Blade views, form requests) that you own and can freely customize without being locked into a third-party component ecosystem. It follows a strict **Repository Pattern** architecture, ships with a server-rendered Livewire data table component, and includes a complete testing suite (Pest, Dusk, K6) — giving you a solid foundation for long-term, maintainable applications.
 
 ## Tech Stack
 
@@ -100,7 +100,7 @@ php artisan make:rsc Product --label="Products"
 - Service Layer
 - Livewire components: `Index`, `Create`, `Edit` (under `app/Livewire/{Plural}`)
 - Form Requests (Store + Update)
-- Blade views under `resources/views/livewire/{plural-kebab}`, index rendered via the shared `<x-livewire-data-table>` component
+- Blade views under `resources/views/livewire/{plural-kebab}`, index rendered via the shared `<x-ui.livewire-data-table>` component
 - Plain `Route::get` entries pointing at the Livewire components
 - CRUD permission migration (view/create/edit/delete), assigned to the `admin` role
 - Sidebar menu item
@@ -128,7 +128,7 @@ php artisan delete:rsc Product
 
 ### Data Tables
 
-Generated index pages render through the shared `<x-livewire-data-table>` Blade component (`resources/views/components/livewire-data-table.blade.php`), backed by Livewire — not a jQuery/AJAX plugin:
+Generated index pages render through the shared `<x-ui.livewire-data-table>` Blade component (`app/View/Components/Ui/LivewireDataTable.php`), backed by Livewire — not a jQuery/AJAX plugin:
 
 - Server-rendered, Livewire-driven sorting (`wire:click="sortBy(...)"`)
 - Column-aware filter UI (text, date range, enum dropdown) with Apply / Reset
@@ -136,8 +136,6 @@ Generated index pages render through the shared `<x-livewire-data-table>` Blade 
 - Standard Laravel pagination
 - Edit / Delete action buttons per row, with a single global delete-confirmation modal (in `resources/views/layouts/app.blade.php`)
 - Dark mode compatible
-
-> Integration details and customization: [`docs/DATATABLE_INTEGRATION.md`](docs/DATATABLE_INTEGRATION.md) *(describes an earlier jQuery DataTables.js implementation — see the component source above for the current Livewire-based table)*
 
 ---
 
@@ -257,8 +255,6 @@ QUEUE_CONNECTION=database
 | [`docs/CRUD_GENERATOR_SHOWCASE.md`](docs/CRUD_GENERATOR_SHOWCASE.md) | `make:rsc` generated output — screenshots and architecture |
 | [`docs/CRUD_GENERATOR.md`](docs/CRUD_GENERATOR.md) | `make:rsc` command — full reference |
 | [`docs/REPOSITORY_PATTERN.md`](docs/REPOSITORY_PATTERN.md) | Architecture guide for the repository layer |
-| [`docs/DATATABLE_INTEGRATION.md`](docs/DATATABLE_INTEGRATION.md) | DataTables server-side integration |
-| [`docs/DATATABLE_EXAMPLE.md`](docs/DATATABLE_EXAMPLE.md) | DataTables usage examples |
 | [`docs/dusk/TESTING.md`](docs/dusk/TESTING.md) | Dusk browser test setup and guide |
 
 ---

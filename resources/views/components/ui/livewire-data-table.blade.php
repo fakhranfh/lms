@@ -1,5 +1,5 @@
 <div {{ $attributes->merge(['class' => 'space-y-space-md']) }}>
-    @if ($showPagination && $items && (($isPaginated && $items->hasPages()) || $perPage !== null))
+    @if ($showPagination && $hasItems && (($isPaginated && $items->hasPages()) || $perPage !== null))
         <div class="flex items-center gap-space-md">
             @if ($isPaginated && $items->hasPages())
                 <div class="flex-1">
@@ -21,7 +21,7 @@
     @endif
 
     <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-        @unless ($items)
+        @unless ($hasItems)
             <div>
                 <div class="grid border-b border-outline-variant bg-surface-container-lowest" style="grid-template-columns: repeat({{ $columnCount }}, minmax(0, 1fr));">
                     @for ($i = 0; $i < $columnCount; $i++)
@@ -77,7 +77,9 @@
                                     <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">{{ $column['label'] }}</th>
                                 @endif
                             @endforeach
-                            <th scope="col" class="px-space-lg py-space-md text-right font-label-md text-label-md text-secondary uppercase">Actions</th>
+                            @if ($showActionsColumn)
+                                <th scope="col" class="px-space-lg py-space-md text-right font-label-md text-label-md text-secondary uppercase">Actions</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -95,7 +97,7 @@
         @endunless
     </div>
 
-    @if ($showPagination && $items && $isPaginated && $items->hasPages())
+    @if ($showPagination && $hasItems && $isPaginated && $items->hasPages())
         {{ $items->links() }}
     @endif
 </div>

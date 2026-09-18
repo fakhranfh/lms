@@ -348,7 +348,7 @@ database/
 └── migrations/xxxx_add_products_permissions_and_assign_to_admin.php
 
 resources/views/livewire/products/
-├── product-index.blade.php   # List view via <x-livewire-data-table>
+├── product-index.blade.php   # List view via <x-ui.livewire-data-table>
 ├── product-create.blade.php  # Create form
 └── product-edit.blade.php    # Edit form
 ```
@@ -704,5 +704,4 @@ The easiest way to deploy a Laravel application to production is [Laravel Cloud]
 | [`docs/USERGUIDE.md`](USERGUIDE.md) | End-user feature walkthrough with screenshots |
 | [`docs/CRUD_GENERATOR.md`](CRUD_GENERATOR.md) | Full `make:rsc` command reference |
 | [`docs/REPOSITORY_PATTERN.md`](REPOSITORY_PATTERN.md) | Repository layer architecture guide |
-| [`docs/DATATABLE_INTEGRATION.md`](DATATABLE_INTEGRATION.md) | Server-side DataTables integration |
 | [`docs/dusk/TESTING.md`](dusk/TESTING.md) | Dusk browser test setup and guide |

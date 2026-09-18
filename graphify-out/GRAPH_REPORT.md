@@ -1,31 +1,31 @@
 # Graph Report - lms  (2026-09-18)
 
 ## Corpus Check
-- 1301 files · ~426,543 words
+- 1293 files · ~420,305 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 6587 nodes · 14590 edges · 714 communities (486 shown, 228 thin omitted)
-- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 1233 edges (avg confidence: 0.8)
+- 6562 nodes · 14561 edges · 698 communities (470 shown, 228 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 1231 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `3c93c257`
+- Built from commit: `2b817647`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - Livewire\Component
-- GroupMember
+- Group
 - AssessmentService
 - Illuminate\Database\Eloquent\Factories\Factory
 - User
 - PaymentGateway
-- DemoLmsAccess
+- Illuminate\Support\Collection
 - MediaLibraryItem
-- Quiz
+- AssessmentFinalExamShowTest
 - VideoConference
-- AssessmentIndex
+- BuildsGradebookViewData.php
 - SchoolService
 - School
 - PaymentGatewayRepositoryInterface.php
@@ -45,15 +45,15 @@
 - CoursePerson
 - AssessmentQuestionOption
 - R2StorageService
-- QuizInstruction
+- AssessmentQuizForm
 - AssessmentQuestionScore
 - GradebookEntry
-- Group
-- Period
-- .seedSchoolCourses
-- ProctorSession
+- GroupRepository
+- ProctorSessionService
+- CourseService
+- ProctorExamShowTest
 - Assessment
-- AssessmentAnswer
+- AssessmentAnswerService
 - AssessmentQuestionAnswer
 - Attendance
 - Forum
@@ -61,36 +61,36 @@
 - VideoConferenceParticipation
 - XenditGateway
 - SyllabusRubricCell
-- CurrentSchool.php
+- Illuminate\Http\UploadedFile
 - FinalExam
 - AssessmentAttemptService
-- AppServiceProvider.php
+- ForumCommentLike
 - CacheManagementService
 - PricingTier
-- RoleService
+- RoleEdit
 - SyllabusEvaluationActivity
 - StudentIndex
 - SchoolTier
-- AttendanceIndex
+- AttendanceDraftService
 - SyllabusEvaluation
 - SyllabusLearningOutcome
-- ForumThreadRead
+- ForumThreadRepositoryInterface.php
 - SyllabusClassPolicy
-- RoleName.php
-- TransactionSummaryService
+- User.php
+- Illuminate\Pagination\LengthAwarePaginator
 - SyllabusRubricKeyIndicator
-- PaymentGatewayConfigService
+- PaymentGatewayCredential
 - ChangePassword
 - StorageUsageLog
-- SessionRepository
+- Illuminate\Contracts\Queue\ShouldQueue
 - CourseFormTest
 - Database Performance Best Practices
-- DetectUserTimezoneJob.php
+- IpGeolocationService
 - Laravel Best Practices Skill (index)
 - LivewireGenerator
 - Illuminate\Filesystem\Filesystem
-- R2StorageService.php
-- IpGeolocationService
+- MediaLibraryItemFactory
+- ProctorExamShow
 - MakeRepositoryServiceController
 - Payment Gateway Response Format Standard
 - Course Restructure Overview
@@ -103,85 +103,85 @@
 - Laravel Best Practices Skill
 - BladeCreateEditStubGenerator
 - ForumThread
-- PaymentWebhookService
+- UserLoginLinkService
 - composer.json
 - scripts
 - ForumComment
 - Task Scheduling Best Practices
-- TierChangeService
+- PaymentGatewayTypeRepositoryInterface.php
 - SyllabusRubricProficiencyLevel
-- Illuminate\Support\Collection
+- AssessmentQuestionAttemptScoringService
 - Syllabus
 - Feature Testing Documentation (Laravel Dusk)
 - syllabus-form.blade.php
 - StorageMonitoringService
 - Illuminate\Database\Eloquent\Model
-- AssessmentQuizFormTest
-- ProctorSnapshot
+- AssessmentQuizShowTest
+- ProctorSnapshotService
 - UserLoginLink
 - Blade & Views Best Practices
 - Pest Testing 4 Skill
 - Laravel Best Practices Skill
-- TierChangeController
-- Illuminate\Pagination\LengthAwarePaginator
+- MediaLibraryIndex
+- AppServiceProvider.php
 - ExamReferenceFile
 - SessionProgress
 - Database Performance Best Practices Rules
 - tenants table
-- RootDomains
+- ProctorSessionStatusService
 - Pest Testing 4 Skill
 - .response
-- XenditChannel.php
-- School.php
+- PaymentChannel.php
+- PaymentStatus.php
 - Course
 - Architecture Best Practices Rules
 - Livewire Development Skill
 - require-dev
-- DataTables Integration Guide (legacy)
+- ForumCommentRepository
 - App\Models\Role
 - exam_type enum (open_book/closed_book/take_home)
 - RepositoryGenerator
 - SessionSubtopic
-- AssessmentSeeder
+- Quiz
 - Illuminate\Database\Eloquent\Collection
-- PeopleIndexTest
+- RichTextAttachmentCleanupService
 - require
 - MakeRepositoryServiceController Console Command
-- Repository Interface pattern
+- AttendanceDerivationService
 - password-reset-test.js
 - Fortify Development Skill
 - FormRequestGenerator
 - FortifyServiceProvider.php
-- GroupRepositoryInterface.php
+- AttendanceIndex
 - Error Handling Best Practices
 - Lesson Model
-- PricingTierService
+- AttendanceService
 - command
 - MediaLibraryService
 - logout-test.js
-- Illuminate\Contracts\Queue\ShouldQueue
-- ForumCommentRepositoryInterface.php
+- PendingEmailVerificationMail
+- AttendanceRepositoryInterface.php
 - Illuminate\Console\Command
-- AssessmentAttempt.php
+- TestCase
 - Caching Best Practices Rules
 - validate-repository-pattern.php
 - Events & Notifications Best Practices Rules
 - lesson_materials table / Multi-Material System
-- CRUD_GENERATOR_SHOWCASE.md — Generated Output Showcase
+- XenditChannel.php
 - Caching Best Practices
 - pest-testing Skill
 - LivewireFormFieldsBuilder
 - AssessmentPersonalShowTest
-- Illuminate\Database\Seeder
-- GroupMemberRepositoryInterface.php
+- CoursePerson.php
+- AssessmentForm
 - Migration Best Practices Rules
 - Laravel Pulse Development Skill
 - setup
 - AI-Powered LMS PRD
 - School Registration Development Plan
-- QuizInstructionRepositoryInterface.php
+- UserForm
 - Laravel Fortify Development Skill
-- AssessmentFinalExamFormTest
+- Illuminate\Database\Eloquent\Relations\HasOne
 - Eloquent Best Practices
 - login-test.js
 - register-test.js
@@ -189,18 +189,18 @@
 - AssessmentScore
 - LivewireEditStubGenerator
 - GradingResponse
-- DemoLmsAccessRepositoryInterface.php
+- DemoLmsAccessService
 - SessionService
 - 2026_08_01_054815_add_slug_to_schools_table.php
 - Eloquent Best Practices Rules
 - AssessmentFormTest
 - config
-- RichTextAttachmentCleanupService
+- ForumCommentService
 - AI_GRADING.md — AI Grading Pipeline
 - ASSESSMENT.md — Assessment & Submission State Machine
 - Payment Gateway Integration Design v2.0
 - Prompt Injection Mitigation
-- RoleRepositoryInterface.php
+- UserImport
 - ShouldQueue on Mailable Class
 - Use Form Request Classes
 - ForumMonitoringIndexTest
@@ -208,11 +208,11 @@
 - Course Restructure — Assessment: Assignment Schema (shared)
 - SessionFormTest
 - Tailwind CSS Development Skill
-- PaymentGatewayCredential
+- StudentGenerate
 - UserFactory
 - GradeSubmissionJob
 - App\Observers\AuditableObserver
-- /route/data/list API Endpoint (legacy)
+- GradebookGradeBandsTest
 - assignments table
 - SyllabusIndex
 - Illuminate\Foundation\Http\FormRequest
@@ -220,18 +220,18 @@
 - session-form.blade.php
 - whereIn + Subquery over whereHas
 - Avoid Hardcoded Table Names in Queries
-- QuizInstructionService
+- QuizInstruction
 - Model
-- SchoolAdminRegister
+- SchoolAdminRegister.php
 - JsonLineFormatter.php
 - DeleteRepositoryServiceController
 - psr-4
 - LivewireIndexStubGenerator
 - AuditLog
 - UserService
-- CourseComingSoonTest
+- ConfigureR2Cors.php
 - CalculateStorageUsageJob
-- Getting Started Complete Guide
+- UpdateProfileRequest
 - Never Modify Deployed Migrations
 - sessions-index-student.blade.php
 - landing-page.js
@@ -241,11 +241,11 @@
 - Always Set Explicit Timeouts
 - Call Event::fake() After Factory Setup
 - GradingRequest
-- LivewireIndexViewStubGenerator
+- UserRoles
 - EditProfile
 - AssessmentTeamShowTest
 - post-create-project-cmd
-- 2026_07_25_000003_rebuild_demo_school_with_school_scoped_roles.php
+- UpdateUserRolesRequest
 - 2026_07_16_221238_add_label_to_tier_features_table.php
 - 2026_07_31_043940_rename_instructor_columns_and_role_to_teacher.php
 - SubmissionController
@@ -259,10 +259,10 @@
 - Define Attribute Casts
 - onOneServer() on Multi-Server Deployments
 - Tailwind CSS Development Skill
-- BladeIndexStubGenerator
+- ForcePasswordChange
 - validate-blade-pattern.php
 - audit-log-table.blade.php
-- TransactionTable
+- 2026_08_07_000001_drop_general_forums.php
 - Course Entity (multi-component container)
 - Implement ShouldQueue on Mailable
 - Escape Output to Prevent XSS
@@ -382,13 +382,12 @@
 - tailwindcss-development Skill
 - robots.txt (allow-all)
 - rich-text-editor.js
-- SyllabusIndexStudentTest
 - Events & Notifications Best Practices
 - file-sample_150kB.pdf (sample PDF placeholder)
 - DuskTestCase
 - AuditLogCleanupCommand.php
 - assessment-final-exam-show.blade.php
-- PricingTierCreate.php
+- BillingPeriod.php
 - Fortify Development Skill
 - forum-index.blade.php
 - StudentForm
@@ -396,7 +395,6 @@
 - MigrationGenerator
 - SyllabusIndexTest
 - forum-index-empty.blade.php
-- AppServiceProvider
 - forum-thread-show.blade.php
 - HomePage
 - AttendanceIndexTest
@@ -410,9 +408,8 @@
 - forum-index-placeholder.blade.php
 - assessment-index.blade.php
 - assessment-index-placeholder.blade.php
-- ForumCommentLikeControllerTest
 - AssessmentAttempt
-- User.php
+- AssessmentType.php
 - Illuminate\Contracts\Pagination\LengthAwarePaginator
 - UpdateUserProfileInformation.php
 - proctor-quiz-questions-form.blade.php
@@ -428,7 +425,6 @@
 - assessment-attendance-show.blade.php
 - assessment-quiz-show.blade.php
 - attendance-index-placeholder.blade.php
-- 2026_07_14_125456_create_pricing_tier_permissions.php
 - Local HTTPS for *.lms.local
 - assessment-final-exam-form.blade.php
 - gradebook-index.blade.php
@@ -442,22 +438,12 @@
 - DemoLmsAccessFactory
 - CoursePersonFactory
 - assessments/table.blade.php
-- 2026_07_29_040710_create_settings_permissions.php
 - assessment-personal-grade.blade.php
 - assessment-team-grade.blade.php
 - forum-monitoring-index.blade.php
 - assessment-final-exam-grade.blade.php
-- 2026_07_31_044252_add_users_create_edit_import_permissions.php
 - forum-monitoring-index-placeholder.blade.php
-- 2026_08_05_000002_add_session_permissions.php
-- SubscriptionTier
-- 2026_08_10_000001_add_assessment_permissions.php
 - DemoStudentEnrollmentSeeder
-- SessionAssessmentSeeder.php
-- 2026_09_17_050458_add_students_permissions.php
-- 2026_08_05_000004_add_syllabus_permissions.php
-- 2026_08_06_000001_add_forum_permissions.php
-- 2026_08_06_000001_drop_modules_lessons_assignments_submissions_tables.php
 - gradebook-grade-bands.blade.php
 - gradebook-show.blade.php
 - gradebook-weights.blade.php
@@ -490,8 +476,8 @@
   .github/skills/laravel-best-practices/rules/security.md → docs/CONTENT_ENGINE.md
 - `Password Change Success Page (Laravel 13 Boilerplate)` --semantically_similar_to--> `Course Entity (multi-component container)`  [AMBIGUOUS] [semantically similar]
   storage/password-change-success.html → docs/tasks/course-restructure-overview.md
-- `down()` --calls--> `Permission`  [INFERRED]
-  database/migrations/2026_07_14_125456_create_pricing_tier_permissions.php → app/Models/Permission.php
+- `up()` --calls--> `Forum`  [INFERRED]
+  database/migrations/2026_08_07_000001_drop_general_forums.php → app/Models/Forum.php
 
 ## Import Cycles
 - None detected.
@@ -509,174 +495,165 @@
 - **Multi-Material Upload, Storage, and Completion Flow** — docs_content_engine_lesson_materials_table, docs_content_engine_r2storageservice, docs_content_engine_lessoncompletionservice, docs_content_engine_storagemonitoringservice, docs_content_engine_calculatestorageusagejob [EXTRACTED 1.00]
 - **Submission Grading Lifecycle (Assessment + AI Grading)** — docs_assessment_submissionstatus_enum, docs_ai_grading_gradesubmissionjob, docs_ai_grading_failedjobhandler, docs_assessment_submissionstatuschip, docs_assessment_submissioncontroller [INFERRED 0.85]
 - **make:rsc CRUD Scaffolding Pipeline** — docs_crud_generator_makerepositoryservicecontroller, docs_crud_generator_livewiregenerator, docs_crud_generator_routegenerator, docs_crud_generator_permissionmigrationgenerator, docs_crud_generator_serviceproviderbindinggenerator [EXTRACTED 1.00]
-- **Legacy DataTables.js Documentation Set (superseded by Livewire)** — docs_datatable_changes_datatable_integration, docs_datatable_example_make_rsc_generator, docs_datatable_integration_guide, docs_datatable_fixes_datatable_fixes_doc, docs_datatable_final_status_ready_for_use [EXTRACTED 1.00]
 - **Payment Gateway Layered Architecture (Registry -> Factory -> Implementations -> Service)** — docs_payment_gateway_design_paymentgatewayregistry, docs_payment_gateway_design_paymentgatewayfactory, docs_payment_gateway_design_basepaymentgateway, docs_payment_gateway_design_subscriptionpaymentservice, docs_payment_gateway_design_paymentwebhookcontroller [EXTRACTED 1.00]
 - **Repository Pattern Three-Tier Flow (Controller/Livewire -> Service -> Repository)** — docs_repository_pattern_controller_layer, docs_repository_pattern_service_class, docs_repository_pattern_repository_interface, docs_repository_pattern_repository_implementation, docs_repository_pattern_livewire_as_controller_rule [EXTRACTED 1.00]
 - **Course Restructure Component Documentation Set** — docs_tasks_course_restructure_overview_course_restructure_overview, docs_tasks_course_restructure_schema_course_restructure_schema, docs_tasks_course_restructure_session_course_restructure_session, docs_tasks_course_restructure_syllabus_course_restructure_syllabus, docs_tasks_course_restructure_forum_course_restructure_forum, docs_tasks_course_restructure_assessment_course_restructure_assessment, docs_tasks_course_restructure_gradebook_course_restructure_gradebook, docs_tasks_course_restructure_people_course_restructure_people, docs_tasks_course_restructure_attendance_course_restructure_attendance, docs_tasks_course_restructure_group_course_restructure_group, docs_tasks_course_restructure_proctor_course_restructure_proctor [EXTRACTED 1.00]
 - **Assessment -> Proctor Review -> Gradebook Scoring Flow** — docs_tasks_course_restructure_assessment_course_restructure_assessment, docs_tasks_course_restructure_proctor_course_restructure_proctor, docs_tasks_course_restructure_gradebook_course_restructure_gradebook [INFERRED 0.85]
 - **Session Video Conference + Forum Participation Drive Attendance Requirements** — docs_tasks_course_restructure_session_video_conference, docs_tasks_course_restructure_forum_course_restructure_forum, docs_tasks_course_restructure_attendance_attendance_requirement [INFERRED 0.85]
 
-## Communities (714 total, 228 thin omitted)
+## Communities (698 total, 228 thin omitted)
 
 ### Community 0 - "Livewire\Component"
-Cohesion: 0.07
-Nodes (12): GradebookSessionBreakdownController, insertRichTextFile(), promoteRichTextAttachments(), richTextAttachmentFolder(), AssessmentPersonalShow, CoursesIndex, HeadMovementTest, Dashboard (+4 more)
+Cohesion: 0.06
+Nodes (15): insertRichTextFile(), promoteRichTextAttachments(), richTextAttachmentFolder(), AssessmentAttendanceShow, AssessmentForumDiscussionShow, AssessmentPersonalShow, CourseComingSoon, GradebookShow (+7 more)
 
-### Community 1 - "GroupMember"
-Cohesion: 0.09
-Nodes (3): GroupMember, GroupMemberRepository, GroupMemberRepositoryInterface
+### Community 1 - "Group"
+Cohesion: 0.05
+Nodes (10): Group, GroupMember, GroupMemberRepository, create(), find(), findByGroupAndUser(), get(), update() (+2 more)
 
 ### Community 2 - "AssessmentService"
-Cohesion: 0.07
-Nodes (18): AssessmentFinalExamForm, AssessmentQuizForm, devAutofill(), generateAllFinalExamTypes(), generateFinalExam(), generateFinalExamOfType(), generatePersonalAssignments(), generateQuizzes() (+10 more)
+Cohesion: 0.14
+Nodes (4): AssessmentIndex, AssessmentType, AssessmentService, AssessmentStatus
 
 ### Community 3 - "Illuminate\Database\Eloquent\Factories\Factory"
 Cohesion: 0.04
-Nodes (38): AssessmentAnswerFactory, AssessmentAttemptFactory, AssessmentQuestionFactory, AssessmentQuestionScoreFactory, AssessmentScoreFactory, AttendanceFactory, AuditLogFactory, CourseFactory (+30 more)
+Nodes (38): AssessmentAnswerFactory, AssessmentAttemptFactory, AssessmentQuestionAnswerFactory, AssessmentQuestionFactory, AssessmentQuestionOptionFactory, AssessmentQuestionScoreFactory, AssessmentScoreFactory, CourseAttendanceSettingFactory (+30 more)
 
 ### Community 4 - "User"
 Cohesion: 0.03
-Nodes (35): Attribute, User, BasePolicy, RolePolicy, UserPolicy, UserRepository, assignRole(), confirmPendingEmail() (+27 more)
+Nodes (30): Attribute, User, BasePolicy, RolePolicy, UserPolicy, UserRepository, assignRole(), confirmPendingEmail() (+22 more)
 
 ### Community 5 - "PaymentGateway"
-Cohesion: 0.07
-Nodes (10): PaymentGateway, PaymentGatewayRepository, MidtransGateway, PaymentStatus, PaymentGatewayCredentialFactory, PaymentGatewayTestTransactionFactory, PaymentTransactionFactory, PaymentWebhookFactory (+2 more)
+Cohesion: 0.05
+Nodes (10): TransactionTable, PaymentGateway, PaymentGatewayRepository, PaymentGatewayConfigService, MidtransGateway, PaymentStatus, PaymentGatewayCredentialFactory, PaymentGatewayFactory (+2 more)
 
-### Community 6 - "DemoLmsAccess"
-Cohesion: 0.08
-Nodes (7): DemoCredentials, DemoLmsAccess, DemoLmsAccessRepository, DemoLmsAccessService, down(), up(), DemoLmsAccessRepositoryInterface
+### Community 6 - "Illuminate\Support\Collection"
+Cohesion: 0.12
+Nodes (19): assignGradeBandTargets(), ensureGradableQuestionPoints(), ensureGroupsForCourse(), firstMemberId(), gradeAttempt(), groupTargetPercentage(), randomizeAttendance(), randomizeForumDiscussion() (+11 more)
 
 ### Community 7 - "MediaLibraryItem"
-Cohesion: 0.09
+Cohesion: 0.10
 Nodes (12): devGenerateSessions(), generateDummyPdfMaterial(), MediaLibraryItem, Attribute, MediaLibraryRepository, create(), filteredQuery(), findOrFail() (+4 more)
-
-### Community 8 - "Quiz"
-Cohesion: 0.12
-Nodes (8): Quiz, QuizRepository, create(), find(), findByAssessment(), get(), update(), QuizRepositoryInterface
 
 ### Community 9 - "VideoConference"
 Cohesion: 0.11
 Nodes (8): VideoConference, VideoConferenceRepository, create(), find(), get(), update(), VideoConferenceService, VideoConferenceRepositoryInterface
 
-### Community 10 - "AssessmentIndex"
-Cohesion: 0.18
-Nodes (3): AssessmentIndex, AssessmentType, AssessmentStatus
+### Community 10 - "BuildsGradebookViewData.php"
+Cohesion: 0.53
+Nodes (4): lastUpdatedLabel(), typeLabel(), typeRows(), Carbon\Carbon
 
 ### Community 11 - "SchoolService"
-Cohesion: 0.07
-Nodes (6): ResolveSchoolFromDomain, SchoolEdit, SchoolIndex, SchoolTierHistory, SchoolService, SchoolDomainResolver
+Cohesion: 0.05
+Nodes (7): ResolveSchoolFromDomain, SchoolEdit, SchoolIndex, SchoolTierHistory, UserIndex, SchoolService, SchoolDomainResolver
 
 ### Community 12 - "School"
-Cohesion: 0.05
-Nodes (20): School, SchoolRepository, administers(), attachAdmin(), create(), find(), findByDomain(), findWith() (+12 more)
+Cohesion: 0.04
+Nodes (20): DemoCredentials, DemoLmsAccess, School, DemoLmsAccessRepository, SchoolRepository, down(), up(), down() (+12 more)
 
 ### Community 13 - "PaymentGatewayRepositoryInterface.php"
-Cohesion: 0.08
-Nodes (5): SchoolPaymentController, ProcessPaymentWebhook, PaymentGatewayFactory, SubscriptionPaymentService, XenditChannel
+Cohesion: 0.07
+Nodes (8): ProcessPaymentWebhook, PaymentWebhook, PaymentWebhookRepository, create(), PaymentGatewayFactory, PaymentWebhookService, SubscriptionPaymentService, PaymentWebhookRepositoryInterface
 
 ### Community 14 - "ProctorEvent"
-Cohesion: 0.09
+Cohesion: 0.12
 Nodes (9): ProctorEvent, ProctorEventRepository, create(), find(), forSession(), get(), update(), ProctorEventService (+1 more)
 
 ### Community 15 - "Permission"
-Cohesion: 0.11
-Nodes (15): Permission, PermissionRepository, down(), up(), down(), up(), down(), up() (+7 more)
+Cohesion: 0.05
+Nodes (36): Permission, PermissionRepository, down(), up(), down(), up(), down(), up() (+28 more)
 
 ### Community 16 - "PaymentTransaction"
-Cohesion: 0.06
-Nodes (14): TierChangeJob, TransactionShow, MyTransactions, PaymentTransaction, PaymentTransactionRepository, create(), findLatestCompletedForSchool(), findPendingBySubscriptionId() (+6 more)
+Cohesion: 0.05
+Nodes (15): TransactionShow, TransactionSummary, MyTransactions, PaymentTransaction, PaymentTransactionRepository, create(), findLatestCompletedForSchool(), findPendingBySubscriptionId() (+7 more)
 
 ### Community 17 - "Session"
-Cohesion: 0.05
-Nodes (8): Session, create(), find(), forCourse(), get(), update(), SessionsIndexStudentTest, SessionsIndexTest
+Cohesion: 0.07
+Nodes (5): Session, SessionRepository, SessionRepositoryInterface, SessionsIndexStudentTest, SessionsIndexTest
 
 ### Community 18 - "Role"
-Cohesion: 0.09
-Nodes (11): Role, RoleRepository, BackedEnum, down(), up(), RoleRepositoryInterface, actingAsPolicyUser(), actingAsRoleManager() (+3 more)
+Cohesion: 0.06
+Nodes (19): Role, RoleRepository, create(), find(), firstOrCreateForSchool(), get(), getAll(), hasPermissions() (+11 more)
+
+### Community 19 - "Course.php"
+Cohesion: 0.12
+Nodes (6): AttendanceFactory, ForumCommentFactory, ForumFactory, ForumThreadFactory, SessionFactory, Illuminate\Database\Eloquent\SoftDeletes
 
 ### Community 20 - "Illuminate\Http\RedirectResponse"
 Cohesion: 0.08
-Nodes (11): GatewayConfigController, AdminLoginController, Controller, DemoLmsController, ForumCommentLikeController, LoginController, ProfileController, TryDemoController (+3 more)
+Nodes (11): GatewayConfigController, AdminLoginController, Controller, LoginController, ProfileController, TierChangeController, TryDemoController, InitiateTierChangeRequest (+3 more)
 
 ### Community 21 - "AssessmentQuestion"
-Cohesion: 0.08
-Nodes (8): AssessmentQuestion, AssessmentQuestionRepository, create(), find(), get(), update(), AssessmentQuestionRepositoryInterface, AssessmentFinalExamGradeTest
+Cohesion: 0.05
+Nodes (10): AssessmentQuestion, AssessmentQuestionRepository, create(), find(), get(), update(), AssessmentQuestionService, AssessmentQuestionRepositoryInterface (+2 more)
 
 ### Community 22 - "ForumThreadService"
-Cohesion: 0.05
-Nodes (18): fakeThreadTopics(), generateThreads(), autofillComments(), deleteAllPosts(), fakeCommentBodies(), fakeCommentBodies(), generateComments(), randomizeForumDiscussion() (+10 more)
+Cohesion: 0.07
+Nodes (10): fakeThreadTopics(), generateThreads(), autofillComments(), deleteAllPosts(), fakeCommentBodies(), resetScores(), ForumIndex, ForumMonitoringIndex (+2 more)
 
 ### Community 23 - "CoursePersonService"
-Cohesion: 0.09
-Nodes (8): AutoAssignUnassignedStudentsCommand, AssessmentTeamShow, PeopleIndex, RoleName, CoursePersonService, GroupMemberService, GroupService, RoleInCourse
+Cohesion: 0.06
+Nodes (9): AutoAssignUnassignedStudentsCommand, AssessmentTeamShow, PeopleIndex, RoleName, CoursePersonService, GroupMemberService, GroupService, CourseTabs (+1 more)
 
 ### Community 24 - "devDependencies"
-Cohesion: 0.06
-Nodes (31): alpinejs, @commitlint/cli, @commitlint/config-conventional, concurrently, datatables.net, datatables.net-dt, husky, laravel-vite-plugin (+23 more)
+Cohesion: 0.07
+Nodes (27): alpinejs, @commitlint/cli, @commitlint/config-conventional, concurrently, husky, laravel-vite-plugin, dependencies, alpinejs (+19 more)
 
 ### Community 25 - "Illuminate\Http\Request"
-Cohesion: 0.12
-Nodes (14): EnsureLocalEnvironment, EnsurePasswordIsChanged, EnsureTokenIsValid, PreservePasswordUpdateErrors, RedirectIfNoSchool, RedirectLmsLocalToHttps, RequireSchool, SecurityHeaders (+6 more)
+Cohesion: 0.08
+Nodes (16): DemoLmsController, EnsureLocalEnvironment, EnsurePasswordIsChanged, EnsureTokenIsValid, PreservePasswordUpdateErrors, RedirectIfNoSchool, RedirectLmsLocalToHttps, RequireSchool (+8 more)
 
 ### Community 26 - "CourseAttendanceSetting"
 Cohesion: 0.12
 Nodes (9): CourseAttendanceSetting, CourseAttendanceSettingRepository, create(), find(), findByCourse(), get(), update(), CourseAttendanceSettingService (+1 more)
 
 ### Community 27 - "CoursePerson"
-Cohesion: 0.06
-Nodes (11): CoursePerson, CoursePersonRepository, create(), enroll(), find(), get(), studentsForCourse(), teachersForCourse() (+3 more)
+Cohesion: 0.10
+Nodes (4): CoursePerson, CoursePersonRepository, CoursePersonRepositoryInterface, seedQuizCourse()
 
 ### Community 28 - "AssessmentQuestionOption"
-Cohesion: 0.06
-Nodes (8): AssessmentQuestionOption, AssessmentQuestionOptionRepository, create(), find(), get(), update(), AssessmentQuestionOptionRepositoryInterface, AssessmentQuizShowTest
+Cohesion: 0.07
+Nodes (12): generateAllFinalExamTypes(), generateFinalExam(), generateFinalExamOfType(), AssessmentQuestionOption, AssessmentQuestionOptionRepository, create(), find(), get() (+4 more)
 
 ### Community 29 - "R2StorageService"
-Cohesion: 0.09
-Nodes (6): AssessmentFinalExamGrade, devAutofill(), devFakeFileChip(), MaterialType, R2StorageService, Aws\Exception\AwsException
+Cohesion: 0.08
+Nodes (7): ResetFinalExamAttempts, devAutofill(), devFakeFileChip(), UserPhotoUpload, MaterialType, R2StorageService, Aws\Exception\AwsException
 
-### Community 30 - "QuizInstruction"
-Cohesion: 0.29
-Nodes (3): QuizInstruction, QuizInstructionRepository, QuizInstructionRepositoryInterface
+### Community 30 - "AssessmentQuizForm"
+Cohesion: 0.11
+Nodes (3): AssessmentQuizForm, ProctorQuizQuestionsForm, QuizScoringMethod
 
 ### Community 31 - "AssessmentQuestionScore"
 Cohesion: 0.11
-Nodes (9): AssessmentQuestionScore, AssessmentQuestionScoreRepository, create(), find(), findByAttempt(), get(), update(), updateOrCreate() (+1 more)
+Nodes (10): AssessmentQuestionScore, AssessmentQuestionScoreRepository, create(), find(), findByAttempt(), get(), update(), updateOrCreate() (+2 more)
 
 ### Community 32 - "GradebookEntry"
 Cohesion: 0.10
 Nodes (9): GradebookEntry, GradebookEntryRepository, create(), find(), forCourseAndUser(), get(), update(), GradebookEntryService (+1 more)
 
-### Community 33 - "Group"
-Cohesion: 0.09
-Nodes (3): Group, GroupRepository, GroupRepositoryInterface
-
-### Community 34 - "Period"
+### Community 35 - "CourseService"
 Cohesion: 0.10
-Nodes (9): Period, PeriodRepository, create(), find(), get(), update(), PeriodService, PeriodRepositoryInterface (+1 more)
-
-### Community 36 - "ProctorSession"
-Cohesion: 0.06
-Nodes (9): ProctorSession, ProctorSessionRepository, create(), find(), findByAttempt(), get(), update(), ProctorSessionRepositoryInterface (+1 more)
+Nodes (8): CoursesIndex, create(), find(), get(), paginate(), update(), CourseService, CourseSeeder
 
 ### Community 37 - "Assessment"
-Cohesion: 0.04
-Nodes (10): Assessment, AssessmentRepository, create(), find(), forCourse(), get(), update(), AssessmentRepositoryInterface (+2 more)
+Cohesion: 0.05
+Nodes (6): Assessment, AssessmentRepository, AssessmentRepositoryInterface, AssessmentAttendanceShowTest, AssessmentIndexTest, GradebookWeightsTest
 
-### Community 38 - "AssessmentAnswer"
+### Community 38 - "AssessmentAnswerService"
 Cohesion: 0.12
-Nodes (8): AssessmentAnswer, AssessmentAnswerRepository, create(), find(), findByAttempt(), get(), update(), AssessmentAnswerRepositoryInterface
+Nodes (9): AssessmentAnswer, AssessmentAnswerRepository, create(), find(), findByAttempt(), get(), update(), AssessmentAnswerService (+1 more)
 
 ### Community 39 - "AssessmentQuestionAnswer"
-Cohesion: 0.12
-Nodes (8): AssessmentQuestionAnswer, AssessmentQuestionAnswerRepository, create(), find(), forAttempt(), get(), update(), AssessmentQuestionAnswerRepositoryInterface
+Cohesion: 0.10
+Nodes (9): AssessmentQuestionAnswer, AssessmentQuestionAnswerRepository, create(), find(), forAttempt(), get(), update(), AssessmentQuestionAnswerService (+1 more)
 
 ### Community 40 - "Attendance"
-Cohesion: 0.09
-Nodes (10): Attendance, AttendanceRepository, create(), find(), findBySessionAndUser(), forUser(), get(), update() (+2 more)
+Cohesion: 0.17
+Nodes (3): Attendance, AttendanceRepository, AttendanceRepositoryInterface
 
 ### Community 41 - "Forum"
 Cohesion: 0.08
-Nodes (9): Forum, ForumRepository, create(), find(), findBySessionAndCourse(), get(), update(), up() (+1 more)
+Nodes (9): Forum, ForumRepository, create(), find(), findBySessionAndCourse(), get(), update(), ForumRepositoryInterface (+1 more)
 
 ### Community 42 - "GradebookSessionEntry"
 Cohesion: 0.11
@@ -690,41 +667,37 @@ Nodes (8): VideoConferenceParticipation, VideoConferenceParticipationRepository,
 Cohesion: 0.13
 Nodes (8): SyllabusRubricCell, SyllabusRubricCellRepository, create(), find(), get(), update(), SyllabusRubricCellService, SyllabusRubricCellRepositoryInterface
 
-### Community 46 - "CurrentSchool.php"
-Cohesion: 0.08
-Nodes (7): StudentImport, RoleName, UserImport, UserPhotoUpload, UserImportService, Illuminate\Http\UploadedFile, Livewire\WithFileUploads
+### Community 46 - "Illuminate\Http\UploadedFile"
+Cohesion: 0.18
+Nodes (3): StudentImport, UserImportService, Illuminate\Http\UploadedFile
 
 ### Community 47 - "FinalExam"
-Cohesion: 0.09
-Nodes (9): FinalExam, FinalExamRepository, create(), find(), findByAssessment(), get(), update(), FinalExamRepositoryInterface (+1 more)
+Cohesion: 0.05
+Nodes (19): FinalExam, Period, FinalExamRepository, create(), find(), findByAssessment(), get(), update() (+11 more)
 
 ### Community 48 - "AssessmentAttemptService"
-Cohesion: 0.05
-Nodes (15): FinalizeExamSubmissionJob, FinalizeProctorDisqualificationJob, AssessmentFinalExamShow, AssessmentQuizShow, resetStudentExam(), FinalExamType, ProctorExamShow, ProctorPreflightShow (+7 more)
+Cohesion: 0.08
+Nodes (7): AssessmentFinalExamGrade, AssessmentFinalExamShow, AssessmentPersonalGrade, AssessmentTeamGrade, resetStudentExam(), AssessmentAttemptService, ExamReferenceFileService
 
-### Community 49 - "AppServiceProvider.php"
-Cohesion: 0.06
-Nodes (17): CustomAuthenticatedSessionResponse, ForumCommentLike, ForumCommentLikeRepository, create(), find(), findByCommentAndUser(), get(), likedCommentIdsForUser() (+9 more)
+### Community 49 - "ForumCommentLike"
+Cohesion: 0.10
+Nodes (11): ForumCommentLikeController, ForumCommentLike, ForumCommentLikeRepository, create(), find(), findByCommentAndUser(), get(), likedCommentIdsForUser() (+3 more)
 
 ### Community 51 - "PricingTier"
-Cohesion: 0.06
-Nodes (18): PricingTierCreate, PricingTierEdit, PricingTier, TierLimit, PricingTierRepository, create(), find(), findLimit() (+10 more)
-
-### Community 52 - "RoleService"
-Cohesion: 0.09
-Nodes (4): RoleCreate, RoleEdit, RoleIndex, RoleService
+Cohesion: 0.04
+Nodes (19): MySchools, PricingTierCreate, PricingTierEdit, PricingTierIndex, SchoolRegister, PricingTier, TierLimit, PricingTierRepository (+11 more)
 
 ### Community 53 - "SyllabusEvaluationActivity"
 Cohesion: 0.12
 Nodes (8): SyllabusEvaluationActivity, SyllabusEvaluationActivityRepository, create(), find(), get(), update(), SyllabusEvaluationActivityService, SyllabusEvaluationActivityRepositoryInterface
 
 ### Community 55 - "SchoolTier"
-Cohesion: 0.12
-Nodes (7): SchoolTier, SchoolTierRepository, create(), findPendingForSchool(), update(), TierChangeFactory, SchoolTierRepositoryInterface
+Cohesion: 0.07
+Nodes (13): SchoolTier, TierChange, SchoolTierRepository, create(), findPendingForSchool(), update(), TierChangeRepository, create() (+5 more)
 
-### Community 56 - "AttendanceIndex"
-Cohesion: 0.14
-Nodes (6): AttendanceIndex, generateRandomAttendance(), randomTimestampBetween(), resetAllAttendance(), AttendanceDraftService, Carbon\Carbon
+### Community 56 - "AttendanceDraftService"
+Cohesion: 0.27
+Nodes (4): generateRandomAttendance(), randomTimestampBetween(), resetAllAttendance(), AttendanceDraftService
 
 ### Community 57 - "SyllabusEvaluation"
 Cohesion: 0.12
@@ -734,25 +707,29 @@ Nodes (8): SyllabusEvaluation, SyllabusEvaluationRepository, create(), find(), g
 Cohesion: 0.12
 Nodes (8): SyllabusLearningOutcome, SyllabusLearningOutcomeRepository, create(), find(), get(), update(), SyllabusLearningOutcomeService, SyllabusLearningOutcomeRepositoryInterface
 
-### Community 59 - "ForumThreadRead"
-Cohesion: 0.09
-Nodes (10): ForumThreadRead, ForumThreadReadRepository, create(), find(), get(), markRead(), readAtByThreadForUser(), update() (+2 more)
+### Community 59 - "ForumThreadRepositoryInterface.php"
+Cohesion: 0.06
+Nodes (17): ForumThreadRead, create(), find(), forForums(), forUserInSession(), get(), paginateForForum(), update() (+9 more)
 
 ### Community 60 - "SyllabusClassPolicy"
 Cohesion: 0.13
 Nodes (8): SyllabusClassPolicy, SyllabusClassPolicyRepository, create(), find(), get(), update(), SyllabusClassPolicyService, SyllabusClassPolicyRepositoryInterface
 
-### Community 61 - "RoleName.php"
-Cohesion: 0.05
-Nodes (5): GroupMemberFactory, Illuminate\Foundation\Testing\RefreshDatabase, Illuminate\Foundation\Testing\TestCase, seedQuizCourse(), TestCase
+### Community 61 - "User.php"
+Cohesion: 0.03
+Nodes (9): allowedExtensions(), extensionTypeMap(), AuditLogFactory, ExamReferenceFileFactory, PricingTierSeeder, QuizInstructionSeeder, Illuminate\Database\Eloquent\Casts\Attribute, Illuminate\Foundation\Testing\RefreshDatabase (+1 more)
+
+### Community 62 - "Illuminate\Pagination\LengthAwarePaginator"
+Cohesion: 0.10
+Nodes (12): administers(), attachAdmin(), create(), find(), findByDomain(), findWith(), getAll(), getAllWithUserCounts() (+4 more)
 
 ### Community 63 - "SyllabusRubricKeyIndicator"
 Cohesion: 0.12
 Nodes (8): SyllabusRubricKeyIndicator, SyllabusRubricKeyIndicatorRepository, create(), find(), get(), update(), SyllabusRubricKeyIndicatorService, SyllabusRubricKeyIndicatorRepositoryInterface
 
-### Community 64 - "PaymentGatewayConfigService"
-Cohesion: 0.07
-Nodes (13): PaymentGatewayTestTransaction, PaymentGatewayType, PaymentGatewayTestTransactionRepository, findForGateway(), storeForGateway(), PaymentGatewayTypeRepository, findByName(), getActive() (+5 more)
+### Community 64 - "PaymentGatewayCredential"
+Cohesion: 0.10
+Nodes (10): PaymentGatewayCredential, PaymentGatewayTestTransaction, PaymentGatewayCredentialRepository, create(), updateOrCreate(), PaymentGatewayTestTransactionRepository, findForGateway(), storeForGateway() (+2 more)
 
 ### Community 65 - "ChangePassword"
 Cohesion: 0.18
@@ -762,33 +739,33 @@ Nodes (6): ResetUserPassword, UpdateUserPassword, ChangePassword, Laravel\Fortif
 Cohesion: 0.22
 Nodes (6): StorageUsageLog, StorageUsageLogRepository, create(), findLatestGlobal(), getGlobalTrend(), StorageUsageLogRepositoryInterface
 
+### Community 67 - "Illuminate\Contracts\Queue\ShouldQueue"
+Cohesion: 0.17
+Nodes (6): CalculateStorageUsageJob, FinalizeExamSubmissionJob, FinalizeProctorDisqualificationJob, TierChangeJob, Illuminate\Contracts\Queue\ShouldQueue, Illuminate\Foundation\Queue\Queueable
+
 ### Community 69 - "Database Performance Best Practices"
 Cohesion: 0.11
 Nodes (22): Advanced Query Patterns, addSelect() Subqueries for Single Values, Compound Indexes Matching orderBy Order, Conditional Aggregates (CASE WHEN), Correlated Subqueries for Has-Many Ordering, Dynamic Relationships via Subquery FK, setRelation() to Prevent Circular N+1, whereIn + Subquery over whereHas (+14 more)
 
-### Community 70 - "DetectUserTimezoneJob.php"
-Cohesion: 0.21
-Nodes (3): DetectUserTimezoneJob, UpdateUserTimezoneOnLogin, Illuminate\Auth\Events\Login
+### Community 70 - "IpGeolocationService"
+Cohesion: 0.13
+Nodes (6): CreateNewUser, DetectUserTimezoneJob, UpdateUserTimezoneOnLogin, IpGeolocationService, Illuminate\Auth\Events\Login, Laravel\Fortify\Contracts\CreatesNewUsers
 
 ### Community 71 - "Laravel Best Practices Skill (index)"
 Cohesion: 0.11
 Nodes (22): Security Best Practices, Audit Dependencies (composer audit), Authorize Every Action (Gate/Policy), Encrypt Sensitive Database Fields, Escape Output to Prevent XSS, Keep Secrets Out of Code, Mass Assignment Protection ($fillable/$guarded), Prevent SQL Injection (+14 more)
 
 ### Community 72 - "LivewireGenerator"
-Cohesion: 0.18
-Nodes (3): LivewireGenerator, LivewireCreateViewStubGenerator, LivewireEditViewStubGenerator
+Cohesion: 0.14
+Nodes (4): LivewireGenerator, LivewireCreateViewStubGenerator, LivewireEditViewStubGenerator, LivewireIndexViewStubGenerator
 
 ### Community 73 - "Illuminate\Filesystem\Filesystem"
 Cohesion: 0.15
 Nodes (4): PermissionMigrationGenerator, RouteGenerator, ServiceProviderBindingGenerator, Illuminate\Filesystem\Filesystem
 
-### Community 74 - "R2StorageService.php"
-Cohesion: 0.09
-Nodes (7): allowedExtensions(), extensionTypeMap(), Aws\S3\S3Client, ExamReferenceFileFactory, MediaLibraryItemFactory, self, Illuminate\Database\Eloquent\Casts\Attribute
-
-### Community 75 - "IpGeolocationService"
-Cohesion: 0.33
-Nodes (3): CreateNewUser, IpGeolocationService, Laravel\Fortify\Contracts\CreatesNewUsers
+### Community 74 - "MediaLibraryItemFactory"
+Cohesion: 0.40
+Nodes (3): MediaLibraryItemFactory, MaterialType, self
 
 ### Community 77 - "Payment Gateway Response Format Standard"
 Cohesion: 0.11
@@ -804,7 +781,7 @@ Nodes (3): SessionMaterialCompletion, SessionMaterialCompletionRepository, Sessi
 
 ### Community 80 - "Illuminate\Database\Eloquent\Relations\BelongsTo"
 Cohesion: 0.06
-Nodes (8): PaymentWebhook, Subscription, TierChange, TierSubscriptionDetail, create(), Illuminate\Database\Eloquent\Factories\HasFactory, Illuminate\Database\Eloquent\Relations\BelongsTo, Illuminate\Database\Eloquent\Relations\HasMany
+Nodes (5): Subscription, TierSubscriptionDetail, Illuminate\Database\Eloquent\Factories\HasFactory, Illuminate\Database\Eloquent\Relations\BelongsTo, Illuminate\Database\Eloquent\Relations\HasMany
 
 ### Community 82 - "Queue & Job Best Practices Rules"
 Cohesion: 0.11
@@ -815,12 +792,12 @@ Cohesion: 0.12
 Nodes (17): addSelect() Correlated Subquery Pattern, App::environment() / isProduction() Checks, $attributes->merge() in Blade Components, Blade Fragments for Partial Re-Renders (htmx/Turbo), Advanced Query Patterns Rules, Blade & Views Best Practices Rules, Configuration Best Practices Rules, Error Handling Best Practices Rules (+9 more)
 
 ### Community 87 - "ForumThread"
-Cohesion: 0.07
+Cohesion: 0.08
 Nodes (4): ForumThread, ForumThreadRepository, ForumThreadRepositoryInterface, ForumIndexTest
 
-### Community 88 - "PaymentWebhookService"
-Cohesion: 0.14
-Nodes (7): PaymentWebhookController, ProctorSpeedTestController, CustomVerifyEmailViewResponse, create(), PaymentWebhookService, Illuminate\Http\Response, Laravel\Fortify\Contracts\VerifyEmailViewResponse
+### Community 88 - "UserLoginLinkService"
+Cohesion: 0.17
+Nodes (4): UserLoginLinkController, create(), findValidByToken(), UserLoginLinkService
 
 ### Community 89 - "composer.json"
 Cohesion: 0.12
@@ -830,45 +807,37 @@ Nodes (16): autoload-dev, psr-4, description, extra, laravel, keywords, dont-dis
 Cohesion: 0.12
 Nodes (17): scripts, analyse, dev, post-autoload-dump, post-update-cmd, pre-package-uninstall, test, Composer\\Config::disableProcessTimeout (+9 more)
 
-### Community 91 - "ForumComment"
-Cohesion: 0.06
-Nodes (4): ForumComment, ForumCommentRepository, ForumCommentRepositoryInterface, ForumThreadShowTest
-
 ### Community 92 - "Task Scheduling Best Practices"
 Cohesion: 0.14
 Nodes (14): HTTP Client Best Practices Rules, Explicit timeout/connectTimeout on HTTP Requests, HTTP Client retry() with Backoff, Task Scheduling Best Practices, environments(), onOneServer(), Schedule Groups, takeUntilTimeout() (+6 more)
 
-### Community 93 - "TierChangeService"
-Cohesion: 0.14
-Nodes (3): MySchools, PaymentGatewayRegistry, TierChangeService
+### Community 93 - "PaymentGatewayTypeRepositoryInterface.php"
+Cohesion: 0.11
+Nodes (9): PaymentGatewayType, PaymentGatewayTypeRepository, findByName(), getActive(), PaymentGatewayRegistry, down(), up(), PaymentGatewayTypeRepositoryInterface (+1 more)
 
 ### Community 94 - "SyllabusRubricProficiencyLevel"
 Cohesion: 0.13
 Nodes (8): SyllabusRubricProficiencyLevel, SyllabusRubricProficiencyLevelRepository, create(), find(), get(), update(), SyllabusRubricProficiencyLevelService, SyllabusRubricProficiencyLevelRepositoryInterface
-
-### Community 95 - "Illuminate\Support\Collection"
-Cohesion: 0.08
-Nodes (22): AssessmentAttendanceShow, AssessmentPersonalGrade, AssessmentTeamGrade, assignGradeBandTargets(), ensureGradableQuestionPoints(), ensureGroupsForCourse(), firstMemberId(), gradeAttempt() (+14 more)
 
 ### Community 96 - "Syllabus"
 Cohesion: 0.09
 Nodes (9): Syllabus, SyllabusRepository, create(), find(), findByCourse(), get(), update(), SyllabusSeeder (+1 more)
 
 ### Community 97 - "Feature Testing Documentation (Laravel Dusk)"
-Cohesion: 0.16
-Nodes (15): tests/Browser/CaptureDocScreenshotsTest.php, tests/Browser/EditProfileTest.php, tests/Browser/Auth/EmailVerificationTest.php, Feature Testing Documentation (Laravel Dusk), tests/Browser/LandingPageTest.php, tests/Browser/Auth/LoginTest.php, tests/Browser/Auth/LogoutTest.php, tests/Browser/PasswordChangeAlertTest.php (+7 more)
+Cohesion: 0.07
+Nodes (33): tests/Browser/CaptureDocScreenshotsTest.php, tests/Browser/EditProfileTest.php, tests/Browser/Auth/EmailVerificationTest.php, Feature Testing Documentation (Laravel Dusk), tests/Browser/LandingPageTest.php, tests/Browser/Auth/LoginTest.php, tests/Browser/Auth/LogoutTest.php, tests/Browser/PasswordChangeAlertTest.php (+25 more)
 
 ### Community 100 - "Illuminate\Database\Eloquent\Model"
-Cohesion: 0.12
-Nodes (7): FeatureNotAvailableException, TierChangeInProgressException, CheckFeatureAccess, AuditableObserver, FeatureGateService, Exception, Illuminate\Database\Eloquent\Model
+Cohesion: 0.13
+Nodes (6): FeatureNotAvailableException, CheckFeatureAccess, AuditableObserver, FeatureGateService, Exception, Illuminate\Database\Eloquent\Model
 
-### Community 102 - "ProctorSnapshot"
-Cohesion: 0.09
-Nodes (9): ProctorSnapshot, ProctorSnapshotRepository, create(), find(), forSession(), get(), update(), ProctorSnapshotService (+1 more)
+### Community 102 - "ProctorSnapshotService"
+Cohesion: 0.11
+Nodes (6): create(), find(), forSession(), get(), update(), ProctorSnapshotService
 
 ### Community 103 - "UserLoginLink"
-Cohesion: 0.06
-Nodes (9): UserLoginLinkController, StudentGenerate, UserLoginLink, UserLoginLinkRepository, create(), findValidByToken(), UserLoginLinkService, UserLoginLinkTest (+1 more)
+Cohesion: 0.11
+Nodes (4): UserLoginLink, UserLoginLinkRepository, UserLoginLinkTest, UserLoginLinkRepositoryInterface
 
 ### Community 104 - "Blade & Views Best Practices"
 Cohesion: 0.15
@@ -882,9 +851,9 @@ Nodes (14): Testing Best Practices, Call Event::fake() After Factory Setup, Fact
 Cohesion: 0.15
 Nodes (13): Default Sort by Descending, View Composers for Shared View Data, Higher-Order Messages for Collections, env() Only in Config Files, No Queries in Blade Templates, Correct Relationship Types, Rely on Event Discovery, Implicit Route Model Binding (+5 more)
 
-### Community 108 - "Illuminate\Pagination\LengthAwarePaginator"
-Cohesion: 0.09
-Nodes (9): create(), find(), forForums(), forUserInSession(), get(), paginateForForum(), update(), paginate() (+1 more)
+### Community 108 - "AppServiceProvider.php"
+Cohesion: 0.05
+Nodes (20): CustomAuthenticatedSessionResponse, create(), find(), forCourse(), get(), update(), create(), find() (+12 more)
 
 ### Community 109 - "ExamReferenceFile"
 Cohesion: 0.15
@@ -899,28 +868,32 @@ Cohesion: 0.15
 Nodes (13): chunk()/chunkById() for Large Datasets, Collection Best Practices Rules, Database Performance Best Practices Rules, cursor() for Memory-Efficient Read-Only Iteration, cursor() vs lazy() Collection Choice, Eager Loading with with() to Prevent N+1, Higher-Order Messages for Collection Operations, lazyById() for Safe Iteration During Updates (+5 more)
 
 ### Community 113 - "tenants table"
-Cohesion: 0.21
-Nodes (13): audit_logs table, courses table, Database Architecture: AI-Powered LMS (SaaS), lesson_user pivot table (progress tracking), lessons table, modules table, permission_role pivot table, permissions table (+5 more)
+Cohesion: 0.31
+Nodes (9): audit_logs table, Database Architecture: AI-Powered LMS (SaaS), permission_role pivot table, permissions table, role_user pivot table, roles table, tenants table, users table (+1 more)
 
-### Community 114 - "RootDomains"
-Cohesion: 0.14
-Nodes (5): ProctorSubmissionStatusController, PaymentStatusStreamService, RootDomains, Sse, Symfony\Component\HttpFoundation\StreamedResponse
+### Community 114 - "ProctorSessionStatusService"
+Cohesion: 0.17
+Nodes (5): ProctorSubmissionStatusController, PaymentStatusStreamService, ProctorSessionStatusService, Sse, Symfony\Component\HttpFoundation\StreamedResponse
 
 ### Community 115 - "Pest Testing 4 Skill"
 Cohesion: 0.20
 Nodes (11): Single-Purpose Action Classes, Keep Controllers Thin, LazilyRefreshDatabase over RefreshDatabase, Pest Architecture Testing (arch()), Pest Browser Testing, Pest Datasets, php artisan make:test --pest, Pest Testing 4 Skill (+3 more)
 
 ### Community 116 - ".response"
-Cohesion: 0.12
-Nodes (6): PermissionController, StudentSelectionController, UserAvailabilityController, StudentSelectionService, Illuminate\Http\JsonResponse, Illuminate\Routing\Controllers\HasMiddleware
+Cohesion: 0.09
+Nodes (13): GradebookSessionBreakdownController, PaymentWebhookController, ProctorSpeedTestController, SchoolPaymentController, StudentSelectionController, UserAvailabilityController, CustomVerifyEmailViewResponse, StudentSelectionService (+5 more)
 
-### Community 117 - "XenditChannel.php"
-Cohesion: 0.15
-Nodes (13): SyncChannelLogos, buildChannelProperties(), isRedirectBased(), label(), logoUrl(), paymentGuideSteps(), requestType(), supportsSimulation() (+5 more)
+### Community 117 - "PaymentChannel.php"
+Cohesion: 0.24
+Nodes (6): SyncChannelLogos, logoUrl(), PaymentChannel, Attribute, down(), up()
+
+### Community 118 - "PaymentStatus.php"
+Cohesion: 0.07
+Nodes (4): extractWebhookStatus(), PaymentGatewayTypeFactory, TierChangeFactory, createPendingRegistrationTransaction()
 
 ### Community 119 - "Course"
 Cohesion: 0.04
-Nodes (21): AssessmentForumDiscussionShow, lastUpdatedLabel(), typeLabel(), typeRows(), CourseComingSoon, CourseForm, GradebookGradeBands, GradebookIndex (+13 more)
+Nodes (11): CourseForm, GradebookGradeBands, GradebookIndex, GradebookWeights, Course, CourseRepository, GradebookScoringService, AssessmentType (+3 more)
 
 ### Community 120 - "Architecture Best Practices Rules"
 Cohesion: 0.17
@@ -933,10 +906,6 @@ Nodes (9): Livewire Development Skill, Class-Based Component (v3 style), Compone
 ### Community 122 - "require-dev"
 Cohesion: 0.17
 Nodes (12): require-dev, fakerphp/faker, larastan/larastan, laravel/boost, laravel/dusk, laravel/pail, laravel/pao, laravel/pint (+4 more)
-
-### Community 123 - "DataTables Integration Guide (legacy)"
-Cohesion: 0.26
-Nodes (12): CSRF Protection for DELETE fetch requests, DataTables Integration (jQuery/AJAX, legacy), make:rsc CRUD Generator (legacy walkthrough), Route Ordering Rule: API route before resource route, MakeRepositoryServiceController, DataTables Integration Final Status (Ready), DataTables Fixes Documentation, DataTables Integration Guide (legacy) (+4 more)
 
 ### Community 124 - "App\Models\Role"
 Cohesion: 0.17
@@ -951,28 +920,28 @@ Cohesion: 0.24
 Nodes (3): RepositoryGenerator, RepositoryInterfaceStubGenerator, RepositoryStubGenerator
 
 ### Community 127 - "SessionSubtopic"
-Cohesion: 0.13
+Cohesion: 0.12
 Nodes (8): SessionSubtopic, SessionSubtopicRepository, create(), find(), get(), update(), SessionSubtopicService, SessionSubtopicRepositoryInterface
 
-### Community 128 - "AssessmentSeeder"
-Cohesion: 0.14
-Nodes (5): Carbon, AssessmentAssignedTo, AssessmentSeeder, AssessmentType, FinalExamType
+### Community 128 - "Quiz"
+Cohesion: 0.07
+Nodes (15): generateQuizzes(), Carbon, Quiz, QuizRepository, create(), find(), findByAssessment(), get() (+7 more)
 
 ### Community 129 - "Illuminate\Database\Eloquent\Collection"
-Cohesion: 0.06
-Nodes (11): find(), get(), getAll(), getAllExcept(), getByGroups(), getByNames(), getViewPermissionsFor(), getAll() (+3 more)
+Cohesion: 0.04
+Nodes (35): PermissionController, RoleCreate, RoleIndex, create(), find(), forAssessmentAndGroup(), forAssessmentAndUser(), get() (+27 more)
+
+### Community 130 - "RichTextAttachmentCleanupService"
+Cohesion: 0.20
+Nodes (3): deleteRichTextAttachment(), RichTextAttachmentCleanupService, RichTextAttachments
 
 ### Community 131 - "require"
 Cohesion: 0.17
 Nodes (12): require, aws/aws-sdk-php, laravel/fortify, laravel/framework, laravel/horizon, laravel/pulse, laravel/tinker, livewire/livewire (+4 more)
 
 ### Community 132 - "MakeRepositoryServiceController Console Command"
-Cohesion: 0.18
-Nodes (11): app/Providers/AppServiceProvider.php, LivewireGenerator, MakeRepositoryServiceController Console Command, PermissionMigrationGenerator, RouteGenerator, ServiceProviderBindingGenerator, ProductIndex Livewire Component (example), ProductRepository / ProductRepositoryInterface (example) (+3 more)
-
-### Community 133 - "Repository Interface pattern"
-Cohesion: 0.22
-Nodes (11): Repository Pattern Architecture (Getting Started), AppServiceProvider Repository Binding, Rule 10: Blade Templates Only Bind Variables, Controller Layer (legacy generated modules), Repository Pattern Architecture Guide, Rule 9: Livewire Components Are Treated Like Controllers, Rule 7: A Repository Must Only Touch Its Own Model, Rule 11: Queries Only Happen in the Repository (+3 more)
+Cohesion: 0.12
+Nodes (20): CRUD_GENERATOR.md — Complete Guide, app/Providers/AppServiceProvider.php, delete:rsc Artisan Command, DeleteRepositoryServiceController Console Command, LivewireGenerator, make:rsc Artisan Command, MakeRepositoryServiceController Console Command, PermissionMigrationGenerator (+12 more)
 
 ### Community 134 - "password-reset-test.js"
 Cohesion: 0.18
@@ -983,12 +952,8 @@ Cohesion: 0.24
 Nodes (10): CreateNewUser Action, Email Verification Setup, Fortify Development Skill, FortifyServiceProvider, Passkeys Setup, Password Reset Setup, Fortify Login Rate Limiting, SPA Authentication Setup (+2 more)
 
 ### Community 137 - "FortifyServiceProvider.php"
-Cohesion: 0.12
-Nodes (7): CustomPasswordResetLinkResponse, CustomPasswordResetResponse, AuditLogServiceProvider, FortifyServiceProvider, Illuminate\Support\ServiceProvider, Laravel\Fortify\Contracts\PasswordResetResponse, Laravel\Fortify\Contracts\SuccessfulPasswordResetLinkRequestResponse
-
-### Community 138 - "GroupRepositoryInterface.php"
-Cohesion: 0.22
-Nodes (5): create(), find(), forCourse(), get(), update()
+Cohesion: 0.08
+Nodes (10): CustomPasswordResetLinkResponse, CustomPasswordResetResponse, AppServiceProvider, AuditLogServiceProvider, FortifyServiceProvider, HorizonServiceProvider, Illuminate\Support\ServiceProvider, Laravel\Fortify\Contracts\PasswordResetResponse (+2 more)
 
 ### Community 139 - "Error Handling Best Practices"
 Cohesion: 0.22
@@ -998,37 +963,33 @@ Nodes (9): Exceptions::fake(), Context Facade for Request-Scoped Data, Error Han
 Cohesion: 0.24
 Nodes (10): CONTENT_ENGINE.md — Course > Module > Lesson Hierarchy, Course Model, CourseBuilder Livewire Component, docs/ERD.md, Lesson Model, lesson_user Progress Pivot Table, LessonViewerComponent, Module Model (+2 more)
 
-### Community 141 - "PricingTierService"
-Cohesion: 0.12
-Nodes (3): PricingTierIndex, SchoolRegister, PricingTierService
-
 ### Community 142 - "command"
 Cohesion: 0.20
 Nodes (9): command, enabled, type, mcp, laravel-boost, $schema, artisan, boost:mcp (+1 more)
 
 ### Community 143 - "MediaLibraryService"
-Cohesion: 0.08
-Nodes (7): devMaterialIds(), AssessmentForm, AssessmentType, devAutofill(), SessionForm, MediaLibraryIndex, MediaLibraryService
+Cohesion: 0.11
+Nodes (10): devMaterialIds(), devAutofill(), devAutofill(), generatePersonalAssignments(), generateTeamAssignments(), devAutofill(), SessionForm, MediaLibraryService (+2 more)
 
 ### Community 144 - "logout-test.js"
 Cohesion: 0.27
 Nodes (9): extractCsrf(), logoutDuration, options, postForm(), randomIp(), setup(), SETUP_SESSIONS, successRate (+1 more)
 
-### Community 145 - "Illuminate\Contracts\Queue\ShouldQueue"
-Cohesion: 0.15
-Nodes (12): CalculateStorageUsageJob, PendingEmailVerificationMail, StorageQuotaAlertMail, Illuminate\Bus\Queueable, Illuminate\Contracts\Queue\ShouldQueue, Illuminate\Foundation\Bus\Dispatchable, Illuminate\Mail\Mailable, Illuminate\Mail\Mailables\Content (+4 more)
+### Community 145 - "PendingEmailVerificationMail"
+Cohesion: 0.16
+Nodes (10): PendingEmailVerificationMail, StorageQuotaAlertMail, Illuminate\Bus\Queueable, Illuminate\Foundation\Bus\Dispatchable, Illuminate\Mail\Mailable, Illuminate\Mail\Mailables\Content, Illuminate\Mail\Mailables\Envelope, Illuminate\Queue\InteractsWithQueue (+2 more)
 
-### Community 146 - "ForumCommentRepositoryInterface.php"
-Cohesion: 0.15
-Nodes (7): create(), find(), forUserInSession(), get(), paginateTopLevelForThread(), topLevelForThread(), update()
+### Community 146 - "AttendanceRepositoryInterface.php"
+Cohesion: 0.18
+Nodes (6): create(), find(), findBySessionAndUser(), forUser(), get(), update()
 
 ### Community 147 - "Illuminate\Console\Command"
-Cohesion: 0.14
-Nodes (7): ConfigureR2Cors, CreateSchoolAdmin, GenerateUserLoginLink, GradingQueueHealthCheck, QueueHealthCommand, GradingQueueHealthService, Illuminate\Console\Command
+Cohesion: 0.17
+Nodes (6): CreateSchoolAdmin, GenerateUserLoginLink, GradingQueueHealthCheck, QueueHealthCommand, GradingQueueHealthService, Illuminate\Console\Command
 
-### Community 148 - "AssessmentAttempt.php"
-Cohesion: 0.11
-Nodes (6): AssessmentQuestionAnswerFactory, AssessmentQuestionOptionFactory, FinalExamFactory, ProctorEventFactory, ProctorSessionFactory, ProctorSnapshotFactory
+### Community 148 - "TestCase"
+Cohesion: 0.10
+Nodes (3): ProctorEventFactory, Illuminate\Foundation\Testing\TestCase, TestCase
 
 ### Community 149 - "Caching Best Practices Rules"
 Cohesion: 0.25
@@ -1046,9 +1007,9 @@ Nodes (9): Events & Notifications Best Practices Rules, Mail Best Practices Rule
 Cohesion: 0.22
 Nodes (9): 2026_07_22 drop_video_embed_url_from_lessons_table migration, lesson_materials table / Multi-Material System, LessonCompletionService, LessonForm Livewire Component, tests/Feature/MaterialMigrationTest.php, App\Enums\MaterialType, 2026_07_17 migrate_video_embed_url_to_lesson_materials migration, R2StorageService (+1 more)
 
-### Community 153 - "CRUD_GENERATOR_SHOWCASE.md — Generated Output Showcase"
-Cohesion: 0.28
-Nodes (9): CRUD_GENERATOR.md — Complete Guide, delete:rsc Artisan Command, DeleteRepositoryServiceController Console Command, make:rsc Artisan Command, CRUD_GENERATOR_SHOWCASE.md — Generated Output Showcase, Use Resource Controllers, README.md — Laravel 13 Boilerplate, CRUD Generator (make:rsc) command (+1 more)
+### Community 153 - "XenditChannel.php"
+Cohesion: 0.31
+Nodes (7): buildChannelProperties(), isRedirectBased(), label(), paymentGuideSteps(), requestType(), supportsSimulation(), viewType()
 
 ### Community 154 - "Caching Best Practices"
 Cohesion: 0.28
@@ -1058,13 +1019,9 @@ Nodes (9): Atomic Locks for Race Conditions (Cache::lock/lockForUpdate), Caching
 Cohesion: 0.29
 Nodes (8): AGENTS.md (laravel-boost guidelines, project-session-context), Project Session Context (laravel-13-boilerplate discoveries), CLAUDE.md (root, laravel-boost guidelines), Use LazilyRefreshDatabase Over RefreshDatabase, pest-testing Skill, Laravel GitHub Actions CI Workflow, laravel-tests CI Job (sqlite/mysql/pgsql matrix), pint-larastan CI Job
 
-### Community 158 - "Illuminate\Database\Seeder"
-Cohesion: 0.17
-Nodes (7): DatabaseSeeder, DefaultRoleSeeder, PricingTierSeeder, ProductSeeder, QuizInstructionSeeder, Illuminate\Database\Console\Seeds\WithoutModelEvents, Illuminate\Database\Seeder
-
-### Community 159 - "GroupMemberRepositoryInterface.php"
-Cohesion: 0.22
-Nodes (5): create(), find(), findByGroupAndUser(), get(), update()
+### Community 158 - "CoursePerson.php"
+Cohesion: 0.15
+Nodes (5): SubscriptionTier, DatabaseSeeder, ProductSeeder, SubscriptionTierSeeder, Illuminate\Database\Seeder
 
 ### Community 160 - "Migration Best Practices Rules"
 Cohesion: 0.25
@@ -1086,10 +1043,6 @@ Nodes (8): GradingQueueHealthService, Laravel Horizon Dashboard, HorizonServiceP
 Cohesion: 0.25
 Nodes (8): Demo LMS Access (14-day token trial), Multi-School Data Isolation Rationale, School Registration Development Plan, BelongsToTenant trait, CurrentTenant singleton, ResolveTenantFromDomain middleware, TenantScope, Three-Tier Domain Routing (lms.local/admin/schoolN)
 
-### Community 165 - "QuizInstructionRepositoryInterface.php"
-Cohesion: 0.25
-Nodes (5): create(), current(), find(), get(), update()
-
 ### Community 166 - "Laravel Fortify Development Skill"
 Cohesion: 0.25
 Nodes (4): app/Actions/Fortify/CreateNewUser.php, Features::registration(), FortifyServiceProvider, Laravel Fortify Development Skill
@@ -1107,20 +1060,20 @@ Cohesion: 0.25
 Nodes (4): options, registrationDuration, successRate, totalRegistrations
 
 ### Community 171 - ".parent"
-Cohesion: 0.06
-Nodes (4): ResetFinalExamAttempts, AssessmentAttendanceShowTest, AssessmentForumDiscussionShowTest, GradebookGradeBandsTest
+Cohesion: 0.05
+Nodes (6): TierChangeInProgressException, ForumCommentLikeControllerTest, AssessmentPersonalGradeTest, CourseComingSoonTest, GradebookShowTest, SyllabusIndexStudentTest
 
 ### Community 172 - "AssessmentScore"
-Cohesion: 0.05
-Nodes (9): AssessmentScore, AssessmentScoreRepository, create(), find(), findByAttempt(), get(), update(), AssessmentScoreRepositoryInterface (+1 more)
+Cohesion: 0.09
+Nodes (8): AssessmentScore, AssessmentScoreRepository, create(), find(), findByAttempt(), get(), update(), AssessmentScoreRepositoryInterface
 
-### Community 175 - "DemoLmsAccessRepositoryInterface.php"
-Cohesion: 0.14
-Nodes (4): AuthController, create(), findValidForSchoolAndRole(), AuthService
+### Community 175 - "DemoLmsAccessService"
+Cohesion: 0.10
+Nodes (5): AuthController, create(), findValidForSchoolAndRole(), AuthService, DemoLmsAccessService
 
 ### Community 176 - "SessionService"
-Cohesion: 0.09
-Nodes (4): devAutofill(), SessionsIndex, SessionMaterialCompletionService, SessionService
+Cohesion: 0.08
+Nodes (3): SessionsIndex, SessionMaterialCompletionService, SessionService
 
 ### Community 178 - "Eloquent Best Practices Rules"
 Cohesion: 0.33
@@ -1130,9 +1083,9 @@ Nodes (7): Attribute Casts via casts() Method, Avoid Hardcoded Table Names in Qu
 Cohesion: 0.29
 Nodes (7): pestphp/pest-plugin, php-http/discovery, config, allow-plugins, optimize-autoloader, preferred-install, sort-packages
 
-### Community 181 - "RichTextAttachmentCleanupService"
-Cohesion: 0.20
-Nodes (3): deleteRichTextAttachment(), RichTextAttachmentCleanupService, RichTextAttachments
+### Community 181 - "ForumCommentService"
+Cohesion: 0.10
+Nodes (5): fakeCommentBodies(), generateComments(), ForumThreadShow, ForumCommentService, HtmlSanitizer
 
 ### Community 182 - "AI_GRADING.md — AI Grading Pipeline"
 Cohesion: 0.33
@@ -1150,10 +1103,6 @@ Nodes (7): AES-256 Credential Encryption Strategy, CredentialEncryption Service,
 Cohesion: 0.29
 Nodes (6): Anthropic API Integration (essay grading), GradeSubmissionJob, AbstractOpenAiCompatibleProvider::buildUserPrompt(), Prompt Injection Mitigation, tests/Feature/PromptInjectionTest.php, Rubric Design Guidelines (AI Grading)
 
-### Community 186 - "RoleRepositoryInterface.php"
-Cohesion: 0.13
-Nodes (8): create(), find(), firstOrCreateForSchool(), get(), getAll(), hasPermissions(), syncPermissions(), update()
-
 ### Community 187 - "ShouldQueue on Mailable Class"
 Cohesion: 0.33
 Nodes (6): afterCommit() on Notifications in Transactions, Always Queue Notifications, ShouldDispatchAfterCommit, afterCommit() on Mailables in Transactions, assertQueued() for Queued Mailables, ShouldQueue on Mailable Class
@@ -1170,10 +1119,6 @@ Nodes (8): Course Restructure — Assessment: Assignment Schema (shared), Course
 Cohesion: 0.33
 Nodes (6): Tailwind CSS Development Skill, Dark Mode (dark: variant), gap Utilities for Spacing, @import "tailwindcss" (v4 Import Syntax), Replaced Utilities (bg-opacity-* etc.), @theme Directive (CSS-First Config)
 
-### Community 194 - "PaymentGatewayCredential"
-Cohesion: 0.24
-Nodes (5): PaymentGatewayCredential, PaymentGatewayCredentialRepository, create(), updateOrCreate(), PaymentGatewayCredentialRepositoryInterface
-
 ### Community 196 - "GradeSubmissionJob"
 Cohesion: 0.40
 Nodes (6): App\Services\FailedJobHandler, GradeSubmissionJob, Always Implement failed(), Use Exponential Backoff, Set retry_after Greater Than timeout, retryUntil() Needs $tries = 0
@@ -1182,17 +1127,13 @@ Nodes (6): App\Services\FailedJobHandler, GradeSubmissionJob, Always Implement f
 Cohesion: 0.33
 Nodes (6): AUDIT_LOGGING.md — Audit Logging, App\Observers\AuditableObserver, App\Models\AuditLog, App\Providers\AuditLogServiceProvider, audit-logs:cleanup Artisan command, Use environments() to Restrict Tasks
 
-### Community 198 - "/route/data/list API Endpoint (legacy)"
-Cohesion: 0.33
-Nodes (6): ControllerStubGenerator, /route/data/list API Endpoint (legacy), RouteGenerator, TailwindBladeIndexStubGenerator, Field Fallback (name -> title -> empty), Route Ordering Bug Fix
-
 ### Community 199 - "assignments table"
-Cohesion: 0.33
-Nodes (6): assignments table, submissions table, assessment_answers table, assessment_attempts table (generic), assessment_questions table, Personal vs Team attempt distinction (user_id vs group_id)
+Cohesion: 0.20
+Nodes (10): assignments table, courses table, lesson_user pivot table (progress tracking), lessons table, modules table, submissions table, assessment_answers table, assessment_attempts table (generic) (+2 more)
 
 ### Community 201 - "Illuminate\Foundation\Http\FormRequest"
-Cohesion: 0.08
-Nodes (8): UpdatePricingTierRequest, StoreRoleRequest, UpdateRoleRequest, InitiateTierChangeRequest, UpdateGatewayConfigRequest, UpdateProfileRequest, UpdateUserRolesRequest, Illuminate\Foundation\Http\FormRequest
+Cohesion: 0.15
+Nodes (5): UpdatePricingTierRequest, StoreRoleRequest, UpdateRoleRequest, UpdateGatewayConfigRequest, Illuminate\Foundation\Http\FormRequest
 
 ### Community 202 - "email-verify-test.js"
 Cohesion: 0.33
@@ -1206,29 +1147,25 @@ Nodes (5): whereIn + Subquery over whereHas, toQuery() for Bulk Operations, Alwa
 Cohesion: 0.40
 Nodes (5): Convention Over Configuration, Avoid Hardcoded Table Names in Queries, Generate Migrations with Artisan, Keep Migrations Focused (No DDL+DML Mix), Prevent SQL Injection
 
+### Community 206 - "QuizInstruction"
+Cohesion: 0.10
+Nodes (10): QuizInstructionEdit, QuizInstruction, QuizInstructionRepository, create(), current(), find(), get(), update() (+2 more)
+
 ### Community 207 - "Model"
-Cohesion: 0.38
-Nodes (4): getAttribute(), viewerTimezone(), Model, Carbon\CarbonInterface
+Cohesion: 0.60
+Nodes (3): getAttribute(), viewerTimezone(), Model
 
 ### Community 211 - "psr-4"
 Cohesion: 0.40
 Nodes (5): autoload, psr-4, App\\, Database\\Factories\\, Database\\Seeders\\
 
 ### Community 213 - "AuditLog"
-Cohesion: 0.07
-Nodes (8): AuditLogTable, AuditLog, SchoolScope, Illuminate\Database\Eloquent\Builder, Illuminate\Database\Eloquent\Relations\MorphTo, Illuminate\Database\Eloquent\Scope, Spatie\Permission\Models\Role, AuditLogTableTest
-
-### Community 214 - "UserService"
-Cohesion: 0.06
-Nodes (5): ForcePasswordChange, UserForm, UserIndex, UserRoles, UserService
+Cohesion: 0.08
+Nodes (7): AuditLogTable, AuditLog, SchoolScope, Illuminate\Database\Eloquent\Builder, Illuminate\Database\Eloquent\Relations\MorphTo, Illuminate\Database\Eloquent\Scope, AuditLogTableTest
 
 ### Community 217 - "CalculateStorageUsageJob"
 Cohesion: 0.40
 Nodes (5): CalculateStorageUsageJob, StorageMonitoringService, Use onOneServer() on Multi-Server Deployments, Use Schedule Groups for Shared Configuration, Use withoutOverlapping() on Variable-Duration Tasks
-
-### Community 218 - "Getting Started Complete Guide"
-Cohesion: 0.40
-Nodes (5): php artisan delete:rsc command, Laravel Dusk Browser Tests (Getting Started), FEATURE_EMAIL_ENABLED config flag, Laravel Fortify Authentication Flow, Getting Started Complete Guide
 
 ### Community 219 - "Never Modify Deployed Migrations"
 Cohesion: 0.40
@@ -1261,10 +1198,6 @@ Nodes (4): Fake HTTP Calls in Tests, Call Event::fake() After Factory Setup, Use
 ### Community 231 - "post-create-project-cmd"
 Cohesion: 0.50
 Nodes (4): post-create-project-cmd, @php artisan key:generate --ansi, @php artisan migrate --graceful --ansi, @php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\
-
-### Community 232 - "2026_07_25_000003_rebuild_demo_school_with_school_scoped_roles.php"
-Cohesion: 0.50
-Nodes (4): createSchoolRole(), down(), RoleName, up()
 
 ### Community 234 - "2026_07_31_043940_rename_instructor_columns_and_role_to_teacher.php"
 Cohesion: 0.83
@@ -1354,16 +1287,12 @@ Nodes (7): Fortify Development Skill, CSRF Protection (@csrf), Fortify Email Ver
 Cohesion: 0.33
 Nodes (5): generateThreads, createThread, gotoPage(1), gotoPage({{ $pagination[, livewire.courses.partials.course-header
 
-### Community 568 - "AppServiceProvider"
-Cohesion: 0.27
-Nodes (3): AppServiceProvider, HorizonServiceProvider, Laravel\Horizon\HorizonApplicationServiceProvider
-
 ### Community 569 - "forum-thread-show.blade.php"
 Cohesion: 0.17
 Nodes (11): addComment, addReply(, cancelEditThread, generateComments, gotoPage({{ $i }}), gotoPage(1), gotoPage({{ $pagination[, livewire.courses.partials.course-header (+3 more)
 
 ### Community 571 - "HomePage"
-Cohesion: 0.22
+Cohesion: 0.25
 Nodes (3): Laravel\Dusk\Page, HomePage, Page
 
 ### Community 575 - "pagination-links.blade.php"
@@ -1375,16 +1304,16 @@ Cohesion: 0.40
 Nodes (4): generateAllFinalExamTypes, generateFinalExam(, livewire.courses.partials.course-header, toggleSection(
 
 ### Community 587 - "AssessmentAttempt"
-Cohesion: 0.05
-Nodes (12): AssessmentAttempt, AssessmentAttemptRepository, create(), find(), forAssessmentAndGroup(), forAssessmentAndUser(), get(), update() (+4 more)
+Cohesion: 0.04
+Nodes (16): AssessmentAttempt, ProctorSession, ProctorSnapshot, AssessmentAttemptRepository, ProctorSessionRepository, create(), find(), findByAttempt() (+8 more)
 
-### Community 588 - "User.php"
-Cohesion: 0.08
-Nodes (3): QuizInstructionFactory, Illuminate\Database\Eloquent\SoftDeletes, Laravel\Dusk\Browser
+### Community 588 - "AssessmentType.php"
+Cohesion: 0.10
+Nodes (3): AssessmentFinalExamForm, AssessmentFactory, QuizFactory
 
 ### Community 589 - "Illuminate\Contracts\Pagination\LengthAwarePaginator"
-Cohesion: 0.15
-Nodes (7): CourseRepository, LivewireDataTable, PaginationLinks, CourseRepositoryInterface, Illuminate\Contracts\Pagination\LengthAwarePaginator, Illuminate\Contracts\View\View, Illuminate\View\Component
+Cohesion: 0.36
+Nodes (5): LivewireDataTable, PaginationLinks, Illuminate\Contracts\Pagination\LengthAwarePaginator, Illuminate\Contracts\View\View, Illuminate\View\Component
 
 ### Community 591 - "proctor-quiz-questions-form.blade.php"
 Cohesion: 0.33
@@ -1395,7 +1324,7 @@ Cohesion: 0.25
 Nodes (7): generateRandomAttendance, markAllAttendance(, resetAllAttendance, clearSuccessMessage, livewire.courses.partials.course-header, saveAllAttendance, selectSession(
 
 ### Community 596 - "SettingsService"
-Cohesion: 0.14
+Cohesion: 0.16
 Nodes (5): AdminFeeType, PricingTierBreakdownController, BillingSettings, Setting, SettingsService
 
 ### Community 597 - "Architecture Best Practices"
@@ -1425,7 +1354,7 @@ Nodes (3): partials.markdown-renderer-script, partials.pdf-reader-script, partia
   storage/password-change-success.html · relation: semantically_similar_to
 
 ## Knowledge Gaps
-- **465 isolated node(s):** `php`, `https-proxy.sh script`, `$schema`, `name`, `type` (+460 more)
+- **460 isolated node(s):** `php`, `https-proxy.sh script`, `$schema`, `name`, `type` (+455 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **228 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -1436,12 +1365,12 @@ _Questions this graph is uniquely positioned to answer:_
   _Edge tagged AMBIGUOUS (relation: semantically_similar_to) - confidence is low._
 - **What is the exact relationship between `Course Entity (multi-component container)` and `Password Change Success Page (Laravel 13 Boilerplate)`?**
   _Edge tagged AMBIGUOUS (relation: semantically_similar_to) - confidence is low._
-- **Why does `Course` connect `Course` to `Livewire\Component`, `CoursePersonFactory`, `AssessmentService`, `Illuminate\Database\Eloquent\Factories\Factory`, `User`, `AssessmentSeeder`, `PeopleIndexTest`, `AssessmentIndex`, `School`, `MediaLibraryService`, `Session`, `Course.php`, `AssessmentAttempt.php`, `AssessmentQuestion`, `ForumThreadService`, `CoursePersonService`, `ForumSeeder`, `CoursePerson`, `AssessmentQuestionOption`, `R2StorageService`, `AssessmentPersonalShowTest`, `Group`, `Period`, `ProctorSession`, `Assessment`, `AssessmentFinalExamFormTest`, `.parent`, `AssessmentScore`, `FinalExam`, `AssessmentAttemptService`, `SessionService`, `AssessmentFormTest`, `SessionAssessmentSeeder.php`, `SyllabusIndexTest`, `AttendanceIndex`, `AttendanceIndexTest`, `RoleName.php`, `ForumMonitoringIndexTest`, `SyllabusIndexEditTest`, `SessionFormTest`, `CourseFormTest`, `SyllabusIndex`, `R2StorageService.php`, `AssessmentAttempt`, `User.php`, `Illuminate\Contracts\Pagination\LengthAwarePaginator`, `ForumCommentLikeControllerTest`, `Model`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `SessionSeeder`, `AutoAssignUnassignedStudentsCommandTest`, `SessionMaterialCompletion`, `CourseComingSoonTest`, `ForumThread`, `ForumComment`, `Illuminate\Support\Collection`, `Syllabus`, `AssessmentQuizFormTest`, `AssessmentTeamShowTest`, `School.php`, `SyllabusIndexStudentTest`?**
-  _High betweenness centrality (0.075) - this node is a cross-community bridge._
-- **Why does `User` connect `User` to `Livewire\Component`, `GroupMember`, `AssessmentService`, `DemoLmsAccess`, `MediaLibraryItem`, `VideoConference`, `SchoolService`, `School`, `PaymentTransaction`, `Session`, `Role`, `Course.php`, `AssessmentQuestion`, `CoursePersonService`, `CoursePerson`, `AssessmentQuestionOption`, `R2StorageService`, `Group`, `Period`, `.seedSchoolCourses`, `ProctorSession`, `Assessment`, `Forum`, `CurrentSchool.php`, `FinalExam`, `StudentForm`, `PricingTier`, `SyllabusIndexTest`, `AttendanceIndexTest`, `RoleName.php`, `ChangePassword`, `UserLoginLinkFactory`, `CourseFormTest`, `DetectUserTimezoneJob.php`, `ForumCommentLikeControllerTest`, `IpGeolocationService`, `User.php`, `AssessmentAttempt`, `UpdateUserProfileInformation.php`, `SessionMaterialCompletion`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `R2StorageService.php`, `AutoAssignUnassignedStudentsCommandTest`, `Illuminate\Database\Eloquent\Relations\BelongsToMany`, `SettingsService`, `ForumThread`, `ForumComment`, `Illuminate\Support\Collection`, `StorageMonitoringService`, `Illuminate\Database\Eloquent\Model`, `AssessmentQuizFormTest`, `UserLoginLink`, `School.php`, `Course`, `DemoLmsAccessFactory`, `CoursePersonFactory`, `AssessmentSeeder`, `PeopleIndexTest`, `Illuminate\Contracts\Queue\ShouldQueue`, `Illuminate\Console\Command`, `AssessmentAttempt.php`, `AssessmentPersonalShowTest`, `Illuminate\Database\Seeder`, `AssessmentFinalExamFormTest`, `.parent`, `AssessmentScore`, `AssessmentFormTest`, `ForumMonitoringIndexTest`, `SyllabusIndexEditTest`, `SessionFormTest`, `Model`, `SchoolAdminRegister`, `AuditLog`, `UserService`, `CourseComingSoonTest`, `AssessmentTeamShowTest`, `2026_07_25_000003_rebuild_demo_school_with_school_scoped_roles.php`, `ForumSeeder`, `SyllabusIndexStudentTest`?**
-  _High betweenness centrality (0.056) - this node is a cross-community bridge._
-- **Why does `School` connect `School` to `AssessmentSeeder`, `PeopleIndexTest`, `Illuminate\Database\Eloquent\Factories\Factory`, `User`, `PaymentGateway`, `DemoLmsAccess`, `MediaLibraryItem`, `SchoolService`, `SyllabusIndexStudentTest`, `PricingTierService`, `PaymentTransaction`, `Session`, `Role`, `Illuminate\Console\Command`, `Course.php`, `AssessmentAttempt.php`, `ForumSeeder`, `AssessmentQuestion`, `CoursePerson`, `AssessmentQuestionOption`, `AssessmentPersonalShowTest`, `Illuminate\Database\Seeder`, `Group`, `Period`, `.seedSchoolCourses`, `ProctorSession`, `Assessment`, `AssessmentFinalExamFormTest`, `.parent`, `AssessmentScore`, `FinalExam`, `2026_08_01_054815_add_slug_to_schools_table.php`, `PricingTier`, `AssessmentFormTest`, `SyllabusIndexTest`, `SchoolTier`, `AttendanceIndexTest`, `RoleName.php`, `ForumMonitoringIndexTest`, `SyllabusIndexEditTest`, `SessionFormTest`, `UserFactory`, `CourseFormTest`, `R2StorageService.php`, `ForumCommentLikeControllerTest`, `AssessmentAttempt`, `Model`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `AutoAssignUnassignedStudentsCommandTest`, `Illuminate\Database\Eloquent\Relations\BelongsToMany`, `AuditLog`, `CourseComingSoonTest`, `ForumThread`, `ForumComment`, `TierChangeService`, `Illuminate\Database\Eloquent\Model`, `AssessmentQuizFormTest`, `AssessmentTeamShowTest`, `UserLoginLink`, `2026_07_25_000003_rebuild_demo_school_with_school_scoped_roles.php`, `TierChangeController`, `School.php`, `Course`, `DemoLmsAccessFactory`?**
-  _High betweenness centrality (0.055) - this node is a cross-community bridge._
+- **Why does `Course` connect `Course` to `Livewire\Component`, `CoursePersonFactory`, `AssessmentService`, `Illuminate\Database\Eloquent\Factories\Factory`, `Quiz`, `AttendanceDerivationService`, `Group`, `AssessmentFinalExamShowTest`, `AttendanceIndex`, `School`, `MediaLibraryService`, `Session`, `Course.php`, `TestCase`, `AssessmentQuestion`, `ForumThreadService`, `CoursePersonService`, `ForumSeeder`, `CoursePerson`, `AssessmentQuestionOption`, `AssessmentPersonalShowTest`, `CoursePerson.php`, `AssessmentQuizForm`, `AssessmentForm`, `ProctorSessionService`, `CourseService`, `ProctorExamShowTest`, `Assessment`, `Illuminate\Database\Eloquent\Relations\HasOne`, `Forum`, `.parent`, `FinalExam`, `AssessmentAttemptService`, `SessionService`, `AssessmentFormTest`, `ForumCommentService`, `SyllabusIndexTest`, `AttendanceIndexTest`, `User.php`, `ForumMonitoringIndexTest`, `SyllabusIndexEditTest`, `SessionFormTest`, `CourseFormTest`, `GradebookGradeBandsTest`, `SyllabusIndex`, `ProctorExamShow`, `AssessmentType.php`, `AssessmentAttempt`, `Model`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `SessionSeeder`, `AutoAssignUnassignedStudentsCommandTest`, `SessionMaterialCompletion`, `ForumThread`, `ForumComment`, `AssessmentQuestionAttemptScoringService`, `Syllabus`, `AssessmentQuizShowTest`, `AssessmentTeamShowTest`, `.response`?**
+  _High betweenness centrality (0.078) - this node is a cross-community bridge._
+- **Why does `User` connect `User` to `Livewire\Component`, `CoursePersonFactory`, `Group`, `Illuminate\Database\Eloquent\Factories\Factory`, `Quiz`, `MediaLibraryItem`, `AssessmentFinalExamShowTest`, `VideoConference`, `SchoolService`, `School`, `SessionMaterialCompletion`, `Permission`, `PaymentTransaction`, `PendingEmailVerificationMail`, `Role`, `Illuminate\Console\Command`, `Course.php`, `Session`, `ForumSeeder`, `CoursePersonService`, `TestCase`, `AssessmentQuestion`, `CoursePerson`, `AssessmentQuestionOption`, `AssessmentPersonalShowTest`, `CoursePerson.php`, `CourseService`, `ProctorExamShowTest`, `UserForm`, `Assessment`, `Forum`, `.parent`, `Illuminate\Http\UploadedFile`, `DemoLmsAccessService`, `AssessmentAttemptService`, `FinalExam`, `StudentForm`, `AssessmentFormTest`, `SyllabusIndexTest`, `AttendanceIndexTest`, `User.php`, `Illuminate\Pagination\LengthAwarePaginator`, `ForumMonitoringIndexTest`, `SessionFormTest`, `ChangePassword`, `SyllabusIndexEditTest`, `UserLoginLinkFactory`, `CourseFormTest`, `IpGeolocationService`, `GradebookGradeBandsTest`, `MediaLibraryItemFactory`, `AssessmentAttempt`, `AssessmentType.php`, `UpdateUserProfileInformation.php`, `Model`, `SchoolAdminRegister.php`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `QuizInstruction`, `Illuminate\Database\Eloquent\Relations\BelongsToMany`, `AutoAssignUnassignedStudentsCommandTest`, `AuditLog`, `UserService`, `ForumThread`, `UserLoginLinkService`, `SettingsService`, `ForumComment`, `StorageMonitoringService`, `UserRoles`, `Illuminate\Database\Eloquent\Model`, `AssessmentQuizShowTest`, `AssessmentTeamShowTest`, `UserLoginLink`, `PaymentStatus.php`, `Course`, `DemoLmsAccessFactory`?**
+  _High betweenness centrality (0.052) - this node is a cross-community bridge._
+- **Why does `Assessment` connect `Assessment` to `Livewire\Component`, `Quiz`, `AssessmentService`, `Group`, `Illuminate\Support\Collection`, `AssessmentFinalExamShowTest`, `Session`, `Course.php`, `TestCase`, `AssessmentQuestion`, `CoursePersonService`, `CoursePerson`, `AssessmentQuestionOption`, `R2StorageService`, `AssessmentQuizForm`, `AssessmentForm`, `CoursePerson.php`, `AssessmentPersonalShowTest`, `ProctorSessionService`, `ProctorExamShowTest`, `Illuminate\Database\Eloquent\Relations\HasOne`, `Attendance`, `Forum`, `.parent`, `AssessmentScore`, `FinalExam`, `AssessmentAttemptService`, `SessionService`, `AssessmentFormTest`, `ProctorExamShow`, `AssessmentType.php`, `AssessmentAttempt`, `Model`, `Illuminate\Database\Eloquent\Relations\BelongsTo`, `AssessmentQuestionAttemptScoringService`, `AssessmentQuizShowTest`, `AssessmentTeamShowTest`, `AppServiceProvider.php`, `ProctorSessionStatusService`, `Course`?**
+  _High betweenness centrality (0.043) - this node is a cross-community bridge._
 - **Are the 82 inferred relationships involving `User` (e.g. with `.handle()` and `.handle()`) actually correct?**
   _`User` has 82 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 31 inferred relationships involving `Course` (e.g. with `.definition()` and `.definition()`) actually correct?**

@@ -29,7 +29,7 @@ Running the command produces a complete, working module in seconds:
 | `app/Livewire/Products/ProductEdit.php` | Edit component |
 | `app/Http/Requests/Product/StoreProductRequest.php` | Create validation |
 | `app/Http/Requests/Product/UpdateProductRequest.php` | Update validation |
-| `resources/views/livewire/products/product-index.blade.php` | List view via `<x-livewire-data-table>` |
+| `resources/views/livewire/products/product-index.blade.php` | List view via `<x-ui.livewire-data-table>` |
 | `resources/views/livewire/products/product-create.blade.php` | Create form |
 | `resources/views/livewire/products/product-edit.blade.php` | Edit form |
 | `database/migrations/xxxx_add_products_permissions_and_assign_to_admin.php` | CRUD permission migration, synced to `admin` role |
@@ -47,7 +47,7 @@ All screenshots below are captured from an actual generated module running in th
 
 ### 1. Index — `/products`
 
-The list page renders through the shared `<x-livewire-data-table>` component with Livewire-driven search, sort, and pagination. The sidebar automatically shows the active "Products" item with its icon.
+The list page renders through the shared `<x-ui.livewire-data-table>` component with Livewire-driven search, sort, and pagination. The sidebar automatically shows the active "Products" item with its icon.
 
 ![Product Index](dusk/images/crud/product-index.png)
 

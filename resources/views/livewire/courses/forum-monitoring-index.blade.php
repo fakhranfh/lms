@@ -114,103 +114,59 @@
             </div>
         @endif
 
-        <!-- Skeleton Loading -->
-        <div
-            wire:loading.class.remove="hidden"
-            wire:target="gotoPage,previousPage,nextPage,studentSearch,perPage,autofillComments,deleteAllPosts"
-            class="hidden bg-surface border border-outline-variant rounded-lg overflow-hidden animate-pulse"
+        <x-ui.livewire-data-table
+            :columns="[
+                ['key' => 'student', 'label' => 'Student', 'sortable' => false],
+                ['key' => 'threads', 'label' => 'Threads', 'sortable' => false],
+                ['key' => 'comments', 'label' => 'Comments', 'sortable' => false],
+                ['key' => 'total_posts', 'label' => 'Total Posts', 'sortable' => false],
+                ['key' => 'requirement', 'label' => 'Requirement', 'sortable' => false],
+            ]"
+            :items="$studentRows"
+            :showPagination="false"
+            loadingTarget="gotoPage,previousPage,nextPage,studentSearch,perPage,autofillComments,deleteAllPosts"
         >
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-outline-variant bg-surface-container/50">
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Student</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Threads</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Comments</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Total Posts</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Requirement</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-outline-variant">
-                        @for ($i = 0; $i < 5; $i++)
-                            <tr>
-                                <td class="px-space-lg py-space-md">
-                                    <div class="flex items-center gap-space-sm">
-                                        <x-ui.skeleton-box class="h-8 w-8 rounded-full flex-shrink-0" />
-                                        <x-ui.skeleton-box class="h-4 w-32" />
-                                    </div>
-                                </td>
-                                <td class="px-space-lg py-space-md"><x-ui.skeleton-box class="h-4 w-8" /></td>
-                                <td class="px-space-lg py-space-md"><x-ui.skeleton-box class="h-4 w-8" /></td>
-                                <td class="px-space-lg py-space-md"><x-ui.skeleton-box class="h-4 w-8" /></td>
-                                <td class="px-space-lg py-space-md"><x-ui.skeleton-box class="h-6 w-24 rounded-full" /></td>
-                                <td class="px-space-lg py-space-md"><x-ui.skeleton-box class="h-4 w-16" /></td>
-                            </tr>
-                        @endfor
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div wire:loading.remove wire:target="gotoPage,previousPage,nextPage,studentSearch,perPage,autofillComments,deleteAllPosts" class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-outline-variant bg-surface-container/50">
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Student</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Threads</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Comments</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Total Posts</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Requirement</th>
-                            <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface-variant">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-outline-variant">
-                        @forelse ($studentRows as $row)
-                            <tr wire:key="forum-monitoring-student-{{ $row['user']->id }}">
-                                <td class="px-space-lg py-space-md">
-                                    <div class="flex items-center gap-space-sm">
-                                        <x-avatar :user="$row['user']" size="8" />
-                                        <span class="font-label-md text-label-md text-on-surface">{{ $row['user']->name }}</span>
-                                    </div>
-                                </td>
-                                <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ $row['threadCount'] }}</td>
-                                <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ $row['commentCount'] }}</td>
-                                <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ $row['totalPosts'] }}</td>
-                                <td class="px-space-lg py-space-md">
-                                    @if ($row['met'])
-                                        <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-success/10 text-success">
-                                            <span class="material-symbols-outlined text-[16px]">check_circle</span>
-                                            Met
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-error/10 text-error">
-                                            <span class="material-symbols-outlined text-[16px]">cancel</span>
-                                            {{ $row['remaining'] }} post{{ $row['remaining'] === 1 ? '' : 's' }} remaining
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-space-lg py-space-md">
-                                    <button
-                                        type="button"
-                                        @click="viewPosts(@js(['id' => $row['user']->id, 'name' => $row['user']->name]), @js($row['threadsJson']), @js($row['commentsJson']))"
-                                        class="text-body-sm text-primary font-medium hover:underline inline-flex items-center gap-space-xs"
-                                    >
-                                        <span class="material-symbols-outlined text-[16px]">visibility</span>
-                                        View Posts
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No students found.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+            @forelse ($studentRows as $row)
+                <tr wire:key="forum-monitoring-student-{{ $row['user']->id }}">
+                    <td class="px-space-lg py-space-md">
+                        <div class="flex items-center gap-space-sm">
+                            <x-avatar :user="$row['user']" size="8" />
+                            <span class="font-label-md text-label-md text-on-surface">{{ $row['user']->name }}</span>
+                        </div>
+                    </td>
+                    <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ $row['threadCount'] }}</td>
+                    <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ $row['commentCount'] }}</td>
+                    <td class="px-space-lg py-space-md text-body-sm text-on-surface">{{ $row['totalPosts'] }}</td>
+                    <td class="px-space-lg py-space-md">
+                        @if ($row['met'])
+                            <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-success/10 text-success">
+                                <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                Met
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-space-xs px-space-sm py-1 rounded-full font-label-sm text-label-sm bg-error/10 text-error">
+                                <span class="material-symbols-outlined text-[16px]">cancel</span>
+                                {{ $row['remaining'] }} post{{ $row['remaining'] === 1 ? '' : 's' }} remaining
+                            </span>
+                        @endif
+                    </td>
+                    <td class="px-space-lg py-space-md text-right">
+                        <button
+                            type="button"
+                            @click="viewPosts(@js(['id' => $row['user']->id, 'name' => $row['user']->name]), @js($row['threadsJson']), @js($row['commentsJson']))"
+                            class="text-body-sm text-primary font-medium hover:underline inline-flex items-center gap-space-xs"
+                        >
+                            <span class="material-symbols-outlined text-[16px]">visibility</span>
+                            View Posts
+                        </button>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="6" class="px-space-lg py-space-lg text-center text-body-sm text-on-surface-variant">No students found.</td>
+                </tr>
+            @endforelse
+        </x-ui.livewire-data-table>
 
         <x-ui.pagination-links :paginator="$studentRows" perPageModel="perPage" :perPageOptions="[10, 25, 50, 100]" />
     @else

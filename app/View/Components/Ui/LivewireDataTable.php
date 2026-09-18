@@ -14,14 +14,16 @@ class LivewireDataTable extends Component
 
     public bool $isPaginated;
 
+    public bool $hasItems;
+
     /**
      * @param  array<int, array{key: string, label: string, sortable?: bool}>  $columns
-     * @param  LengthAwarePaginator<int, mixed>|Collection<int, mixed>|null  $items
+     * @param  LengthAwarePaginator<int, mixed>|Collection<int, mixed>|array<int, mixed>|null  $items
      * @param  array<int, int>  $perPageOptions
      */
     public function __construct(
         public array $columns = [],
-        public LengthAwarePaginator|Collection|null $items = null,
+        public LengthAwarePaginator|Collection|array|null $items = null,
         public ?string $sort = null,
         public string $direction = 'asc',
         public ?int $perPage = null,
@@ -29,9 +31,11 @@ class LivewireDataTable extends Component
         public string $loadingTarget = 'search,applyFilters,resetFilters,sortBy,perPage',
         public bool $selectable = false,
         public bool $showPagination = true,
+        public bool $showActionsColumn = true,
     ) {
-        $this->columnCount = count($columns) + 1 + ($selectable ? 1 : 0);
+        $this->columnCount = count($columns) + ($showActionsColumn ? 1 : 0) + ($selectable ? 1 : 0);
         $this->isPaginated = $items instanceof LengthAwarePaginator;
+        $this->hasItems = $items !== null;
     }
 
     public function render(): View|Closure|string

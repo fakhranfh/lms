@@ -139,11 +139,6 @@
     "ast_hash": "d054090aedbbabce68b75775f28376e0",
     "semantic_hash": "d054090aedbbabce68b75775f28376e0"
   },
-  "app/Console/Commands/Stubs/BladeIndexStubGenerator.php": {
-    "mtime": 1784380589.2646704,
-    "ast_hash": "98c268ddf2377d884063a3710af31c38",
-    "semantic_hash": "98c268ddf2377d884063a3710af31c38"
-  },
   "app/Console/Commands/Stubs/LivewireCreateStubGenerator.php": {
     "mtime": 1784380589.2656753,
     "ast_hash": "7b10bc4526c54f29d070bb095b909a4d",
@@ -3030,9 +3025,9 @@
     "semantic_hash": "1f42217599a3431dafead845b48e216f"
   },
   "package.json": {
-    "mtime": 1787116808.5659592,
-    "ast_hash": "46e2d057860007077364a500e42d63fe",
-    "semantic_hash": "46e2d057860007077364a500e42d63fe"
+    "mtime": 1789703825.4946823,
+    "ast_hash": "e500cbf57dc7d2cfaa87cbef7936f907",
+    "semantic_hash": ""
   },
   "public/index.php": {
     "mtime": 1784380589.446673,
@@ -3158,16 +3153,6 @@
     "mtime": 1784380589.4596732,
     "ast_hash": "d28b4c8bc45cdf4ce76baa21d97b4591",
     "semantic_hash": "d28b4c8bc45cdf4ce76baa21d97b4591"
-  },
-  "resources/views/components/data-table-scripts.blade.php": {
-    "mtime": 1784380589.460672,
-    "ast_hash": "6337f14f8d9306dc26f073320e065b65",
-    "semantic_hash": "6337f14f8d9306dc26f073320e065b65"
-  },
-  "resources/views/components/data-table.blade.php": {
-    "mtime": 1784380589.4616718,
-    "ast_hash": "59fd2e95080a724070e40e3f7a68ffd0",
-    "semantic_hash": "59fd2e95080a724070e40e3f7a68ffd0"
   },
   "resources/views/components/delete-modal.blade.php": {
     "mtime": 1784380589.4616718,
@@ -4685,9 +4670,9 @@
     "semantic_hash": "224aaa18e9a7b0f928a50d0ace424e5b"
   },
   "README.md": {
-    "mtime": 1784380589.253671,
-    "ast_hash": "536759a96ff522bbd1c84cd4f34cf6c0",
-    "semantic_hash": "536759a96ff522bbd1c84cd4f34cf6c0"
+    "mtime": 1789703904.959355,
+    "ast_hash": "34ed0397b4f61dd7d0cd11256bbf8996",
+    "semantic_hash": ""
   },
   "docs/AI_GRADING.md": {
     "mtime": 1784794261.5734468,
@@ -4715,39 +4700,14 @@
     "semantic_hash": "10e15bbf7769136b714d065abd2b7fb0"
   },
   "docs/CRUD_GENERATOR.md": {
-    "mtime": 1784380589.4066727,
-    "ast_hash": "c960da5d033784094fc8bac6dd0fd42a",
-    "semantic_hash": "c960da5d033784094fc8bac6dd0fd42a"
+    "mtime": 1789703900.3738725,
+    "ast_hash": "c8ce324cb68dd666bc8eabe42b034a5a",
+    "semantic_hash": ""
   },
   "docs/CRUD_GENERATOR_SHOWCASE.md": {
-    "mtime": 1784380589.4066727,
-    "ast_hash": "8556b3c383b4223732e9631821aeab52",
-    "semantic_hash": "8556b3c383b4223732e9631821aeab52"
-  },
-  "docs/DATATABLE_CHANGES.md": {
-    "mtime": 1784380589.407671,
-    "ast_hash": "7bafe4e0be8471ce914596cbe8b0035f",
-    "semantic_hash": "7bafe4e0be8471ce914596cbe8b0035f"
-  },
-  "docs/DATATABLE_EXAMPLE.md": {
-    "mtime": 1784380589.407671,
-    "ast_hash": "7aaa929a1850ae2da211f17b528757c2",
-    "semantic_hash": "7aaa929a1850ae2da211f17b528757c2"
-  },
-  "docs/DATATABLE_FINAL_STATUS.md": {
-    "mtime": 1784380589.408672,
-    "ast_hash": "a6f3dd73a6eb7ba74f480fd973c2a8d8",
-    "semantic_hash": "a6f3dd73a6eb7ba74f480fd973c2a8d8"
-  },
-  "docs/DATATABLE_FIXES.md": {
-    "mtime": 1784380589.408672,
-    "ast_hash": "6a55c53589669746fb5a9db78d6dc2d4",
-    "semantic_hash": "6a55c53589669746fb5a9db78d6dc2d4"
-  },
-  "docs/DATATABLE_INTEGRATION.md": {
-    "mtime": 1784380589.4096723,
-    "ast_hash": "9c582a82d60c06b1a26770a94e93df40",
-    "semantic_hash": "9c582a82d60c06b1a26770a94e93df40"
+    "mtime": 1789703900.409875,
+    "ast_hash": "890f215feb42e094832f7cee55e6d7c6",
+    "semantic_hash": ""
   },
   "docs/ERD.md": {
     "mtime": 1784701773.8459666,
@@ -4755,9 +4715,9 @@
     "semantic_hash": "8fec313fd0e198ac7b1bad7db6c9affd"
   },
   "docs/GETTING_STARTED.md": {
-    "mtime": 1784380589.4096723,
-    "ast_hash": "8ef97b63c6a83a4682851edb322b1770",
-    "semantic_hash": "8ef97b63c6a83a4682851edb322b1770"
+    "mtime": 1789703900.4246876,
+    "ast_hash": "bdcc918a9c47b9f82a15e3ff000afd68",
+    "semantic_hash": ""
   },
   "docs/MONITORING.md": {
     "mtime": 1784860543.5388942,
@@ -6255,8 +6215,8 @@
     "semantic_hash": ""
   },
   "resources/views/components/assessments/session-table.blade.php": {
-    "mtime": 1789450123.3794687,
-    "ast_hash": "d180d1c2f5c9cde875cd777da97ff97b",
+    "mtime": 1789703321.405201,
+    "ast_hash": "cacb903607e7105cedb2c7e05a148cb9",
     "semantic_hash": ""
   },
   "resources/views/components/assessments/table-skeleton.blade.php": {
@@ -6405,8 +6365,8 @@
     "semantic_hash": ""
   },
   "resources/views/components/assessments/attendance-summary-table.blade.php": {
-    "mtime": 1789443335.453837,
-    "ast_hash": "abef4286488cb05e6b972ef444e1020b",
+    "mtime": 1789703330.783854,
+    "ast_hash": "330924352f5696979dae0b78f7e70a36",
     "semantic_hash": ""
   },
   "resources/views/components/assessments/final-exam/question-grade-card.blade.php": {
@@ -6425,8 +6385,8 @@
     "semantic_hash": ""
   },
   "resources/views/components/assessments/forum-discussion-summary-table.blade.php": {
-    "mtime": 1789443259.1318705,
-    "ast_hash": "8171beea9291b1721167d5503471990d",
+    "mtime": 1789703339.5438364,
+    "ast_hash": "e96b827b6858e13bdb21200a8f8f6095",
     "semantic_hash": ""
   },
   "resources/views/components/attendance/table-skeleton.blade.php": {
@@ -6450,8 +6410,8 @@
     "semantic_hash": ""
   },
   "resources/views/livewire/courses/forum-monitoring-index.blade.php": {
-    "mtime": 1789451725.574893,
-    "ast_hash": "1859d3cae806290fc89857cc91250678",
+    "mtime": 1789703363.561339,
+    "ast_hash": "137cc98dd113faffb8d0c5a2e9ef2cee",
     "semantic_hash": ""
   },
   "tests/Feature/CourseRestructure/AssessmentQuestionAttemptScoringServiceTest.php": {
@@ -6590,8 +6550,8 @@
     "semantic_hash": ""
   },
   "app/View/Components/Ui/LivewireDataTable.php": {
-    "mtime": 1789702588.7936027,
-    "ast_hash": "10a299822496222b38bec4f018ba24ff",
+    "mtime": 1789703291.6166894,
+    "ast_hash": "ce348813e50b43dd22fe2281ac9ccb89",
     "semantic_hash": ""
   },
   "config/students.php": {
@@ -6625,8 +6585,8 @@
     "semantic_hash": ""
   },
   "resources/views/components/ui/livewire-data-table.blade.php": {
-    "mtime": 1789702596.4992337,
-    "ast_hash": "ad7f8ce28eb260f1bb82b031256c734b",
+    "mtime": 1789703302.6223295,
+    "ast_hash": "a74db852bc68e828236fd7af0c112f02",
     "semantic_hash": ""
   },
   "resources/views/livewire/courses/gradebook-grade-bands-placeholder.blade.php": {

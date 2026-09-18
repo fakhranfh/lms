@@ -39,7 +39,7 @@ Tailwind CRUD Generator auto-creates professional CRUD views with:
 - ✅ RESTful routes
 - ✅ Auto-generated forms with full enum support (select dropdowns)
 - ✅ Column-aware filter UI (text, date range, enum dropdown) out of the box
-- ✅ Server-side DataTables with filter-aware AJAX endpoint
+- ✅ Server-rendered Livewire data table, sorted with `wire:click` (no AJAX/DataTables.js)
 - ✅ Sidebar driven by `config/sidebar.php` (config-based, not hardcoded HTML)
 - ✅ Auto-generated CRUD permission migration (view/create/update/delete), assigned to the `admin` role
 
@@ -385,7 +385,7 @@ database/migrations/
 └── xxxx_add_products_permissions_and_assign_to_admin.php  # Permission migration
 
 resources/views/livewire/products/
-├── product-index.blade.php                      # List page via <x-livewire-data-table>
+├── product-index.blade.php                      # List page via <x-ui.livewire-data-table>
 ├── product-create.blade.php                     # Create form
 └── product-edit.blade.php                       # Edit form
 
@@ -496,7 +496,7 @@ php artisan route:list | grep products
 - Success/error alert messages
 - Column-aware filter UI (text, date range, enum dropdown — per column type)
 - Apply / Reset filter buttons
-- Server-rendered table via `<x-livewire-data-table>`, sorted with `wire:click` (no AJAX/DataTables.js)
+- Server-rendered table via `<x-ui.livewire-data-table>`, sorted with `wire:click` (no AJAX/DataTables.js)
 - Pagination controls
 
 **Layout:**
@@ -780,34 +780,6 @@ Open blade file and insert after auto-generated fields:
   <th class="px-6 py-3">{{ __('Stock') }}</th>       <!-- Add custom -->
   <th class="px-6 py-3">{{ __('Actions') }}</th>
 </tr>
-```
-
-### Add DataTables Integration
-
-```blade
-<!-- In index.blade.php @push('scripts') -->
-@push('scripts')
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const table = document.getElementById('product-table');
-    if (table && typeof DataTable !== 'undefined') {
-      new DataTable('#product-table', {
-        ajax: {
-          url: '{{ route("products.data") }}',
-          type: 'GET'
-        },
-        columns: [
-          { data: 'id' },
-          { data: 'name' },
-          { data: 'price' },
-          { data: 'stock' },
-          { data: 'actions', orderable: false, searchable: false }
-        ]
-      });
-    }
-  });
-</script>
-@endpush
 ```
 
 ### Change Colors
@@ -1356,7 +1328,7 @@ app/Console/Commands/Stubs/
 ├── RepositoryStubGenerator.php
 ├── ServiceStubGenerator.php
 ├── LivewireIndexStubGenerator.php
-├── LivewireIndexViewStubGenerator.php   # emits <x-livewire-data-table> usage
+├── LivewireIndexViewStubGenerator.php   # emits <x-ui.livewire-data-table> usage
 ├── LivewireCreateStubGenerator.php
 ├── LivewireCreateViewStubGenerator.php
 ├── LivewireEditStubGenerator.php

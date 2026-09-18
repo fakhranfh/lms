@@ -1,7 +1,7 @@
 @section('title', $assessment->title)
 
-<div
-    class="min-h-screen bg-surface-container/30"
+<x-full-page-form
+    max-width="max-w-xl"
     x-data="{
         speedTesting: false,
         speedResult: null,
@@ -341,25 +341,25 @@
     x-init="$el.closest('main')?.scrollTo(0, 0)"
     x-on:destroy="stopAllChecks()"
 >
-    <div class="fixed top-0 inset-x-0 flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant bg-surface z-10">
-        <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ $assessment->title }}</h2>
-        <div class="flex items-center gap-space-md">
-            @if (app()->environment('local'))
-                <a
-                    href="{{ route('assessments.final-exam.proctor.show', $assessment) }}"
-                    wire:navigate
-                    @click="stopAllChecks()"
-                    class="inline-flex items-center px-space-sm py-1 rounded-full text-body-xs font-medium bg-secondary/10 text-secondary hover:bg-secondary/20 transition"
-                >
-                    Skip (local only)
-                </a>
-            @endif
-            <span class="inline-flex items-center px-space-sm py-1 rounded-full text-body-xs font-medium bg-error/10 text-error">Proctored</span>
+    <x-slot:topbar>
+        <div class="fixed top-0 inset-x-0 flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant bg-surface z-10">
+            <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ $assessment->title }}</h2>
+            <div class="flex items-center gap-space-md">
+                @if (app()->environment('local'))
+                    <a
+                        href="{{ route('assessments.final-exam.proctor.show', $assessment) }}"
+                        wire:navigate
+                        @click="stopAllChecks()"
+                        class="inline-flex items-center px-space-sm py-1 rounded-full text-body-xs font-medium bg-secondary/10 text-secondary hover:bg-secondary/20 transition"
+                    >
+                        Skip (local only)
+                    </a>
+                @endif
+                <span class="inline-flex items-center px-space-sm py-1 rounded-full text-body-xs font-medium bg-error/10 text-error">Proctored</span>
+            </div>
         </div>
-    </div>
+    </x-slot:topbar>
 
-    <div class="min-h-screen flex items-center justify-center px-gutter py-space-xl pt-24">
-    <div class="bg-surface border border-outline-variant rounded-lg p-space-xl max-w-xl w-full space-y-space-lg">
         @if ($step !== 'instructions')
             <!-- Step indicator -->
             <div class="flex items-center justify-center gap-space-sm">
@@ -637,6 +637,4 @@
                 </div>
             </div>
         @endif
-    </div>
-    </div>
-</div>
+</x-full-page-form>

@@ -7,6 +7,7 @@
 
 <div x-data="{
         deleteId: null, showDeleteModal: false,
+        deletingIds: [],
         selected: [],
         selectAllMatching: @entangle('selectAllMatching'),
         matchingCount: @entangle('matchingCount'),
@@ -111,6 +112,22 @@
                 headers: { 'X-CSRF-TOKEN': this.csrfToken(), 'Accept': 'application/json' },
             }).catch(() => {});
         },
+        confirmDelete() {
+            this.showDeleteModal = false;
+
+            if (this.deleteId !== null) {
+                this.deletingIds = [this.deleteId];
+
+                $wire.call('destroy', this.deleteId).finally(() => { this.deletingIds = [] });
+
+                return;
+            }
+
+            this.deletingIds = this.selectAllMatching ? [...this.pageIds] : [...this.selected];
+
+            const deletion = this.selectAllMatching ? $wire.call('destroyAllMatching') : $wire.call('destroySelected', this.selected);
+            deletion.then(() => this.clearSelection()).finally(() => { this.deletingIds = [] });
+        },
     }"
 >
     <x-ui.livewire-data-table
@@ -208,7 +225,7 @@
                     Cancel
                 </button>
                 <button
-                    @click="showDeleteModal = false; if (deleteId === null) { const deletion = selectAllMatching ? $wire.call('destroyAllMatching') : $wire.call('destroySelected', selected); deletion.then(() => clearSelection()) } else { $wire.call('destroy', deleteId) }"
+                    @click="confirmDelete()"
                     type="button"
                     class="flex-1 px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                 >

@@ -3,16 +3,22 @@
 namespace App\Livewire\Students;
 
 use App\Enums\RoleName;
+use App\Exports\StudentsExport;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Services\UserLoginLinkService;
 use App\Services\UserService;
 use App\Support\CurrentSchool;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * @property-read LengthAwarePaginator $students
@@ -94,6 +100,55 @@ class StudentIndex extends Component
 
         $link = $userLoginLinkService->createLink($student, config('students.login_link_ttl_minutes', 2880));
         $this->regeneratedLoginUrl = $userLoginLinkService->buildLoginUrl($link);
+    }
+
+    public function exportExcel(UserService $userService, UserLoginLinkService $userLoginLinkService)
+    {
+        abort_unless(auth()->user()->can('students.view'), 403);
+
+        return Excel::download(
+            new StudentsExport($this->exportRows($userService, $userLoginLinkService)),
+            'students-'.now()->format('Y-m-d').'.xlsx',
+        );
+    }
+
+    public function exportPdf(UserService $userService, UserLoginLinkService $userLoginLinkService): StreamedResponse
+    {
+        abort_unless(auth()->user()->can('students.view'), 403);
+
+        $filename = 'students-'.now()->format('Y-m-d').'.pdf';
+        $output = Pdf::loadView('exports.students-pdf', [
+            'rows' => $this->exportRows($userService, $userLoginLinkService),
+        ])->output();
+
+        return Response::streamDownload(function () use ($output) {
+            echo $output;
+        }, $filename, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    /**
+     * @return Collection<int, array{name: string, email: string, login_url: string}>
+     */
+    private function exportRows(UserService $userService, UserLoginLinkService $userLoginLinkService): Collection
+    {
+        $ids = $userService->idsMatching($this->matchingFilters());
+        $ttlMinutes = config('students.login_link_ttl_minutes', 2880);
+
+        return collect($ids)
+            ->map(fn (string $id) => $userService->find($id))
+            ->filter()
+            ->map(function ($student) use ($userLoginLinkService, $ttlMinutes) {
+                $link = $userLoginLinkService->createLink($student, $ttlMinutes);
+
+                return [
+                    'name' => $student->name,
+                    'email' => $student->email,
+                    'login_url' => $userLoginLinkService->buildLoginUrl($link),
+                ];
+            })
+            ->values();
     }
 
     private function currentSchoolId(): ?string

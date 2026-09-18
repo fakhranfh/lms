@@ -27,6 +27,22 @@
                     </button>
                 @endcan
             @endif
+            @can('students.view')
+                <button type="button" wire:click="exportExcel" wire:loading.attr="disabled" wire:target="exportExcel"
+                    class="px-space-lg py-space-sm border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors inline-flex items-center gap-space-2xs disabled:opacity-60">
+                    <span wire:loading wire:target="exportExcel"><x-ui.spinner /></span>
+                    <span wire:loading.remove wire:target="exportExcel" class="material-symbols-outlined text-[18px]">grid_on</span>
+                    <span wire:loading.remove wire:target="exportExcel">Export Excel</span>
+                    <span wire:loading wire:target="exportExcel">Exporting...</span>
+                </button>
+                <button type="button" wire:click="exportPdf" wire:loading.attr="disabled" wire:target="exportPdf"
+                    class="px-space-lg py-space-sm border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors inline-flex items-center gap-space-2xs disabled:opacity-60">
+                    <span wire:loading wire:target="exportPdf"><x-ui.spinner /></span>
+                    <span wire:loading.remove wire:target="exportPdf" class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                    <span wire:loading.remove wire:target="exportPdf">Export PDF</span>
+                    <span wire:loading wire:target="exportPdf">Exporting...</span>
+                </button>
+            @endcan
             @can('students.import')
                 <a href="{{ route('students.import') }}"
                     class="px-space-lg py-space-sm border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors inline-flex items-center gap-space-2xs">

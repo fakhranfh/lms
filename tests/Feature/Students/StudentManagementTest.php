@@ -223,6 +223,40 @@ test('regenerating a login link from the students index without permission is fo
         ->assertForbidden();
 });
 
+test('exporting students to excel streams a download for matching students', function () {
+    $actor = actingAsStudentManager(['students.view']);
+    makeStudent($actor, ['name' => 'Excel Student', 'email' => 'excel@example.com']);
+
+    Livewire::actingAs($actor)->test(StudentIndex::class)
+        ->call('exportExcel')
+        ->assertFileDownloaded('students-'.now()->format('Y-m-d').'.xlsx');
+});
+
+test('exporting students to excel without permission is forbidden', function () {
+    $actor = User::factory()->create();
+
+    Livewire::actingAs($actor)->test(StudentIndex::class)
+        ->call('exportExcel')
+        ->assertForbidden();
+});
+
+test('exporting students to pdf streams a download for matching students', function () {
+    $actor = actingAsStudentManager(['students.view']);
+    makeStudent($actor, ['name' => 'Pdf Student', 'email' => 'pdf@example.com']);
+
+    Livewire::actingAs($actor)->test(StudentIndex::class)
+        ->call('exportPdf')
+        ->assertFileDownloaded('students-'.now()->format('Y-m-d').'.pdf');
+});
+
+test('exporting students to pdf without permission is forbidden', function () {
+    $actor = User::factory()->create();
+
+    Livewire::actingAs($actor)->test(StudentIndex::class)
+        ->call('exportPdf')
+        ->assertForbidden();
+});
+
 test('editing a student without permission is forbidden', function () {
     $actor = actingAsStudentManager(['students.view']);
     $student = makeStudent($actor);

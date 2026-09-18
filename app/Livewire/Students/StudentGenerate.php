@@ -12,6 +12,8 @@ use Livewire\Component;
 
 class StudentGenerate extends Component
 {
+    public bool $embedded = false;
+
     public int $count = 5;
 
     public int $loginLinkTtlDays = 2;
@@ -21,6 +23,8 @@ class StudentGenerate extends Component
 
     public function mount(): void
     {
+        abort_unless(app()->environment(['local', 'testing']), 403);
+
         $this->loginLinkTtlDays = (int) ceil(config('students.login_link_ttl_minutes', 2880) / 1440);
     }
 
@@ -39,6 +43,7 @@ class StudentGenerate extends Component
 
     public function generate(UserService $userService, UserLoginLinkService $userLoginLinkService): void
     {
+        abort_unless(app()->environment(['local', 'testing']), 403);
         abort_unless(auth()->user()->can('students.create'), 403);
 
         $this->validate();
@@ -77,7 +82,13 @@ class StudentGenerate extends Component
     {
         $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
 
-        return view('livewire.students.student-generate')
+        $view = view('livewire.students.student-generate');
+
+        if ($this->embedded) {
+            return $view;
+        }
+
+        return $view
             ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => 'Generate Students'])
             ->section($isAdminUser ? 'admin-content' : 'app-content');
     }

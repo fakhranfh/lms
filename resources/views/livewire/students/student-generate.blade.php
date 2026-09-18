@@ -34,7 +34,10 @@
         </div>
     @endif
 
-    <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
+    <div @class([
+        'space-y-space-lg',
+        'bg-surface border border-outline-variant rounded-lg p-space-lg' => ! $embedded,
+    ])>
         <div>
             <h2 class="font-headline-sm text-headline-sm text-on-surface">Generate Students</h2>
             <p class="font-body-sm text-body-sm text-secondary mt-space-xs">
@@ -72,7 +75,11 @@
                 <span wire:loading.remove wire:target="generate">Generate</span>
                 <span wire:loading wire:target="generate">Generating...</span>
             </button>
-            <a href="{{ route('students.index') }}" class="font-label-md text-label-md text-secondary hover:underline">Cancel</a>
+            @if ($embedded)
+                <button type="button" @click="showGenerateModal = false" class="font-label-md text-label-md text-secondary hover:underline">Cancel</button>
+            @else
+                <a href="{{ route('students.index') }}" class="font-label-md text-label-md text-secondary hover:underline">Cancel</a>
+            @endif
         </div>
     </div>
 </div>

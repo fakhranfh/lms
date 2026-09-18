@@ -3,16 +3,29 @@
 <div class="w-full" x-data="{
         showErrorModal: false, errorMessage: '',
         savedPhotoSrc: @js($this->savedPhotoSrc()),
+        name: @js($name),
+        email: @js($email),
         password: @js($password),
         passwordConfirmation: @js($password_confirmation),
+        loginLinkTtlDays: @js((string) $loginLinkTtlDays),
         isEditing: @js($this->isEditing()),
+        nameTouched: false,
+        emailTouched: false,
+        loginLinkTtlDaysTouched: false,
+        submitAttempted: false,
+        get nameEmpty() { return this.name.trim() === '' },
+        get emailInvalid() { return this.email.trim() === '' || ! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email) },
+        get loginLinkTtlDaysInvalid() {
+            const days = Number(this.loginLinkTtlDays);
+            return this.loginLinkTtlDays === '' || ! Number.isInteger(days) || days < 1 || days > 365;
+        },
         get passwordTooShort() { return this.password.length > 0 && this.password.length < 8 },
         get passwordMismatch() { return this.passwordConfirmation.length > 0 && this.password !== this.passwordConfirmation },
         get passwordInvalid() {
             if (this.password === '' && this.passwordConfirmation === '' && this.isEditing) { return false }
             return this.passwordTooShort || this.passwordMismatch || this.password === '' || this.passwordConfirmation === ''
         },
-        get formInvalid() { return this.passwordInvalid },
+        get formInvalid() { return this.nameEmpty || this.emailInvalid || this.loginLinkTtlDaysInvalid || this.passwordInvalid },
         previewPhoto(event) {
             const file = event.target.files[0];
             if (! file) { return }
@@ -27,12 +40,24 @@
     }"
     x-init="
         $wire.$on('show-error-modal', ({ message }) => { errorMessage = message; showErrorModal = true });
-        $wire.$on('student-autofilled', ({ password: pwd }) => { password = pwd; passwordConfirmation = pwd });
+        $wire.$on('student-autofilled', ({ name: newName, email: newEmail, password: pwd }) => {
+            name = newName; email = newEmail; password = pwd; passwordConfirmation = pwd;
+        });
     ">
 
-    @if ($loginUrl)
+    <div class="mb-space-lg">
+        <a href="{{ route('students.index') }}" class="text-body-sm text-primary hover:underline inline-flex items-center gap-space-xs">
+            <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+            Back to Students
+        </a>
+        <h1 class="font-headline-sm text-headline-sm text-on-surface mt-space-sm">
+            {{ $this->isEditing() ? 'Edit Student - '.$this->user->name : 'New Student' }}
+        </h1>
+    </div>
+
+    @if ($loginUrl && ! $this->isEditing())
         <div class="mb-space-lg px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg space-y-space-sm" x-data="{ copied: false }">
-            <p class="font-label-md text-label-md text-success">{{ $this->isEditing() ? 'New login link generated. Share this one-time login link:' : 'Student created. Share this one-time login link:' }}</p>
+            <p class="font-label-md text-label-md text-success">Student created. Share this one-time login link:</p>
             <div class="flex items-center gap-space-sm">
                 <input type="text" readonly value="{{ $loginUrl }}" x-ref="loginUrlInput"
                     class="flex-1 px-space-md py-space-sm border border-outline-variant rounded-lg font-body-sm text-body-sm bg-surface">
@@ -45,7 +70,32 @@
         </div>
     @endif
 
-    <form @submit.prevent="if (!formInvalid) { $wire.save() }" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
+    @if ($loginUrl && $this->isEditing())
+        <div wire:key="login-url-modal-{{ md5($loginUrl) }}" x-data="{ copied: false, show: true }">
+            <x-ui.modal show="show" onClose="show = false" maxWidth="max-w-lg">
+                <div class="bg-surface border border-outline-variant rounded-lg shadow-lg p-space-lg space-y-space-md">
+                    <h3 class="font-headline-sm text-headline-sm text-on-surface">New Login Link Generated</h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant">Share this one-time login link with the student:</p>
+                    <div class="flex items-center gap-space-sm">
+                        <input type="text" readonly value="{{ $loginUrl }}" x-ref="regeneratedLoginUrlInput"
+                            class="flex-1 px-space-md py-space-sm border border-outline-variant rounded-lg font-body-sm text-body-sm bg-surface">
+                        <button type="button"
+                            @click="navigator.clipboard.writeText($refs.regeneratedLoginUrlInput.value); copied = true; setTimeout(() => copied = false, 2000)"
+                            class="px-space-md py-space-sm bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity">
+                            <span x-text="copied ? 'Copied!' : 'Copy'"></span>
+                        </button>
+                    </div>
+                    <div class="flex justify-end pt-space-sm">
+                        <button type="button" @click="show = false" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </x-ui.modal>
+        </div>
+    @endif
+
+    <form @submit.prevent="submitAttempted = true; if (!formInvalid) { $wire.save() }" class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg">
         <!-- Profile Photo -->
         <div class="flex flex-col md:flex-row items-center md:items-start gap-space-lg pb-space-lg border-b border-outline-variant">
             <label for="photo" class="relative group/avatar cursor-pointer flex-shrink-0">
@@ -86,7 +136,12 @@
         <div>
             <label for="name" class="block font-label-md text-label-md text-on-surface mb-space-xs">Name</label>
             <input type="text" wire:model="name" id="name"
-                class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md border-outline-variant">
+                x-on:input="name = $event.target.value" x-on:blur="nameTouched = true"
+                class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md"
+                :class="(nameTouched || submitAttempted) && nameEmpty ? 'border-error' : 'border-outline-variant'">
+            <p x-show="(nameTouched || submitAttempted) && nameEmpty" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error">
+                Name is required.
+            </p>
             @error('name')
                 <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
             @enderror
@@ -95,7 +150,12 @@
         <div>
             <label for="email" class="block font-label-md text-label-md text-on-surface mb-space-xs">Email</label>
             <input type="email" wire:model="email" id="email"
-                class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md border-outline-variant">
+                x-on:input="email = $event.target.value" x-on:blur="emailTouched = true"
+                class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md"
+                :class="(emailTouched || submitAttempted) && emailInvalid ? 'border-error' : 'border-outline-variant'">
+            <p x-show="(emailTouched || submitAttempted) && emailInvalid" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error">
+                Enter a valid email address.
+            </p>
             @error('email')
                 <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
             @enderror
@@ -138,12 +198,17 @@
                 Login link valid for (days)
             </label>
             <input type="number" wire:model="loginLinkTtlDays" id="loginLinkTtlDays" min="1" max="365"
-                class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md border-outline-variant">
+                x-on:input="loginLinkTtlDays = $event.target.value" x-on:blur="loginLinkTtlDaysTouched = true"
+                class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md"
+                :class="(loginLinkTtlDaysTouched || submitAttempted) && loginLinkTtlDaysInvalid ? 'border-error' : 'border-outline-variant'">
+            <p x-show="(loginLinkTtlDaysTouched || submitAttempted) && loginLinkTtlDaysInvalid" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error">
+                Enter a whole number of days between 1 and 365.
+            </p>
             @if ($this->isEditing())
                 @can('students.edit')
                     <div class="mt-space-sm flex items-center gap-space-md">
-                        <button type="button" wire:click="regenerateLoginLink" wire:loading.attr="disabled" wire:target="regenerateLoginLink"
-                            class="px-space-md py-space-xs border border-outline-variant rounded-lg font-label-sm text-label-sm text-primary hover:bg-surface-container-low transition-colors inline-flex items-center gap-space-xs">
+                        <button type="button" wire:click="regenerateLoginLink" :disabled="loginLinkTtlDaysInvalid" wire:loading.attr="disabled" wire:target="regenerateLoginLink"
+                            class="px-space-md py-space-xs border border-outline-variant rounded-lg font-label-sm text-label-sm text-primary hover:bg-surface-container-low transition-colors inline-flex items-center gap-space-xs disabled:opacity-50 disabled:cursor-not-allowed">
                             <span class="material-symbols-outlined text-[16px]">refresh</span>
                             <span wire:loading.remove wire:target="regenerateLoginLink">Generate New Login Link</span>
                             <span wire:loading wire:target="regenerateLoginLink">Generating...</span>
@@ -172,7 +237,6 @@
                 <span wire:loading.remove wire:target="save">Save</span>
                 <span wire:loading wire:target="save">Saving...</span>
             </button>
-            <a href="{{ route('students.index') }}" class="font-label-md text-label-md text-secondary hover:underline">Cancel</a>
         </div>
     </form>
 

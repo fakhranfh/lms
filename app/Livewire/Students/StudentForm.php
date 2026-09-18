@@ -94,7 +94,7 @@ class StudentForm extends Component
         $this->password = $password;
         $this->password_confirmation = $password;
 
-        $this->dispatch('student-autofilled', password: $password);
+        $this->dispatch('student-autofilled', name: $this->name, email: $this->email, password: $password);
     }
 
     protected function rules(): array

@@ -3460,9 +3460,9 @@
     "semantic_hash": "a8628be5946d7bbebb7d80f8c41a7adb"
   },
   "resources/views/livewire/pricing-tiers/pricing-tier-index.blade.php": {
-    "mtime": 1784607686.035185,
-    "ast_hash": "db903de0a4f65bae630a5b5affd014c7",
-    "semantic_hash": "db903de0a4f65bae630a5b5affd014c7"
+    "mtime": 1789702103.3675442,
+    "ast_hash": "99f19fa928b966f3cc9406a76483f0a9",
+    "semantic_hash": ""
   },
   "resources/views/livewire/roles/role-create.blade.php": {
     "mtime": 1784966349.1122203,
@@ -3475,9 +3475,9 @@
     "semantic_hash": "16294bdc29ad2aa56efb6b664ae1a499"
   },
   "resources/views/livewire/roles/role-index.blade.php": {
-    "mtime": 1784380589.4856706,
-    "ast_hash": "1444974e56e71a94a541e99ceeddec23",
-    "semantic_hash": "1444974e56e71a94a541e99ceeddec23"
+    "mtime": 1789702089.1523948,
+    "ast_hash": "84a24e42a6b78adbc1454771ffbb10da",
+    "semantic_hash": ""
   },
   "resources/views/livewire/school-admin-register.blade.php": {
     "mtime": 1785227604.1319866,
@@ -6590,8 +6590,8 @@
     "semantic_hash": ""
   },
   "app/View/Components/Ui/LivewireDataTable.php": {
-    "mtime": 1789699390.228158,
-    "ast_hash": "e8c6c0f4b33cdd48a5aead29aa2fb825",
+    "mtime": 1789702588.7936027,
+    "ast_hash": "10a299822496222b38bec4f018ba24ff",
     "semantic_hash": ""
   },
   "config/students.php": {
@@ -6619,19 +6619,14 @@
     "ast_hash": "f5a092754c6c9d368bdf9900dee881ac",
     "semantic_hash": ""
   },
-  "resources/views/components/students/partials/table-skeleton.blade.php": {
-    "mtime": 1789693970.2344065,
-    "ast_hash": "a8ff20d93aba3d9688cf74fe4f380280",
-    "semantic_hash": ""
-  },
   "resources/views/components/students/table.blade.php": {
-    "mtime": 1789698755.8168182,
-    "ast_hash": "d1e92e7088eed58410de85d2898c0ac4",
+    "mtime": 1789702600.0138404,
+    "ast_hash": "1c096af1787154f8ccdde10455802d38",
     "semantic_hash": ""
   },
   "resources/views/components/ui/livewire-data-table.blade.php": {
-    "mtime": 1789699415.918009,
-    "ast_hash": "4c0aadf98ce5faa6087cb916d7e2405e",
+    "mtime": 1789702596.4992337,
+    "ast_hash": "ad7f8ce28eb260f1bb82b031256c734b",
     "semantic_hash": ""
   },
   "resources/views/livewire/courses/gradebook-grade-bands-placeholder.blade.php": {

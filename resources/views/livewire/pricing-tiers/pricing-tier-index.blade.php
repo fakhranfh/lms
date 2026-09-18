@@ -33,48 +33,42 @@
             </a>
         </div>
     @else
-        <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="border-b border-outline-variant bg-surface-container-lowest">
-                            <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Name</th>
-                            <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Price</th>
-                            <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Status</th>
-                            <th scope="col" class="px-space-lg py-space-md text-right font-label-md text-label-md text-secondary uppercase">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($tiers as $tier)
-                            <tr class="border-b border-outline-variant last:border-0">
-                                <td class="px-space-lg py-space-md">
-                                    <p class="font-body-md text-body-md text-on-surface">{{ $tier->name }}</p>
-                                    <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">{{ $tier->slug }}</p>
-                                </td>
-                                <td class="px-space-lg py-space-md font-body-md text-body-md text-on-surface">
-                                    Rp {{ number_format($tier->price, 0, '.', '.') }}
-                                </td>
-                                <td class="px-space-lg py-space-md">
-                                    @if ($tier->is_active)
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-body-sm font-medium bg-success/10 border border-success/20 text-success">
-                                            Active
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-body-sm font-medium bg-surface-container text-on-surface-variant">
-                                            Inactive
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-space-lg py-space-md text-right space-x-space-sm whitespace-nowrap">
-                                    <a href="{{ route('admin.pricing-tiers.edit', $tier) }}" class="font-label-md text-label-md text-primary hover:underline">Edit</a>
-                                    <button type="button" @click="deleteId = {{ $tier->id }}; showModal = true" class="font-label-md text-label-md text-error hover:underline">Delete</button>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <x-ui.livewire-data-table
+            :columns="[
+                ['key' => 'name', 'label' => 'Name', 'sortable' => false],
+                ['key' => 'price', 'label' => 'Price', 'sortable' => false],
+                ['key' => 'status', 'label' => 'Status', 'sortable' => false],
+            ]"
+            :items="$tiers"
+            loadingTarget="destroy"
+        >
+            @foreach ($tiers as $tier)
+                <tr class="border-b border-outline-variant last:border-0">
+                    <td class="px-space-lg py-space-md">
+                        <p class="font-body-md text-body-md text-on-surface">{{ $tier->name }}</p>
+                        <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">{{ $tier->slug }}</p>
+                    </td>
+                    <td class="px-space-lg py-space-md font-body-md text-body-md text-on-surface">
+                        Rp {{ number_format($tier->price, 0, '.', '.') }}
+                    </td>
+                    <td class="px-space-lg py-space-md">
+                        @if ($tier->is_active)
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-body-sm font-medium bg-success/10 border border-success/20 text-success">
+                                Active
+                            </span>
+                        @else
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-body-sm font-medium bg-surface-container text-on-surface-variant">
+                                Inactive
+                            </span>
+                        @endif
+                    </td>
+                    <td class="px-space-lg py-space-md text-right space-x-space-sm whitespace-nowrap">
+                        <a href="{{ route('admin.pricing-tiers.edit', $tier) }}" class="font-label-md text-label-md text-primary hover:underline">Edit</a>
+                        <button type="button" @click="deleteId = {{ $tier->id }}; showModal = true" class="font-label-md text-label-md text-error hover:underline">Delete</button>
+                    </td>
+                </tr>
+            @endforeach
+        </x-ui.livewire-data-table>
     @endif
 
     <!-- Delete Modal -->

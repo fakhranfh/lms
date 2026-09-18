@@ -1,7 +1,7 @@
 <div {{ $attributes->merge(['class' => 'space-y-space-md']) }}>
-    @if ($items && ($items->hasPages() || $perPage !== null))
+    @if ($showPagination && $items && (($isPaginated && $items->hasPages()) || $perPage !== null))
         <div class="flex items-center gap-space-md">
-            @if ($items->hasPages())
+            @if ($isPaginated && $items->hasPages())
                 <div class="flex-1">
                     {{ $items->links() }}
                 </div>
@@ -95,7 +95,7 @@
         @endunless
     </div>
 
-    @if ($items && $items->hasPages())
+    @if ($showPagination && $items && $isPaginated && $items->hasPages())
         {{ $items->links() }}
     @endif
 </div>

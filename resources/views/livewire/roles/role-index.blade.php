@@ -22,39 +22,33 @@
         </a>
     </div>
 
-    <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="border-b border-outline-variant bg-surface-container-lowest">
-                        <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Name</th>
-                        <th scope="col" class="px-space-lg py-space-md text-left font-label-md text-label-md text-secondary uppercase">Permissions</th>
-                        <th scope="col" class="px-space-lg py-space-md text-right font-label-md text-label-md text-secondary uppercase">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($roles as $role)
-                        <tr class="border-b border-outline-variant last:border-0">
-                            <td class="px-space-lg py-space-md font-body-md text-body-md text-on-surface">{{ $role->name }}</td>
-                            <td class="px-space-lg py-space-md font-body-sm text-body-sm text-secondary">
-                                {{ $role->permissions->map(fn ($permission) => $permission->label ?? $permission->name)->join(', ') ?: '—' }}
-                            </td>
-                            <td class="px-space-lg py-space-md text-right space-x-space-sm whitespace-nowrap">
-                                <a href="{{ route('roles.edit', $role) }}" class="font-label-md text-label-md text-primary hover:underline">Edit</a>
-                                @unless ($role->name === 'admin')
-                                    <button type="button" @click="deleteId = {{ $role->id }}; showModal = true" class="font-label-md text-label-md text-error hover:underline">Delete</button>
-                                @endunless
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="px-space-lg py-space-lg text-center font-body-md text-body-md text-secondary">No roles yet.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <x-ui.livewire-data-table
+        :columns="[
+            ['key' => 'name', 'label' => 'Name', 'sortable' => false],
+            ['key' => 'permissions', 'label' => 'Permissions', 'sortable' => false],
+        ]"
+        :items="$roles"
+        loadingTarget="destroy"
+    >
+        @forelse ($roles as $role)
+            <tr class="border-b border-outline-variant last:border-0">
+                <td class="px-space-lg py-space-md font-body-md text-body-md text-on-surface">{{ $role->name }}</td>
+                <td class="px-space-lg py-space-md font-body-sm text-body-sm text-secondary">
+                    {{ $role->permissions->map(fn ($permission) => $permission->label ?? $permission->name)->join(', ') ?: '—' }}
+                </td>
+                <td class="px-space-lg py-space-md text-right space-x-space-sm whitespace-nowrap">
+                    <a href="{{ route('roles.edit', $role) }}" class="font-label-md text-label-md text-primary hover:underline">Edit</a>
+                    @unless ($role->name === 'admin')
+                        <button type="button" @click="deleteId = {{ $role->id }}; showModal = true" class="font-label-md text-label-md text-error hover:underline">Delete</button>
+                    @endunless
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="3" class="px-space-lg py-space-lg text-center font-body-md text-body-md text-secondary">No roles yet.</td>
+            </tr>
+        @endforelse
+    </x-ui.livewire-data-table>
 
     <!-- Delete Modal -->
     <div

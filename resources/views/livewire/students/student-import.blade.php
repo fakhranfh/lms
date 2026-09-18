@@ -91,4 +91,31 @@
             <a href="{{ route('students.index') }}" class="font-label-md text-label-md text-secondary hover:underline">Cancel</a>
         </div>
     </div>
+
+    <!-- Import Errors Modal -->
+    @if (! empty($importErrors))
+        <div wire:key="import-errors-modal-{{ md5(implode('', $importErrors)) }}" x-data="{ show: true }">
+            <x-ui.modal show="show" onClose="show = false" maxWidth="max-w-lg">
+                <div class="bg-surface border border-outline-variant rounded-lg shadow-lg p-space-lg space-y-space-md">
+                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Import Completed with Errors</h3>
+                    @if ($createdCount)
+                        <p class="font-body-sm text-body-sm text-on-surface-variant">
+                            {{ $createdCount }} student(s) imported successfully.
+                        </p>
+                    @endif
+                    <p class="font-label-md text-label-md text-error">{{ count($importErrors) }} row(s) could not be imported:</p>
+                    <ul class="list-disc list-inside font-body-sm text-body-sm text-error max-h-64 overflow-y-auto">
+                        @foreach ($importErrors as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <div class="flex justify-end pt-space-sm">
+                        <button type="button" @click="show = false" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </x-ui.modal>
+        </div>
+    @endif
 </div>

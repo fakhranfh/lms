@@ -19,6 +19,11 @@ class StudentImport extends Component
 
     public ?string $columnError = null;
 
+    public ?int $createdCount = null;
+
+    /** @var array<int, string> */
+    public array $importErrors = [];
+
     public function mount(): void
     {
         $this->loginLinkTtlDays = (int) ceil(config('students.login_link_ttl_minutes', 2880) / 1440);
@@ -37,6 +42,8 @@ class StudentImport extends Component
         abort_unless(auth()->user()->can('students.import'), 403);
 
         $this->columnError = null;
+        $this->createdCount = null;
+        $this->importErrors = [];
 
         $this->validate();
 
@@ -60,13 +67,16 @@ class StudentImport extends Component
         $createdCount = $result['created'];
         $importErrors = [...$parsed['errors'], ...$result['errors']];
 
-        if ($createdCount > 0) {
-            session()->flash('success', trans_choice('1 student imported successfully.|:count students imported successfully.', $createdCount, ['count' => $createdCount]));
-        }
+        $this->reset(['spreadsheet']);
 
         if ($importErrors !== []) {
-            session()->flash('error', count($importErrors).' row(s) could not be imported: '.collect($importErrors)->join(' '));
+            $this->createdCount = $createdCount;
+            $this->importErrors = $importErrors;
+
+            return null;
         }
+
+        session()->flash('success', trans_choice('1 student imported successfully.|:count students imported successfully.', $createdCount, ['count' => $createdCount]));
 
         return $this->redirect(route('students.index'), navigate: true);
     }

@@ -19,14 +19,6 @@ class StudentImport extends Component
 
     public ?string $columnError = null;
 
-    public ?int $createdCount = null;
-
-    /** @var array<int, string> */
-    public array $importErrors = [];
-
-    /** @var array<int, array{name: string, email: string, loginUrl: string}> */
-    public array $createdStudents = [];
-
     public function mount(): void
     {
         $this->loginLinkTtlDays = (int) ceil(config('students.login_link_ttl_minutes', 2880) / 1440);
@@ -40,21 +32,18 @@ class StudentImport extends Component
         ];
     }
 
-    public function import(UserImportService $userImportService): void
+    public function import(UserImportService $userImportService): mixed
     {
         abort_unless(auth()->user()->can('students.import'), 403);
 
         $this->columnError = null;
-        $this->createdCount = null;
-        $this->importErrors = [];
-        $this->createdStudents = [];
 
         $this->validate();
 
         if ($columnError = $userImportService->validateColumns($this->spreadsheet)) {
             $this->columnError = $columnError;
 
-            return;
+            return null;
         }
 
         $parsed = $userImportService->parseRows($this->spreadsheet);
@@ -68,19 +57,18 @@ class StudentImport extends Component
             loginLinkTtlMinutes: $this->loginLinkTtlDays * 1440,
         );
 
-        $this->createdCount = $result['created'];
-        $this->importErrors = [...$parsed['errors'], ...$result['errors']];
+        $createdCount = $result['created'];
+        $importErrors = [...$parsed['errors'], ...$result['errors']];
 
-        $createdLoginUrls = $result['createdLoginUrls'];
-        foreach ($result['createdUsers'] as $student) {
-            $this->createdStudents[] = [
-                'name' => $student->name,
-                'email' => $student->email,
-                'loginUrl' => $createdLoginUrls[$student->id] ?? '',
-            ];
+        if ($createdCount > 0) {
+            session()->flash('success', trans_choice('1 student imported successfully.|:count students imported successfully.', $createdCount, ['count' => $createdCount]));
         }
 
-        $this->reset(['spreadsheet']);
+        if ($importErrors !== []) {
+            session()->flash('error', count($importErrors).' row(s) could not be imported: '.collect($importErrors)->join(' '));
+        }
+
+        return $this->redirect(route('students.index'), navigate: true);
     }
 
     public function render()

@@ -1,57 +1,6 @@
 @section('title', 'Import Students')
 
 <div class="w-full space-y-space-lg">
-    @if ($createdCount !== null)
-        <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
-            <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
-            <p class="font-body-md text-body-md text-success">{{ $createdCount }} student(s) imported successfully.</p>
-        </div>
-    @endif
-
-    @if (! empty($importErrors))
-        <div class="px-gutter py-space-md bg-error/10 border border-error/20 rounded-lg space-y-space-xs">
-            <p class="font-label-md text-label-md text-error">{{ count($importErrors) }} row(s) could not be imported:</p>
-            <ul class="list-disc list-inside font-body-sm text-body-sm text-error">
-                @foreach ($importErrors as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-    @if (! empty($createdStudents))
-        <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-surface-container border-b border-outline-variant">
-                    <tr>
-                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface">Name</th>
-                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface">Email</th>
-                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface">Login Link</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-outline-variant">
-                    @foreach ($createdStudents as $student)
-                        <tr>
-                            <td class="px-space-lg py-space-md text-body-md text-on-surface">{{ $student['name'] }}</td>
-                            <td class="px-space-lg py-space-md text-body-md text-on-surface-variant">{{ $student['email'] }}</td>
-                            <td class="px-space-lg py-space-md">
-                                <div class="flex items-center gap-space-sm" x-data="{ copied: false }">
-                                    <input type="text" readonly value="{{ $student['loginUrl'] }}" x-ref="url"
-                                        class="w-full px-space-sm py-space-xs border border-outline-variant rounded font-body-sm text-body-sm">
-                                    <button type="button"
-                                        @click="navigator.clipboard.writeText($refs.url.value); copied = true; setTimeout(() => copied = false, 2000)"
-                                        class="px-space-sm py-space-xs bg-primary text-on-primary rounded font-label-sm text-label-sm hover:opacity-90 transition-opacity whitespace-nowrap">
-                                        <span x-text="copied ? 'Copied!' : 'Copy'"></span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @endif
-
     <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg" x-data="{
             selectedFile: null, spreadsheetName: null,
             uploading: false, progress: 0,

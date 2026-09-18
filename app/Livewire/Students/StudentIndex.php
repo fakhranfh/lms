@@ -75,6 +75,7 @@ class StudentIndex extends Component
     public function mount(): void
     {
         $this->successMessage = session('success');
+        $this->errorMessage = session('error');
     }
 
     public function loadUsers(): void

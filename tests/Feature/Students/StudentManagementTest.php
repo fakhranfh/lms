@@ -118,8 +118,8 @@ test('creating a student assigns the student role and generates a login link wit
     Livewire::actingAs($actor)->test(StudentForm::class)
         ->set('name', 'New Student')
         ->set('email', 'new-student@example.com')
-        ->set('password', 'password123')
-        ->set('password_confirmation', 'password123')
+        ->set('password', 'Password123!')
+        ->set('password_confirmation', 'Password123!')
         ->call('save');
 
     $student = User::where('email', 'new-student@example.com')->first();
@@ -136,8 +136,8 @@ test('creating a student without permission is forbidden', function () {
     Livewire::actingAs($actor)->test(StudentForm::class)
         ->set('name', 'New Student')
         ->set('email', 'blocked@example.com')
-        ->set('password', 'password123')
-        ->set('password_confirmation', 'password123')
+        ->set('password', 'Password123!')
+        ->set('password_confirmation', 'Password123!')
         ->call('save')
         ->assertForbidden();
 });
@@ -366,8 +366,8 @@ test('force password change updates password and clears the flag', function () {
     $user = User::factory()->create(['must_change_password' => true]);
 
     Livewire::actingAs($user)->test(ForcePasswordChange::class)
-        ->set('password', 'brand-new-pass')
-        ->set('password_confirmation', 'brand-new-pass')
+        ->set('password', 'BrandNewPass1!')
+        ->set('password_confirmation', 'BrandNewPass1!')
         ->call('save')
         ->assertRedirect(route('dashboard'));
 
@@ -378,7 +378,7 @@ test('force password change requires matching confirmation', function () {
     $user = User::factory()->create(['must_change_password' => true]);
 
     Livewire::actingAs($user)->test(ForcePasswordChange::class)
-        ->set('password', 'brand-new-pass')
+        ->set('password', 'BrandNewPass1!')
         ->set('password_confirmation', 'different')
         ->call('save')
         ->assertHasErrors(['password']);

@@ -2,8 +2,8 @@
 
 namespace App\Actions\Fortify;
 
+use App\Support\PasswordPolicy;
 use Illuminate\Contracts\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 trait PasswordValidationRules
 {
@@ -14,15 +14,6 @@ trait PasswordValidationRules
      */
     protected function passwordRules(): array
     {
-        return [
-            'required',
-            'string',
-            Password::min(8)
-                ->mixedCase()
-                ->numbers()
-                ->symbols()
-                ->uncompromised(),
-            'confirmed',
-        ];
+        return PasswordPolicy::rules();
     }
 }

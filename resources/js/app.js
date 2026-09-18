@@ -6,6 +6,7 @@ import { createReadingDetector } from './reading-detector';
 import { addSyllabusRow, removeSyllabusRow, setSyllabusRadio, toggleWireArrayValue } from './syllabus-form';
 import { addQuizOption, toggleFinalExamQuestionType, toggleFinalExamType } from './assessment-form';
 import { scrollToFirstFormError, handleFormValidationErrors, validateAssessmentQuestionsTotal, validateFinalExamEssayTotal, validateFinalExamForm, validateQuizForm } from './form-error-scroll';
+import { PasswordPolicy } from './password-policy';
 
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('richTextEditor', richTextEditor);
@@ -37,3 +38,8 @@ window.validateAssessmentQuestionsTotal = validateAssessmentQuestionsTotal;
 window.validateFinalExamEssayTotal = validateFinalExamEssayTotal;
 window.validateFinalExamForm = validateFinalExamForm;
 window.validateQuizForm = validateQuizForm;
+
+// Exposed globally so the password fields in force-password-change,
+// student-form, and user-form (inline x-data, not Alpine.data components)
+// validate against the same rule as the backend PasswordPolicy.
+window.PasswordPolicy = PasswordPolicy;

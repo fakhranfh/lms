@@ -3,6 +3,7 @@
 namespace App\Livewire\Students;
 
 use App\Services\UserService;
+use App\Support\PasswordPolicy;
 use Livewire\Component;
 
 class ForcePasswordChange extends Component
@@ -14,7 +15,7 @@ class ForcePasswordChange extends Component
     protected function rules(): array
     {
         return [
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => PasswordPolicy::rules(),
         ];
     }
 
@@ -32,6 +33,8 @@ class ForcePasswordChange extends Component
 
     public function render()
     {
-        return view('livewire.students.force-password-change');
+        return view('livewire.students.force-password-change')
+            ->extends('layouts.app', ['skipTopbar' => true, 'skipSidebar' => true])
+            ->section('app-content');
     }
 }

@@ -144,8 +144,8 @@ test('user with users.create can create a new user', function () {
     Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
         ->set('name', 'New Teacher')
         ->set('email', 'new.teacher@example.com')
-        ->set('password', 'password123')
-        ->set('password_confirmation', 'password123')
+        ->set('password', 'Password123!')
+        ->set('password_confirmation', 'Password123!')
         ->set('roles', [$teacherRole->id])
         ->call('save')
         ->assertHasNoErrors()
@@ -174,8 +174,8 @@ test('creating a user with a photo uploads it via R2StorageService', function ()
     Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
         ->set('name', 'Photo Teacher')
         ->set('email', 'photo.teacher@example.com')
-        ->set('password', 'password123')
-        ->set('password_confirmation', 'password123')
+        ->set('password', 'Password123!')
+        ->set('password_confirmation', 'Password123!')
         ->set('photo', $file)
         ->call('save')
         ->assertHasNoErrors();
@@ -192,8 +192,8 @@ test('creating a user requires users.create permission', function () {
     Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
         ->set('name', 'New Teacher')
         ->set('email', 'blocked@example.com')
-        ->set('password', 'password123')
-        ->set('password_confirmation', 'password123')
+        ->set('password', 'Password123!')
+        ->set('password_confirmation', 'Password123!')
         ->call('save')
         ->assertForbidden();
 });
@@ -205,8 +205,8 @@ test('creating a user fails validation when name is already used', function () {
     Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
         ->set('name', 'Taken Name')
         ->set('email', 'unique.email@example.com')
-        ->set('password', 'password123')
-        ->set('password_confirmation', 'password123')
+        ->set('password', 'Password123!')
+        ->set('password_confirmation', 'Password123!')
         ->call('save')
         ->assertHasErrors('name');
 });
@@ -218,8 +218,8 @@ test('creating a user fails validation when email is already used', function () 
     Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
         ->set('name', 'Unique Name')
         ->set('email', 'taken@example.com')
-        ->set('password', 'password123')
-        ->set('password_confirmation', 'password123')
+        ->set('password', 'Password123!')
+        ->set('password_confirmation', 'Password123!')
         ->call('save')
         ->assertHasErrors('email');
 });
@@ -232,8 +232,8 @@ test('a soft-deleted user email is still reported as taken, not silently availab
     $component = Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
         ->set('name', 'Unique Name')
         ->set('email', 'gone@example.com')
-        ->set('password', 'password123')
-        ->set('password_confirmation', 'password123')
+        ->set('password', 'Password123!')
+        ->set('password_confirmation', 'Password123!')
         ->call('save');
 
     expect($component->errors()->first('email'))->not->toBeNull();
@@ -256,8 +256,8 @@ test('creating a user with a soft-deleted same-school email restores the old use
     Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
         ->set('name', 'Restored Name')
         ->set('email', 'gone@example.com')
-        ->set('password', 'password123')
-        ->set('password_confirmation', 'password123')
+        ->set('password', 'Password123!')
+        ->set('password_confirmation', 'Password123!')
         ->set('roles', [$teacherRole->id])
         ->call('save')
         ->assertHasNoErrors()
@@ -279,8 +279,8 @@ test('the email conflict message specifies another school when the email belongs
     $component = Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
         ->set('name', 'Unique Name')
         ->set('email', 'taken@example.com')
-        ->set('password', 'password123')
-        ->set('password_confirmation', 'password123')
+        ->set('password', 'Password123!')
+        ->set('password_confirmation', 'Password123!')
         ->call('save');
 
     expect($component->errors()->first('email'))->toBe('This email is already in use in another school.');
@@ -311,8 +311,8 @@ test('a School Admin (attached only via school_admins, not school_user) still ge
     $component = Livewire::test(UserForm::class, ['id' => null])
         ->set('name', 'Unique Name')
         ->set('email', 'elsewhere@example.com')
-        ->set('password', 'password123')
-        ->set('password_confirmation', 'password123')
+        ->set('password', 'Password123!')
+        ->set('password_confirmation', 'Password123!')
         ->call('save');
 
     expect($component->errors()->first('email'))->toBe('This email is already in use in another school.');
@@ -330,8 +330,8 @@ test('the email conflict message is generic when the email belongs to the same s
     $component = Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
         ->set('name', 'Unique Name')
         ->set('email', 'taken@example.com')
-        ->set('password', 'password123')
-        ->set('password_confirmation', 'password123')
+        ->set('password', 'Password123!')
+        ->set('password_confirmation', 'Password123!')
         ->call('save');
 
     expect($component->errors()->first('email'))->toBe('This email is already in use.');
@@ -368,7 +368,7 @@ test('creating a user fails validation when password confirmation does not match
     Livewire::actingAs($actor)->test(UserForm::class, ['id' => null])
         ->set('name', 'Mismatch User')
         ->set('email', 'mismatch@example.com')
-        ->set('password', 'password123')
+        ->set('password', 'Password123!')
         ->set('password_confirmation', 'different123')
         ->call('save')
         ->assertHasErrors('password');

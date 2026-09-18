@@ -8,6 +8,7 @@ use App\Repositories\Role\RoleRepositoryInterface;
 use App\Services\UserLoginLinkService;
 use App\Services\UserService;
 use App\Support\CurrentSchool;
+use App\Support\PasswordPolicy;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -115,7 +116,7 @@ class StudentForm extends Component
                 },
             ],
             'password' => array_filter([
-                $this->isEditing() ? 'nullable' : 'required', 'string', 'min:8',
+                $this->isEditing() ? 'nullable' : 'required', 'string', PasswordPolicy::complexityRule(),
                 ($this->password !== '' || ! $this->isEditing()) ? 'confirmed' : null,
             ]),
             'photo' => ['nullable', 'image', 'max:5120', 'mimes:jpg,jpeg,png,gif'],

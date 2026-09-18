@@ -19,11 +19,11 @@
             const days = Number(this.loginLinkTtlDays);
             return this.loginLinkTtlDays === '' || ! Number.isInteger(days) || days < 1 || days > 365;
         },
-        get passwordTooShort() { return this.password.length > 0 && this.password.length < 8 },
+        get passwordTooWeak() { return this.password.length > 0 && window.PasswordPolicy.invalid(this.password) },
         get passwordMismatch() { return this.passwordConfirmation.length > 0 && this.password !== this.passwordConfirmation },
         get passwordInvalid() {
             if (this.password === '' && this.passwordConfirmation === '' && this.isEditing) { return false }
-            return this.passwordTooShort || this.passwordMismatch || this.password === '' || this.passwordConfirmation === ''
+            return this.passwordTooWeak || this.passwordMismatch || this.password === '' || this.passwordConfirmation === ''
         },
         get formInvalid() { return this.nameEmpty || this.emailInvalid || this.loginLinkTtlDaysInvalid || this.passwordInvalid },
         previewPhoto(event) {
@@ -168,9 +168,8 @@
             <input type="password" wire:model="password" id="password" autocomplete="new-password"
                 x-on:input="password = $event.target.value"
                 class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md"
-                :class="passwordTooShort ? 'border-error' : 'border-outline-variant'">
-            <p x-show="passwordTooShort" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error">
-                Password must be at least 8 characters.
+                :class="passwordTooWeak ? 'border-error' : 'border-outline-variant'">
+            <p x-show="passwordTooWeak" x-cloak class="mt-space-xs font-body-sm text-body-sm text-error" x-text="window.PasswordPolicy.message">
             </p>
             @error('password')
                 <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>

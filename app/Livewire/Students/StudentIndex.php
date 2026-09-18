@@ -9,6 +9,7 @@ use App\Support\CurrentSchool;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -70,6 +71,15 @@ class StudentIndex extends Component
     public function loadUsers(): void
     {
         $this->studentsLoaded = true;
+    }
+
+    #[On('students-generated')]
+    public function handleStudentsGenerated(int $count): void
+    {
+        $this->successMessage = trans_choice('1 student generated successfully.|:count students generated successfully.', $count, ['count' => $count]);
+        $this->errorMessage = null;
+
+        unset($this->students);
     }
 
     private function currentSchoolId(): ?string

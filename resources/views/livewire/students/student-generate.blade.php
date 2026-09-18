@@ -1,39 +1,6 @@
 @section('title', 'Generate Students')
 
 <div class="w-full space-y-space-lg">
-    @if (! empty($generatedStudents))
-        <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden">
-            <table class="w-full">
-                <thead class="bg-surface-container border-b border-outline-variant">
-                    <tr>
-                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface">Name</th>
-                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface">Email</th>
-                        <th class="px-space-lg py-space-md text-left font-label-md text-label-md text-on-surface">Login Link</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-outline-variant">
-                    @foreach ($generatedStudents as $student)
-                        <tr>
-                            <td class="px-space-lg py-space-md text-body-md text-on-surface">{{ $student['name'] }}</td>
-                            <td class="px-space-lg py-space-md text-body-md text-on-surface-variant">{{ $student['email'] }}</td>
-                            <td class="px-space-lg py-space-md">
-                                <div class="flex items-center gap-space-sm" x-data="{ copied: false }">
-                                    <input type="text" readonly value="{{ $student['loginUrl'] }}" x-ref="url"
-                                        class="w-full px-space-sm py-space-xs border border-outline-variant rounded font-body-sm text-body-sm">
-                                    <button type="button"
-                                        @click="navigator.clipboard.writeText($refs.url.value); copied = true; setTimeout(() => copied = false, 2000)"
-                                        class="px-space-sm py-space-xs bg-primary text-on-primary rounded font-label-sm text-label-sm hover:opacity-90 transition-opacity whitespace-nowrap">
-                                        <span x-text="copied ? 'Copied!' : 'Copy'"></span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @endif
-
     <div @class([
         'space-y-space-lg',
         'bg-surface border border-outline-variant rounded-lg p-space-lg' => ! $embedded,

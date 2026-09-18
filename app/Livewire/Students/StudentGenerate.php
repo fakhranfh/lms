@@ -18,9 +18,6 @@ class StudentGenerate extends Component
 
     public int $loginLinkTtlDays = 2;
 
-    /** @var array<int, array{name: string, email: string, loginUrl: string}> */
-    public array $generatedStudents = [];
-
     public function mount(): void
     {
         abort_unless(app()->environment(['local', 'testing']), 403);
@@ -48,8 +45,6 @@ class StudentGenerate extends Component
 
         $this->validate();
 
-        $this->generatedStudents = [];
-
         $schoolId = $this->currentSchoolId();
         $roleId = $schoolId ? app(RoleRepositoryInterface::class)
             ->get(['school_id' => $schoolId, 'name' => RoleName::Student->value])
@@ -68,14 +63,10 @@ class StudentGenerate extends Component
                 'must_change_password' => true,
             ], null, $roleIds);
 
-            $link = $userLoginLinkService->createLink($student, $this->loginLinkTtlDays * 1440);
-
-            $this->generatedStudents[] = [
-                'name' => $student->name,
-                'email' => $student->email,
-                'loginUrl' => $userLoginLinkService->buildLoginUrl($link),
-            ];
+            $userLoginLinkService->createLink($student, $this->loginLinkTtlDays * 1440);
         }
+
+        $this->dispatch('students-generated', count: $this->count);
     }
 
     public function render()

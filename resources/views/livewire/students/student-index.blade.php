@@ -1,6 +1,6 @@
 @section('title', 'Students')
 
-<div class="w-full space-y-space-lg" wire:init="loadUsers" x-data="{ showGenerateModal: false }">
+<div class="w-full space-y-space-lg" wire:init="loadUsers" x-data="{ showGenerateModal: false }" @students-generated.window="showGenerateModal = false">
     @if ($successMessage)
         <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
             <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>

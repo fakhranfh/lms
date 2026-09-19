@@ -3,6 +3,7 @@
 namespace App\Livewire\Concerns;
 
 use App\Enums\RoleName;
+use App\Exports\UserExport;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Services\UserLoginLinkService;
 use App\Services\UserService;
@@ -83,14 +84,38 @@ trait ManagesUserIndex
     abstract protected function entityLabel(): string;
 
     /**
-     * Fully-qualified export class, e.g. StudentsExport::class.
-     */
-    abstract protected function exportClass(): string;
-
-    /**
      * Blade view used to render the PDF export.
      */
     abstract protected function pdfView(): string;
+
+    /**
+     * Blade view used to render the index page.
+     */
+    abstract protected function viewName(): string;
+
+    /**
+     * View data key the index Blade view expects the paginator under,
+     * e.g. "students".
+     */
+    abstract protected function viewDataKey(): string;
+
+    /**
+     * Page title shown in the admin/app layout topbar, e.g. "Students".
+     */
+    abstract protected function topbarTitle(): string;
+
+    /**
+     * Whether the table has been loaded yet (kept false through the
+     * initial render, triggered via wire:init, so the page paints
+     * instantly with a skeleton in place of the table).
+     */
+    abstract protected function isLoaded(): bool;
+
+    /**
+     * The current page of users, backed by the host component's own
+     * `#[Computed]` accessor.
+     */
+    abstract protected function items(): LengthAwarePaginator;
 
     public function mountManagesUserIndex(): void
     {
@@ -125,10 +150,8 @@ trait ManagesUserIndex
     {
         abort_unless(auth()->user()->can("{$this->permissionPrefix()}.view"), 403);
 
-        $exportClass = $this->exportClass();
-
         return Excel::download(
-            new $exportClass($this->exportRows($userService, $userLoginLinkService)),
+            new UserExport($this->exportRows($userService, $userLoginLinkService)),
             "{$this->permissionPrefix()}-".now()->format('Y-m-d').'.xlsx',
         );
     }
@@ -335,5 +358,20 @@ trait ManagesUserIndex
             with: ['roles'],
             perPage: $this->perPage,
         );
+    }
+
+    public function render()
+    {
+        $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
+
+        $items = $this->isLoaded() ? $this->items() : null;
+        $this->matchingCount = $items?->total() ?? 0;
+        $this->pageIds = $items?->pluck('id')->values()->all() ?? [];
+
+        return view($this->viewName(), [
+            $this->viewDataKey() => $items,
+        ])
+            ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => $this->topbarTitle()])
+            ->section($isAdminUser ? 'admin-content' : 'app-content');
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Livewire\Students;
 
 use App\Enums\RoleName;
-use App\Exports\StudentsExport;
 use App\Livewire\Concerns\ManagesUserIndex;
 use App\Services\UserService;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -46,14 +45,34 @@ class StudentIndex extends Component
         return 'student';
     }
 
-    protected function exportClass(): string
-    {
-        return StudentsExport::class;
-    }
-
     protected function pdfView(): string
     {
         return 'exports.students-pdf';
+    }
+
+    protected function viewName(): string
+    {
+        return 'livewire.students.student-index';
+    }
+
+    protected function viewDataKey(): string
+    {
+        return 'students';
+    }
+
+    protected function topbarTitle(): string
+    {
+        return 'Students';
+    }
+
+    protected function isLoaded(): bool
+    {
+        return $this->studentsLoaded;
+    }
+
+    protected function items(): LengthAwarePaginator
+    {
+        return $this->students;
     }
 
     public function loadUsers(): void
@@ -97,20 +116,5 @@ class StudentIndex extends Component
     public function students(): LengthAwarePaginator
     {
         return $this->paginateUsers();
-    }
-
-    public function render()
-    {
-        $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
-
-        $students = $this->studentsLoaded ? $this->students : null;
-        $this->matchingCount = $students?->total() ?? 0;
-        $this->pageIds = $students?->pluck('id')->values()->all() ?? [];
-
-        return view('livewire.students.student-index', [
-            'students' => $students,
-        ])
-            ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => 'Students'])
-            ->section($isAdminUser ? 'admin-content' : 'app-content');
     }
 }

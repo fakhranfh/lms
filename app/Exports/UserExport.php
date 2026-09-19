@@ -10,7 +10,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class StudentsExport implements FromCollection, ShouldAutoSize, WithHeadings, WithStyles
+class UserExport implements FromCollection, ShouldAutoSize, WithHeadings, WithStyles
 {
     /**
      * @param  Collection<int, array{name: string, email: string, login_url: string}>  $rows

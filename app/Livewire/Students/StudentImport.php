@@ -3,82 +3,32 @@
 namespace App\Livewire\Students;
 
 use App\Enums\RoleName;
-use App\Services\UserImportService;
-use App\Support\CurrentSchool;
-use Illuminate\Http\UploadedFile;
+use App\Livewire\Concerns\ManagesUserImport;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class StudentImport extends Component
 {
-    use WithFileUploads;
+    use ManagesUserImport, WithFileUploads;
 
-    public ?UploadedFile $spreadsheet = null;
-
-    public int $loginLinkTtlDays = 2;
-
-    public ?string $columnError = null;
-
-    public ?int $createdCount = null;
-
-    /** @var array<int, string> */
-    public array $importErrors = [];
-
-    public function mount(): void
+    protected function managedRole(): RoleName
     {
-        $this->loginLinkTtlDays = (int) ceil(config('students.login_link_ttl_minutes', 2880) / 1440);
+        return RoleName::Student;
     }
 
-    protected function rules(): array
+    protected function permissionPrefix(): string
     {
-        return [
-            'spreadsheet' => ['required', 'file', 'mimes:xlsx,csv,txt'],
-            'loginLinkTtlDays' => ['required', 'integer', 'min:1', 'max:365'],
-        ];
+        return 'students';
     }
 
-    public function import(UserImportService $userImportService): mixed
+    protected function configKey(): string
     {
-        abort_unless(auth()->user()->can('students.import'), 403);
+        return 'students';
+    }
 
-        $this->columnError = null;
-        $this->createdCount = null;
-        $this->importErrors = [];
-
-        $this->validate();
-
-        if ($columnError = $userImportService->validateColumns($this->spreadsheet)) {
-            $this->columnError = $columnError;
-
-            return null;
-        }
-
-        $parsed = $userImportService->parseRows($this->spreadsheet);
-
-        $schoolId = app(CurrentSchool::class)->getSchoolId() ?? auth()->user()->school_id;
-        $result = $userImportService->createUsers(
-            $parsed['rows'],
-            RoleName::Student,
-            $schoolId,
-            generateLoginLinks: true,
-            loginLinkTtlMinutes: $this->loginLinkTtlDays * 1440,
-        );
-
-        $createdCount = $result['created'];
-        $importErrors = [...$parsed['errors'], ...$result['errors']];
-
-        $this->reset(['spreadsheet']);
-
-        if ($importErrors !== []) {
-            $this->createdCount = $createdCount;
-            $this->importErrors = $importErrors;
-
-            return null;
-        }
-
-        session()->flash('success', trans_choice('1 student imported successfully.|:count students imported successfully.', $createdCount, ['count' => $createdCount]));
-
-        return $this->redirect(route('students.index'), navigate: true);
+    protected function entityLabel(): string
+    {
+        return 'student';
     }
 
     public function render()

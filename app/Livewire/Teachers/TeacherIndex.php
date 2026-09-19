@@ -3,7 +3,6 @@
 namespace App\Livewire\Teachers;
 
 use App\Enums\RoleName;
-use App\Exports\TeachersExport;
 use App\Livewire\Concerns\ManagesUserIndex;
 use App\Services\UserService;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -46,14 +45,34 @@ class TeacherIndex extends Component
         return 'teacher';
     }
 
-    protected function exportClass(): string
-    {
-        return TeachersExport::class;
-    }
-
     protected function pdfView(): string
     {
         return 'exports.teachers-pdf';
+    }
+
+    protected function viewName(): string
+    {
+        return 'livewire.teachers.teacher-index';
+    }
+
+    protected function viewDataKey(): string
+    {
+        return 'teachers';
+    }
+
+    protected function topbarTitle(): string
+    {
+        return 'Teachers';
+    }
+
+    protected function isLoaded(): bool
+    {
+        return $this->teachersLoaded;
+    }
+
+    protected function items(): LengthAwarePaginator
+    {
+        return $this->teachers;
     }
 
     public function loadUsers(): void
@@ -97,20 +116,5 @@ class TeacherIndex extends Component
     public function teachers(): LengthAwarePaginator
     {
         return $this->paginateUsers();
-    }
-
-    public function render()
-    {
-        $isAdminUser = auth()->user()->hasRole(RoleName::Admin);
-
-        $teachers = $this->teachersLoaded ? $this->teachers : null;
-        $this->matchingCount = $teachers?->total() ?? 0;
-        $this->pageIds = $teachers?->pluck('id')->values()->all() ?? [];
-
-        return view('livewire.teachers.teacher-index', [
-            'teachers' => $teachers,
-        ])
-            ->extends($isAdminUser ? 'layouts.admin' : 'layouts.app', ['topbarTitle' => 'Teachers'])
-            ->section($isAdminUser ? 'admin-content' : 'app-content');
     }
 }

@@ -21,32 +21,12 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="font-headline-sm text-headline-sm text-on-surface">Bulk Upload Photos</h1>
-            <p class="font-body-sm text-body-sm text-secondary mt-space-xs">Click a user's photo to choose a replacement. Nothing is final until you press Save.</p>
+            <p class="font-body-sm text-body-sm text-secondary mt-space-xs">Click a teacher's photo to choose a replacement. Nothing is final until you press Save.</p>
         </div>
-        <button type="button" onclick="window.location.href='{{ route('admin.users.index') }}'"
+        <button type="button" onclick="window.location.href='{{ route('teachers.index') }}'"
             class="px-space-lg py-space-sm border border-outline-variant text-on-surface rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors">
-            Back to Users
+            Back to Teachers
         </button>
-    </div>
-
-    <!-- Search and Filter -->
-    <div class="bg-surface rounded-lg p-space-lg border border-outline-variant">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
-            <div>
-                <label class="block font-label-md text-label-md text-on-surface mb-space-xs">Search</label>
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Search by name..."
-                    class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none">
-            </div>
-            <div>
-                <label class="block font-label-md text-label-md text-on-surface mb-space-xs">Filter by Role</label>
-                <select wire:model.live="filterRole" class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none">
-                    <option value="">All Roles</option>
-                    @foreach ($this->availableRoles as $role)
-                        <option value="{{ $role->id }}">{{ $role->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
     </div>
 
     @if (! empty($stagedPhotoUrls))
@@ -64,39 +44,37 @@
         </div>
     @endif
 
-    <!-- Pagination Controls Top -->
-    <div class="flex items-center justify-end gap-space-md bg-surface-container rounded-lg p-space-md border border-outline-variant">
-        <label class="flex items-center gap-space-sm">
-            <span class="font-label-md text-label-md text-on-surface">Per page:</span>
-            <select wire:model.live="perPage" class="h-[40px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none">
-                <option value="20">20</option>
-                <option value="40">40</option>
-                <option value="60">60</option>
-                <option value="100">100</option>
-            </select>
-        </label>
-    </div>
+    @if ($teachersLoaded)
+        <x-ui.pagination-links
+            :paginator="$teachers"
+            perPageModel="perPage"
+            :perPageOptions="[20, 40, 60, 100]"
+            searchModel="search"
+            searchPlaceholder="Search by name..."
+            :search="$search"
+        />
+    @endif
 
-    @if (! $usersLoaded)
+    @if (! $teachersLoaded)
         @include('livewire.users.partials.photo-grid-skeleton')
     @else
     <!-- Skeleton (shown while loading) -->
-    <div wire:loading.block wire:target="search,filterRole,perPage">
+    <div wire:loading.block wire:target="search,perPage">
         @include('livewire.users.partials.photo-grid-skeleton')
     </div>
 
     <!-- Photo grid (hidden while loading) -->
-    <div wire:loading.remove wire:target="search,filterRole,perPage" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-space-md">
-        @forelse ($users as $user)
+    <div wire:loading.remove wire:target="search,perPage" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-space-md">
+        @forelse ($teachers as $teacher)
             @php
-                $initial = strtoupper(substr($user->name ?: 'U', 0, 1));
+                $initial = strtoupper(substr($teacher->name ?: 'U', 0, 1));
                 $defaultAvatar = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%231E3A8A%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22 font-size=%2250%22 font-weight=%22bold%22%3E'.$initial.'%3C/text%3E%3C/svg%3E';
-                $currentSrc = $stagedPhotoUrls[$user->id] ?? $user->profile_photo_path ?? $defaultAvatar;
+                $currentSrc = $stagedPhotoUrls[$teacher->id] ?? $teacher->profile_photo_path ?? $defaultAvatar;
             @endphp
-            <div wire:key="photo-{{ $user->id }}" x-data="{ preview: null, uploading: false, progress: 0 }"
+            <div wire:key="photo-{{ $teacher->id }}" x-data="{ preview: null, uploading: false, progress: 0 }"
                 class="flex flex-col items-center gap-space-xs p-space-md bg-surface border border-outline-variant rounded-lg">
                 <label class="relative group/avatar cursor-pointer w-20 h-20 rounded-full overflow-hidden border-2 border-surface-container-low shadow-sm">
-                    <img :src="preview || @js($currentSrc)" alt="{{ $user->name }}" class="w-full h-full object-cover" :class="{ 'opacity-50': uploading }">
+                    <img :src="preview || @js($currentSrc)" alt="{{ $teacher->name }}" class="w-full h-full object-cover" :class="{ 'opacity-50': uploading }">
                     <div class="absolute inset-0 bg-on-surface/40 flex items-center justify-center transition-opacity duration-200"
                         :class="uploading ? 'opacity-100' : 'opacity-0 group-hover/avatar:opacity-100'">
                         <template x-if="!uploading">
@@ -109,7 +87,7 @@
                     <div x-show="uploading" x-cloak class="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
                         <div class="h-full bg-primary transition-all" :style="`width: ${progress}%`"></div>
                     </div>
-                    @if (isset($stagedPhotoUrls[$user->id]))
+                    @if (isset($stagedPhotoUrls[$teacher->id]))
                         <span class="absolute top-0 right-0 w-5 h-5 bg-success rounded-full flex items-center justify-center border-2 border-surface">
                             <span class="material-symbols-outlined text-white text-[12px]" data-weight="fill">check</span>
                         </span>
@@ -128,7 +106,7 @@
                             uploading = true;
                             progress = 0;
 
-                            $wire.upload('uploads.{{ $user->id }}', file,
+                            $wire.upload('uploads.{{ $teacher->id }}', file,
                                 () => { uploading = false; },
                                 () => { uploading = false; },
                                 (event) => { progress = event.detail.progress; },
@@ -136,31 +114,21 @@
                         ">
                 </label>
                 <div class="text-center">
-                    <p class="font-label-sm text-label-sm text-on-surface truncate max-w-[7rem]">{{ $user->name }}</p>
-                    <p class="font-body-sm text-body-sm text-secondary truncate max-w-[7rem]">{{ $user->roles->pluck('name')->join(', ') ?: '—' }}</p>
+                    <p class="font-label-sm text-label-sm text-on-surface truncate max-w-[7rem]">{{ $teacher->name }}</p>
+                    <p class="font-body-sm text-body-sm text-secondary truncate max-w-[7rem]">{{ $teacher->email }}</p>
                 </div>
             </div>
         @empty
-            <p class="col-span-full text-center font-body-md text-body-md text-secondary py-space-lg">No users found.</p>
+            <p class="col-span-full text-center font-body-md text-body-md text-secondary py-space-lg">No teachers found.</p>
         @endforelse
     </div>
     @endif
 
-    <!-- Pagination Controls Bottom -->
-    <div class="flex items-center justify-between gap-space-md bg-surface-container rounded-lg p-space-md border border-outline-variant">
-        <label class="flex items-center gap-space-sm">
-            <span class="font-label-md text-label-md text-on-surface">Per page:</span>
-            <select wire:model.live="perPage" class="h-[40px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none">
-                <option value="20">20</option>
-                <option value="40">40</option>
-                <option value="60">60</option>
-                <option value="100">100</option>
-            </select>
-        </label>
-        <div>
-            @if ($usersLoaded)
-                {{ $users->links() }}
-            @endif
-        </div>
-    </div>
+    @if ($teachersLoaded)
+        <x-ui.pagination-links
+            :paginator="$teachers"
+            perPageModel="perPage"
+            :perPageOptions="[20, 40, 60, 100]"
+        />
+    @endif
 </div>

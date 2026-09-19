@@ -49,5 +49,5 @@ test('user with users.assign-roles permission can update roles but not view the 
     $actor->assignRole('role-assigner');
 
     $this->actingAs($actor)->get(route('users.roles.edit', $target))->assertOk();
-    $this->actingAs($actor)->get(route('users.index'))->assertForbidden();
+    $this->actingAs($actor)->get(route('admin.users.index'))->assertForbidden();
 });

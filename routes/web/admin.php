@@ -19,7 +19,11 @@ use App\Livewire\Roles\RoleIndex;
 use App\Livewire\Schools\SchoolEdit;
 use App\Livewire\Schools\SchoolIndex;
 use App\Livewire\Schools\SchoolTierHistory;
+use App\Livewire\Users\UserForm;
+use App\Livewire\Users\UserImport;
 use App\Livewire\Users\UserIndex;
+use App\Livewire\Users\UserPhotoUpload;
+use App\Livewire\Users\UserRoles;
 use App\Services\R2StorageService;
 use App\Support\RootDomains;
 use Illuminate\Http\Request;
@@ -83,6 +87,11 @@ foreach (RootDomains::all() as $index => $rootDomain) {
             })->name("admin.demo-credentials{$suffix}");
 
             Route::get('/users', UserIndex::class)->name("admin.users.index{$suffix}");
+            Route::get('/users/create', UserForm::class)->name("admin.users.create{$suffix}");
+            Route::get('/users/import/{role}', UserImport::class)->whereIn('role', ['teacher', 'student'])->name("admin.users.import{$suffix}");
+            Route::get('/users/photos', UserPhotoUpload::class)->name("admin.users.photos{$suffix}");
+            Route::get('/users/{id}/edit', UserForm::class)->name("admin.users.edit{$suffix}");
+            Route::get('/users/{id}/roles', UserRoles::class)->name("admin.users.roles.edit{$suffix}");
             Route::get('/roles', RoleIndex::class)->name("admin.roles.index{$suffix}");
             Route::get('/roles/create', RoleCreate::class)->name("admin.roles.create{$suffix}");
             Route::get('/roles/{role}/edit', RoleEdit::class)->name("admin.roles.edit{$suffix}");

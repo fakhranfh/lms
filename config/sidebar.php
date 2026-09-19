@@ -23,6 +23,16 @@ return [
         'icon' => 'groups',
         'active_pattern' => 'students.*',
         'requires_permission' => 'students.view',
+        'requires_role' => 'School Admin',
+        'requires_school' => true,
+    ],
+    [
+        'label' => 'Teachers',
+        'route' => 'teachers.index',
+        'icon' => 'person',
+        'active_pattern' => 'teachers.*',
+        'requires_permission' => 'teachers.view',
+        'requires_role' => 'School Admin',
         'requires_school' => true,
     ],
     [
@@ -31,14 +41,6 @@ return [
         'icon' => 'perm_media',
         'active_pattern' => 'media-library.*',
         'requires_permission' => 'media.view',
-        'requires_school' => true,
-    ],
-    [
-        'label' => 'Users',
-        'route' => 'users.index',
-        'icon' => 'group',
-        'active_pattern' => 'users.*',
-        'requires_permission' => 'users.view',
         'requires_school' => true,
     ],
     [

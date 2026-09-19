@@ -60,10 +60,11 @@ use App\Livewire\Students\StudentGenerate;
 use App\Livewire\Students\StudentImport;
 use App\Livewire\Students\StudentIndex;
 use App\Livewire\Students\StudentPhotoUpload;
-use App\Livewire\Users\UserForm;
-use App\Livewire\Users\UserImport;
-use App\Livewire\Users\UserIndex;
-use App\Livewire\Users\UserPhotoUpload;
+use App\Livewire\Teachers\TeacherForm;
+use App\Livewire\Teachers\TeacherGenerate;
+use App\Livewire\Teachers\TeacherImport;
+use App\Livewire\Teachers\TeacherIndex;
+use App\Livewire\Teachers\TeacherPhotoUpload;
 use App\Livewire\Users\UserRoles;
 use App\Models\Course;
 use Illuminate\Support\Facades\Route;
@@ -94,24 +95,28 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school', EnsurePasswordIs
     Route::get('/roles/{role}/edit', RoleEdit::class)->middleware(['permission:roles.view', 'permission:roles.update'])->name('roles.edit');
     Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
 
-    Route::get('/users', UserIndex::class)->middleware('permission:users.view')->name('users.index');
     Route::get('/users/check-availability', [UserAvailabilityController::class, 'check'])->name('users.check-availability');
-    Route::get('/users/create', UserForm::class)->middleware('permission:users.create')->name('users.create');
-    Route::get('/users/import/{role}', UserImport::class)->whereIn('role', ['teacher', 'student'])->middleware('permission:users.import')->name('users.import');
-    Route::get('/users/photos', UserPhotoUpload::class)->middleware('permission:users.edit')->name('users.photos');
-    Route::get('/users/{id}/edit', UserForm::class)->middleware('permission:users.edit')->name('users.edit');
     Route::get('/users/{id}/roles', UserRoles::class)->middleware('permission:users.assign-roles')->name('users.roles.edit');
 
-    Route::get('/students', StudentIndex::class)->middleware('permission:students.view')->name('students.index');
-    Route::get('/students/create', StudentForm::class)->middleware('permission:students.create')->name('students.create');
-    Route::get('/students/import', StudentImport::class)->middleware('permission:students.import')->name('students.import');
-    Route::get('/students/generate', StudentGenerate::class)->middleware('permission:students.create')->name('students.generate');
-    Route::get('/students/photos', StudentPhotoUpload::class)->middleware('permission:students.edit')->name('students.photos');
-    Route::get('/students/selection', [StudentSelectionController::class, 'show'])->middleware('permission:students.view')->name('students.selection.show');
-    Route::post('/students/selection', [StudentSelectionController::class, 'update'])->middleware('permission:students.view')->name('students.selection.update');
-    Route::post('/students/selection/batch', [StudentSelectionController::class, 'updateMany'])->middleware('permission:students.view')->name('students.selection.update-many');
-    Route::delete('/students/selection', [StudentSelectionController::class, 'clear'])->middleware('permission:students.view')->name('students.selection.clear');
-    Route::get('/students/{id}/edit', StudentForm::class)->middleware('permission:students.edit')->name('students.edit');
+    Route::middleware('role:School Admin')->group(function () {
+        Route::get('/students', StudentIndex::class)->middleware('permission:students.view')->name('students.index');
+        Route::get('/students/create', StudentForm::class)->middleware('permission:students.create')->name('students.create');
+        Route::get('/students/import', StudentImport::class)->middleware('permission:students.import')->name('students.import');
+        Route::get('/students/generate', StudentGenerate::class)->middleware('permission:students.create')->name('students.generate');
+        Route::get('/students/photos', StudentPhotoUpload::class)->middleware('permission:students.edit')->name('students.photos');
+        Route::get('/students/selection', [StudentSelectionController::class, 'show'])->middleware('permission:students.view')->name('students.selection.show');
+        Route::post('/students/selection', [StudentSelectionController::class, 'update'])->middleware('permission:students.view')->name('students.selection.update');
+        Route::post('/students/selection/batch', [StudentSelectionController::class, 'updateMany'])->middleware('permission:students.view')->name('students.selection.update-many');
+        Route::delete('/students/selection', [StudentSelectionController::class, 'clear'])->middleware('permission:students.view')->name('students.selection.clear');
+        Route::get('/students/{id}/edit', StudentForm::class)->middleware('permission:students.edit')->name('students.edit');
+
+        Route::get('/teachers', TeacherIndex::class)->middleware('permission:teachers.view')->name('teachers.index');
+        Route::get('/teachers/create', TeacherForm::class)->middleware('permission:teachers.create')->name('teachers.create');
+        Route::get('/teachers/import', TeacherImport::class)->middleware('permission:teachers.import')->name('teachers.import');
+        Route::get('/teachers/generate', TeacherGenerate::class)->middleware('permission:teachers.create')->name('teachers.generate');
+        Route::get('/teachers/photos', TeacherPhotoUpload::class)->middleware('permission:teachers.edit')->name('teachers.photos');
+        Route::get('/teachers/{id}/edit', TeacherForm::class)->middleware('permission:teachers.edit')->name('teachers.edit');
+    });
 
     Route::get('/tier-management', [TierChangeController::class, 'show'])->name('tier-management.show');
     Route::post('/tier-management/change', [TierChangeController::class, 'initiate'])->name('tier-management.change');

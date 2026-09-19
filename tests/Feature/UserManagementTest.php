@@ -95,7 +95,7 @@ test('user with users.assign-roles can update a target user roles', function () 
         ->set('roles', [$role->id])
         ->call('updateRoles')
         ->assertHasNoErrors()
-        ->assertRedirect(route('users.index'));
+        ->assertRedirect(route('admin.users.index'));
 
     expect($target->fresh()->roles->pluck('id')->all())->toBe([$role->id]);
 });
@@ -131,9 +131,10 @@ test('removing the last admin role from the only admin user is blocked', functio
 });
 
 test('the create user page loads via its real route without an id parameter', function () {
-    $actor = actingAsUserManager(['users.create']);
+    $actor = User::factory()->create(['school_id' => null]);
+    $actor->assignRole(RoleName::Admin);
 
-    $this->actingAs($actor)->get(route('users.create'))
+    $this->actingAs($actor)->get(route('admin.users.create'))
         ->assertOk();
 });
 
@@ -149,7 +150,7 @@ test('user with users.create can create a new user', function () {
         ->set('roles', [$teacherRole->id])
         ->call('save')
         ->assertHasNoErrors()
-        ->assertRedirect(route('users.index'));
+        ->assertRedirect(route('admin.users.index'));
 
     $created = User::where('email', 'new.teacher@example.com')->first();
     expect($created)->not->toBeNull();
@@ -261,7 +262,7 @@ test('creating a user with a soft-deleted same-school email restores the old use
         ->set('roles', [$teacherRole->id])
         ->call('save')
         ->assertHasNoErrors()
-        ->assertRedirect(route('users.index'));
+        ->assertRedirect(route('admin.users.index'));
 
     expect(User::withTrashed()->where('email', 'gone@example.com')->count())->toBe(1);
 
@@ -383,7 +384,7 @@ test('user with users.edit can update an existing user', function () {
         ->set('email', 'updated@example.com')
         ->call('save')
         ->assertHasNoErrors()
-        ->assertRedirect(route('users.index'));
+        ->assertRedirect(route('admin.users.index'));
 
     $this->assertDatabaseHas('users', [
         'id' => $target->id,

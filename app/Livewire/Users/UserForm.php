@@ -152,7 +152,7 @@ class UserForm extends Component
             session()->flash('success', __('User created successfully.'));
         }
 
-        return redirect()->route('users.index');
+        return redirect()->route('admin.users.index');
     }
 
     public function render(RoleService $roleService)

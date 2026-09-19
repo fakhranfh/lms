@@ -1,24 +1,6 @@
-@section('title', $role === 'teacher' ? 'Import Teachers' : 'Import Students')
+@section('title', 'Import Teachers')
 
-<div class="max-w-2xl space-y-space-lg">
-    @if ($createdCount !== null)
-        <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
-            <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
-            <p class="font-body-md text-body-md text-success">{{ $createdCount }} user(s) imported successfully.</p>
-        </div>
-    @endif
-
-    @if (! empty($importErrors))
-        <div class="px-gutter py-space-md bg-error/10 border border-error/20 rounded-lg space-y-space-xs">
-            <p class="font-label-md text-label-md text-error">{{ count($importErrors) }} row(s) could not be imported:</p>
-            <ul class="list-disc list-inside font-body-sm text-body-sm text-error">
-                @foreach ($importErrors as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
+<div class="w-full space-y-space-lg">
     <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-lg" x-data="{
             selectedFile: null, spreadsheetName: null,
             uploading: false, progress: 0,
@@ -36,20 +18,27 @@
             },
         }">
         <div>
-            <h2 class="font-headline-sm text-headline-sm text-on-surface">
-                {{ $role === 'teacher' ? 'Import Teachers' : 'Import Students' }}
-            </h2>
+            <h2 class="font-headline-sm text-headline-sm text-on-surface">Import Teachers</h2>
             <p class="font-body-sm text-body-sm text-secondary mt-space-xs">
                 Upload a spreadsheet with columns <code>Name</code> and <code>Email</code> — it must match the
-                template exactly. Every row will be created as a {{ $role === 'teacher' ? 'Teacher' : 'Student' }}.
-                Profile photos can be added afterwards from the
-                <a href="{{ route('admin.users.photos') }}" class="text-primary hover:underline">Bulk Upload Photos</a> page.
+                template exactly. Every row will be created as a Teacher with a one-time login link.
             </p>
             <a href="{{ $templateUrl }}"
                 class="mt-space-sm inline-flex items-center gap-space-2xs font-label-md text-label-md text-primary hover:underline">
                 <span class="material-symbols-outlined text-[18px]">download</span>
-                Download {{ $role === 'teacher' ? 'teacher' : 'student' }} template (.xlsx)
+                Download teacher template (.xlsx)
             </a>
+        </div>
+
+        <div>
+            <label for="loginLinkTtlDays" class="block font-label-md text-label-md text-on-surface mb-space-xs">
+                Login link valid for (days)
+            </label>
+            <input type="number" wire:model="loginLinkTtlDays" id="loginLinkTtlDays" min="1" max="365"
+                class="w-full px-space-md py-space-sm border rounded-lg font-body-md text-body-md border-outline-variant">
+            @error('loginLinkTtlDays')
+                <p class="mt-space-xs font-body-sm text-body-sm text-error">{{ $message }}</p>
+            @enderror
         </div>
 
         <div>
@@ -73,8 +62,6 @@
                     <div class="h-full bg-primary transition-all" :style="`width: ${progress}%`"></div>
                 </div>
             </label>
-            <!-- Plain (non-wire:model) file input: picking a file only stores it in
-                 Alpine state, it is not sent to the server until Import is clicked. -->
             <input type="file" id="spreadsheet" accept=".xlsx,.csv" class="hidden"
                 @change="
                     const file = $event.target.files[0] ?? null;
@@ -101,7 +88,34 @@
                 <span wire:loading.remove wire:target="import">Import</span>
                 <span wire:loading wire:target="import">Importing...</span>
             </button>
-            <a href="{{ route('admin.users.index') }}" class="font-label-md text-label-md text-secondary hover:underline">Cancel</a>
+            <a href="{{ route('teachers.index') }}" class="font-label-md text-label-md text-secondary hover:underline">Cancel</a>
         </div>
     </div>
+
+    <!-- Import Errors Modal -->
+    @if (! empty($importErrors))
+        <div wire:key="import-errors-modal-{{ md5(implode('', $importErrors)) }}" x-data="{ show: true }">
+            <x-ui.modal show="show" onClose="show = false" maxWidth="max-w-lg">
+                <div class="bg-surface border border-outline-variant rounded-lg shadow-lg p-space-lg space-y-space-md">
+                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Import Completed with Errors</h3>
+                    @if ($createdCount)
+                        <p class="font-body-sm text-body-sm text-on-surface-variant">
+                            {{ $createdCount }} teacher(s) imported successfully.
+                        </p>
+                    @endif
+                    <p class="font-label-md text-label-md text-error">{{ count($importErrors) }} row(s) could not be imported:</p>
+                    <ul class="list-disc list-inside font-body-sm text-body-sm text-error max-h-64 overflow-y-auto">
+                        @foreach ($importErrors as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <div class="flex justify-end pt-space-sm">
+                        <button type="button" @click="show = false" class="px-space-lg py-space-sm border border-outline rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container transition">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </x-ui.modal>
+        </div>
+    @endif
 </div>

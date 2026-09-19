@@ -31,6 +31,11 @@ function actingAsStudentManager(array $permissionNames): User
 
     $user->assignRole($role);
 
+    // Students/Teachers management routes are gated to School Admin only,
+    // on top of the fine-grained permission checks exercised by these tests.
+    $schoolAdminRole = Role::firstOrCreate(['name' => RoleName::SchoolAdmin->value, 'guard_name' => 'web', 'school_id' => $user->school_id]);
+    $user->assignRole($schoolAdminRole);
+
     return $user;
 }
 

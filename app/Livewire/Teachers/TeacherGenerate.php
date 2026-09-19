@@ -22,7 +22,7 @@ class TeacherGenerate extends Component
     {
         abort_unless(app()->environment(['local', 'testing']), 403);
 
-        $this->loginLinkTtlDays = (int) ceil(config('students.login_link_ttl_minutes', 2880) / 1440);
+        $this->loginLinkTtlDays = (int) ceil(config('teachers.login_link_ttl_minutes', 2880) / 1440);
     }
 
     protected function rules(): array

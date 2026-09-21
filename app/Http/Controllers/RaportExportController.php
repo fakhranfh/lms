@@ -63,10 +63,15 @@ class RaportExportController extends Controller
             ];
         })->values();
 
+        $overallScore = $this->overallScore($entries);
+        $overallGrade = $this->overallGrade($overallScore);
+
         $filename = 'raport-'.str($student->name)->slug().'-'.now()->format('Y-m-d').'.pdf';
         $output = Pdf::loadView('exports.raport-pdf', [
             'student' => $student,
             'courses' => $entries,
+            'overallScore' => $overallScore,
+            'overallGrade' => $overallGrade,
         ])->output();
 
         return Response::streamDownload(function () use ($output) {

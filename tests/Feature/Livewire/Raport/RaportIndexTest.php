@@ -30,6 +30,8 @@ class RaportIndexTest extends TestCase
     {
         parent::setUp();
 
+        app()->detectEnvironment(fn () => 'local');
+
         $this->school = School::factory()->create();
         $this->teacher = User::factory()->forSchool($this->school)->create();
         $this->student = User::factory()->forSchool($this->school)->create();
@@ -114,5 +116,88 @@ class RaportIndexTest extends TestCase
             ->call('loadData')
             ->assertSee($this->student->name)
             ->assertSee(route('raport.show', $this->student), false);
+    }
+
+    public function test_generate_raport_scores_is_forbidden_outside_local_environment(): void
+    {
+        app()->detectEnvironment(fn () => 'production');
+
+        $this->teacher->givePermissionTo(['raport.view', 'gradebook.manage']);
+        $this->actingAs($this->teacher);
+
+        Livewire::test(RaportIndex::class)
+            ->call('loadData')
+            ->call('generateRaportScores')
+            ->assertStatus(403);
+
+        app()->detectEnvironment(fn () => 'testing');
+    }
+
+    public function test_generate_raport_scores_enrolls_every_student_into_every_course_in_the_school(): void
+    {
+        $this->teacher->givePermissionTo(['raport.view', 'gradebook.manage']);
+        $this->actingAs($this->teacher);
+
+        $otherCourse = Course::factory()->for($this->school)->create();
+        $unenrolledStudent = User::factory()->forSchool($this->school)->create();
+        $unenrolledStudent->assignRole(Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]));
+
+        Livewire::test(RaportIndex::class)
+            ->call('loadData')
+            ->call('generateRaportScores');
+
+        $this->assertTrue(CoursePerson::where('course_id', $this->course->id)->where('user_id', $unenrolledStudent->id)->exists());
+        $this->assertTrue(CoursePerson::where('course_id', $otherCourse->id)->where('user_id', $unenrolledStudent->id)->exists());
+        $this->assertTrue(CoursePerson::where('course_id', $otherCourse->id)->where('user_id', $this->student->id)->exists());
+    }
+
+    public function test_generate_raport_scores_grades_every_configured_assessment(): void
+    {
+        $this->teacher->givePermissionTo(['raport.view', 'gradebook.manage']);
+        $this->actingAs($this->teacher);
+
+        $assessment = Assessment::factory()->for($this->course)->create(['type' => 'theory_personal_assignment', 'weight' => 20]);
+        AssessmentQuestion::factory()->for($assessment)->create(['points' => 100]);
+
+        Livewire::test(RaportIndex::class)
+            ->call('loadData')
+            ->call('generateRaportScores');
+
+        $this->assertTrue(
+            AssessmentAttempt::where('assessment_id', $assessment->id)->where('user_id', $this->student->id)->exists()
+        );
+    }
+
+    public function test_generate_raport_scores_creates_and_grades_assessment_types_the_course_is_missing(): void
+    {
+        $this->teacher->givePermissionTo(['raport.view', 'gradebook.manage']);
+        $this->actingAs($this->teacher);
+
+        // The course starts with no Assessments at all (not even the
+        // auto-provisioned Attendance/Forum Discussion ones), so every type
+        // in the report card should be created and graded, not just left
+        // blank as Gradebook's single-course randomizer would leave it.
+        $this->assertSame(0, Assessment::where('course_id', $this->course->id)->count());
+
+        Livewire::test(RaportIndex::class)
+            ->call('loadData')
+            ->call('generateRaportScores');
+
+        $types = Assessment::where('course_id', $this->course->id)->pluck('type')->map(fn ($type) => $type->value)->sort()->values()->all();
+
+        $this->assertSame([
+            'attendance',
+            'forum_discussion',
+            'theory_final_exam',
+            'theory_personal_assignment',
+            'theory_quiz',
+            'theory_team_assignment',
+        ], $types);
+
+        $personalAssignment = Assessment::where('course_id', $this->course->id)->where('type', 'theory_personal_assignment')->firstOrFail();
+
+        $this->assertTrue(
+            AssessmentAttempt::where('assessment_id', $personalAssignment->id)->where('user_id', $this->student->id)->exists()
+        );
     }
 }

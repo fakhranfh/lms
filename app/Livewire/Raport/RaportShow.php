@@ -81,6 +81,9 @@ class RaportShow extends Component
             ];
         })->values();
 
+        $viewData['overallScore'] = $this->overallScore($viewData['courseCards']);
+        $viewData['overallGrade'] = $this->overallGrade($viewData['overallScore']);
+
         return view('livewire.raport.raport-show', $viewData)
             ->extends('layouts.app', ['topbarTitle' => $this->student->name])
             ->section('app-content');

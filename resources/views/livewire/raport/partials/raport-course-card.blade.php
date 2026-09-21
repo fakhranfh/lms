@@ -4,7 +4,7 @@
     session drill-down GradebookIndex/GradebookShow expose.
 --}}
 <div wire:key="raport-course-{{ $card['course']->id }}" class="space-y-space-sm">
-    <h2 class="font-title-md text-title-md text-on-surface">{{ $card['course']->title }}</h2>
+    <h2 class="font-title-md text-title-md text-on-surface font-bold">{{ $card['course']->title }}</h2>
 
     <div class="rounded-lg p-space-lg bg-primary grid grid-cols-[1fr_4rem_4rem] gap-space-lg items-start">
         <div class="min-w-0">

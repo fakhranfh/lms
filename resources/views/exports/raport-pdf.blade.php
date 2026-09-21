@@ -12,10 +12,22 @@
         th { background-color: #f8f8f8; }
         .text-right { text-align: right; }
         .final-row td { font-weight: bold; background-color: #fafafa; }
+        .overall { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
+        .overall td { border: 1px solid #1a1a1a; padding: 8px 10px; font-weight: bold; }
+        .overall .label { background-color: #1a1a1a; color: #fff; }
     </style>
 </head>
 <body>
     <h1>Raport — {{ $student->name }}</h1>
+
+    @if ($courses->isNotEmpty())
+        <table class="overall">
+            <tr>
+                <td class="label">Overall Final Score ({{ count($courses) }} course(s))</td>
+                <td class="text-right">{{ $overallScore !== null ? number_format($overallScore, 0) : '—' }} ({{ $overallGrade ?? '—' }})</td>
+            </tr>
+        </table>
+    @endif
 
     @forelse ($courses as $entry)
         <div class="course">

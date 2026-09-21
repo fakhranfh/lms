@@ -17,11 +17,17 @@ class RoleService
         protected PermissionRepositoryInterface $permissionRepository,
     ) {}
 
+    /**
+     * @return Collection<int, Role>
+     */
     public function get(array $filters = [], array $with = []): Collection
     {
         return $this->roleRepository->get($filters, $with);
     }
 
+    /**
+     * @return Collection<int, Role>
+     */
     public function getAll(): Collection
     {
         return $this->roleRepository->getAll();

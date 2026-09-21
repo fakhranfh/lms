@@ -1,6 +1,13 @@
 @section('title', 'Raport')
 
 <div class="space-y-space-lg">
+    @if ($successMessage)
+        <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
+            <p class="font-body-md text-body-md text-success">{{ $successMessage }}</p>
+        </div>
+    @endif
+
     <div class="flex items-start justify-between gap-space-md">
         <h1 class="font-headline-md text-headline-md text-on-surface">Raport</h1>
 
@@ -12,6 +19,19 @@
                 <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
                 Export PDF
             </a>
+        @elseif ($isLocalEnv)
+            <button
+                type="button"
+                wire:click="generateRaportScores"
+                wire:loading.attr="disabled"
+                wire:target="generateRaportScores"
+                class="flex-shrink-0 px-space-md py-space-sm rounded-lg bg-secondary text-on-secondary font-label-md text-label-md hover:opacity-90 transition-opacity inline-flex items-center gap-space-sm disabled:opacity-50"
+                title="Enroll every student into every course and randomize raport scores (dev only)"
+            >
+                <span wire:loading.remove wire:target="generateRaportScores" class="material-symbols-outlined text-[18px]">casino</span>
+                <span wire:loading wire:target="generateRaportScores" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                Generate Raport Scores
+            </button>
         @endif
     </div>
 
@@ -21,6 +41,12 @@
                 You are not enrolled in any course yet.
             </div>
         @else
+            <div class="rounded-lg p-space-lg bg-primary grid grid-cols-[1fr_4rem_4rem] gap-space-lg items-center">
+                <p class="font-title-md text-title-md text-on-primary">Overall Final Score ({{ $courseCards->count() }} course{{ $courseCards->count() === 1 ? '' : 's' }})</p>
+                <p class="text-center font-headline-sm text-headline-sm text-on-primary">{{ $overallScore !== null ? number_format($overallScore, 0) : '—' }}</p>
+                <p class="text-center font-headline-sm text-headline-sm text-on-primary">{{ $overallGrade ?? '—' }}</p>
+            </div>
+
             <div class="space-y-space-xl">
                 @foreach ($courseCards as $card)
                     @include('livewire.raport.partials.raport-course-card', ['card' => $card])
@@ -89,7 +115,7 @@
         <!-- Skeleton Loading (shown while paginating, searching, changing per-page/grade filters) -->
         <div
             wire:loading.class.remove="hidden"
-            wire:target="gotoPage,previousPage,nextPage,studentSearch,applyGradeFilter,perPage"
+            wire:target="gotoPage,previousPage,nextPage,studentSearch,applyGradeFilter,perPage,generateRaportScores"
             class="hidden bg-surface border border-outline-variant rounded-lg overflow-hidden"
         >
             <x-ui.person-grid-skeleton :rows="$perPage" />
@@ -97,7 +123,7 @@
 
         <div
             wire:loading.remove
-            wire:target="gotoPage,previousPage,nextPage,studentSearch,applyGradeFilter,perPage"
+            wire:target="gotoPage,previousPage,nextPage,studentSearch,applyGradeFilter,perPage,generateRaportScores"
             class="bg-surface border border-outline-variant rounded-lg overflow-hidden"
         >
             <x-ui.person-grid>

@@ -85,4 +85,39 @@ trait BuildsRaportViewData
             default => 'E',
         };
     }
+
+    /**
+     * Averages a student's final score across every course card being shown
+     * (ignoring courses with no computable score yet), so the Raport can
+     * read as one combined report card on top of the per-course breakdowns.
+     *
+     * @param  iterable<array{finalScore: ?float}>  $courseCards
+     */
+    private function overallScore(iterable $courseCards): ?float
+    {
+        $scores = collect($courseCards)->pluck('finalScore')->filter(fn (?float $score) => $score !== null);
+
+        return $scores->isEmpty() ? null : round($scores->avg(), 2);
+    }
+
+    /**
+     * Grade bands here are fixed (90/80/70/60) rather than any single
+     * Course's own grade_band_* columns, since this score averages across
+     * every course a student is enrolled in — courses that may each have
+     * different custom bands.
+     */
+    private function overallGrade(?float $overallScore): ?string
+    {
+        if ($overallScore === null) {
+            return null;
+        }
+
+        return match (true) {
+            $overallScore >= 90 => 'A',
+            $overallScore >= 80 => 'B',
+            $overallScore >= 70 => 'C',
+            $overallScore >= 60 => 'D',
+            default => 'E',
+        };
+    }
 }

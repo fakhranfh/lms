@@ -4,6 +4,7 @@ namespace App\Livewire\Raport;
 
 use App\Enums\RoleName;
 use App\Livewire\Raport\Concerns\BuildsRaportViewData;
+use App\Livewire\Raport\Concerns\HasRaportIndexDevTools;
 use App\Models\Course;
 use App\Services\CoursePersonService;
 use App\Services\CourseService;
@@ -18,13 +19,15 @@ use Livewire\WithPagination;
 
 class RaportIndex extends Component
 {
-    use BuildsRaportViewData, WithPagination;
+    use BuildsRaportViewData, HasRaportIndexDevTools, WithPagination;
 
     private const DEFAULT_ROWS_PER_PAGE = 12;
 
     public bool $isStudent = false;
 
     public bool $dataLoaded = false;
+
+    public ?string $successMessage = null;
 
     #[Url(as: 'per_page')]
     public int $perPage = self::DEFAULT_ROWS_PER_PAGE;
@@ -42,6 +45,7 @@ class RaportIndex extends Component
         abort_unless(auth()->user()->can('raport.view'), 403);
 
         $this->isStudent = auth()->user()->hasRole(RoleName::Student);
+        $this->isLocalEnv = app()->environment('local');
     }
 
     public function loadData(): void
@@ -68,6 +72,8 @@ class RaportIndex extends Component
 
         $viewData = [
             'isStudent' => $this->isStudent,
+            'isLocalEnv' => $this->isLocalEnv,
+            'successMessage' => $this->successMessage,
         ];
 
         if (! $this->dataLoaded) {
@@ -90,6 +96,9 @@ class RaportIndex extends Component
                     'typeRows' => $this->typeRows($result),
                 ];
             })->values();
+
+            $viewData['overallScore'] = $this->overallScore($viewData['courseCards']);
+            $viewData['overallGrade'] = $this->overallGrade($viewData['overallScore']);
         } else {
             $courses = $courseService->get(['teaching_user_id' => auth()->id(), 'school_id' => $schoolId]);
 
@@ -124,26 +133,22 @@ class RaportIndex extends Component
 
                 $entry = $studentsById->get($coursePerson->user_id, [
                     'user' => $coursePerson->user,
-                    'scores' => [],
+                    'courseCards' => [],
                 ]);
 
-                if ($result['final']['score'] !== null) {
-                    $entry['scores'][] = $result['final']['score'];
-                }
+                $entry['courseCards'][] = ['finalScore' => $result['final']['score']];
 
                 $studentsById->put($coursePerson->user_id, $entry);
             }
         }
 
         $rows = $studentsById->map(function (array $entry) {
-            $averageScore = count($entry['scores']) > 0
-                ? round(array_sum($entry['scores']) / count($entry['scores']), 2)
-                : null;
+            $overallScore = $this->overallScore($entry['courseCards']);
 
             return [
                 'user' => $entry['user'],
-                'score' => $averageScore,
-                'grade' => $this->aggregateGrade($averageScore),
+                'score' => $overallScore,
+                'grade' => $this->overallGrade($overallScore),
             ];
         })->values();
 
@@ -166,26 +171,5 @@ class RaportIndex extends Component
             $page,
             ['path' => Paginator::resolveCurrentPath()],
         );
-    }
-
-    /**
-     * Grade bands here are fixed (90/80/70/60) rather than a Course's own
-     * grade_band_* columns, since this row averages a student's final score
-     * across every course they're enrolled in — courses that may each have
-     * different custom bands.
-     */
-    private function aggregateGrade(?float $averageScore): ?string
-    {
-        if ($averageScore === null) {
-            return null;
-        }
-
-        return match (true) {
-            $averageScore >= 90 => 'A',
-            $averageScore >= 80 => 'B',
-            $averageScore >= 70 => 'C',
-            $averageScore >= 60 => 'D',
-            default => 'E',
-        };
     }
 }

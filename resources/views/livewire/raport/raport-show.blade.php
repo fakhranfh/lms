@@ -31,6 +31,12 @@
             No courses found.
         </div>
     @else
+        <div class="rounded-lg p-space-lg bg-primary grid grid-cols-[1fr_4rem_4rem] gap-space-lg items-center">
+            <p class="font-title-md text-title-md text-on-primary">Overall Final Score ({{ $courseCards->count() }} course{{ $courseCards->count() === 1 ? '' : 's' }})</p>
+            <p class="text-center font-headline-sm text-headline-sm text-on-primary">{{ $overallScore !== null ? number_format($overallScore, 0) : '—' }}</p>
+            <p class="text-center font-headline-sm text-headline-sm text-on-primary">{{ $overallGrade ?? '—' }}</p>
+        </div>
+
         <div class="space-y-space-xl">
             @foreach ($courseCards as $card)
                 <div wire:key="raport-course-{{ $card['course']->id }}" class="space-y-space-sm">

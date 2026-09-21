@@ -7,6 +7,12 @@
     </div>
 
     <div class="space-y-space-xl animate-pulse">
+        <div class="rounded-lg p-space-lg bg-surface-container grid grid-cols-[1fr_4rem_4rem] gap-space-lg items-center">
+            <div class="h-4 bg-surface rounded w-48"></div>
+            <div class="h-6 bg-surface rounded w-10 mx-auto"></div>
+            <div class="h-6 bg-surface rounded w-10 mx-auto"></div>
+        </div>
+
         @for ($i = 0; $i < 2; $i++)
             <div class="space-y-space-sm">
                 <div class="h-5 bg-surface-container rounded w-1/3"></div>

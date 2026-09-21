@@ -89,4 +89,29 @@ class RaportShowTest extends TestCase
         Livewire::test(RaportShow::class, ['student' => $otherStudent])
             ->assertStatus(403);
     }
+
+    public function test_overall_final_score_averages_across_every_course(): void
+    {
+        $this->student->givePermissionTo('raport.view');
+        $this->actingAs($this->student);
+
+        $otherCourse = Course::factory()->for($this->school)->create();
+        CoursePerson::factory()->for($otherCourse)->student()->create(['user_id' => $this->student->id]);
+
+        $assessment = Assessment::factory()->for($this->course)->create(['type' => 'theory_personal_assignment', 'weight' => 100]);
+        AssessmentQuestion::factory()->for($assessment)->create(['points' => 100]);
+        $attempt = AssessmentAttempt::factory()->for($assessment)->for($this->student)->create();
+        AssessmentScore::factory()->for($attempt, 'attempt')->create(['score' => 80, 'graded_at' => now()]);
+
+        $otherAssessment = Assessment::factory()->for($otherCourse)->create(['type' => 'theory_personal_assignment', 'weight' => 100]);
+        AssessmentQuestion::factory()->for($otherAssessment)->create(['points' => 100]);
+        $otherAttempt = AssessmentAttempt::factory()->for($otherAssessment)->for($this->student)->create();
+        AssessmentScore::factory()->for($otherAttempt, 'attempt')->create(['score' => 40, 'graded_at' => now()]);
+
+        Livewire::test(RaportShow::class, ['student' => $this->student])
+            ->call('loadData')
+            ->assertViewHas('overallScore', 60.0)
+            ->assertViewHas('overallGrade', 'D')
+            ->assertSee('Overall Final Score');
+    }
 }

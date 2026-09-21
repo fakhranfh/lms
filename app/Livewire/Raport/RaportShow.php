@@ -2,10 +2,10 @@
 
 namespace App\Livewire\Raport;
 
+use App\Enums\RoleName;
 use App\Livewire\Raport\Concerns\BuildsRaportViewData;
 use App\Models\Course;
 use App\Models\User;
-use App\Services\CoursePersonService;
 use App\Services\CourseService;
 use App\Services\GradebookScoringService;
 use App\Support\CurrentSchool;
@@ -21,20 +21,17 @@ class RaportShow extends Component
 
     public bool $dataLoaded = false;
 
-    public function mount(CurrentSchool $currentSchool, User $student, CourseService $courseService, CoursePersonService $coursePersonService): void
+    public function mount(User $student): void
     {
         abort_unless(auth()->user()->can('raport.view'), 403);
 
         $this->isSelf = $student->id === auth()->id();
 
-        if (! $this->isSelf) {
-            $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
-
-            $teachesStudent = $courseService->get(['teaching_user_id' => auth()->id(), 'school_id' => $schoolId])
-                ->contains(fn (Course $course) => $coursePersonService->isEnrolledAsStudent($course->id, $student->id));
-
-            abort_unless($teachesStudent, 403);
-        }
+        // A student's own row is always visible to them; viewing someone
+        // else's is a School Admin's school-wide oversight, not a Teacher's
+        // — the global SchoolScope on User already keeps $student to the
+        // current school, so no course-level check is needed here.
+        abort_unless($this->isSelf || auth()->user()->hasRole(RoleName::SchoolAdmin), 403);
 
         $this->student = $student;
     }
@@ -47,7 +44,6 @@ class RaportShow extends Component
     public function render(
         CurrentSchool $currentSchool,
         CourseService $courseService,
-        CoursePersonService $coursePersonService,
         GradebookScoringService $gradebookScoringService,
     ) {
         $viewData = [
@@ -63,11 +59,7 @@ class RaportShow extends Component
 
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
 
-        $courses = $this->isSelf
-            ? $courseService->get(['enrolled_user_id' => $this->student->id, 'school_id' => $schoolId])
-            : $courseService->get(['teaching_user_id' => auth()->id(), 'school_id' => $schoolId])
-                ->filter(fn (Course $course) => $coursePersonService->isEnrolledAsStudent($course->id, $this->student->id))
-                ->values();
+        $courses = $courseService->get(['enrolled_user_id' => $this->student->id, 'school_id' => $schoolId]);
 
         $viewData['courseCards'] = $courses->map(function (Course $course) use ($gradebookScoringService) {
             $result = $gradebookScoringService->computeForUser($course, $this->student->id);

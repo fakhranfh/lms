@@ -45,6 +45,13 @@ class RaportIndex extends Component
         abort_unless(auth()->user()->can('raport.view'), 403);
 
         $this->isStudent = auth()->user()->hasRole(RoleName::Student);
+
+        // The roster of every student in the school is a School Admin's
+        // school-wide oversight, not a Teacher's — Teachers no longer hold
+        // raport.view by default, but guard the role directly too in case
+        // it was granted to one some other way.
+        abort_unless($this->isStudent || auth()->user()->hasRole(RoleName::SchoolAdmin), 403);
+
         $this->isLocalEnv = app()->environment('local');
     }
 
@@ -100,7 +107,7 @@ class RaportIndex extends Component
             $viewData['overallScore'] = $this->overallScore($viewData['courseCards']);
             $viewData['overallGrade'] = $this->overallGrade($viewData['overallScore']);
         } else {
-            $courses = $courseService->get(['teaching_user_id' => auth()->id(), 'school_id' => $schoolId]);
+            $courses = $courseService->get(['school_id' => $schoolId]);
 
             $viewData['gradeFilter'] = $this->gradeFilter;
             $viewData['studentRows'] = $this->paginateStudentRows($courses, $coursePersonService, $gradebookScoringService);
@@ -112,11 +119,11 @@ class RaportIndex extends Component
     }
 
     /**
-     * Builds one row per unique student across every course this teacher
-     * teaches, combining that student's final score across all of them into
-     * a single average — the Raport covers a student's whole record, not
-     * one course at a time, so students enrolled in more than one of this
-     * teacher's courses are no longer listed once per course.
+     * Builds one row per unique student across every course in the school,
+     * combining that student's final score across all of them into a single
+     * average — the Raport covers a student's whole record, not one course
+     * at a time, so students enrolled in more than one course are no longer
+     * listed once per course.
      *
      * @param  Collection<int, Course>  $courses
      */

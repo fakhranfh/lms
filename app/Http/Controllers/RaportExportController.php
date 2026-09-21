@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RoleName;
 use App\Livewire\Raport\Concerns\BuildsRaportViewData;
 use App\Models\Course;
 use App\Models\User;
-use App\Services\CoursePersonService;
 use App\Services\CourseService;
 use App\Services\GradebookScoringService;
 use App\Support\CurrentSchool;
@@ -32,17 +32,13 @@ class RaportExportController extends Controller
         User $student,
         CurrentSchool $currentSchool,
         CourseService $courseService,
-        CoursePersonService $coursePersonService,
         GradebookScoringService $gradebookScoringService,
     ): StreamedResponse {
         abort_unless(auth()->user()->can('raport.view'), 403);
+        abort_unless(auth()->user()->hasRole(RoleName::SchoolAdmin), 403);
 
         $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
-        $courses = $courseService->get(['teaching_user_id' => auth()->id(), 'school_id' => $schoolId])
-            ->filter(fn (Course $course) => $coursePersonService->isEnrolledAsStudent($course->id, $student->id))
-            ->values();
-
-        abort_if($courses->isEmpty(), 403);
+        $courses = $courseService->get(['enrolled_user_id' => $student->id, 'school_id' => $schoolId]);
 
         return $this->download($student, $courses, $gradebookScoringService);
     }

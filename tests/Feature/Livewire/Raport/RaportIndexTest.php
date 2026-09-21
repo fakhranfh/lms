@@ -20,6 +20,8 @@ class RaportIndexTest extends TestCase
 {
     private School $school;
 
+    private User $schoolAdmin;
+
     private User $teacher;
 
     private User $student;
@@ -33,6 +35,9 @@ class RaportIndexTest extends TestCase
         app()->detectEnvironment(fn () => 'local');
 
         $this->school = School::factory()->create();
+        $this->schoolAdmin = User::factory()->forSchool($this->school)->create();
+        $this->schoolAdmin->assignRole(Role::firstOrCreate(['name' => RoleName::SchoolAdmin->value, 'guard_name' => 'web', 'school_id' => $this->school->id]));
+        $this->schoolAdmin->givePermissionTo(['raport.view', 'gradebook.manage']);
         $this->teacher = User::factory()->forSchool($this->school)->create();
         $this->student = User::factory()->forSchool($this->school)->create();
         $this->student->assignRole(Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]));
@@ -45,6 +50,14 @@ class RaportIndexTest extends TestCase
     public function test_user_without_permission_cannot_view_raport(): void
     {
         $this->actingAs($this->student);
+
+        Livewire::test(RaportIndex::class)->assertStatus(403);
+    }
+
+    public function test_teacher_cannot_view_raport_even_when_granted_the_permission(): void
+    {
+        $this->teacher->givePermissionTo('raport.view');
+        $this->actingAs($this->teacher);
 
         Livewire::test(RaportIndex::class)->assertStatus(403);
     }
@@ -66,10 +79,9 @@ class RaportIndexTest extends TestCase
             ->assertSee('THEORY: Personal Assignment');
     }
 
-    public function test_teacher_sees_every_student_enrolled_in_their_taught_courses(): void
+    public function test_school_admin_sees_every_student_in_the_school(): void
     {
-        $this->teacher->givePermissionTo('raport.view');
-        $this->actingAs($this->teacher);
+        $this->actingAs($this->schoolAdmin);
 
         Livewire::test(RaportIndex::class)
             ->call('loadData')
@@ -77,10 +89,9 @@ class RaportIndexTest extends TestCase
                 && $studentRows->first()['user']->id === $this->student->id);
     }
 
-    public function test_teacher_does_not_see_students_from_courses_they_do_not_teach(): void
+    public function test_school_admin_sees_students_from_courses_school_wide_not_just_ones_they_teach(): void
     {
-        $this->teacher->givePermissionTo('raport.view');
-        $this->actingAs($this->teacher);
+        $this->actingAs($this->schoolAdmin);
 
         $otherCourse = Course::factory()->for($this->school)->create();
         $otherStudent = User::factory()->forSchool($this->school)->create();
@@ -88,17 +99,15 @@ class RaportIndexTest extends TestCase
 
         Livewire::test(RaportIndex::class)
             ->call('loadData')
-            ->assertViewHas('studentRows', fn ($studentRows) => $studentRows->total() === 1
-                && ! $studentRows->contains(fn (array $row) => $row['user']->id === $otherStudent->id));
+            ->assertViewHas('studentRows', fn ($studentRows) => $studentRows->total() === 2
+                && $studentRows->contains(fn (array $row) => $row['user']->id === $otherStudent->id));
     }
 
-    public function test_teacher_sees_each_student_once_even_when_enrolled_in_several_of_their_courses(): void
+    public function test_school_admin_sees_each_student_once_even_when_enrolled_in_several_courses(): void
     {
-        $this->teacher->givePermissionTo('raport.view');
-        $this->actingAs($this->teacher);
+        $this->actingAs($this->schoolAdmin);
 
         $otherCourse = Course::factory()->for($this->school)->create();
-        CoursePerson::factory()->for($otherCourse)->teacher()->create(['user_id' => $this->teacher->id]);
         CoursePerson::factory()->for($otherCourse)->student()->create(['user_id' => $this->student->id]);
 
         Livewire::test(RaportIndex::class)
@@ -107,10 +116,9 @@ class RaportIndexTest extends TestCase
                 && $studentRows->first()['user']->id === $this->student->id);
     }
 
-    public function test_teacher_student_grid_links_to_the_student_raport_show_page(): void
+    public function test_student_grid_links_to_the_student_raport_show_page(): void
     {
-        $this->teacher->givePermissionTo('raport.view');
-        $this->actingAs($this->teacher);
+        $this->actingAs($this->schoolAdmin);
 
         Livewire::test(RaportIndex::class)
             ->call('loadData')
@@ -122,8 +130,7 @@ class RaportIndexTest extends TestCase
     {
         app()->detectEnvironment(fn () => 'production');
 
-        $this->teacher->givePermissionTo(['raport.view', 'gradebook.manage']);
-        $this->actingAs($this->teacher);
+        $this->actingAs($this->schoolAdmin);
 
         Livewire::test(RaportIndex::class)
             ->call('loadData')
@@ -135,8 +142,7 @@ class RaportIndexTest extends TestCase
 
     public function test_generate_raport_scores_enrolls_every_student_into_every_course_in_the_school(): void
     {
-        $this->teacher->givePermissionTo(['raport.view', 'gradebook.manage']);
-        $this->actingAs($this->teacher);
+        $this->actingAs($this->schoolAdmin);
 
         $otherCourse = Course::factory()->for($this->school)->create();
         $unenrolledStudent = User::factory()->forSchool($this->school)->create();
@@ -153,8 +159,7 @@ class RaportIndexTest extends TestCase
 
     public function test_generate_raport_scores_grades_every_configured_assessment(): void
     {
-        $this->teacher->givePermissionTo(['raport.view', 'gradebook.manage']);
-        $this->actingAs($this->teacher);
+        $this->actingAs($this->schoolAdmin);
 
         $assessment = Assessment::factory()->for($this->course)->create(['type' => 'theory_personal_assignment', 'weight' => 20]);
         AssessmentQuestion::factory()->for($assessment)->create(['points' => 100]);
@@ -170,8 +175,7 @@ class RaportIndexTest extends TestCase
 
     public function test_generate_raport_scores_creates_and_grades_assessment_types_the_course_is_missing(): void
     {
-        $this->teacher->givePermissionTo(['raport.view', 'gradebook.manage']);
-        $this->actingAs($this->teacher);
+        $this->actingAs($this->schoolAdmin);
 
         // The course starts with no Assessments at all (not even the
         // auto-provisioned Attendance/Forum Discussion ones), so every type

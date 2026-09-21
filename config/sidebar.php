@@ -1,12 +1,14 @@
 <?php
 
+use App\Enums\RoleName;
+
 return [
     [
         'label' => 'Dashboard',
         'route' => 'dashboard',
         'icon' => 'dashboard',
         'active_pattern' => 'dashboard',
-        'exclude_role' => 'School Admin',
+        'exclude_role' => RoleName::SchoolAdmin->value,
     ],
     [
         'label' => 'Courses',
@@ -15,7 +17,7 @@ return [
         'active_pattern' => 'courses.*|sessions.*',
         'requires_permission' => 'courses.view',
         'requires_school' => true,
-        'exclude_role' => 'School Admin',
+        'exclude_role' => RoleName::SchoolAdmin->value,
     ],
     [
         'label' => 'Students',
@@ -23,7 +25,7 @@ return [
         'icon' => 'groups',
         'active_pattern' => 'students.*',
         'requires_permission' => 'students.view',
-        'requires_role' => 'School Admin',
+        'requires_role' => RoleName::SchoolAdmin->value,
         'requires_school' => true,
     ],
     [
@@ -32,7 +34,7 @@ return [
         'icon' => 'person',
         'active_pattern' => 'teachers.*',
         'requires_permission' => 'teachers.view',
-        'requires_role' => 'School Admin',
+        'requires_role' => RoleName::SchoolAdmin->value,
         'requires_school' => true,
     ],
     [
@@ -42,7 +44,7 @@ return [
         'active_pattern' => 'raport.*',
         'requires_permission' => 'raport.view',
         'requires_school' => true,
-        'exclude_role' => 'School Admin',
+        'exclude_role' => RoleName::Teacher->value,
     ],
     [
         'label' => 'Media Library',
@@ -73,7 +75,7 @@ return [
         'route' => 'manage.schools.index',
         'icon' => 'apartment',
         'active_pattern' => 'manage.schools.index',
-        'requires_role' => 'School Admin',
+        'requires_role' => RoleName::SchoolAdmin->value,
         'requires_no_school' => true,
     ],
     [
@@ -81,7 +83,7 @@ return [
         'route' => 'transactions.index',
         'icon' => 'receipt_long',
         'active_pattern' => 'transactions.index',
-        'requires_role' => 'School Admin',
+        'requires_role' => RoleName::SchoolAdmin->value,
         'requires_no_school' => true,
     ],
 ];

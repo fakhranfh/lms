@@ -14,6 +14,8 @@ class RaportExportControllerTest extends TestCase
 {
     private School $school;
 
+    private User $schoolAdmin;
+
     private User $teacher;
 
     private User $student;
@@ -25,6 +27,9 @@ class RaportExportControllerTest extends TestCase
         parent::setUp();
 
         $this->school = School::factory()->create();
+        $this->schoolAdmin = User::factory()->forSchool($this->school)->create();
+        $this->schoolAdmin->assignRole(Role::firstOrCreate(['name' => RoleName::SchoolAdmin->value, 'guard_name' => 'web', 'school_id' => $this->school->id]));
+        $this->schoolAdmin->givePermissionTo('raport.view');
         $this->teacher = User::factory()->forSchool($this->school)->create();
         $this->student = User::factory()->forSchool($this->school)->create();
         $this->student->assignRole(Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $this->school->id]));
@@ -45,10 +50,9 @@ class RaportExportControllerTest extends TestCase
         $response->assertHeader('content-type', 'application/pdf');
     }
 
-    public function test_teacher_can_export_a_student_they_teach(): void
+    public function test_school_admin_can_export_any_student_in_the_school(): void
     {
-        $this->teacher->givePermissionTo('raport.view');
-        $this->actingAs($this->teacher);
+        $this->actingAs($this->schoolAdmin);
 
         $response = $this->get(route('raport.export.student', $this->student));
 
@@ -56,14 +60,12 @@ class RaportExportControllerTest extends TestCase
         $response->assertHeader('content-type', 'application/pdf');
     }
 
-    public function test_teacher_cannot_export_a_student_they_do_not_teach(): void
+    public function test_teacher_cannot_export_a_student_even_when_granted_the_permission(): void
     {
         $this->teacher->givePermissionTo('raport.view');
         $this->actingAs($this->teacher);
 
-        $otherStudent = User::factory()->forSchool($this->school)->create();
-
-        $response = $this->get(route('raport.export.student', $otherStudent));
+        $response = $this->get(route('raport.export.student', $this->student));
 
         $response->assertStatus(403);
     }

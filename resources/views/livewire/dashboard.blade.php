@@ -1,6 +1,6 @@
 @section('title', 'Dashboard')
 
-<div class="space-y-space-lg">
+<div class="space-y-space-lg" @if($isStudent) wire:init="loadStudentData" @endif>
 
     <!-- Storage Quota Card -->
     @if($storageQuota)
@@ -24,6 +24,41 @@
             </div>
         </div>
     </div>
+    @endif
+
+    @if($isStudent)
+        @if(!$studentDataLoaded)
+            <!-- Student dashboard skeleton -->
+            <div class="space-y-space-lg animate-pulse">
+                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+                    <div class="h-4 bg-surface-container rounded w-40"></div>
+                    @for ($i = 0; $i < 3; $i++)
+                        <div class="space-y-space-xs">
+                            <div class="h-3 bg-surface-container rounded w-1/3"></div>
+                            <div class="h-2 bg-surface-container rounded-full w-full"></div>
+                        </div>
+                    @endfor
+                </div>
+                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+                    <div class="h-4 bg-surface-container rounded w-32"></div>
+                    @for ($i = 0; $i < 4; $i++)
+                        <div class="h-8 bg-surface-container rounded w-full"></div>
+                    @endfor
+                </div>
+                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg space-y-space-md">
+                    <div class="h-4 bg-surface-container rounded w-48"></div>
+                    @for ($i = 0; $i < 3; $i++)
+                        <div class="h-10 bg-surface-container rounded w-full"></div>
+                    @endfor
+                </div>
+            </div>
+        @else
+            <livewire:dashboard.my-progress wire:key="dashboard-my-progress" />
+
+            <livewire:dashboard.todo-list wire:key="dashboard-todo-list" />
+
+            <livewire:dashboard.latest-forum-posts wire:key="dashboard-latest-forum-posts" />
+        @endif
     @endif
 
 </div>

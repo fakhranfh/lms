@@ -7,6 +7,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProctorSpeedTestController;
 use App\Http\Controllers\ProctorSubmissionStatusController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RaportExportController;
 use App\Http\Controllers\SchoolPaymentController;
 use App\Http\Controllers\StudentSelectionController;
 use App\Http\Controllers\TierChangeController;
@@ -51,6 +52,8 @@ use App\Livewire\Dashboard;
 use App\Livewire\EditProfile;
 use App\Livewire\MediaLibrary\MediaLibraryIndex;
 use App\Livewire\MyTransactions;
+use App\Livewire\Raport\RaportIndex;
+use App\Livewire\Raport\RaportShow;
 use App\Livewire\Roles\RoleCreate;
 use App\Livewire\Roles\RoleEdit;
 use App\Livewire\Roles\RoleIndex;
@@ -178,6 +181,11 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school', EnsurePasswordIs
         Route::get('/courses/{course}/tabs/{tab}', CourseComingSoon::class)->middleware('permission:courses.view')->name('course-tabs.coming-soon');
 
         Route::get('/media-library', MediaLibraryIndex::class)->middleware('permission:media.view')->name('media-library.index');
+
+        Route::get('/raport', RaportIndex::class)->middleware('permission:raport.view')->name('raport.index');
+        Route::get('/raport/export', [RaportExportController::class, 'exportSelf'])->middleware('permission:raport.view')->name('raport.export.self');
+        Route::get('/raport/export/{student}', [RaportExportController::class, 'exportStudent'])->middleware('permission:raport.view')->name('raport.export.student');
+        Route::get('/raport/students/{student}', RaportShow::class)->middleware('permission:raport.view')->name('raport.show');
     });
 });
 

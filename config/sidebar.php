@@ -36,6 +36,15 @@ return [
         'requires_school' => true,
     ],
     [
+        'label' => 'Raport',
+        'route' => 'raport.index',
+        'icon' => 'summarize',
+        'active_pattern' => 'raport.*',
+        'requires_permission' => 'raport.view',
+        'requires_school' => true,
+        'exclude_role' => 'School Admin',
+    ],
+    [
         'label' => 'Media Library',
         'route' => 'media-library.index',
         'icon' => 'perm_media',

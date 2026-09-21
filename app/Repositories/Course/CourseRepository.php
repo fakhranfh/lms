@@ -3,6 +3,7 @@
 namespace App\Repositories\Course;
 
 use App\Enums\CourseMembershipStatus;
+use App\Enums\RoleInCourse;
 use App\Models\Course;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -48,6 +49,12 @@ class CourseRepository implements CourseRepositoryInterface
             } elseif ($key === 'enrolled_user_id') {
                 $query->whereHas('people', function ($subQuery) use ($value) {
                     $subQuery->where('user_id', $value)
+                        ->where('status', CourseMembershipStatus::Active);
+                });
+            } elseif ($key === 'teaching_user_id') {
+                $query->whereHas('people', function ($subQuery) use ($value) {
+                    $subQuery->where('user_id', $value)
+                        ->whereIn('role_in_course', [RoleInCourse::Teacher, RoleInCourse::Assistant])
                         ->where('status', CourseMembershipStatus::Active);
                 });
             } else {

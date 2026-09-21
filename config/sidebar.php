@@ -8,7 +8,6 @@ return [
         'route' => 'dashboard',
         'icon' => 'dashboard',
         'active_pattern' => 'dashboard',
-        'exclude_role' => RoleName::SchoolAdmin->value,
     ],
     [
         'label' => 'Courses',

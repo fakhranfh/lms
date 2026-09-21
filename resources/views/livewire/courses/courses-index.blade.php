@@ -29,6 +29,30 @@
         @endcan
     </div>
 
+    @if ($canGenerateCourses)
+        <div class="px-gutter py-space-md bg-secondary/10 border border-secondary/20 rounded-lg flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-secondary text-[20px]">science</span>
+            <p class="font-body-sm text-body-sm text-secondary flex-1">Dev only: generate full demo courses (sessions, syllabus, materials, assessments, students &amp; groups).</p>
+            <input
+                type="number"
+                min="1"
+                max="20"
+                wire:model="generateCount"
+                class="w-20 px-space-sm py-space-xs border border-outline rounded-lg font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-secondary/50"
+            />
+            <button
+                type="button"
+                wire:click="devGenerateCourses"
+                wire:loading.attr="disabled"
+                wire:target="devGenerateCourses"
+                class="px-space-md py-space-xs rounded-lg bg-secondary text-on-secondary font-label-sm text-label-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+                <span wire:loading.remove wire:target="devGenerateCourses">Generate</span>
+                <span wire:loading wire:target="devGenerateCourses">Generating…</span>
+            </button>
+        </div>
+    @endif
+
     <!-- Search -->
     <div class="flex gap-space-md">
         <x-ui.search-input wire-model="search" placeholder="Search courses..." class="flex-1" />

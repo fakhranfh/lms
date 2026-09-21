@@ -14,7 +14,9 @@ use App\Models\School;
 use App\Models\Session;
 use App\Models\SessionMaterialCompletion;
 use App\Models\User;
+use App\Services\R2StorageService;
 use Livewire\Livewire;
+use Mockery;
 use Tests\TestCase;
 
 class CoursesIndexTest extends TestCase
@@ -333,5 +335,34 @@ class CoursesIndexTest extends TestCase
             ->call('loadCourses')
             ->assertSee('Progress Course')
             ->assertSee('50%');
+    }
+
+    public function test_dev_generate_courses_creates_full_demo_courses(): void
+    {
+        $this->teacher->givePermissionTo(['courses.view', 'courses.create']);
+
+        $r2Mock = Mockery::mock(R2StorageService::class);
+        $r2Mock->shouldReceive('uploadRawContent')->andReturn('https://example.test/dummy.pdf');
+        $this->app->instance(R2StorageService::class, $r2Mock);
+
+        Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
+            ->set('generateCount', 2)
+            ->call('devGenerateCourses')
+            ->assertSet('successMessage', '2 course(s) generated.');
+
+        $this->assertDatabaseCount('courses', 2);
+        $this->assertDatabaseCount('course_sessions', 12);
+        $this->assertDatabaseCount('syllabuses', 2);
+    }
+
+    public function test_dev_generate_courses_forbidden_without_permission(): void
+    {
+        $this->teacher->givePermissionTo('courses.view');
+
+        Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
+            ->call('devGenerateCourses')
+            ->assertStatus(403);
     }
 }

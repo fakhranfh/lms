@@ -3,6 +3,7 @@
 namespace App\Livewire\Courses;
 
 use App\Enums\RoleName;
+use App\Livewire\Courses\Concerns\HasCoursesIndexDevTools;
 use App\Services\CourseService;
 use App\Services\SessionMaterialCompletionService;
 use App\Support\CurrentSchool;
@@ -12,7 +13,7 @@ use Livewire\WithPagination;
 
 class CoursesIndex extends Component
 {
-    use WithPagination;
+    use HasCoursesIndexDevTools, WithPagination;
 
     public ?string $search = null;
 
@@ -94,6 +95,7 @@ class CoursesIndex extends Component
             'courses' => $courses,
             'isStudent' => $this->isStudent,
             'courseProgress' => $courseProgress,
+            'canGenerateCourses' => ! $this->isStudent && auth()->user()->can('courses.create') && app()->environment(['local', 'testing']),
         ])
             ->extends('layouts.app', ['topbarTitle' => 'Courses'])
             ->section('app-content');

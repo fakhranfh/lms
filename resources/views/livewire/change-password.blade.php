@@ -30,25 +30,26 @@
                     <!-- Current Password -->
                     <div class="space-y-space-xs" x-data="{ show: false }">
                         <label class="font-label-md text-label-md text-on-surface" for="current_password">Current Password</label>
-                        <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary/60 text-[20px]">lock</span>
-                            <input
-                                class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md rounded-lg py-space-sm pl-10 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all @error('current_password') border-error @enderror"
-                                id="current_password"
-                                wire:model="current_password"
-                                :type="show ? 'text' : 'password'"
-                                autocomplete="current-password"
-                                required
-                            />
-                            <button
-                                type="button"
-                                class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary/60 hover:text-secondary transition-colors"
-                                @click="show = !show"
-                                tabindex="-1"
-                            >
-                                <span class="material-symbols-outlined text-[20px]" x-text="show ? 'visibility_off' : 'visibility'">visibility</span>
-                            </button>
-                        </div>
+                        <x-ui.text-input
+                            icon="lock"
+                            id="current_password"
+                            wire:model="current_password"
+                            x-bind:type="show ? 'text' : 'password'"
+                            autocomplete="current-password"
+                            required
+                            class="@error('current_password') border-error @enderror"
+                        >
+                            <x-slot:right>
+                                <button
+                                    type="button"
+                                    class="absolute inset-y-0 right-3 flex items-center text-secondary/60 hover:text-secondary transition-colors"
+                                    @click="show = !show"
+                                    tabindex="-1"
+                                >
+                                    <span class="material-symbols-outlined text-[20px]" x-text="show ? 'visibility_off' : 'visibility'">visibility</span>
+                                </button>
+                            </x-slot:right>
+                        </x-ui.text-input>
                         @error('current_password')
                             <p class="text-error text-body-sm font-body-sm mt-space-xs">{{ $message }}</p>
                         @enderror
@@ -57,25 +58,26 @@
                     <!-- New Password -->
                     <div class="space-y-space-xs" x-data="{ show: false }">
                         <label class="font-label-md text-label-md text-on-surface" for="password">New Password</label>
-                        <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary/60 text-[20px]">lock_reset</span>
-                            <input
-                                class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md rounded-lg py-space-sm pl-10 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all @error('password') border-error @enderror"
-                                id="password"
-                                wire:model.live.debounce.300ms="password"
-                                :type="show ? 'text' : 'password'"
-                                autocomplete="new-password"
-                                required
-                            />
-                            <button
-                                type="button"
-                                class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary/60 hover:text-secondary transition-colors"
-                                @click="show = !show"
-                                tabindex="-1"
-                            >
-                                <span class="material-symbols-outlined text-[20px]" x-text="show ? 'visibility_off' : 'visibility'">visibility</span>
-                            </button>
-                        </div>
+                        <x-ui.text-input
+                            icon="lock_reset"
+                            id="password"
+                            wire:model.live.debounce.300ms="password"
+                            x-bind:type="show ? 'text' : 'password'"
+                            autocomplete="new-password"
+                            required
+                            class="@error('password') border-error @enderror"
+                        >
+                            <x-slot:right>
+                                <button
+                                    type="button"
+                                    class="absolute inset-y-0 right-3 flex items-center text-secondary/60 hover:text-secondary transition-colors"
+                                    @click="show = !show"
+                                    tabindex="-1"
+                                >
+                                    <span class="material-symbols-outlined text-[20px]" x-text="show ? 'visibility_off' : 'visibility'">visibility</span>
+                                </button>
+                            </x-slot:right>
+                        </x-ui.text-input>
                         @error('password')
                             <p class="text-error text-body-sm font-body-sm mt-space-xs">{{ $message }}</p>
                         @enderror
@@ -92,25 +94,25 @@
                     <!-- Confirm Password -->
                     <div class="space-y-space-xs" x-data="{ show: false }">
                         <label class="font-label-md text-label-md text-on-surface" for="password_confirmation">Confirm Password</label>
-                        <div class="relative">
-                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary/60 text-[20px]">verified</span>
-                            <input
-                                class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md rounded-lg py-space-sm pl-10 pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                                id="password_confirmation"
-                                wire:model="password_confirmation"
-                                :type="show ? 'text' : 'password'"
-                                autocomplete="new-password"
-                                required
-                            />
-                            <button
-                                type="button"
-                                class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary/60 hover:text-secondary transition-colors"
-                                @click="show = !show"
-                                tabindex="-1"
-                            >
-                                <span class="material-symbols-outlined text-[20px]" x-text="show ? 'visibility_off' : 'visibility'">visibility</span>
-                            </button>
-                        </div>
+                        <x-ui.text-input
+                            icon="verified"
+                            id="password_confirmation"
+                            wire:model="password_confirmation"
+                            x-bind:type="show ? 'text' : 'password'"
+                            autocomplete="new-password"
+                            required
+                        >
+                            <x-slot:right>
+                                <button
+                                    type="button"
+                                    class="absolute inset-y-0 right-3 flex items-center text-secondary/60 hover:text-secondary transition-colors"
+                                    @click="show = !show"
+                                    tabindex="-1"
+                                >
+                                    <span class="material-symbols-outlined text-[20px]" x-text="show ? 'visibility_off' : 'visibility'">visibility</span>
+                                </button>
+                            </x-slot:right>
+                        </x-ui.text-input>
                     </div>
 
                     <!-- Security Tips -->

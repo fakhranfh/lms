@@ -96,10 +96,14 @@
                                     </span>
                                 @endif
                             </div>
-                            <div class="relative">
-                                <span class="material-symbols-outlined absolute inset-y-0 left-3 flex items-center text-secondary/60 text-[20px]">mail</span>
-                                <input class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md rounded-lg py-space-sm pl-10 pr-space-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all @error('email') border-error @enderror" id="email" wire:model="email" type="email" required />
-                            </div>
+                            <x-ui.text-input
+                                icon="mail"
+                                id="email"
+                                wire:model="email"
+                                type="email"
+                                required
+                                class="@error('email') border-error @enderror"
+                            />
                             @if ($currentPendingEmail)
                                 <p class="font-body-sm text-body-sm text-secondary mt-space-xs">
                                     Pending change to <strong>{{ $currentPendingEmail }}</strong>. Check your inbox to verify the new email.
@@ -115,10 +119,14 @@
                             <div class="flex items-center">
                                 <label class="font-label-md text-label-md text-on-surface" for="name">Full Name</label>
                             </div>
-                            <div class="relative">
-                                <span class="material-symbols-outlined absolute inset-y-0 left-3 flex items-center text-secondary/60 text-[20px]">person</span>
-                                <input class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md rounded-lg py-space-sm pl-10 pr-space-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all @error('name') border-error @enderror" id="name" wire:model="name" type="text" required />
-                            </div>
+                            <x-ui.text-input
+                                icon="person"
+                                id="name"
+                                wire:model="name"
+                                type="text"
+                                required
+                                class="@error('name') border-error @enderror"
+                            />
                             @error('name')
                                 <p class="text-error text-body-sm font-body-sm mt-space-xs">{{ $message }}</p>
                             @enderror

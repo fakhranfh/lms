@@ -26,21 +26,6 @@
         </div>
     </div>
 
-    <!-- Quota -->
-    @php $quotaInfo = $this->getQuotaInfo(); @endphp
-    <div class="p-space-md bg-surface-container rounded-lg border border-outline text-body-sm space-y-space-xs">
-        <p class="{{ $quotaInfo['color'] }}">
-            Remaining quota: {{ $quotaInfo['remaining'] }}
-            @if ($quotaInfo['limit_gb'])
-                of {{ $quotaInfo['limit_gb'] }} GB
-            @endif
-            ({{ $quotaInfo['percentage'] }}% used)
-        </p>
-        @if ($quotaInfo['warning'])
-            <p class="{{ $quotaInfo['color'] }} font-medium">{{ $quotaInfo['warning'] }}</p>
-        @endif
-    </div>
-
     <!-- Upload -->
     @can('media.create')
         <x-ui.file-upload ref-name="mediaFile" :accept="$acceptedExtensions" label="Upload Media" />
@@ -182,15 +167,9 @@
     </div>
 
     <!-- Media Detail Modal -->
-    <div
-        x-show="selectedMedia"
-        x-cloak
-        @click.self="selectedMedia = null; previewOpen = false"
-        @keydown.escape.window="if (! previewOpen) { selectedMedia = null }"
-        class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
-    >
+    <x-ui.modal show="selectedMedia" onClose="if (! previewOpen) { selectedMedia = null }" maxWidth="max-w-md">
         <template x-if="selectedMedia">
-            <div class="bg-surface border border-outline-variant rounded-lg max-w-md w-full overflow-hidden">
+            <div class="bg-surface border border-outline-variant rounded-lg w-full overflow-hidden">
                 <div class="aspect-video bg-surface-container flex items-center justify-center overflow-hidden">
                     <template x-if="selectedMedia.isImage">
                         <img :src="selectedMedia.url" :alt="selectedMedia.title" class="w-full h-full object-contain" />
@@ -243,16 +222,10 @@
                 </div>
             </div>
         </template>
-    </div>
+    </x-ui.modal>
 
     <!-- Media Preview Modal (same per-type viewers as the lesson material viewer) -->
-    <div
-        x-show="previewOpen && selectedMedia"
-        x-cloak
-        @click.self="previewOpen = false"
-        @keydown.escape.window="previewOpen = false"
-        class="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 px-gutter"
-    >
+    <x-ui.modal show="previewOpen && selectedMedia" onClose="previewOpen = false" maxWidth="max-w-4xl" backdrop="bg-black/70">
         <template x-if="previewOpen && selectedMedia">
             <div class="bg-surface border border-outline-variant rounded-lg max-w-4xl w-full overflow-hidden">
                 <div class="flex items-center justify-between px-space-lg py-space-md border-b border-outline-variant">
@@ -353,17 +326,11 @@
                 </div>
             </div>
         </template>
-    </div>
+    </x-ui.modal>
 
     <!-- Bulk Delete Confirmation Modal -->
-    <div
-        x-show="bulkDeleteConfirmOpen"
-        x-cloak
-        @click.self="bulkDeleteConfirmOpen = false"
-        @keydown.escape.window="bulkDeleteConfirmOpen = false"
-        class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
-    >
-        <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg">
+    <x-ui.modal show="bulkDeleteConfirmOpen" onClose="bulkDeleteConfirmOpen = false" maxWidth="max-w-sm">
+        <div class="bg-surface border border-outline-variant rounded-lg p-space-lg w-full space-y-space-lg">
             <h2 class="font-headline-sm text-headline-sm text-on-surface">Delete confirmation</h2>
             <p class="font-body-md text-body-md text-secondary">
                 Are you sure you want to delete <span class="font-medium" x-text="selectedIds.length"></span> selected media item(s)?
@@ -383,7 +350,7 @@
                 </button>
             </div>
         </div>
-    </div>
+    </x-ui.modal>
 </div>
 
 @push('scripts')

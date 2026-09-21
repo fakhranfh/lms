@@ -4,7 +4,6 @@ namespace App\Livewire\MediaLibrary;
 
 use App\Enums\MaterialType;
 use App\Services\MediaLibraryService;
-use App\Services\R2StorageService;
 use App\Support\CurrentSchool;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -172,40 +171,6 @@ class MediaLibraryIndex extends Component
         $bytes /= (1 << (10 * $pow));
 
         return round($bytes, 2).' '.$units[$pow];
-    }
-
-    /**
-     * @return array{used: string, remaining: string, percentage: float, color: string, warning: string|null, limit_gb: int|null}
-     */
-    public function getQuotaInfo(?R2StorageService $r2Service = null): array
-    {
-        $r2Service ??= app(R2StorageService::class);
-
-        $quota = $r2Service->checkSchoolQuota($this->getSchoolId());
-        $percentage = $quota['percentage'];
-
-        $color = match (true) {
-            $percentage < 80 => 'text-green-600',
-            $percentage < 90 => 'text-yellow-600',
-            $percentage < 100 => 'text-orange-600',
-            default => 'text-red-600',
-        };
-
-        $warning = match (true) {
-            $percentage >= 100 => '❌ Quota full. Uploads blocked.',
-            $percentage >= 90 => '⚠️ Quota at 90%. Upload may fail soon.',
-            $percentage >= 80 => '⚠️ Quota at 80%. Consider freeing space.',
-            default => null,
-        };
-
-        return [
-            'used' => $this->formatBytes($quota['used']),
-            'remaining' => $this->formatBytes($quota['remaining']),
-            'percentage' => round($percentage, 1),
-            'color' => $color,
-            'warning' => $warning,
-            'limit_gb' => $quota['limit_gb'] ?? null,
-        ];
     }
 
     /**

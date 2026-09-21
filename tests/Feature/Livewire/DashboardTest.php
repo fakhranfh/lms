@@ -209,4 +209,74 @@ class DashboardTest extends TestCase
             ->assertDontSee('To-Do')
             ->assertDontSee('Latest Forum Posts');
     }
+
+    public function test_dashboard_does_not_show_storage_card(): void
+    {
+        $this->actingAs($this->student);
+
+        Livewire::test(Dashboard::class)
+            ->assertDontSee('Storage');
+    }
+
+    public function test_school_admin_sees_school_stats_and_quick_actions(): void
+    {
+        $admin = User::factory()->forSchool($this->school)->create();
+        $adminRole = Role::firstOrCreate([
+            'name' => RoleName::SchoolAdmin->value,
+            'guard_name' => 'web',
+            'school_id' => $this->school->id,
+        ]);
+        $admin->assignRole($adminRole);
+
+        $teacher = User::factory()->forSchool($this->school)->create();
+        $teacherRole = Role::firstOrCreate([
+            'name' => RoleName::Teacher->value,
+            'guard_name' => 'web',
+            'school_id' => $this->school->id,
+        ]);
+        $teacher->assignRole($teacherRole);
+
+        $this->actingAs($admin);
+
+        Livewire::test(Dashboard::class)
+            ->assertSee('Students')
+            ->assertSee('Teachers')
+            ->assertDontSee('Courses')
+            ->assertSee('Quick actions')
+            ->assertSee('Add student')
+            ->assertSee('Add teacher')
+            ->assertDontSee('Add course')
+            ->assertSee('View raport')
+            ->assertDontSee('My Progress');
+    }
+
+    public function test_teacher_sees_course_and_session_stats(): void
+    {
+        $teacher = User::factory()->forSchool($this->school)->create();
+        $teacherRole = Role::firstOrCreate([
+            'name' => RoleName::Teacher->value,
+            'guard_name' => 'web',
+            'school_id' => $this->school->id,
+        ]);
+        $teacher->assignRole($teacherRole);
+
+        CoursePerson::factory()->create([
+            'course_id' => $this->course->id,
+            'user_id' => $teacher->id,
+            'role_in_course' => RoleInCourse::Teacher,
+            'status' => CourseMembershipStatus::Active,
+        ]);
+
+        Session::factory()->for($this->course)->create([
+            'date_start' => now(),
+            'date_end' => now()->addHour(),
+        ]);
+
+        $this->actingAs($teacher);
+
+        Livewire::test(Dashboard::class)
+            ->assertSee('My Courses')
+            ->assertSee("Today's Sessions", false)
+            ->assertDontSee('Students');
+    }
 }

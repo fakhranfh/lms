@@ -97,7 +97,7 @@
                                 @endif
                             </div>
                             <div class="relative">
-                                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary/60 text-[20px]">mail</span>
+                                <span class="material-symbols-outlined absolute inset-y-0 left-3 flex items-center text-secondary/60 text-[20px]">mail</span>
                                 <input class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md rounded-lg py-space-sm pl-10 pr-space-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all @error('email') border-error @enderror" id="email" wire:model="email" type="email" required />
                             </div>
                             @if ($currentPendingEmail)
@@ -116,7 +116,7 @@
                                 <label class="font-label-md text-label-md text-on-surface" for="name">Full Name</label>
                             </div>
                             <div class="relative">
-                                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary/60 text-[20px]">person</span>
+                                <span class="material-symbols-outlined absolute inset-y-0 left-3 flex items-center text-secondary/60 text-[20px]">person</span>
                                 <input class="w-full bg-surface-container-lowest border border-outline-variant text-on-surface font-body-md text-body-md rounded-lg py-space-sm pl-10 pr-space-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all @error('name') border-error @enderror" id="name" wire:model="name" type="text" required />
                             </div>
                             @error('name')

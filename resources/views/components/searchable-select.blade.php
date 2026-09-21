@@ -45,7 +45,7 @@
         x-show="query"
         x-cloak
         @click="clear()"
-        class="absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
+        class="absolute inset-y-0 right-2 flex items-center justify-center text-on-surface-variant hover:text-on-surface"
     >
         <span class="material-symbols-outlined text-[18px]">close</span>
     </button>

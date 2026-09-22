@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Roles\RoleCreate;
+use App\Models\School;
 use App\Models\User;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
@@ -40,14 +41,14 @@ test('user with permissions.view permission cannot access role management', func
     $this->actingAs($user)->get(route('roles.index'))->assertForbidden();
 });
 
-test('user with users.assign-roles permission can update roles but not view the user list', function () {
-    $target = User::factory()->create();
-    $actor = User::factory()->create();
+test('user with users.assign-roles permission can access the role assignment page', function () {
+    $school = School::factory()->create();
+    $target = User::factory()->forSchool($school)->create();
+    $actor = User::factory()->forSchool($school)->create();
 
     Role::create(['name' => 'role-assigner', 'guard_name' => 'web'])
         ->givePermissionTo(Permission::firstOrCreate(['name' => 'users.assign-roles', 'guard_name' => 'web']));
     $actor->assignRole('role-assigner');
 
     $this->actingAs($actor)->get(route('users.roles.edit', $target))->assertOk();
-    $this->actingAs($actor)->get(route('admin.users.index'))->assertForbidden();
 });

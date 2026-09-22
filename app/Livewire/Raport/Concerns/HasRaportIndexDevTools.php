@@ -11,7 +11,6 @@ use App\Services\CourseService;
 use App\Services\GradebookRandomizerService;
 use App\Services\RoleService;
 use App\Services\UserService;
-use App\Support\CurrentSchool;
 
 /**
  * Dev-only bulk generator for Raport's teacher view: enrolls every student
@@ -25,7 +24,6 @@ trait HasRaportIndexDevTools
     public bool $isLocalEnv = false;
 
     public function generateRaportScores(
-        CurrentSchool $currentSchool,
         RoleService $roleService,
         UserService $userService,
         CourseService $courseService,
@@ -43,7 +41,7 @@ trait HasRaportIndexDevTools
 
         $this->successMessage = null;
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
 
         $courses = $courseService->get(['school_id' => $schoolId]);
 

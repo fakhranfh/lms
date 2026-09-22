@@ -4,7 +4,6 @@ namespace App\Livewire\Courses;
 
 use App\Models\Course;
 use App\Services\CourseService;
-use App\Support\CurrentSchool;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -34,12 +33,12 @@ class CourseForm extends Component
         }
     }
 
-    public function save(CourseService $courseService, CurrentSchool $currentSchool)
+    public function save(CourseService $courseService)
     {
         try {
             $this->validate();
 
-            $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+            $schoolId = auth()->user()->school_id;
 
             if (! $schoolId) {
                 abort(403, 'This action requires a school context.');

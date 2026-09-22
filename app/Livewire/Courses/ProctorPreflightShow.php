@@ -11,7 +11,6 @@ use App\Models\FinalExam;
 use App\Services\CoursePersonService;
 use App\Services\FinalExamService;
 use App\Services\ProctorSessionService;
-use App\Support\CurrentSchool;
 use Livewire\Component;
 
 class ProctorPreflightShow extends Component
@@ -38,7 +37,6 @@ class ProctorPreflightShow extends Component
     ];
 
     public function mount(
-        CurrentSchool $currentSchool,
         CoursePersonService $coursePersonService,
         FinalExamService $finalExamService,
         ProctorSessionService $proctorSessionService,
@@ -51,7 +49,7 @@ class ProctorPreflightShow extends Component
 
         abort_if($course === null, 404);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('assessment.view') && $course->school_id === $schoolId, 403);
         abort_unless($assessment->course_id === $course->id, 404);
         abort_unless($assessment->type === AssessmentType::TheoryFinalExam, 404);

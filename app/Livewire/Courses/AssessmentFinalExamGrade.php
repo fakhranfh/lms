@@ -21,7 +21,6 @@ use App\Services\ProctorSessionService;
 use App\Services\ProctorSnapshotService;
 use App\Services\R2StorageService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -57,7 +56,6 @@ class AssessmentFinalExamGrade extends Component
     public array $reviewNotes = [];
 
     public function mount(
-        CurrentSchool $currentSchool,
         AssessmentAttemptService $assessmentAttemptService,
         AssessmentScoreService $assessmentScoreService,
         AssessmentQuestionScoreService $assessmentQuestionScoreService,
@@ -69,7 +67,7 @@ class AssessmentFinalExamGrade extends Component
 
         abort_if($course === null, 404);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('assessment.grade') && $course->school_id === $schoolId, 403);
         abort_unless($assessment->type === AssessmentType::TheoryFinalExam, 404);
 

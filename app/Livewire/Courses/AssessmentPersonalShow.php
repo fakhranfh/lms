@@ -14,7 +14,6 @@ use App\Services\AssessmentQuestionScoreService;
 use App\Services\AssessmentScoreService;
 use App\Services\CoursePersonService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Component;
@@ -61,7 +60,7 @@ class AssessmentPersonalShow extends Component
         return $row['score'] ? 'graded' : 'submitted';
     }
 
-    public function mount(CurrentSchool $currentSchool, CoursePersonService $coursePersonService, ?Course $course = null, ?Assessment $assessment = null): void
+    public function mount(CoursePersonService $coursePersonService, ?Course $course = null, ?Assessment $assessment = null): void
     {
         abort_if($assessment === null, 404);
 
@@ -69,7 +68,7 @@ class AssessmentPersonalShow extends Component
 
         abort_if($course === null, 404);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('assessment.view') && $course->school_id === $schoolId, 403);
         abort_unless($assessment->course_id === $course->id, 404);
         abort_unless($assessment->type === AssessmentType::TheoryPersonalAssignment, 404);

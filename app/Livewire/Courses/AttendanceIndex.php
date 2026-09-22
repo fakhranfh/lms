@@ -15,7 +15,6 @@ use App\Services\AttendanceService;
 use App\Services\CoursePersonService;
 use App\Services\SessionService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -60,9 +59,9 @@ class AttendanceIndex extends Component
 
     public ?string $successMessage = null;
 
-    public function mount(CurrentSchool $currentSchool, Course $course): void
+    public function mount(Course $course): void
     {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('attendance.view') && $course->school_id === $schoolId, 403);
 
         $this->course = $course;

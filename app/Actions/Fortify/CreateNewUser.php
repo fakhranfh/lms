@@ -4,7 +4,6 @@ namespace App\Actions\Fortify;
 
 use App\Models\User;
 use App\Services\IpGeolocationService;
-use App\Support\CurrentSchool;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -17,7 +16,6 @@ class CreateNewUser implements CreatesNewUsers
 
     public function __construct(
         private IpGeolocationService $ipGeolocationService,
-        private CurrentSchool $currentSchool,
     ) {}
 
     /**
@@ -41,7 +39,7 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $this->passwordRules(),
         ])->validate();
 
-        $schoolId = $this->currentSchool->getSchoolId();
+        $schoolId = auth()->user()?->school_id;
 
         if (! $schoolId) {
             throw ValidationException::withMessages([

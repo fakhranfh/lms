@@ -11,7 +11,6 @@ use App\Services\CoursePersonService;
 use App\Services\ForumDiscussionScoringService;
 use App\Services\GradebookScoringService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use Livewire\Component;
 
 class AssessmentForumDiscussionShow extends Component
@@ -23,7 +22,6 @@ class AssessmentForumDiscussionShow extends Component
     public bool $isStudent = false;
 
     public function mount(
-        CurrentSchool $currentSchool,
         CoursePersonService $coursePersonService,
         ?Course $course = null,
         ?Assessment $assessment = null,
@@ -34,7 +32,7 @@ class AssessmentForumDiscussionShow extends Component
 
         abort_if($course === null, 404);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('assessment.view') && $course->school_id === $schoolId, 403);
         abort_unless($assessment->course_id === $course->id, 404);
         abort_unless($assessment->type === AssessmentType::ForumDiscussion, 404);

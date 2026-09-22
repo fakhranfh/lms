@@ -18,7 +18,6 @@ use App\Services\SyllabusRubricKeyIndicatorService;
 use App\Services\SyllabusRubricProficiencyLevelService;
 use App\Services\SyllabusService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -93,9 +92,9 @@ class SyllabusIndex extends Component
 
     public string $activeSection = 'course_description';
 
-    public function mount(CurrentSchool $currentSchool, Course $course, SyllabusService $syllabusService, bool $startInEditMode = false): void
+    public function mount(Course $course, SyllabusService $syllabusService, bool $startInEditMode = false): void
     {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('syllabus.view') && $course->school_id === $schoolId, 403);
 
         $this->course = $course;

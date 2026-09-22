@@ -16,7 +16,6 @@ use App\Services\AssessmentService;
 use App\Services\MediaLibraryService;
 use App\Services\SessionService;
 use App\Support\AssessmentTypeLabel;
-use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -55,7 +54,7 @@ class AssessmentForm extends Component
      */
     public array $questions = [];
 
-    public function mount(CurrentSchool $currentSchool, ?Course $course = null, ?Assessment $assessment = null, string $type = ''): void
+    public function mount(?Course $course = null, ?Assessment $assessment = null, string $type = ''): void
     {
         abort_unless(auth()->user()->can('assessment.create') || auth()->user()->can('assessment.edit'), 403);
 
@@ -63,7 +62,7 @@ class AssessmentForm extends Component
 
         abort_if($course === null, 404);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless($course->school_id === $schoolId, 403);
 
         $this->course = $course;

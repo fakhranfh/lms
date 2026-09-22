@@ -57,14 +57,3 @@ test('verification notification can be resent', function () {
         ->assertRedirect()
         ->assertSessionHas('status', 'verification-link-sent');
 });
-
-test('admin user can access protected routes without email verification', function () {
-    $user = User::factory()->unverified()->create([
-        'school_id' => null,
-    ]);
-    $user->assignRole('Admin');
-
-    $this->actingAs($user)
-        ->get(route('admin.dashboard'))
-        ->assertSuccessful();
-});

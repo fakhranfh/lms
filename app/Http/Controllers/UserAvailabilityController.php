@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Services\UserService;
-use App\Support\CurrentSchool;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -26,7 +25,7 @@ class UserAvailabilityController extends Controller implements HasMiddleware
      * Check whether a name or email is already taken, for client-side (JS)
      * live validation on the user create/edit form.
      */
-    public function check(Request $request, UserService $userService, CurrentSchool $currentSchool): JsonResponse
+    public function check(Request $request, UserService $userService): JsonResponse
     {
         $validated = $request->validate([
             'field' => ['required', Rule::in(['name', 'email'])],
@@ -39,7 +38,7 @@ class UserAvailabilityController extends Controller implements HasMiddleware
         // auth()->user()->school_id only reflects school_user membership;
         // School Admins are attached via a separate school_admins pivot and
         // would otherwise resolve to null, hiding the "another school" message.
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
 
         $message = $validated['field'] === 'email'
             ? $userService->emailConflictMessage($validated['value'], $schoolId, $ignoreId)

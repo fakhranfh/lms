@@ -8,7 +8,6 @@ use App\Models\PricingTier;
 use App\Models\School;
 use App\Services\PaymentGatewayRegistry;
 use App\Services\TierChangeService;
-use App\Support\CurrentSchool;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -16,7 +15,6 @@ class TierChangeController extends Controller
 {
     public function __construct(
         private readonly TierChangeService $tierChangeService,
-        private readonly CurrentSchool $currentSchool,
         private readonly PaymentGatewayRegistry $gatewayRegistry,
     ) {}
 
@@ -39,7 +37,7 @@ class TierChangeController extends Controller
     {
         $this->denyUnlessCanManageTier();
 
-        $schoolId = auth()->user()->school_id ?? $this->currentSchool->getSchoolId();
+        $schoolId = auth()->user()->school_id;
         $school = School::findOrFail($schoolId);
 
         $isDemoMode = $this->isDemoMode($school);
@@ -83,7 +81,7 @@ class TierChangeController extends Controller
     {
         $this->denyUnlessCanManageTier();
 
-        $schoolId = auth()->user()->school_id ?? $this->currentSchool->getSchoolId();
+        $schoolId = auth()->user()->school_id;
         $school = School::findOrFail($schoolId);
 
         abort_if($this->isDemoMode($school), 403, 'Demo accounts cannot change pricing tiers.');
@@ -113,7 +111,7 @@ class TierChangeController extends Controller
     {
         $this->denyUnlessCanManageTier();
 
-        $schoolId = auth()->user()->school_id ?? $this->currentSchool->getSchoolId();
+        $schoolId = auth()->user()->school_id;
         $school = School::findOrFail($schoolId);
 
         if ($this->tierChangeService->cancelTierChange($school)) {

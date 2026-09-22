@@ -7,7 +7,6 @@ use App\Http\Middleware\PreservePasswordUpdateErrors;
 use App\Http\Middleware\RedirectIfNoSchool;
 use App\Http\Middleware\RedirectLmsLocalToHttps;
 use App\Http\Middleware\RequireSchool;
-use App\Http\Middleware\ResolveSchoolFromDomain;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrustReverseProxyScheme;
 use Illuminate\Foundation\Application;
@@ -33,7 +32,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(RedirectLmsLocalToHttps::class);
         $middleware->append(PreservePasswordUpdateErrors::class);
         $middleware->append(SecurityHeaders::class);
-        $middleware->web(prepend: [ResolveSchoolFromDomain::class]);
 
         // Payment gateway webhooks are called by Xendit/Midtrans directly,
         // without a browser session or CSRF token.

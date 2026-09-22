@@ -12,7 +12,6 @@ use App\Services\ForumCommentService;
 use App\Services\ForumThreadReadService;
 use App\Services\ForumThreadService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -63,9 +62,9 @@ class ForumThreadShow extends Component
     #[Url(as: 'comment')]
     public ?string $highlightCommentId = null;
 
-    public function mount(CurrentSchool $currentSchool, Course $course, ForumThread $thread, ForumThreadReadService $forumThreadReadService, ForumCommentService $forumCommentService): void
+    public function mount(Course $course, ForumThread $thread, ForumThreadReadService $forumThreadReadService, ForumCommentService $forumCommentService): void
     {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('forum.view') && $course->school_id === $schoolId, 403);
         abort_unless($thread->forum->course_id === $course->id, 404);
 

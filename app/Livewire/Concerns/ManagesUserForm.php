@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Services\UserLoginLinkService;
 use App\Services\UserService;
-use App\Support\CurrentSchool;
 use App\Support\PasswordPolicy;
 use Closure;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -91,7 +90,7 @@ trait ManagesUserForm
 
     private function currentSchoolId(): ?string
     {
-        return app(CurrentSchool::class)->getSchoolId() ?? auth()->user()->school_id;
+        return auth()->user()->school_id;
     }
 
     public function cancelPhoto(): void

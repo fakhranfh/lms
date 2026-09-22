@@ -8,7 +8,6 @@ use App\Models\Course;
 use App\Models\User;
 use App\Services\CourseService;
 use App\Services\GradebookScoringService;
-use App\Support\CurrentSchool;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Response;
@@ -18,11 +17,11 @@ class RaportExportController extends Controller
 {
     use BuildsRaportViewData;
 
-    public function exportSelf(CurrentSchool $currentSchool, CourseService $courseService, GradebookScoringService $gradebookScoringService): StreamedResponse
+    public function exportSelf(CourseService $courseService, GradebookScoringService $gradebookScoringService): StreamedResponse
     {
         abort_unless(auth()->user()->can('raport.view'), 403);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         $courses = $courseService->get(['enrolled_user_id' => auth()->id(), 'school_id' => $schoolId]);
 
         return $this->download(auth()->user(), $courses, $gradebookScoringService);
@@ -30,14 +29,13 @@ class RaportExportController extends Controller
 
     public function exportStudent(
         User $student,
-        CurrentSchool $currentSchool,
         CourseService $courseService,
         GradebookScoringService $gradebookScoringService,
     ): StreamedResponse {
         abort_unless(auth()->user()->can('raport.view'), 403);
         abort_unless(auth()->user()->hasRole(RoleName::SchoolAdmin), 403);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         $courses = $courseService->get(['enrolled_user_id' => $student->id, 'school_id' => $schoolId]);
 
         return $this->download($student, $courses, $gradebookScoringService);

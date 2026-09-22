@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\MaterialType;
 use App\Repositories\PricingTier\PricingTierRepositoryInterface;
 use App\Repositories\School\SchoolRepositoryInterface;
-use App\Support\CurrentSchool;
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use Illuminate\Http\UploadedFile;
@@ -32,7 +31,6 @@ class R2StorageService
     public function __construct(
         protected SchoolRepositoryInterface $schoolRepository,
         protected PricingTierRepositoryInterface $pricingTierRepository,
-        protected CurrentSchool $currentSchool,
     ) {
         $this->accountId = config('services.r2.account_id');
         $this->bucket = config('services.r2.bucket');
@@ -743,7 +741,7 @@ class R2StorageService
      */
     public function schoolPrefix(): string
     {
-        $schoolId = $this->currentSchool->getSchoolId();
+        $schoolId = auth()->user()?->school_id;
 
         if (! $schoolId) {
             return '';

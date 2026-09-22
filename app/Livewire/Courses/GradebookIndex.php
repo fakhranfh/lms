@@ -10,7 +10,6 @@ use App\Models\CoursePerson;
 use App\Services\CoursePersonService;
 use App\Services\GradebookScoringService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
@@ -43,9 +42,9 @@ class GradebookIndex extends Component
     #[Url(as: 'grade')]
     public array $gradeFilter = [];
 
-    public function mount(CurrentSchool $currentSchool, Course $course): void
+    public function mount(Course $course): void
     {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('gradebook.view') && $course->school_id === $schoolId, 403);
 
         $this->course = $course;

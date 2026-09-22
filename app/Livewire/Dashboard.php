@@ -6,7 +6,6 @@ use App\Enums\RoleName;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Services\DashboardService;
 use App\Services\UserService;
-use App\Support\CurrentSchool;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -55,7 +54,7 @@ class Dashboard extends Component
 
     private function countUsersWithRole(RoleName $role): int
     {
-        $schoolId = app(CurrentSchool::class)->getSchoolId() ?? Auth::user()?->school_id;
+        $schoolId = Auth::user()?->school_id;
 
         if ($schoolId === null) {
             return 0;

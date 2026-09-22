@@ -7,7 +7,6 @@ use App\Exports\UserExport;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Services\UserLoginLinkService;
 use App\Services\UserService;
-use App\Support\CurrentSchool;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -197,7 +196,7 @@ trait ManagesUserIndex
 
     private function currentSchoolId(): ?string
     {
-        return app(CurrentSchool::class)->getSchoolId() ?? auth()->user()->school_id;
+        return auth()->user()->school_id;
     }
 
     protected function handleDestroy(string $id, UserService $userService): void

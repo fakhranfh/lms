@@ -27,7 +27,6 @@ use App\Services\ForumThreadService;
 use App\Services\GroupMemberService;
 use App\Services\ProctorSessionService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
@@ -48,9 +47,9 @@ class AssessmentIndex extends Component
 
     public string $generateCount = '5';
 
-    public function mount(CurrentSchool $currentSchool, Course $course): void
+    public function mount(Course $course): void
     {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('assessment.view') && $course->school_id === $schoolId, 403);
 
         $this->course = $course;

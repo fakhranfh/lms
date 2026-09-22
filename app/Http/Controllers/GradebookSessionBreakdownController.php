@@ -7,7 +7,6 @@ use App\Enums\RoleName;
 use App\Models\Course;
 use App\Services\CoursePersonService;
 use App\Services\GradebookScoringService;
-use App\Support\CurrentSchool;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -23,9 +22,8 @@ class GradebookSessionBreakdownController extends Controller
         string $type,
         GradebookScoringService $gradebookScoringService,
         CoursePersonService $coursePersonService,
-        CurrentSchool $currentSchool,
     ): JsonResponse {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('gradebook.view') && $course->school_id === $schoolId, 403);
 
         $assessmentType = AssessmentType::tryFrom($type);

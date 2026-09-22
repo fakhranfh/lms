@@ -44,8 +44,8 @@
                     @php
                         $hasPermission = !($item['requires_permission'] ?? null) || auth()->user()->can($item['requires_permission']);
                         $hasRole = !($item['requires_role'] ?? null) || auth()->user()->hasRole($item['requires_role']);
-                        $hasSchool = !($item['requires_school'] ?? null) || app(\App\Support\CurrentSchool::class)->getSchoolId() !== null;
-                        $hasNoSchool = !($item['requires_no_school'] ?? null) || app(\App\Support\CurrentSchool::class)->getSchoolId() === null;
+                        $hasSchool = !($item['requires_school'] ?? null) || auth()->user()->school_id !== null;
+                        $hasNoSchool = !($item['requires_no_school'] ?? null) || auth()->user()->school_id === null;
                         $notExcludedRole = !($item['exclude_role'] ?? null) || !auth()->user()->hasRole($item['exclude_role']);
                         $canAccess = $hasPermission && $hasRole && $hasSchool && $hasNoSchool && $notExcludedRole;
                     @endphp

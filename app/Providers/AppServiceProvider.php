@@ -142,7 +142,6 @@ use App\Services\AssessmentQuestionService;
 use App\Services\AssessmentScoreService;
 use App\Services\AssessmentService;
 use App\Services\AttendanceService;
-use App\Services\CacheManagementService;
 use App\Services\CourseAttendanceSettingService;
 use App\Services\CoursePersonService;
 use App\Services\CourseService;
@@ -188,7 +187,6 @@ use App\Services\SyllabusService;
 use App\Services\TierChangeService;
 use App\Services\VideoConferenceParticipationService;
 use App\Services\VideoConferenceService;
-use App\Support\CurrentSchool;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -276,8 +274,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CourseAttendanceSettingRepositoryInterface::class, CourseAttendanceSettingRepository::class);
         $this->app->bind(CacheRepositoryInterface::class, RedisRepository::class);
 
-        $this->app->singleton(CurrentSchool::class);
-
         $this->app->singleton(CredentialEncryption::class);
         $this->app->singleton(FeatureGateService::class);
         $this->app->singleton(PaymentGatewayRegistry::class);
@@ -326,7 +322,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ProctorSnapshotService::class);
         $this->app->singleton(ProctorExamAnswersService::class);
         $this->app->singleton(GradingQueueHealthService::class);
-        $this->app->singleton(CacheManagementService::class);
         $this->app->singleton(GradebookEntryService::class);
         $this->app->singleton(GradebookSessionEntryService::class);
         $this->app->singleton(AttendanceService::class);

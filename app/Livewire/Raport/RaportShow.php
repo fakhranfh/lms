@@ -8,7 +8,6 @@ use App\Models\Course;
 use App\Models\User;
 use App\Services\CourseService;
 use App\Services\GradebookScoringService;
-use App\Support\CurrentSchool;
 use Livewire\Component;
 
 class RaportShow extends Component
@@ -42,7 +41,6 @@ class RaportShow extends Component
     }
 
     public function render(
-        CurrentSchool $currentSchool,
         CourseService $courseService,
         GradebookScoringService $gradebookScoringService,
     ) {
@@ -57,7 +55,7 @@ class RaportShow extends Component
                 ->section('app-content');
         }
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
 
         $courses = $courseService->get(['enrolled_user_id' => $this->student->id, 'school_id' => $schoolId]);
 

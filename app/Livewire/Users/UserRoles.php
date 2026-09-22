@@ -46,7 +46,7 @@ class UserRoles extends Component
 
         session()->flash('success', __('Roles updated successfully.'));
 
-        return redirect()->route('admin.users.index');
+        return redirect()->route('roles.index');
     }
 
     public function render(RoleService $roleService)

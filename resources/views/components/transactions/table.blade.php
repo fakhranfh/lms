@@ -4,7 +4,7 @@
     'sort' => 'created_at',
     'direction' => 'desc',
     'filterTargets' => 'dateFrom,dateTo,status,transactionType,gatewayId,search,perPage',
-    'actionsView' => 'components.transactions.admin-actions',
+    'actionsView' => 'components.transactions.school-actions',
 ])
 
 <x-ui.livewire-data-table

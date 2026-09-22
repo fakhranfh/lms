@@ -6,7 +6,6 @@ use App\Enums\RoleName;
 use App\Models\Course;
 use App\Services\CoursePersonService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use Livewire\Component;
 
 class CourseComingSoon extends Component
@@ -20,11 +19,11 @@ class CourseComingSoon extends Component
     /** @var array<string, string> */
     public array $tabLabels = [];
 
-    public function mount(CurrentSchool $currentSchool, Course $course, string $tab): void
+    public function mount(Course $course, string $tab): void
     {
         abort_unless(auth()->user()->can('courses.view'), 403);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless($course->school_id === $schoolId, 403);
 
         abort_unless(array_key_exists($tab, $this->tabLabels), 404);

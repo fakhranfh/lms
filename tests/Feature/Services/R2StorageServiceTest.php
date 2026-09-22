@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\School;
+use App\Models\User;
 use App\Services\R2StorageService;
-use App\Support\CurrentSchool;
 
 describe('R2StorageService', function () {
     test('configuration is properly set from env', function () {
@@ -86,7 +86,8 @@ describe('R2StorageService', function () {
 
         test('scopes to schools/{slug}/ when a school is in context', function () {
             $school = School::factory()->create(['name' => 'Demo LMS Local']);
-            app(CurrentSchool::class)->setSchoolId($school->id);
+            $user = User::factory()->create(['school_id' => $school->id]);
+            test()->actingAs($user);
 
             $service = app(R2StorageService::class);
 

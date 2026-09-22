@@ -20,41 +20,6 @@ class PricingTierManagementTest extends TestCase
         $this->artisan('migrate');
     }
 
-    public function test_admin_can_view_pricing_tiers_index(): void
-    {
-        $adminUser = User::factory()->create(['school_id' => null]);
-        $adminUser->assignRole('Admin');
-
-        $response = $this->actingAs($adminUser)->get(
-            'http://admin.lms.local/pricing-tiers'
-        );
-
-        $response->assertStatus(200);
-    }
-
-    public function test_non_admin_cannot_view_pricing_tiers(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this->actingAs($user)->get(
-            'http://admin.lms.local/pricing-tiers'
-        );
-
-        $response->assertStatus(403);
-    }
-
-    public function test_admin_can_view_create_pricing_tier_form(): void
-    {
-        $adminUser = User::factory()->create(['school_id' => null]);
-        $adminUser->assignRole('Admin');
-
-        $response = $this->actingAs($adminUser)->get(
-            'http://admin.lms.local/pricing-tiers/create'
-        );
-
-        $response->assertStatus(200);
-    }
-
     public function test_admin_can_create_pricing_tier_with_limits(): void
     {
         $adminUser = User::factory()->create(['school_id' => null]);
@@ -73,38 +38,6 @@ class PricingTierManagementTest extends TestCase
         ]);
 
         $this->assertCount(1, $tier->limits);
-    }
-
-    public function test_admin_can_update_pricing_tier(): void
-    {
-        $adminUser = User::factory()->create(['school_id' => null]);
-        $adminUser->assignRole('Admin');
-        $adminUser->givePermissionTo('pricing-tiers.update');
-
-        $tier = PricingTier::factory()->create([
-            'name' => 'Standard',
-            'slug' => 'standard',
-        ]);
-
-        $response = $this->actingAs($adminUser)->get(
-            "http://admin.lms.local/pricing-tiers/{$tier->id}/edit"
-        );
-
-        $response->assertStatus(200);
-    }
-
-    public function test_admin_cannot_delete_tier_with_active_schools(): void
-    {
-        $adminUser = User::factory()->create(['school_id' => null]);
-        $adminUser->assignRole('Admin');
-        $adminUser->givePermissionTo('pricing-tiers.delete');
-
-        $tier = PricingTier::factory()->create();
-        SchoolTier::factory()->create(['tier_id' => $tier->id]);
-
-        $this->actingAs($adminUser)->call('DELETE', "http://admin.lms.local/pricing-tiers/{$tier->id}");
-
-        $this->assertDatabaseHas('pricing_tiers', ['id' => $tier->id]);
     }
 
     public function test_admin_can_delete_unused_pricing_tier(): void

@@ -30,7 +30,7 @@
             <button type="submit" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
                 Save
             </button>
-            <a href="{{ route('admin.users.index') }}" class="font-label-md text-label-md text-secondary hover:underline">Cancel</a>
+            <a href="{{ route('roles.index') }}" class="font-label-md text-label-md text-secondary hover:underline">Cancel</a>
         </div>
     </form>
 </div>

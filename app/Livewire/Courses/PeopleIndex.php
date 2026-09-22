@@ -15,7 +15,6 @@ use App\Services\GroupService;
 use App\Services\RoleService;
 use App\Services\UserService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -54,9 +53,9 @@ class PeopleIndex extends Component
 
     public int $groupSize = 4;
 
-    public function mount(CurrentSchool $currentSchool, Course $course): void
+    public function mount(Course $course): void
     {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('people.view') && $course->school_id === $schoolId, 403);
 
         $this->course = $course;

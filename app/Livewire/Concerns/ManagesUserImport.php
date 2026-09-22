@@ -4,7 +4,6 @@ namespace App\Livewire\Concerns;
 
 use App\Enums\RoleName;
 use App\Services\UserImportService;
-use App\Support\CurrentSchool;
 use Illuminate\Http\UploadedFile;
 
 /**
@@ -75,7 +74,7 @@ trait ManagesUserImport
 
         $parsed = $userImportService->parseRows($this->spreadsheet);
 
-        $schoolId = app(CurrentSchool::class)->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         $result = $userImportService->createUsers(
             $parsed['rows'],
             $this->managedRole(),

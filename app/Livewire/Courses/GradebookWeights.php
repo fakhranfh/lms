@@ -12,7 +12,6 @@ use App\Services\AttendanceScoringService;
 use App\Services\ForumDiscussionScoringService;
 use App\Services\GradebookScoringService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
@@ -28,9 +27,9 @@ class GradebookWeights extends Component
 
     public ?string $successMessage = null;
 
-    public function mount(CurrentSchool $currentSchool, Course $course): void
+    public function mount(Course $course): void
     {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('gradebook.manage') && $course->school_id === $schoolId, 403);
 
         $this->course = $course;

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\ForumComment;
 use App\Services\ForumCommentLikeService;
-use App\Support\CurrentSchool;
 use Illuminate\Http\JsonResponse;
 
 class ForumCommentLikeController extends Controller
@@ -14,10 +13,10 @@ class ForumCommentLikeController extends Controller
      * from the Forum thread view so liking stays instant and decoupled from
      * Livewire's full component re-render cycle.
      */
-    public function toggle(ForumComment $comment, ForumCommentLikeService $forumCommentLikeService, CurrentSchool $currentSchool): JsonResponse
+    public function toggle(ForumComment $comment, ForumCommentLikeService $forumCommentLikeService): JsonResponse
     {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
-        abort_unless(auth()->user()->can('forum.create') && $comment->thread->forum->course->school_id === $schoolId, 403);
+        $schoolId = auth()->user()->school_id;
+        abort_unless(auth()->user()->can('forum.create') && $comment->thread->forum->course?->school_id === $schoolId, 403);
 
         $existing = $forumCommentLikeService->findByCommentAndUser($comment->id, auth()->id());
 

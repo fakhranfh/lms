@@ -147,10 +147,11 @@ class PaymentGatewayConfigService
             'amount' => 10000,
             'customer_email' => 'connection-test@example.com',
             'description' => 'Payment gateway connection test',
-            // Send redirect-based test channels (DANA, LinkAja, ...) back to
-            // this same result page instead of the generic app URL default.
-            'success_return_url' => route('admin.gateways.test-result', $gateway),
-            'failure_return_url' => route('admin.gateways.test-result', $gateway),
+            // The admin gateway test-result page has been removed, so
+            // redirect-based test channels (DANA, LinkAja, ...) fall back to
+            // the generic app URL default.
+            'success_return_url' => config('app.url'),
+            'failure_return_url' => config('app.url'),
         ];
 
         if ($channel !== null) {

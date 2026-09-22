@@ -15,7 +15,6 @@ use App\Services\CoursePersonService;
 use App\Services\GroupMemberService;
 use App\Services\GroupService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
 use Livewire\Component;
 
@@ -51,7 +50,7 @@ class AssessmentTeamShow extends Component
         return $row['score'] ? 'graded' : 'submitted';
     }
 
-    public function mount(CurrentSchool $currentSchool, ?Course $course = null, ?Assessment $assessment = null): void
+    public function mount(?Course $course = null, ?Assessment $assessment = null): void
     {
         abort_if($assessment === null, 404);
 
@@ -59,7 +58,7 @@ class AssessmentTeamShow extends Component
 
         abort_if($course === null, 404);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('assessment.view') && $course->school_id === $schoolId, 403);
         abort_unless($assessment->course_id === $course->id, 404);
         abort_unless($assessment->type === AssessmentType::TheoryTeamAssignment, 404);

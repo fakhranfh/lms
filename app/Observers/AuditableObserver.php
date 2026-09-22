@@ -3,7 +3,6 @@
 namespace App\Observers;
 
 use App\Models\AuditLog;
-use App\Support\CurrentSchool;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -58,7 +57,7 @@ class AuditableObserver
         }
 
         $auditLog = AuditLog::create([
-            'school_id' => $model->school_id ?? app(CurrentSchool::class)->getSchoolId(),
+            'school_id' => $model->school_id ?? auth()->user()?->school_id,
             'user_id' => auth()->id(),
             'event' => $event,
             'auditable_type' => $model::class,

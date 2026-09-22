@@ -30,7 +30,6 @@ use App\Services\ProctorSessionStatusService;
 use App\Services\ProctorSnapshotService;
 use App\Services\R2StorageService;
 use App\Services\SessionService;
-use App\Support\CurrentSchool;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Renderless;
 use Livewire\Component;
@@ -89,7 +88,6 @@ class ProctorExamShow extends Component
     }
 
     public function mount(
-        CurrentSchool $currentSchool,
         CoursePersonService $coursePersonService,
         AssessmentService $assessmentService,
         FinalExamService $finalExamService,
@@ -102,7 +100,7 @@ class ProctorExamShow extends Component
 
         abort_if($course === null, 404);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('assessment.view') && $course->school_id === $schoolId, 403);
         abort_unless($assessment->course_id === $course->id, 404);
         abort_unless($assessment->type === AssessmentType::TheoryFinalExam, 404);

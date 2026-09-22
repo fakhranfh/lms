@@ -25,7 +25,6 @@ use App\Services\SessionService;
 use App\Services\VideoConferenceParticipationService;
 use App\Services\VideoConferenceService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Url;
@@ -77,9 +76,9 @@ class SessionsIndex extends Component
      */
     public bool $sessionsLoaded = false;
 
-    public function mount(CurrentSchool $currentSchool, Course $course): void
+    public function mount(Course $course): void
     {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('sessions.view') && $course->school_id === $schoolId, 403);
 
         $this->course = $course;

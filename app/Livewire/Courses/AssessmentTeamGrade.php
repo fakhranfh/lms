@@ -13,7 +13,6 @@ use App\Services\AssessmentScoreService;
 use App\Services\GradebookScoringService;
 use App\Services\GroupMemberService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use Livewire\Component;
 
 class AssessmentTeamGrade extends Component
@@ -30,13 +29,13 @@ class AssessmentTeamGrade extends Component
 
     public ?string $errorMessage = null;
 
-    public function mount(CurrentSchool $currentSchool, AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, Assessment $assessment, Group $group): void
+    public function mount(AssessmentAttemptService $assessmentAttemptService, AssessmentScoreService $assessmentScoreService, AssessmentQuestionScoreService $assessmentQuestionScoreService, Assessment $assessment, Group $group): void
     {
         $course = $assessment->course;
 
         abort_if($course === null, 404);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('assessment.grade') && $course->school_id === $schoolId, 403);
         abort_unless($assessment->type === AssessmentType::TheoryTeamAssignment, 404);
         abort_unless($group->course_id === $course->id, 404);

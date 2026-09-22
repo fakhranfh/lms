@@ -6,7 +6,6 @@ use App\Enums\RoleName;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Services\UserLoginLinkService;
 use App\Services\UserService;
-use App\Support\CurrentSchool;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -35,7 +34,7 @@ class StudentGenerate extends Component
 
     private function currentSchoolId(): ?string
     {
-        return app(CurrentSchool::class)->getSchoolId() ?? auth()->user()->school_id;
+        return auth()->user()->school_id;
     }
 
     public function generate(UserService $userService, UserLoginLinkService $userLoginLinkService): void

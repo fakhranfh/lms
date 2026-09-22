@@ -12,7 +12,6 @@ use App\Services\AssessmentQuestionOptionService;
 use App\Services\AssessmentQuestionService;
 use App\Services\FinalExamService;
 use App\Services\QuizService;
-use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -35,14 +34,13 @@ class ProctorQuizQuestionsForm extends Component
     public array $questions = [];
 
     public function mount(
-        CurrentSchool $currentSchool,
         FinalExamService $finalExamService,
         Course $course,
         Assessment $assessment,
     ): void {
         abort_unless(auth()->user()->can('assessment.create') || auth()->user()->can('assessment.edit'), 403);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless($course->school_id === $schoolId, 403);
         abort_unless($assessment->course_id === $course->id, 404);
         abort_unless($assessment->type === AssessmentType::TheoryFinalExam, 404);

@@ -3,7 +3,6 @@
 namespace App\Models\Concerns;
 
 use App\Models\Scopes\SchoolScope;
-use App\Support\CurrentSchool;
 use Illuminate\Database\Eloquent\Model;
 
 trait BelongsToSchool
@@ -12,7 +11,7 @@ trait BelongsToSchool
     {
         static::creating(function (Model $model) {
             if (empty($model->getAttribute('school_id'))) {
-                $model->setAttribute('school_id', app(CurrentSchool::class)->getSchoolId());
+                $model->setAttribute('school_id', auth()->user()?->school_id);
             }
         });
     }

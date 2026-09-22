@@ -88,11 +88,6 @@
                     <a href="{{ route('get-started'.\App\Support\RootDomains::currentSuffix()) }}" class="flex min-h-[44px] items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
                         Register your school &rarr;
                     </a>
-                    @if (Route::has('pricing'.\App\Support\RootDomains::currentSuffix()))
-                        <a href="{{ route('pricing'.\App\Support\RootDomains::currentSuffix()) }}" class="flex min-h-[44px] items-center rounded border border-outline-variant px-space-lg font-label-md text-label-md text-on-surface hover:border-primary hover:text-primary transition-colors">
-                            View pricing
-                        </a>
-                    @endif
                 </div>
             </div>
         </section>

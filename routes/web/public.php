@@ -5,7 +5,6 @@ use App\Http\Controllers\TryDemoController;
 use App\Livewire\MySchools;
 use App\Livewire\SchoolAdminRegister;
 use App\Livewire\SchoolRegister;
-use App\Services\PricingTierService;
 use App\Support\RootDomains;
 use Illuminate\Support\Facades\Route;
 
@@ -20,12 +19,6 @@ foreach (RootDomains::all() as $index => $rootDomain) {
         Route::view('/', 'landing-page')->name("home{$suffix}");
 
         Route::view('/features', 'features')->name("features{$suffix}");
-
-        Route::get('/pricing', function (PricingTierService $pricingTierService) {
-            return view('pricing', [
-                'tiers' => $pricingTierService->get(['is_active' => true], ['limits']),
-            ]);
-        })->name("pricing{$suffix}");
 
         Route::get('/pricing-tiers/{pricingTier}/breakdown', [PricingTierBreakdownController::class, 'show'])->name("pricing-tiers.breakdown{$suffix}");
 

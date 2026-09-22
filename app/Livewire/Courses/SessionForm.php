@@ -11,7 +11,6 @@ use App\Services\MediaLibraryService;
 use App\Services\SessionService;
 use App\Services\SessionSubtopicService;
 use App\Services\VideoConferenceService;
-use App\Support\CurrentSchool;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -51,7 +50,7 @@ class SessionForm extends Component
      */
     public array $videoConferences = [];
 
-    public function mount(CurrentSchool $currentSchool, ?Course $course = null, ?Session $session = null): void
+    public function mount(?Course $course = null, ?Session $session = null): void
     {
         abort_unless(auth()->user()->can('sessions.create') || auth()->user()->can('sessions.edit'), 403);
 
@@ -59,7 +58,7 @@ class SessionForm extends Component
 
         abort_if($course === null, 404);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless($course->school_id === $schoolId, 403);
 
         $this->course = $course;

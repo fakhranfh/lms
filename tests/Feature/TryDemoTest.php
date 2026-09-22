@@ -83,16 +83,3 @@ test('an invalid demo role is rejected', function () {
 
     $response->assertNotFound();
 });
-
-test('admin login is only reachable on the admin subdomain', function () {
-    $rootDomain = config('app.domain');
-    $adminDomain = "admin.{$rootDomain}";
-
-    $adminResponse = $this->get("http://{$adminDomain}/login");
-    $adminResponse->assertOk();
-    $adminResponse->assertViewIs('auth.admin-login');
-
-    $rootResponse = $this->get("http://{$rootDomain}/login");
-    $rootResponse->assertOk();
-    $rootResponse->assertViewIs('auth.login');
-});

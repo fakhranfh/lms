@@ -6,7 +6,6 @@ use App\Models\Course;
 use App\Services\CoursePersonService;
 use App\Services\GradebookScoringService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use Livewire\Component;
 
 class GradebookGradeBands extends Component
@@ -19,9 +18,9 @@ class GradebookGradeBands extends Component
 
     public ?string $successMessage = null;
 
-    public function mount(CurrentSchool $currentSchool, Course $course): void
+    public function mount(Course $course): void
     {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('gradebook.manage') && $course->school_id === $schoolId, 403);
 
         $this->course = $course;

@@ -3,16 +3,15 @@
 use App\Models\School;
 use App\Models\Scopes\SchoolScope;
 use App\Models\User;
-use App\Support\CurrentSchool;
 
 test('a query run under school A never returns rows belonging to school B', function () {
     $schoolA = School::factory()->create();
     $schoolB = School::factory()->create();
 
-    User::factory()->forSchool($schoolA)->create();
+    $userA = User::factory()->forSchool($schoolA)->create();
     User::factory()->forSchool($schoolB)->create();
 
-    app(CurrentSchool::class)->setSchoolId($schoolA->id);
+    test()->actingAs($userA);
 
     $users = User::all();
 
@@ -22,8 +21,9 @@ test('a query run under school A never returns rows belonging to school B', func
 
 test('creating a record without school_id assigns the current school automatically', function () {
     $school = School::factory()->create();
+    $actingUser = User::factory()->forSchool($school)->create();
 
-    app(CurrentSchool::class)->setSchoolId($school->id);
+    test()->actingAs($actingUser);
 
     $user = User::create([
         'name' => 'Jane Doe',
@@ -41,7 +41,7 @@ test('withoutGlobalScope bypasses school scoping for cross-school console operat
     $userA = User::factory()->forSchool($schoolA)->create();
     $userB = User::factory()->forSchool($schoolB)->create();
 
-    app(CurrentSchool::class)->setSchoolId($schoolA->id);
+    test()->actingAs($userA);
 
     $allUserIds = User::withoutGlobalScope(SchoolScope::class)->pluck('id');
 
@@ -54,8 +54,6 @@ test('no school context means queries are unscoped', function () {
 
     $userA = User::factory()->forSchool($schoolA)->create();
     $userB = User::factory()->forSchool($schoolB)->create();
-
-    app(CurrentSchool::class)->setSchoolId(null);
 
     $userIds = User::all()->pluck('id');
 

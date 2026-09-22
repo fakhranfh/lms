@@ -15,7 +15,6 @@ use App\Services\ForumDiscussionScoringService;
 use App\Services\ForumThreadService;
 use App\Services\SessionService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
@@ -43,9 +42,9 @@ class ForumMonitoringIndex extends Component
     #[Url(as: 'perPage')]
     public int $perPage = self::DEFAULT_STUDENTS_PER_PAGE;
 
-    public function mount(CurrentSchool $currentSchool, Course $course): void
+    public function mount(Course $course): void
     {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('forum.moderate') && $course->school_id === $schoolId, 403);
 
         $this->course = $course;

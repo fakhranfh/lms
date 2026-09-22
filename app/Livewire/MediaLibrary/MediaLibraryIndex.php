@@ -4,7 +4,6 @@ namespace App\Livewire\MediaLibrary;
 
 use App\Enums\MaterialType;
 use App\Services\MediaLibraryService;
-use App\Support\CurrentSchool;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -31,11 +30,11 @@ class MediaLibraryIndex extends Component
 
     private ?string $schoolId = null;
 
-    public function mount(CurrentSchool $currentSchool): void
+    public function mount(): void
     {
         abort_unless(auth()->user()->can('media.view'), 403);
 
-        $this->schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $this->schoolId = auth()->user()->school_id;
     }
 
     public function updatingSearch(): void

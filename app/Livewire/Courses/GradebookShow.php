@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Services\CoursePersonService;
 use App\Services\GradebookScoringService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use Livewire\Component;
 
 class GradebookShow extends Component
@@ -21,9 +20,9 @@ class GradebookShow extends Component
 
     public bool $dataLoaded = false;
 
-    public function mount(CurrentSchool $currentSchool, Course $course, User $student, CoursePersonService $coursePersonService): void
+    public function mount(Course $course, User $student, CoursePersonService $coursePersonService): void
     {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('gradebook.view') && $course->school_id === $schoolId, 403);
 
         $isSelf = $student->id === auth()->id();

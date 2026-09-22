@@ -20,7 +20,6 @@ use App\Services\ExamReferenceFileService;
 use App\Services\FinalExamService;
 use App\Services\ProctorSessionService;
 use App\Support\CourseTabs;
-use App\Support\CurrentSchool;
 use App\Support\HtmlSanitizer;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Renderless;
@@ -54,7 +53,7 @@ class AssessmentFinalExamShow extends Component
 
     public ?string $referenceFileError = null;
 
-    public function mount(CurrentSchool $currentSchool, CoursePersonService $coursePersonService, ?Course $course = null, ?Assessment $assessment = null): void
+    public function mount(CoursePersonService $coursePersonService, ?Course $course = null, ?Assessment $assessment = null): void
     {
         abort_if($assessment === null, 404);
 
@@ -62,7 +61,7 @@ class AssessmentFinalExamShow extends Component
 
         abort_if($course === null, 404);
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
         abort_unless(auth()->user()->can('assessment.view') && $course->school_id === $schoolId, 403);
         abort_unless($assessment->course_id === $course->id, 404);
         abort_unless($assessment->type === AssessmentType::TheoryFinalExam, 404);

@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\RoleName;
 use App\Models\Concerns\HasViewerTimezoneDates;
 use App\Models\Scopes\SchoolScope;
-use App\Support\CurrentSchool;
 use App\Traits\HasUuid;
 use Database\Factories\UserFactory;
 use Illuminate\Auth\Passwords\CanResetPassword;
@@ -42,7 +41,7 @@ class User extends Authenticatable implements MustVerifyEmail
         static::created(function (User $user): void {
             $schoolId = $user->pendingSchoolIdWasSet
                 ? $user->pendingSchoolId
-                : app(CurrentSchool::class)->getSchoolId();
+                : auth()->user()?->school_id;
 
             if ($schoolId !== null) {
                 $user->memberSchools()->syncWithoutDetaching([$schoolId]);

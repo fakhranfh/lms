@@ -6,7 +6,6 @@ use App\Enums\RoleName;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Services\R2StorageService;
 use App\Services\UserService;
-use App\Support\CurrentSchool;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Validator;
@@ -119,7 +118,7 @@ class StudentPhotoUpload extends Component
 
     private function studentRoleId(): ?int
     {
-        $schoolId = app(CurrentSchool::class)->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
 
         if ($schoolId === null) {
             return null;

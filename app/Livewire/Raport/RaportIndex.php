@@ -9,7 +9,6 @@ use App\Models\Course;
 use App\Services\CoursePersonService;
 use App\Services\CourseService;
 use App\Services\GradebookScoringService;
-use App\Support\CurrentSchool;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Collection;
@@ -40,7 +39,7 @@ class RaportIndex extends Component
     #[Url(as: 'grade')]
     public array $gradeFilter = [];
 
-    public function mount(CurrentSchool $currentSchool): void
+    public function mount(): void
     {
         abort_unless(auth()->user()->can('raport.view'), 403);
 
@@ -70,12 +69,11 @@ class RaportIndex extends Component
     }
 
     public function render(
-        CurrentSchool $currentSchool,
         CourseService $courseService,
         CoursePersonService $coursePersonService,
         GradebookScoringService $gradebookScoringService,
     ) {
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
 
         $viewData = [
             'isStudent' => $this->isStudent,

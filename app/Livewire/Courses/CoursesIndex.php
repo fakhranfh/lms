@@ -6,7 +6,6 @@ use App\Enums\RoleName;
 use App\Livewire\Courses\Concerns\HasCoursesIndexDevTools;
 use App\Services\CourseService;
 use App\Services\SessionMaterialCompletionService;
-use App\Support\CurrentSchool;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -95,7 +94,7 @@ class CoursesIndex extends Component
         $this->dispatch('courses-selection-cleared');
     }
 
-    public function render(CurrentSchool $currentSchool, CourseService $courseService, SessionMaterialCompletionService $completionService)
+    public function render(CourseService $courseService, SessionMaterialCompletionService $completionService)
     {
         if (! $this->coursesLoaded) {
             return view('livewire.courses.courses-index-placeholder', [
@@ -105,7 +104,7 @@ class CoursesIndex extends Component
                 ->section('app-content');
         }
 
-        $schoolId = $currentSchool->getSchoolId() ?? auth()->user()->school_id;
+        $schoolId = auth()->user()->school_id;
 
         $filters = ['school_id' => $schoolId, 'search' => $this->search];
 

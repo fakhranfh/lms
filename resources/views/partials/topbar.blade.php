@@ -17,11 +17,6 @@
                     Features
                 </a>
             @endif
-            @if (Route::has('pricing'.$rootDomainSuffix))
-                <a href="{{ route('pricing'.$rootDomainSuffix) }}" class="hidden font-label-md text-label-md text-secondary hover:text-on-surface transition-colors sm:inline">
-                    Pricing
-                </a>
-            @endif
             @auth
                 <a href="{{ url('/dashboard') }}" class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors">
                     Dashboard

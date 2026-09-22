@@ -12,6 +12,7 @@ use App\Enums\FinalExamType;
 use App\Enums\MaterialType;
 use App\Enums\QuizScoringMethod;
 use App\Enums\RoleInCourse;
+use App\Enums\RoleName;
 use App\Enums\SyllabusPolicyScope;
 use App\Models\Assessment;
 use App\Models\AssessmentQuestion;
@@ -21,6 +22,7 @@ use App\Models\MediaLibraryItem;
 use App\Models\Period;
 use App\Models\Quiz;
 use App\Models\School;
+use App\Models\Scopes\SchoolScope;
 use App\Models\Session;
 use App\Models\Syllabus;
 use App\Models\SyllabusLearningOutcome;
@@ -306,33 +308,25 @@ class DemoCourseGeneratorService
     }
 
     /**
+     * Enrolls every existing student in the school into the course, rather
+     * than generating fake ones, so demo courses reflect the school's real
+     * student roster.
+     *
      * @return Collection<int, User>
      */
     private function generateStudents(School $school, Course $course): Collection
     {
-        $names = [
-            'Amelia Santoso', 'Bagas Wirawan', 'Citra Puspita', 'Dimas Prakoso', 'Erika Wulandari',
-            'Fajar Nugroho', 'Gita Anggraini', 'Hendra Saputra',
-        ];
+        $students = User::withoutGlobalScope(SchoolScope::class)
+            ->whereHas('memberSchools', fn ($query) => $query->where('schools.id', $school->id))
+            ->role(RoleName::Student->value)
+            ->get();
 
-        $students = collect();
-
-        foreach ($names as $index => $name) {
-            $email = Str::slug($name).'-'.Str::lower(Str::random(4)).'@demo.local';
-
-            $student = User::factory()->forSchool($school)->create([
-                'name' => $name,
-                'email' => $email,
-            ]);
-            $student->assignRole('Student');
-
+        foreach ($students as $student) {
             $this->coursePersonService->enroll($course->id, $student->id, [
                 'role_in_course' => RoleInCourse::Student,
                 'enrolled_at' => now(),
                 'status' => CourseMembershipStatus::Active,
             ]);
-
-            $students->push($student);
         }
 
         return $students;

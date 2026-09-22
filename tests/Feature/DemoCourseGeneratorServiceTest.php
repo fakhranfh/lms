@@ -14,11 +14,15 @@ beforeEach(function () {
     $this->app->instance(R2StorageService::class, $r2Mock);
 });
 
-function generateDemoCourses(int $count): Collection
+function generateDemoCourses(int $count, ?School $school = null, int $studentCount = 8): Collection
 {
-    $school = School::factory()->create();
+    $school ??= School::factory()->create();
     $teacher = User::factory()->forSchool($school)->create();
     $teacher->assignRole('Teacher');
+
+    User::factory($studentCount)->forSchool($school)->create()->each(
+        fn (User $student) => $student->assignRole('Student')
+    );
 
     return app(DemoCourseGeneratorService::class)->generate($school->id, $teacher->id, $count);
 }
@@ -76,4 +80,26 @@ test('it cycles through the title pool without repeating an existing course titl
     $titles = Course::where('school_id', $school->id)->pluck('title');
 
     expect($titles->unique())->toHaveCount(5);
+});
+
+test('it enrolls existing students of the school instead of generating new ones', function () {
+    $school = School::factory()->create();
+    $teacher = User::factory()->forSchool($school)->create();
+    $teacher->assignRole('Teacher');
+
+    $students = User::factory(5)->forSchool($school)->create();
+    $students->each(fn (User $student) => $student->assignRole('Student'));
+
+    $userCountBefore = User::withoutGlobalScopes()->count();
+
+    $course = app(DemoCourseGeneratorService::class)
+        ->generate($school->id, $teacher->id, 1)
+        ->first()
+        ->fresh(['people']);
+
+    expect(User::withoutGlobalScopes()->count())->toBe($userCountBefore);
+
+    $enrolledStudentIds = $course->people()->where('role_in_course', 'student')->pluck('user_id')->sort()->values();
+
+    expect($enrolledStudentIds->all())->toEqual($students->pluck('id')->sort()->values()->all());
 });

@@ -59,31 +59,13 @@ return [
     | Root School Domain
     |--------------------------------------------------------------------------
     |
-    | The root domain used for subdomain-based school resolution. Schools
-    | are addressed at "{school}.{domain}", the admin panel lives
-    | at "admin.{domain}", and this root domain hosts the public landing
-    | and school registration pages.
+    | The root domain used when building a school's public-facing subdomain
+    | (e.g. "{school}.{domain}") for links and demo access. Routing itself
+    | is no longer domain-scoped, so this only affects generated URLs.
     |
     */
 
     'domain' => env('APP_DOMAIN', 'lms.local'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Extra Root Domains
-    |--------------------------------------------------------------------------
-    |
-    | Additional root domains that behave identically to "app.domain" above
-    | (same landing page, admin panel, and school subdomains). Configure as
-    | a comma-separated list, e.g. APP_EXTRA_DOMAINS=lms.io,mylms.test.
-    | These can only be changed via .env, not through the admin panel.
-    |
-    */
-
-    'extra_domains' => array_values(array_filter(array_map(
-        'trim',
-        explode(',', (string) env('APP_EXTRA_DOMAINS', ''))
-    ))),
 
     /*
     |--------------------------------------------------------------------------

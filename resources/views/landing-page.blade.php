@@ -28,11 +28,11 @@
                             Go to Dashboard
                         </a>
                     @else
-                        <a href="{{ route('get-started'.\App\Support\RootDomains::currentSuffix()) }}" class="flex h-11 items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
+                        <a href="{{ route('get-started') }}" class="flex h-11 items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
                             Start your school &rarr;
                         </a>
-                        @if (Route::has('try-demo'.\App\Support\RootDomains::currentSuffix()))
-                            <a href="{{ route('try-demo'.\App\Support\RootDomains::currentSuffix()) }}" class="group inline-flex items-center gap-space-xs font-label-md text-label-md text-on-surface hover:text-primary transition-colors">
+                        @if (Route::has('try-demo'))
+                            <a href="{{ route('try-demo') }}" class="group inline-flex items-center gap-space-xs font-label-md text-label-md text-on-surface hover:text-primary transition-colors">
                                 Try Demo
                                 <span class="transition-transform group-hover:translate-x-0.5" aria-hidden="true">&rarr;</span>
                             </a>

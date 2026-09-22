@@ -122,6 +122,7 @@ class AttendanceIndexTest extends TestCase
             'date_start' => now()->subHours(2),
             'date_end' => now()->subHour(),
         ]);
+        $this->session->refresh();
 
         Livewire::test(AttendanceIndex::class, ['course' => $this->course])
             ->call('loadData')
@@ -138,6 +139,8 @@ class AttendanceIndexTest extends TestCase
 
         if ($attendance->recorded_at !== null) {
             $this->assertTrue($attendance->recorded_at->betweenIncluded($this->session->date_start, $this->session->date_end));
+        } else {
+            $this->assertSame(AttendanceStatus::Absent, $attendance->status);
         }
 
         if ($attendance->status === AttendanceStatus::Present) {

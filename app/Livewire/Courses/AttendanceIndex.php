@@ -103,7 +103,7 @@ class AttendanceIndex extends Component
 
         abort_if($session->isAttendanceLocked(), 403);
 
-        $this->persistAttendance($session->id, $userId, $status, $notes, $attendanceService);
+        $this->persistAttendance($session->id, $userId, $status, $notes, $attendanceService, now());
 
         $attendanceDraftService->forgetUser($session->id, $userId);
         unset($this->drafts[$userId]);
@@ -140,7 +140,7 @@ class AttendanceIndex extends Component
                 continue;
             }
 
-            $this->persistAttendance($session->id, $userId, $draft['status'], $draft['notes'] ?? '', $attendanceService);
+            $this->persistAttendance($session->id, $userId, $draft['status'], $draft['notes'] ?? '', $attendanceService, now());
         }
 
         $sessionService->update($session->id, ['attendance_locked_at' => now()]);
@@ -181,7 +181,7 @@ class AttendanceIndex extends Component
         }
     }
 
-    private function persistAttendance(string $sessionId, string $userId, string $status, string $notes, AttendanceService $attendanceService, ?Carbon $recordedAt = null, ?string $recordedBy = null): void
+    private function persistAttendance(string $sessionId, string $userId, string $status, string $notes, AttendanceService $attendanceService, ?Carbon $recordedAt, ?string $recordedBy = null): void
     {
         $existing = $attendanceService->findBySessionAndUser($sessionId, $userId);
 
@@ -190,7 +190,7 @@ class AttendanceIndex extends Component
             'user_id' => $userId,
             'status' => AttendanceStatus::from($status),
             'recorded_by' => $recordedBy ?? auth()->id(),
-            'recorded_at' => $recordedAt ?? now(),
+            'recorded_at' => $recordedAt,
             'notes' => $notes ?: null,
         ];
 

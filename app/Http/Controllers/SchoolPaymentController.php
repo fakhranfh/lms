@@ -11,7 +11,6 @@ use App\Services\PaymentGateways\XenditGateway;
 use App\Services\PaymentStatusStreamService;
 use App\Services\SchoolService;
 use App\Services\SubscriptionPaymentService;
-use App\Support\RootDomains;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,14 +24,12 @@ class SchoolPaymentController extends Controller
         private readonly PaymentGatewayRepositoryInterface $gatewayRepository,
     ) {}
 
-    public function index(PaymentTransaction $transaction, Request $request): View|RedirectResponse
+    public function index(PaymentTransaction $transaction): View|RedirectResponse
     {
         abort_unless($transaction->initiated_by === auth()->id(), 403);
 
         if ($transaction->status === PaymentStatus::Completed && $transaction->school) {
-            $suffix = RootDomains::suffixFor(RootDomains::match($request->getHost()));
-
-            return redirect()->route("manage.schools.index{$suffix}");
+            return redirect()->route('manage.schools.index');
         }
 
         // Already initiated a payment request against a channel: show the
@@ -49,7 +46,6 @@ class SchoolPaymentController extends Controller
             ? collect($gateway->enabled_channels ?? [])->map(fn (string $value) => XenditChannel::tryFrom($value))->filter()
             : collect();
 
-        $suffix = RootDomains::suffixFor(RootDomains::match($request->getHost()));
         $isTierChange = ! $transaction->registration_data;
 
         return view('school-payment', [
@@ -59,8 +55,8 @@ class SchoolPaymentController extends Controller
             'initialResult' => $selectedChannel ? $this->channelPayload($transaction) : null,
             'isTierChange' => $isTierChange,
             'backUrl' => $isTierChange
-                ? route("manage.schools.index{$suffix}")
-                : route("get-started.school{$suffix}"),
+                ? route('manage.schools.index')
+                : route('get-started.school'),
         ]);
     }
 
@@ -147,13 +143,11 @@ class SchoolPaymentController extends Controller
         return response()->json(['message' => $result['message'] ?? 'Payment simulation triggered.']);
     }
 
-    public function stream(PaymentTransaction $transaction, Request $request, PaymentStatusStreamService $streamService): StreamedResponse
+    public function stream(PaymentTransaction $transaction, PaymentStatusStreamService $streamService): StreamedResponse
     {
         abort_unless($transaction->initiated_by === auth()->id(), 403);
 
-        $suffix = RootDomains::suffixFor(RootDomains::match($request->getHost()));
-
-        return $streamService->stream($transaction, route("manage.schools.index{$suffix}"));
+        return $streamService->stream($transaction, route('manage.schools.index'));
     }
 
     /**

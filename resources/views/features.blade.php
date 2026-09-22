@@ -85,7 +85,7 @@
                 <h2 class="font-headline-md text-headline-md text-on-surface">Ready to launch your school?</h2>
                 <p class="mx-auto mt-space-xs max-w-md font-body-md text-body-md text-on-surface-variant">Start on any plan and change later as your school grows &mdash; no lock-in.</p>
                 <div class="mt-space-lg flex flex-wrap justify-center gap-space-md">
-                    <a href="{{ route('get-started'.\App\Support\RootDomains::currentSuffix()) }}" class="flex min-h-[44px] items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
+                    <a href="{{ route('get-started') }}" class="flex min-h-[44px] items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
                         Register your school &rarr;
                     </a>
                 </div>

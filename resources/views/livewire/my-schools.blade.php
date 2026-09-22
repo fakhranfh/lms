@@ -3,7 +3,7 @@
 <div class="space-y-space-lg">
     <div class="flex items-center justify-between">
         <h1 class="font-headline-sm text-headline-sm text-on-surface">My Schools</h1>
-        <a href="{{ route('get-started.school'.\App\Support\RootDomains::currentSuffix()) }}" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
+        <a href="{{ route('get-started.school') }}" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
             Add School
         </a>
     </div>

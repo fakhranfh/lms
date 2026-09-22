@@ -17,6 +17,8 @@ class CoursesIndex extends Component
 
     public ?string $search = null;
 
+    public int $perPage = 12;
+
     public ?string $successMessage = null;
 
     public ?string $errorMessage = null;
@@ -42,6 +44,11 @@ class CoursesIndex extends Component
     }
 
     public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingPerPage(): void
     {
         $this->resetPage();
     }
@@ -106,7 +113,7 @@ class CoursesIndex extends Component
             $filters['enrolled_user_id'] = auth()->id();
         }
 
-        $courses = $courseService->paginate($filters, ['creator', 'sessions'], 10);
+        $courses = $courseService->paginate($filters, ['creator', 'sessions'], $this->perPage);
 
         $courseProgress = $this->isStudent
             ? collect($courses->items())->mapWithKeys(

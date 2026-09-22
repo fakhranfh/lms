@@ -2,8 +2,10 @@
 
 <div
     class="space-y-space-lg"
-    x-data="{ selected: [] }"
-    x-on:courses-selection-cleared.window="selected = []"
+    x-data="{ selected: [], deletingIds: [] }"
+    x-on:courses-selection-cleared.window="selected = []; deletingIds = []"
+    x-on:delete-confirmed.window="deletingIds = [$event.detail.id]"
+    x-on:bulk-delete-confirmed.window="deletingIds = $event.detail.ids"
 >
     @if ($successMessage)
         <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
@@ -57,10 +59,15 @@
         </div>
     @endif
 
-    <!-- Search -->
-    <div class="flex gap-space-md">
-        <x-ui.search-input wire-model="search" placeholder="Search courses..." class="flex-1" />
-    </div>
+    <!-- Search & Pagination -->
+    <x-ui.pagination-links
+        :paginator="$courses"
+        perPageModel="perPage"
+        :perPageOptions="[12, 24, 48, 96]"
+        searchModel="search"
+        searchPlaceholder="Search courses..."
+        :search="$search"
+    />
 
     @can('courses.delete')
         @if (! $isStudent && $courses->isNotEmpty())
@@ -157,73 +164,100 @@
         <!-- Courses Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg">
             @foreach ($courses as $course)
-                <div wire:key="course-{{ $course->id }}" class="bg-surface border border-outline-variant rounded-lg overflow-hidden hover:border-primary/50 transition-all hover:shadow-md group flex flex-col">
-                    <!-- Card Header -->
-                    <div class="p-space-lg border-b border-outline-variant">
-                        <div class="flex items-start justify-between gap-space-md mb-space-md">
-                            @can('courses.delete')
-                                @if (! $isStudent)
-                                    <input
-                                        type="checkbox"
-                                        x-model="selected"
-                                        value="{{ $course->id }}"
-                                        class="mt-1 rounded border-outline shrink-0"
-                                    />
-                                @endif
-                            @endcan
-                            <a href="{{ route('courses.show', $course) }}" class="flex-1">
-                                <h3 class="font-label-lg text-label-lg text-on-surface group-hover:text-primary transition-colors line-clamp-2">
-                                    {{ $course->title }}
-                                </h3>
-                            </a>
-                        </div>
-
-                        @if ($course->description)
-                            <p class="text-body-sm text-on-surface-variant line-clamp-2">
-                                {{ $course->description }}
-                            </p>
-                        @endif
-
-                        @if ($isStudent)
-                            <div class="mt-space-md">
-                                <div class="flex items-center justify-between mb-1">
-                                    <p class="text-body-xs text-on-surface-variant">Progress</p>
-                                    <p class="text-body-xs text-on-surface font-medium">{{ $courseProgress[$course->id] ?? 0 }}%</p>
-                                </div>
-                                <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
-                                    <div class="h-full bg-success transition-all duration-300" style="width: {{ $courseProgress[$course->id] ?? 0 }}%"></div>
-                                </div>
+                <div wire:key="course-{{ $course->id }}" class="relative">
+                    <!-- Card Skeleton (shown while this course is being deleted) -->
+                    <div x-show="deletingIds.includes('{{ $course->id }}')" x-cloak class="bg-surface border border-outline-variant rounded-lg overflow-hidden flex flex-col animate-pulse">
+                        <div class="p-space-lg border-b border-outline-variant space-y-space-md">
+                            <div class="flex items-start justify-between gap-space-md">
+                                <div class="h-4 bg-surface-container rounded w-2/3"></div>
+                                <div class="h-5 bg-surface-container rounded-full w-16 shrink-0"></div>
                             </div>
-                        @endif
+                            <div class="space-y-space-xs">
+                                <div class="h-3 bg-surface-container rounded w-full"></div>
+                                <div class="h-3 bg-surface-container rounded w-4/5"></div>
+                            </div>
+                        </div>
+                        <div class="px-space-lg py-space-md space-y-space-sm flex-1">
+                            <div class="h-3 bg-surface-container rounded w-3/4"></div>
+                            <div class="h-3 bg-surface-container rounded w-2/3"></div>
+                        </div>
+                        <div class="px-space-lg py-space-md bg-surface-container/50 border-t border-outline-variant flex items-center justify-between">
+                            <div class="h-3 bg-surface-container rounded w-20"></div>
+                            <div class="flex gap-space-xs">
+                                <div class="h-8 w-8 bg-surface-container rounded"></div>
+                                <div class="h-8 w-8 bg-surface-container rounded"></div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Card Footer -->
-                    <div class="px-space-lg py-space-md bg-surface-container/50 border-t border-outline-variant flex items-center justify-between">
-                        <div class="flex items-center gap-space-md text-body-sm text-on-surface-variant">
-                            <span class="material-symbols-outlined text-[18px]">calendar_month</span>
-                            {{ $course->sessions->count() }} session{{ $course->sessions->count() !== 1 ? 's' : '' }}
+                    <div x-show="!deletingIds.includes('{{ $course->id }}')" class="bg-surface border border-outline-variant rounded-lg overflow-hidden hover:border-primary/50 transition-all hover:shadow-md group flex flex-col">
+                        <!-- Card Header -->
+                        <div class="p-space-lg border-b border-outline-variant">
+                            <div class="flex items-start justify-between gap-space-md mb-space-md">
+                                @can('courses.delete')
+                                    @if (! $isStudent)
+                                        <input
+                                            type="checkbox"
+                                            x-model="selected"
+                                            value="{{ $course->id }}"
+                                            class="mt-1 rounded border-outline shrink-0"
+                                        />
+                                    @endif
+                                @endcan
+                                <a href="{{ route('courses.show', $course) }}" class="flex-1">
+                                    <h3 class="font-label-lg text-label-lg text-on-surface group-hover:text-primary transition-colors line-clamp-2">
+                                        {{ $course->title }}
+                                    </h3>
+                                </a>
+                            </div>
+
+                            @if ($course->description)
+                                <p class="text-body-sm text-on-surface-variant line-clamp-2">
+                                    {{ $course->description }}
+                                </p>
+                            @endif
+
+                            @if ($isStudent)
+                                <div class="mt-space-md">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <p class="text-body-xs text-on-surface-variant">Progress</p>
+                                        <p class="text-body-xs text-on-surface font-medium">{{ $courseProgress[$course->id] ?? 0 }}%</p>
+                                    </div>
+                                    <div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+                                        <div class="h-full bg-success transition-all duration-300" style="width: {{ $courseProgress[$course->id] ?? 0 }}%"></div>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
 
-                        <div class="flex gap-space-xs">
-                            @can('courses.edit')
-                                <a
-                                    href="{{ route('courses.edit', $course) }}"
-                                    class="p-2 hover:bg-surface rounded transition text-primary"
-                                    title="Edit"
-                                >
-                                    <span class="material-symbols-outlined text-[20px]">edit</span>
-                                </a>
-                            @endcan
-                            @can('courses.delete')
-                                <button
-                                    type="button"
-                                    @click="$dispatch('open-delete-confirm', { id: '{{ $course->id }}', name: @js($course->title), type: 'courses' })"
-                                    class="p-2 hover:bg-surface rounded transition text-error"
-                                    title="Delete"
-                                >
-                                    <span class="material-symbols-outlined text-[20px]">delete</span>
-                                </button>
-                            @endcan
+                        <!-- Card Footer -->
+                        <div class="px-space-lg py-space-md bg-surface-container/50 border-t border-outline-variant flex items-center justify-between">
+                            <div class="flex items-center gap-space-md text-body-sm text-on-surface-variant">
+                                <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                                {{ $course->sessions->count() }} session{{ $course->sessions->count() !== 1 ? 's' : '' }}
+                            </div>
+
+                            <div class="flex gap-space-xs">
+                                @can('courses.edit')
+                                    <a
+                                        href="{{ route('courses.edit', $course) }}"
+                                        class="p-2 hover:bg-surface rounded transition text-primary"
+                                        title="Edit"
+                                    >
+                                        <span class="material-symbols-outlined text-[20px]">edit</span>
+                                    </a>
+                                @endcan
+                                @can('courses.delete')
+                                    <button
+                                        type="button"
+                                        @click="$dispatch('open-delete-confirm', { id: '{{ $course->id }}', name: @js($course->title), type: 'courses' })"
+                                        class="p-2 hover:bg-surface rounded transition text-error"
+                                        title="Delete"
+                                    >
+                                        <span class="material-symbols-outlined text-[20px]">delete</span>
+                                    </button>
+                                @endcan
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -231,7 +265,7 @@
         </div>
 
         <!-- Pagination -->
-        <x-ui.pagination-links :paginator="$courses" />
+        <x-ui.pagination-links :paginator="$courses" perPageModel="perPage" :perPageOptions="[12, 24, 48, 96]" class="mt-space-lg" />
     @endif
     </div>
 </div>

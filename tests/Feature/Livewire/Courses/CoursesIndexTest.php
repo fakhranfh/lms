@@ -199,8 +199,24 @@ class CoursesIndexTest extends TestCase
             ->call('loadCourses');
         $courses = $component->viewData('courses');
 
-        $this->assertEquals(10, $courses->count());
+        $this->assertEquals(12, $courses->count());
         $this->assertTrue($courses->hasPages());
+    }
+
+    public function test_per_page_selector_changes_page_size_and_resets_pagination(): void
+    {
+        $this->teacher->givePermissionTo('courses.view');
+
+        Course::factory()
+            ->for($this->school)
+            ->count(15)
+            ->create();
+
+        Livewire::test(CoursesIndex::class)
+            ->call('loadCourses')
+            ->call('gotoPage', 2)
+            ->set('perPage', 24)
+            ->assertViewHas('courses', fn ($courses) => $courses->currentPage() === 1 && $courses->count() === 15);
     }
 
     public function test_search_resets_pagination(): void

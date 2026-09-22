@@ -6,7 +6,6 @@ use App\Traits\HasUuid;
 use Database\Factories\SchoolFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Schema;
@@ -16,7 +15,7 @@ use Illuminate\Support\Str;
  * @property string $id
  * @property string $slug
  */
-#[Fillable(['name', 'domain', 'tier_id', 'logo_path'])]
+#[Fillable(['name', 'domain', 'logo_path'])]
 class School extends Model
 {
     /** @use HasFactory<SchoolFactory> */
@@ -62,46 +61,6 @@ class School extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'school_user')->withTimestamps();
-    }
-
-    /**
-     * Get the pricing tier for this school.
-     *
-     * @return BelongsTo<PricingTier, $this>
-     */
-    public function tier(): BelongsTo
-    {
-        return $this->belongsTo(PricingTier::class, 'tier_id');
-    }
-
-    /**
-     * Get the school tier subscriptions.
-     *
-     * @return HasMany<SchoolTier, $this>
-     */
-    public function schoolTiers(): HasMany
-    {
-        return $this->hasMany(SchoolTier::class);
-    }
-
-    /**
-     * Get the current tier limit value for a specific limit key.
-     */
-    public function getCurrentTierLimit(string $limitKey): ?int
-    {
-        return $this->tier?->limits()
-            ->where('limit_key', $limitKey)
-            ->value('limit_value');
-    }
-
-    /**
-     * Get the most recent active school tier subscription.
-     */
-    public function getCurrentSchoolTier(): ?SchoolTier
-    {
-        return $this->schoolTiers()
-            ->latest('started_at')
-            ->first();
     }
 
     /**

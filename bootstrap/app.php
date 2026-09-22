@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\CheckFeatureAccess;
 use App\Http\Middleware\EnsureLocalEnvironment;
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\PreservePasswordUpdateErrors;
@@ -34,7 +33,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SecurityHeaders::class);
 
         $middleware->alias([
-            'feature' => CheckFeatureAccess::class,
             'local-only' => EnsureLocalEnvironment::class,
             'must-change-password' => EnsurePasswordIsChanged::class,
             'permission' => PermissionMiddleware::class,

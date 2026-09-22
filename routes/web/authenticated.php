@@ -9,7 +9,6 @@ use App\Http\Controllers\ProctorSubmissionStatusController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RaportExportController;
 use App\Http\Controllers\StudentSelectionController;
-use App\Http\Controllers\TierChangeController;
 use App\Http\Controllers\UserAvailabilityController;
 use App\Http\Controllers\UserLoginLinkController;
 use App\Http\Middleware\EnsurePasswordIsChanged;
@@ -109,10 +108,6 @@ Route::middleware(['auth', 'verified', 'redirect-if-no-school', EnsurePasswordIs
         Route::get('/teachers/photos', TeacherPhotoUpload::class)->middleware('permission:teachers.edit')->name('teachers.photos');
         Route::get('/teachers/{id}/edit', TeacherForm::class)->middleware('permission:teachers.edit')->name('teachers.edit');
     });
-
-    Route::get('/tier-management', [TierChangeController::class, 'show'])->name('tier-management.show');
-    Route::post('/tier-management/change', [TierChangeController::class, 'initiate'])->name('tier-management.change');
-    Route::post('/tier-management/cancel', [TierChangeController::class, 'cancel'])->name('tier-management.cancel');
 
     Route::middleware('require-school')->group(function () {
         Route::get('/courses', CoursesIndex::class)->middleware('permission:courses.view')->name('courses.index');

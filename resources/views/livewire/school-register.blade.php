@@ -49,27 +49,6 @@
                 @enderror
             </div>
 
-            {{-- TODO: the paid-tier checkout flow (PricingTierBreakdownController,
-                 pricing-tiers.breakdown route, and the live cost breakdown
-                 that used to fetch from it) was removed along with
-                 school-payment checkout. Only the free tier can be selected
-                 here for now; see SchoolRegister::save(). --}}
-            <div class="space-y-space-xs">
-                <label class="block font-label-md text-label-md text-on-surface" for="tierId">Plan</label>
-                <select class="w-full h-[44px] px-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none @error('tierId') border-error @enderror" id="tierId" name="tierId" wire:model="tierId" required>
-                    <option value="" disabled>Select a plan</option>
-                    @foreach ($tiers as $tier)
-                        <option value="{{ $tier->id }}">
-                            {{ $tier->name }} &mdash; {{ (float) $tier->price === 0.0 ? 'Free' : 'Rp '.number_format($tier->price, 0, '.', '.').' / '.strtolower($tier->billing_period->label()) }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('tierId')
-                    <p class="text-error text-body-sm font-body-sm mt-space-xs">{{ $message }}</p>
-                @enderror
-                <p class="font-body-sm text-body-sm text-secondary">You can change your plan anytime after registering.</p>
-            </div>
-
             <div class="space-y-space-xs" x-data="{ domainType: @entangle('domainType').defer }">
                 <span class="block font-label-md text-label-md text-on-surface">Domain</span>
                 <div class="grid grid-cols-2 gap-space-sm">

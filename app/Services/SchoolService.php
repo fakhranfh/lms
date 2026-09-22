@@ -6,26 +6,19 @@ use App\Enums\RoleName;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
-use App\Repositories\PricingTier\PricingTierRepositoryInterface;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Repositories\School\SchoolRepositoryInterface;
-use App\Repositories\SchoolTier\SchoolTierRepositoryInterface;
-use App\Repositories\TierChange\TierChangeRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SchoolService
 {
     public function __construct(
         protected SchoolRepositoryInterface $schoolRepository,
-        protected PricingTierRepositoryInterface $pricingTierRepository,
         protected RoleRepositoryInterface $roleRepository,
-        protected SchoolTierRepositoryInterface $schoolTierRepository,
-        protected TierChangeRepositoryInterface $tierChangeRepository,
         protected R2StorageService $r2Storage,
         protected RoleService $roleService,
     ) {}
@@ -82,17 +75,12 @@ class SchoolService
      */
     public function create(array $data): School
     {
-        if (empty($data['tier_id'])) {
-            $data['tier_id'] = $this->pricingTierRepository->get(['slug' => 'basic'])->firstOrFail()->id;
-        }
-
         if (($data['logo'] ?? null) instanceof UploadedFile) {
             $data['logo_path'] = $this->r2Storage->uploadPublicFile($data['logo'], 'school-logos');
         }
         unset($data['logo']);
 
         $school = $this->schoolRepository->create($data);
-        $this->assignDefaultTier($school);
         $this->roleService->createDefaultRolesForSchool($school->id);
 
         return $school;
@@ -125,33 +113,6 @@ class SchoolService
     public function administers(User $user, School $school): bool
     {
         return $this->schoolRepository->administers($school, $user->id);
-    }
-
-    /**
-     * Assign default tier to a school.
-     */
-    public function assignDefaultTier(School $school): void
-    {
-        $basicTier = $school->tier;
-
-        DB::transaction(function () use ($school, $basicTier): void {
-            $schoolTier = $this->schoolTierRepository->create([
-                'school_id' => $school->id,
-                'tier_id' => $basicTier->id,
-                'status' => 'active',
-                'started_at' => now(),
-                'expires_at' => null,
-            ]);
-
-            $this->tierChangeRepository->create([
-                'school_tier_id' => $schoolTier->id,
-                'from_tier_id' => null,
-                'to_tier_id' => $basicTier->id,
-                'change_type' => 'initial',
-                'prorated_amount' => 0,
-                'changed_at' => now(),
-            ]);
-        });
     }
 
     /**

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\MaterialType;
-use App\Repositories\PricingTier\PricingTierRepositoryInterface;
 use App\Repositories\School\SchoolRepositoryInterface;
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
@@ -21,8 +20,8 @@ class R2StorageService
 
     protected string $customDomain;
 
-    // Deprecated: per-school quota now determined by tier
-    protected const GLOBAL_QUOTA_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB (legacy)
+    // Global storage figure used for the storage monitoring dashboard.
+    protected const GLOBAL_QUOTA_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB
 
     protected const MAX_RETRIES = 3;
 
@@ -30,7 +29,6 @@ class R2StorageService
 
     public function __construct(
         protected SchoolRepositoryInterface $schoolRepository,
-        protected PricingTierRepositoryInterface $pricingTierRepository,
     ) {
         $this->accountId = config('services.r2.account_id');
         $this->bucket = config('services.r2.bucket');
@@ -57,9 +55,6 @@ class R2StorageService
      */
     public function upload(UploadedFile $file, string $path, MaterialType $type): string
     {
-        // Enforce global quota before upload
-        $this->enforceQuotaLimit();
-
         // Build S3 key (path/filename)
         $key = $this->buildS3Key($path, $file->getClientOriginalName());
 
@@ -225,9 +220,6 @@ class R2StorageService
         try {
             // Layer 1: Validate extension BEFORE generating URL (server-side validation)
             $this->validateFileExtension($filename, $materialType);
-
-            // Enforce quota
-            $this->enforceQuotaLimit();
 
             // Upload to temp folder first (content validation happens in finalizeR2Upload)
             $key = $this->schoolPrefix()."temp/{$tempSubpath}/".substr(hash('sha256', uniqid()), 0, 8).'-'.$filename;
@@ -483,38 +475,8 @@ class R2StorageService
     }
 
     /**
-     * Check storage quota for a school based on tier
-     *
-     * @return array{used: int, limit: int, remaining: int, percentage: float, limit_gb: int|null}
-     */
-    public function checkSchoolQuota(?string $schoolId = null): array
-    {
-        if ($schoolId) {
-            // Per-school quota based on tier
-            $used = $this->getSchoolStorageUsed($schoolId);
-            $limitBytes = $this->getSchoolStorageQuotaBytes($schoolId);
-            $limitGb = $limitBytes / (1024 * 1024 * 1024);
-        } else {
-            // Legacy global quota
-            $used = $this->getTotalStorageUsed();
-            $limitBytes = self::GLOBAL_QUOTA_BYTES;
-            $limitGb = 10;
-        }
-
-        $remaining = max(0, $limitBytes - $used);
-        $percentage = $limitBytes > 0 ? ((float) $used / $limitBytes) * 100 : 0.0;
-
-        return [
-            'used' => $used,
-            'limit' => $limitBytes,
-            'remaining' => $remaining,
-            'percentage' => $percentage,
-            'limit_gb' => (int) $limitGb,
-        ];
-    }
-
-    /**
-     * Get the legacy global storage quota in bytes.
+     * Get the global storage quota figure in bytes, used for the storage
+     * monitoring dashboard only (uploads are not blocked by it).
      */
     public function getGlobalQuotaBytes(): int
     {
@@ -530,106 +492,6 @@ class R2StorageService
         $bytes /= (1 << (10 * $pow));
 
         return round($bytes, 2).' '.$units[$pow];
-    }
-
-    /**
-     * Enforce quota limit before allowing uploads (throws 413 Payload Too Large)
-     * Supports both school-specific and global quota enforcement
-     */
-    public function enforceQuotaLimit(?string $schoolId = null): void
-    {
-        if ($schoolId) {
-            $quota = $this->checkSchoolQuota($schoolId);
-            if ($quota['remaining'] <= 0) {
-                throw new HttpException(
-                    413,
-                    "Your school's storage quota ({$quota['limit_gb']} GB) is full. "
-                    .'Please contact admin or upgrade your plan to free up space.'
-                );
-            }
-        } else {
-            // Legacy global quota check (kept for backward compatibility)
-            $globalUsed = $this->getTotalStorageUsed();
-            if ($globalUsed >= self::GLOBAL_QUOTA_BYTES) {
-                throw new HttpException(
-                    413,
-                    'System storage quota full (10 GB). Contact admin to free up space.'
-                );
-            }
-        }
-    }
-
-    /**
-     * Get school's tier-based storage quota in bytes
-     */
-    public function getSchoolStorageQuotaBytes(?string $schoolId = null): int
-    {
-        if (! $schoolId) {
-            return self::GLOBAL_QUOTA_BYTES;
-        }
-
-        try {
-            $school = $this->schoolRepository->find($schoolId);
-            if (! $school || ! $school->tier) {
-                // Default to Basic tier (1 GB) if no tier found
-                return 1 * 1024 * 1024 * 1024;
-            }
-
-            // Get material_storage_gb limit from tier
-            $limit = $this->pricingTierRepository->findLimit($school->tier->id, 'material_storage_gb');
-
-            if (! $limit) {
-                // Default to Basic tier (1 GB)
-                return 1 * 1024 * 1024 * 1024;
-            }
-
-            $gb = $limit->limit_value ?? 1;
-
-            return $gb * 1024 * 1024 * 1024;
-        } catch (\Exception $e) {
-            \Log::warning("Failed to get school storage quota for {$schoolId}: {$e->getMessage()}");
-
-            return 1 * 1024 * 1024 * 1024; // Default to 1 GB on error
-        }
-    }
-
-    /**
-     * Get school's storage usage (used bytes only, not limit)
-     */
-    public function getSchoolStorageUsed(?string $schoolId = null): int
-    {
-        if (! $schoolId) {
-            return $this->getTotalStorageUsed();
-        }
-
-        try {
-            try {
-                $school = $this->schoolRepository->find($schoolId);
-            } catch (\Exception $e) {
-                $school = null;
-            }
-            $prefix = ($school && $school->slug) ? "schools/{$school->slug}/" : 'lessons/';
-
-            $total = 0;
-            $paginator = $this->s3Client->getPaginator('ListObjectsV2', [
-                'Bucket' => $this->bucket,
-                'Prefix' => $prefix,
-            ]);
-
-            foreach ($paginator as $result) {
-                if (isset($result['Contents'])) {
-                    foreach ($result['Contents'] as $object) {
-                        $total += $object['Size'] ?? 0;
-                    }
-                }
-            }
-
-            return $total;
-        } catch (AwsException $e) {
-            \Log::error("Failed to get school storage used for {$schoolId}: {$e->getMessage()}");
-
-            return 0;
-        }
     }
 
     /**

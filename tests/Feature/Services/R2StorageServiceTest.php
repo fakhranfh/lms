@@ -23,28 +23,10 @@ describe('R2StorageService', function () {
     test('methods exist and are callable', function () {
         $service = app(R2StorageService::class);
 
-        $methods = ['upload', 'delete', 'getSignedUrl', 'checkSchoolQuota', 'enforceQuotaLimit', 'getTotalStorageUsed'];
+        $methods = ['upload', 'delete', 'getSignedUrl', 'getTotalStorageUsed'];
         foreach ($methods as $method) {
             expect(method_exists($service, $method))->toBeTrue();
         }
-    });
-
-    describe('public API', function () {
-        test('checkSchoolQuota returns expected structure', function () {
-            // Create a mock or skip R2 if not configured
-            if (! config('services.r2.access_key_id')) {
-                $this->markTestSkipped('R2 credentials not configured');
-            }
-
-            $service = app(R2StorageService::class);
-            $quota = $service->checkSchoolQuota('test-school');
-
-            expect($quota)->toHaveKeys(['used', 'limit', 'remaining', 'percentage', 'limit_gb'])
-                ->and($quota['used'])->toBeInt()
-                ->and($quota['remaining'])->toBeInt()
-                ->and($quota['percentage'])->toBeFloat()
-                ->and($quota['limit_gb'])->toBeInt();
-        });
     });
 
     describe('validateFileContent', function () {

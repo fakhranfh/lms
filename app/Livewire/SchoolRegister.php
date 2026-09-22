@@ -2,12 +2,9 @@
 
 namespace App\Livewire;
 
-use App\Models\PricingTier;
 use App\Models\School;
-use App\Services\PricingTierService;
 use App\Services\SchoolService;
 use Illuminate\Support\Str;
-use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -25,19 +22,10 @@ class SchoolRegister extends Component
 
     public $logo = null;
 
-    #[Url(as: 'tier')]
-    public string $tierId = '';
-
-    public function mount(PricingTierService $pricingTierService): void
+    public function mount(): void
     {
         if (! auth()->check()) {
             $this->redirectRoute('get-started');
-        }
-
-        $validTierIds = $pricingTierService->get(['is_active' => true])->pluck('id');
-
-        if (! $validTierIds->contains($this->tierId)) {
-            $this->tierId = (string) ($pricingTierService->get(['slug' => 'basic'])->first()->id ?? '');
         }
     }
 
@@ -66,7 +54,6 @@ class SchoolRegister extends Component
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'logo' => ['nullable', 'image', 'max:5120', 'mimes:jpg,jpeg,png,gif,webp'],
-            'tierId' => ['bail', 'required', 'integer', 'exists:pricing_tiers,id'],
         ];
 
         if ($this->domainType === 'subdomain') {
@@ -105,37 +92,25 @@ class SchoolRegister extends Component
     {
         $this->validate();
 
-        $tier = PricingTier::findOrFail($this->tierId);
         $domain = $this->domainType === 'subdomain'
             ? $this->computeSubdomain()
             : $this->customDomain;
 
-        $data = ['name' => $this->name, 'domain' => $domain, 'tier_id' => $this->tierId];
+        $data = ['name' => $this->name, 'domain' => $domain];
 
         if ($this->logo) {
             $data['logo'] = $this->logo;
         }
 
-        if ((float) $tier->price !== 0.0) {
-            // Paid-tier registration is unavailable: the payment gateway
-            // subsystem was removed and no replacement payment flow exists
-            // yet, so only the free tier can be selected at registration.
-            $this->addError('tierId', 'Paid tier registration is currently unavailable. Please select the free tier.');
-
-            return;
-        }
-
         $school = $schoolService->create($data);
         $schoolService->attachAdmin($school, auth()->user());
 
-        $this->redirectRoute('manage.schools.index');
+        $this->redirectRoute('dashboard');
     }
 
-    public function render(PricingTierService $pricingTierService)
+    public function render()
     {
-        return view('livewire.school-register', [
-            'tiers' => $pricingTierService->get(['is_active' => true]),
-        ])
+        return view('livewire.school-register')
             ->extends('master', ['body_class' => 'bg-background text-on-background min-h-screen flex flex-col font-body-md'])
             ->section('content');
     }

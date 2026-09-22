@@ -38,14 +38,9 @@
                             'description' => 'Automatically grade student submissions with AI, complete with prompt-injection safeguards, queue monitoring, and event logging for full auditability.',
                         ],
                         [
-                            'icon' => '&#128179;',
-                            'title' => 'Per-School Billing',
-                            'description' => 'Flexible pricing tiers with Midtrans and Xendit payment gateway integration, feature gating, and automatic tier assignment per school.',
-                        ],
-                        [
                             'icon' => '&#128190;',
                             'title' => 'Cloud Material Storage',
-                            'description' => 'Upload and version lesson materials to R2 storage with per-tier quotas, from 1GB on the Basic plan up to 100GB on Max.',
+                            'description' => 'Upload and version lesson materials to R2 storage, with unrestricted capacity for every school.',
                         ],
                         [
                             'icon' => '&#128272;',

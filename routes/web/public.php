@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\TryDemoController;
-use App\Livewire\MySchools;
 use App\Livewire\SchoolAdminRegister;
 use App\Livewire\SchoolRegister;
 use Illuminate\Support\Facades\Route;
@@ -14,7 +13,6 @@ Route::view('/features', 'features')->name('features');
 
 Route::get('/get-started', SchoolAdminRegister::class)->name('get-started');
 Route::get('/get-started/school', SchoolRegister::class)->name('get-started.school');
-Route::get('/manage/schools', MySchools::class)->name('manage.schools.index');
 
 Route::get('/try-demo', [TryDemoController::class, 'index'])->name('try-demo');
 Route::get('/try-demo/{role}', [TryDemoController::class, 'login'])

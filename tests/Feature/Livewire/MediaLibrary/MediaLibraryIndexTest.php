@@ -122,8 +122,6 @@ test('media can be deleted via the global delete-confirmed event', function () {
 
     $this->mock(R2StorageService::class, function ($mock) {
         $mock->shouldReceive('delete')->once()->andReturn(true);
-        $mock->shouldReceive('checkSchoolQuota')
-            ->andReturn(['used' => 0, 'limit' => 1073741824, 'remaining' => 1073741824, 'percentage' => 0.0, 'limit_gb' => 1]);
         $mock->shouldReceive('getPublicUrl')->andReturn('https://example.com/file');
     });
 
@@ -167,8 +165,6 @@ test('bulk delete removes all given media ids belonging to the school', function
 
     $this->mock(R2StorageService::class, function ($mock) {
         $mock->shouldReceive('delete')->times(3)->andReturn(true);
-        $mock->shouldReceive('checkSchoolQuota')
-            ->andReturn(['used' => 0, 'limit' => 1073741824, 'remaining' => 1073741824, 'percentage' => 0.0, 'limit_gb' => 1]);
         $mock->shouldReceive('getPublicUrl')->andReturn('https://example.com/file');
     });
 
@@ -190,8 +186,6 @@ test('bulk delete only affects the current school even if other ids are passed',
 
     $this->mock(R2StorageService::class, function ($mock) {
         $mock->shouldReceive('delete')->once()->andReturn(true);
-        $mock->shouldReceive('checkSchoolQuota')
-            ->andReturn(['used' => 0, 'limit' => 1073741824, 'remaining' => 1073741824, 'percentage' => 0.0, 'limit_gb' => 1]);
         $mock->shouldReceive('getPublicUrl')->andReturn('https://example.com/file');
     });
 

@@ -29,8 +29,6 @@ class ExamReferenceFileService
     {
         $this->assertAllowedMaterialType($materialType);
 
-        $this->r2Service->enforceQuotaLimit();
-
         return $this->r2Service->generatePresignedPutUrlForPath("exam-reference/{$assessmentId}/{$userId}", $filename, $materialType);
     }
 

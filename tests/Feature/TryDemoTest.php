@@ -2,7 +2,6 @@
 
 use App\Models\DemoLmsAccess;
 use App\Models\School;
-use Database\Seeders\PricingTierSeeder;
 
 test('the try demo page is reachable on the root domain', function () {
     $rootDomain = config('app.domain');
@@ -16,7 +15,6 @@ test('the try demo page is reachable on the root domain', function () {
 });
 
 test('trying the demo as teacher generates access and logs the user in', function () {
-    $this->seed(PricingTierSeeder::class);
 
     $rootDomain = config('app.domain');
     $demoDomain = "school.{$rootDomain}";
@@ -31,7 +29,6 @@ test('trying the demo as teacher generates access and logs the user in', functio
 });
 
 test('trying the demo as school admin generates access and logs the user in', function () {
-    $this->seed(PricingTierSeeder::class);
 
     $rootDomain = config('app.domain');
     $demoDomain = "school.{$rootDomain}";
@@ -46,7 +43,6 @@ test('trying the demo as school admin generates access and logs the user in', fu
 });
 
 test('trying the demo as student generates access and logs the user in', function () {
-    $this->seed(PricingTierSeeder::class);
 
     $rootDomain = config('app.domain');
     $demoDomain = "school.{$rootDomain}";
@@ -61,7 +57,6 @@ test('trying the demo as student generates access and logs the user in', functio
 });
 
 test('trying the demo reuses an existing valid access token instead of generating a new one', function () {
-    $this->seed(PricingTierSeeder::class);
 
     $rootDomain = config('app.domain');
     $demoDomain = "school.{$rootDomain}";

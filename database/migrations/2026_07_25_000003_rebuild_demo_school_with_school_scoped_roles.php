@@ -34,17 +34,10 @@ return new class extends Migration
             $school->delete();
         }
 
-        $tier = DB::table('pricing_tiers')->where('slug', 'max')->first();
-
-        if (! $tier) {
-            return;
-        }
-
         $school = School::create([
             'id' => (string) Str::uuid(),
             'name' => 'School Demo',
             'domain' => $rootDomain,
-            'tier_id' => $tier->id,
         ]);
 
         $schoolAdminRole = $this->createSchoolRole($school->id, RoleName::SchoolAdmin);

@@ -17,14 +17,12 @@ class MediaLibraryService
     /**
      * Generate presigned PUT URL for direct R2 upload (client-side flow), scoped
      * to the school's media library rather than a lesson.
-     * Validates file extension BEFORE generating URL and enforces school quota.
+     * Validates file extension BEFORE generating URL.
      *
      * @return array{url: string, key: string}
      */
     public function generatePresignedUploadUrl(string $schoolId, string $filename, string $materialType): array
     {
-        $this->r2Service->enforceQuotaLimit($schoolId);
-
         return $this->r2Service->generatePresignedPutUrlForPath('media', $filename, $materialType);
     }
 

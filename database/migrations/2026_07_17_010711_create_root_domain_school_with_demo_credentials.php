@@ -17,18 +17,12 @@ return new class extends Migration
         $parsedUrl = parse_url($appUrl);
         $rootDomain = $parsedUrl['host'] ?? 'localhost';
 
-        $basicTier = \DB::table('pricing_tiers')->where('slug', 'max')->first();
-        if (! $basicTier) {
-            return;
-        }
-
         // Create or get root domain school
         $school = School::firstOrCreate(
             ['domain' => $rootDomain],
             [
                 'id' => Str::uuid(),
                 'name' => 'School Demo',
-                'tier_id' => $basicTier->id,
             ]
         );
 

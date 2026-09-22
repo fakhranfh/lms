@@ -50,8 +50,8 @@
                         <dd class="font-label-sm text-label-sm text-on-surface-variant">Assisted grading</dd>
                     </div>
                     <div>
-                        <dt class="font-headline-sm text-headline-sm text-on-surface">4 tiers</dt>
-                        <dd class="font-label-sm text-label-sm text-on-surface-variant">Flexible pricing</dd>
+                        <dt class="font-headline-sm text-headline-sm text-on-surface">Unlimited</dt>
+                        <dd class="font-label-sm text-label-sm text-on-surface-variant">Storage &amp; features</dd>
                     </div>
                 </dl>
             </div>

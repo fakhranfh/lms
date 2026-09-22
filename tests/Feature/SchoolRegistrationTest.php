@@ -2,14 +2,11 @@
 
 use App\Enums\RoleName;
 use App\Livewire\SchoolRegister;
-use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\User;
-use Database\Seeders\PricingTierSeeder;
 use Livewire\Livewire;
 
 test('a school can register with a valid name and subdomain', function () {
-    $this->seed(PricingTierSeeder::class);
     $this->actingAs(User::factory()->create(['school_id' => null]));
 
     $rootDomain = config('app.domain');
@@ -26,7 +23,6 @@ test('a school can register with a valid name and subdomain', function () {
 });
 
 test('a school can register with a custom domain', function () {
-    $this->seed(PricingTierSeeder::class);
     $this->actingAs(User::factory()->create(['school_id' => null]));
 
     Livewire::test(SchoolRegister::class)
@@ -40,7 +36,6 @@ test('a school can register with a custom domain', function () {
 });
 
 test('registering a school attaches the current user as school admin', function () {
-    $this->seed(PricingTierSeeder::class);
     $user = User::factory()->create(['school_id' => null]);
     $this->actingAs($user);
 
@@ -57,37 +52,6 @@ test('registering a school attaches the current user as school admin', function 
 
     expect($school->admins->contains($user->id))->toBeTrue()
         ->and($user->hasRole(RoleName::SchoolAdmin))->toBeTrue();
-});
-
-test('a school registers with the basic tier by default', function () {
-    $this->seed(PricingTierSeeder::class);
-    $this->actingAs(User::factory()->create(['school_id' => null]));
-
-    $schoolDomain = 'myschool.'.config('app.domain');
-
-    Livewire::test(SchoolRegister::class)
-        ->set('name', 'My School')
-        ->set('domainType', 'subdomain')
-        ->set('subdomain', 'myschool')
-        ->call('save')
-        ->assertHasNoErrors();
-
-    $school = School::query()->where('domain', $schoolDomain)->firstOrFail();
-
-    expect($school->tier->slug)->toBe('basic');
-});
-
-test('registration is rejected for an unknown tier', function () {
-    $this->seed(PricingTierSeeder::class);
-    $this->actingAs(User::factory()->create(['school_id' => null]));
-
-    Livewire::test(SchoolRegister::class)
-        ->set('name', 'My School')
-        ->set('domainType', 'subdomain')
-        ->set('subdomain', 'myschool')
-        ->set('tierId', 'not-a-real-tier-id')
-        ->call('save')
-        ->assertHasErrors('tierId');
 });
 
 test('guests are redirected to the get-started account step', function () {
@@ -155,44 +119,18 @@ test('registration is rejected for an invalid subdomain label', function (string
     'has slash' => 'my/school',
 ]);
 
-test('registering with a free tier creates the school immediately and redirects to dashboard', function () {
-    $this->seed(PricingTierSeeder::class);
+test('registering a school creates it immediately and redirects to the dashboard', function () {
     $user = User::factory()->create(['school_id' => null]);
     $this->actingAs($user);
 
-    $basicTier = PricingTier::query()->where('slug', 'basic')->firstOrFail();
     $schoolDomain = 'myschool.'.config('app.domain');
 
-    Livewire::withQueryParams(['tier' => $basicTier->id])
-        ->test(SchoolRegister::class)
+    Livewire::test(SchoolRegister::class)
         ->set('name', 'My School')
         ->set('domainType', 'subdomain')
         ->set('subdomain', 'myschool')
         ->call('save')
-        ->assertRedirect(route('manage.schools.index'));
+        ->assertRedirect(route('dashboard'));
 
     expect(School::query()->where('domain', $schoolDomain)->exists())->toBeTrue();
-});
-
-test('registering with a paid tier is refused now that the payment gateway subsystem is removed', function () {
-    // The payment gateway subsystem (SchoolPaymentController and the
-    // school.payment.* routes, plus all gateway services/models) was
-    // removed entirely. SchoolRegister::save() no longer creates a pending
-    // registration transaction for paid tiers.
-    $this->seed(PricingTierSeeder::class);
-    $user = User::factory()->create(['school_id' => null]);
-    $this->actingAs($user);
-
-    $plusTier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
-    $schoolDomain = 'myschool.'.config('app.domain');
-
-    Livewire::withQueryParams(['tier' => $plusTier->id])
-        ->test(SchoolRegister::class)
-        ->set('name', 'My School')
-        ->set('domainType', 'subdomain')
-        ->set('subdomain', 'myschool')
-        ->call('save')
-        ->assertHasErrors('tierId');
-
-    expect(School::query()->where('domain', $schoolDomain)->exists())->toBeFalse();
 });

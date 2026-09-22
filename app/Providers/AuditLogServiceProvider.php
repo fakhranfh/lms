@@ -3,10 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Course;
-use App\Models\PricingTier;
 use App\Models\Role;
-use App\Models\SchoolTier;
-use App\Models\TierChange;
 use App\Models\User;
 use App\Observers\AuditableObserver;
 use Illuminate\Support\ServiceProvider;
@@ -22,9 +19,6 @@ class AuditLogServiceProvider extends ServiceProvider
         Course::class,
         Role::class,
         User::class,
-        PricingTier::class,
-        SchoolTier::class,
-        TierChange::class,
     ];
 
     /**

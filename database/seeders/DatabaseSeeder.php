@@ -11,9 +11,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seed pricing tiers first (required for schools)
-        $this->call(PricingTierSeeder::class);
-
         // Root domain school is created via migration (2026_07_17_010711)
 
         // Seed default roles for schools (permissions are seeded via migration)

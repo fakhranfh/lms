@@ -20,10 +20,6 @@ class SchoolRepository implements SchoolRepositoryInterface
                 ->orWhereRaw('domain ILIKE ?', ["%{$filters['search']}%"]);
         }
 
-        if (isset($filters['tier_id']) && $filters['tier_id']) {
-            $query->where('tier_id', $filters['tier_id']);
-        }
-
         if (isset($filters['sort']) && isset($filters['direction'])) {
             $query->orderBy($filters['sort'], $filters['direction']);
         }

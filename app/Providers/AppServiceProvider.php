@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Enums\RoleName;
-use App\Enums\TierFeature;
 use App\Http\Responses\CustomAuthenticatedSessionResponse;
 use App\Http\Responses\CustomVerifyEmailViewResponse;
 use App\Listeners\UpdateUserTimezoneOnLogin;
@@ -68,8 +67,6 @@ use App\Repositories\Period\PeriodRepository;
 use App\Repositories\Period\PeriodRepositoryInterface;
 use App\Repositories\Permission\PermissionRepository;
 use App\Repositories\Permission\PermissionRepositoryInterface;
-use App\Repositories\PricingTier\PricingTierRepository;
-use App\Repositories\PricingTier\PricingTierRepositoryInterface;
 use App\Repositories\ProctorEvent\ProctorEventRepository;
 use App\Repositories\ProctorEvent\ProctorEventRepositoryInterface;
 use App\Repositories\ProctorSession\ProctorSessionRepository;
@@ -85,8 +82,6 @@ use App\Repositories\Role\RoleRepository;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Repositories\School\SchoolRepository;
 use App\Repositories\School\SchoolRepositoryInterface;
-use App\Repositories\SchoolTier\SchoolTierRepository;
-use App\Repositories\SchoolTier\SchoolTierRepositoryInterface;
 use App\Repositories\Session\SessionRepository;
 use App\Repositories\Session\SessionRepositoryInterface;
 use App\Repositories\SessionMaterialCompletion\SessionMaterialCompletionRepository;
@@ -113,8 +108,6 @@ use App\Repositories\SyllabusRubricKeyIndicator\SyllabusRubricKeyIndicatorReposi
 use App\Repositories\SyllabusRubricKeyIndicator\SyllabusRubricKeyIndicatorRepositoryInterface;
 use App\Repositories\SyllabusRubricProficiencyLevel\SyllabusRubricProficiencyLevelRepository;
 use App\Repositories\SyllabusRubricProficiencyLevel\SyllabusRubricProficiencyLevelRepositoryInterface;
-use App\Repositories\TierChange\TierChangeRepository;
-use App\Repositories\TierChange\TierChangeRepositoryInterface;
 use App\Repositories\User\UserRepository;
 use App\Repositories\User\UserRepositoryInterface;
 use App\Repositories\UserLoginLink\UserLoginLinkRepository;
@@ -134,7 +127,6 @@ use App\Services\CourseAttendanceSettingService;
 use App\Services\CoursePersonService;
 use App\Services\CourseService;
 use App\Services\CredentialEncryption;
-use App\Services\FeatureGateService;
 use App\Services\FinalExamService;
 use App\Services\ForumCommentLikeService;
 use App\Services\ForumCommentService;
@@ -147,7 +139,6 @@ use App\Services\GradingQueueHealthService;
 use App\Services\GroupMemberService;
 use App\Services\GroupService;
 use App\Services\PeriodService;
-use App\Services\PricingTierService;
 use App\Services\ProctorEventService;
 use App\Services\ProctorExamAnswersService;
 use App\Services\ProctorSessionService;
@@ -167,7 +158,6 @@ use App\Services\SyllabusRubricCellService;
 use App\Services\SyllabusRubricKeyIndicatorService;
 use App\Services\SyllabusRubricProficiencyLevelService;
 use App\Services\SyllabusService;
-use App\Services\TierChangeService;
 use App\Services\VideoConferenceParticipationService;
 use App\Services\VideoConferenceService;
 use Illuminate\Auth\Events\Login;
@@ -197,14 +187,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(RoleRepositoryInterface::class, RoleRepository::class);
         $this->app->bind(PermissionRepositoryInterface::class, PermissionRepository::class);
-        $this->app->bind(PricingTierRepositoryInterface::class, PricingTierRepository::class);
         $this->app->bind(SchoolRepositoryInterface::class, SchoolRepository::class);
         $this->app->bind(CourseRepositoryInterface::class, CourseRepository::class);
         $this->app->bind(MediaLibraryRepositoryInterface::class, MediaLibraryRepository::class);
         $this->app->bind(DemoLmsAccessRepositoryInterface::class, DemoLmsAccessRepository::class);
         $this->app->bind(UserLoginLinkRepositoryInterface::class, UserLoginLinkRepository::class);
-        $this->app->bind(SchoolTierRepositoryInterface::class, SchoolTierRepository::class);
-        $this->app->bind(TierChangeRepositoryInterface::class, TierChangeRepository::class);
         $this->app->bind(StorageUsageLogRepositoryInterface::class, StorageUsageLogRepository::class);
 
         $this->app->bind(SessionRepositoryInterface::class, SessionRepository::class);
@@ -252,10 +239,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CacheRepositoryInterface::class, RedisRepository::class);
 
         $this->app->singleton(CredentialEncryption::class);
-        $this->app->singleton(FeatureGateService::class);
-        $this->app->singleton(PricingTierService::class);
         $this->app->singleton(SchoolService::class);
-        $this->app->singleton(TierChangeService::class);
         $this->app->singleton(CourseService::class);
         $this->app->singleton(R2StorageService::class);
         $this->app->singleton(SessionService::class);
@@ -315,19 +299,6 @@ class AppServiceProvider extends ServiceProvider
 
         Livewire::useScriptTagAttributes(['defer' => true]);
 
-        $this->registerFeatureGates();
-
         Event::listen(Login::class, UpdateUserTimezoneOnLogin::class);
-    }
-
-    private function registerFeatureGates(): void
-    {
-        $featureGate = $this->app->make(FeatureGateService::class);
-
-        foreach (TierFeature::cases() as $feature) {
-            Gate::define("use-{$feature->value}", function (User $user) use ($featureGate, $feature) {
-                return $featureGate->can($user, $feature);
-            });
-        }
     }
 }

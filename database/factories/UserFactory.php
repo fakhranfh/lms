@@ -2,8 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\BillingPeriod;
-use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -51,16 +49,6 @@ class UserFactory extends Factory
                     'name' => $name,
                     'slug' => Str::slug($name).'-'.Str::random(6),
                     'domain' => fake()->unique()->domainName(),
-                    'tier_id' => PricingTier::where('slug', 'basic')->first()?->id
-                        ?? PricingTier::create([
-                            'name' => 'Basic',
-                            'slug' => 'basic',
-                            'description' => 'Free tier for getting started',
-                            'price' => 0,
-                            'currency' => 'IDR',
-                            'billing_period' => BillingPeriod::Monthly->value,
-                            'is_active' => true,
-                        ])->id,
                 ]);
 
                 $user->memberSchools()->attach($school);

@@ -69,12 +69,4 @@ return [
         'requires_permission' => 'permissions.view',
         'requires_school' => true,
     ],
-    [
-        'label' => 'My Schools',
-        'route' => 'manage.schools.index',
-        'icon' => 'apartment',
-        'active_pattern' => 'manage.schools.index',
-        'requires_role' => RoleName::SchoolAdmin->value,
-        'requires_no_school' => true,
-    ],
 ];

@@ -105,4 +105,9 @@ class CourseRepository implements CourseRepositoryInterface
     {
         return Course::destroy($id);
     }
+
+    public function bulkDelete(array $ids): int
+    {
+        return Course::destroy($ids);
+    }
 }

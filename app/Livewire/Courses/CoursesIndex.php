@@ -63,6 +63,29 @@ class CoursesIndex extends Component
         $courseService->delete($id);
         $this->successMessage = __('Course deleted successfully.');
         $this->resetPage();
+        $this->dispatch('courses-selection-cleared');
+    }
+
+    /**
+     * @param  array<int, string>  $ids
+     */
+    #[On('bulk-delete-confirmed')]
+    public function bulkDestroy(array $ids, CourseService $courseService): void
+    {
+        abort_unless(auth()->user()->can('courses.delete'), 403);
+
+        $this->successMessage = null;
+        $this->errorMessage = null;
+
+        if (empty($ids)) {
+            return;
+        }
+
+        $count = $courseService->bulkDelete($ids);
+
+        $this->successMessage = trans_choice('{1} :count course deleted successfully.|[2,*] :count courses deleted successfully.', $count, ['count' => $count]);
+        $this->resetPage();
+        $this->dispatch('courses-selection-cleared');
     }
 
     public function render(CurrentSchool $currentSchool, CourseService $courseService, SessionMaterialCompletionService $completionService)

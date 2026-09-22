@@ -50,4 +50,11 @@ interface CourseRepositoryInterface
      * Delete a course.
      */
     public function delete(string $id): int;
+
+    /**
+     * Delete multiple courses.
+     *
+     * @param  array<int, string>  $ids
+     */
+    public function bulkDelete(array $ids): int;
 }

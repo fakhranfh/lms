@@ -23,8 +23,8 @@
     </div>
 
     <div
-        x-data="{ open: false, itemId: null, itemName: null, itemType: null, confirmText: '' }"
-        x-on:open-delete-confirm.window="open = true; itemId = $event.detail.id; itemName = $event.detail.name ?? null; itemType = $event.detail.type ?? null; confirmText = ''"
+        x-data="{ open: false, itemId: null, itemIds: [], itemName: null, itemType: null }"
+        x-on:open-delete-confirm.window="open = true; itemId = $event.detail.id ?? null; itemIds = $event.detail.ids ?? []; itemName = $event.detail.name ?? null; itemType = $event.detail.type ?? null"
         x-show="open"
         x-cloak
         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-gutter"
@@ -37,7 +37,12 @@
                     Are you sure you want to reset all gradebook scores for this course? This action cannot be undone.
                 </p>
             </template>
-            <template x-if="itemType !== 'gradebook-scores'">
+            <template x-if="itemType === 'courses-bulk'">
+                <p class="font-body-md text-body-md text-secondary">
+                    Are you sure you want to delete <span class="font-medium" x-text="itemIds.length"></span> selected course<span x-show="itemIds.length !== 1">s</span>? This will also delete all of their sessions. This action cannot be undone.
+                </p>
+            </template>
+            <template x-if="itemType !== 'gradebook-scores' && itemType !== 'courses-bulk'">
                 <p class="font-body-md text-body-md text-secondary">
                     Are you sure you want to delete
                     <template x-if="itemName"><span>"<span class="font-medium" x-text="itemName"></span>"</span></template>
@@ -48,25 +53,12 @@
             <p x-show="itemType === 'courses'" class="font-body-sm text-body-sm text-error">
                 This will also delete all of its sessions.
             </p>
-            <div x-show="itemName">
-                <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
-                    Type <span class="font-medium" x-text="itemName"></span> to confirm
-                </label>
-                <input
-                    type="text"
-                    x-model="confirmText"
-                    autocomplete="off"
-                    class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
-                />
-            </div>
             <div class="flex items-center justify-end gap-space-md">
                 <button type="button" @click="open = false" class="px-space-lg py-space-sm font-label-md text-label-md text-secondary hover:underline">Cancel</button>
                 <button
                     type="button"
-                    :disabled="itemName && confirmText !== itemName"
-                    :class="itemName && confirmText !== itemName ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'"
-                    @click="Livewire.dispatch('delete-confirmed', { id: itemId }); open = false"
-                    class="px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md transition-opacity"
+                    @click="itemType === 'courses-bulk' ? Livewire.dispatch('bulk-delete-confirmed', { ids: itemIds }) : Livewire.dispatch('delete-confirmed', { id: itemId }); open = false"
+                    class="px-space-lg py-space-sm bg-error text-on-error rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity"
                     x-text="itemType === 'gradebook-scores' ? 'Reset' : 'Delete'"
                 >
                 </button>

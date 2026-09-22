@@ -154,4 +154,14 @@ class CourseService
     {
         return $this->courseRepository->delete($id);
     }
+
+    /**
+     * Delete multiple courses.
+     *
+     * @param  array<int, string>  $ids
+     */
+    public function bulkDelete(array $ids): int
+    {
+        return $this->courseRepository->bulkDelete($ids);
+    }
 }

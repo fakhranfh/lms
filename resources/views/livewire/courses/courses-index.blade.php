@@ -1,6 +1,10 @@
 @section('title', 'Courses')
 
-<div class="space-y-space-lg">
+<div
+    class="space-y-space-lg"
+    x-data="{ selected: [] }"
+    x-on:courses-selection-cleared.window="selected = []"
+>
     @if ($successMessage)
         <div class="px-gutter py-space-md bg-success/10 border border-success/20 rounded-lg flex items-center gap-space-md">
             <span class="material-symbols-outlined text-success text-[20px]" data-weight="fill">check_circle</span>
@@ -57,6 +61,31 @@
     <div class="flex gap-space-md">
         <x-ui.search-input wire-model="search" placeholder="Search courses..." class="flex-1" />
     </div>
+
+    @can('courses.delete')
+        @if (! $isStudent && $courses->isNotEmpty())
+            <div class="flex items-center justify-between px-gutter py-space-sm bg-surface border border-outline-variant rounded-lg">
+                <label class="flex items-center gap-space-sm text-body-sm text-on-surface-variant">
+                    <input
+                        type="checkbox"
+                        :checked="selected.length > 0 && selected.length === {{ $courses->count() }}"
+                        @change="selected = $event.target.checked ? @js($courses->pluck('id')) : []"
+                        class="rounded border-outline"
+                    />
+                    Select all on this page
+                </label>
+                <button
+                    type="button"
+                    x-show="selected.length > 0"
+                    @click="$dispatch('open-delete-confirm', { ids: selected, type: 'courses-bulk' })"
+                    class="px-space-md py-space-xs bg-error text-on-error rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity inline-flex items-center gap-space-xs"
+                >
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                    Delete Selected (<span x-text="selected.length"></span>)
+                </button>
+            </div>
+        @endif
+    @endcan
 
     <!-- Skeleton Loading (shown while search is in flight) -->
     <div
@@ -132,6 +161,16 @@
                     <!-- Card Header -->
                     <div class="p-space-lg border-b border-outline-variant">
                         <div class="flex items-start justify-between gap-space-md mb-space-md">
+                            @can('courses.delete')
+                                @if (! $isStudent)
+                                    <input
+                                        type="checkbox"
+                                        x-model="selected"
+                                        value="{{ $course->id }}"
+                                        class="mt-1 rounded border-outline shrink-0"
+                                    />
+                                @endif
+                            @endcan
                             <a href="{{ route('courses.show', $course) }}" class="flex-1">
                                 <h3 class="font-label-lg text-label-lg text-on-surface group-hover:text-primary transition-colors line-clamp-2">
                                     {{ $course->title }}
@@ -192,14 +231,7 @@
         </div>
 
         <!-- Pagination -->
-        @if ($courses->hasPages())
-            <div class="flex items-center justify-between">
-                <p class="text-body-sm text-on-surface-variant">
-                    Showing {{ $courses->firstItem() }} to {{ $courses->lastItem() }} of {{ $courses->total() }} courses
-                </p>
-                {{ $courses->links() }}
-            </div>
-        @endif
+        <x-ui.pagination-links :paginator="$courses" />
     @endif
     </div>
 </div>

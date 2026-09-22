@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Models\Course;
-use App\Models\PaymentTransaction;
 use App\Models\PricingTier;
 use App\Models\Role;
 use App\Models\SchoolTier;
@@ -26,7 +25,6 @@ class AuditLogServiceProvider extends ServiceProvider
         PricingTier::class,
         SchoolTier::class,
         TierChange::class,
-        PaymentTransaction::class,
     ];
 
     /**

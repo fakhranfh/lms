@@ -2,15 +2,10 @@
 
 namespace App\Services;
 
-use App\Enums\AdminFeeType;
-use App\Enums\PaymentStatus;
 use App\Enums\RoleName;
-use App\Models\PaymentTransaction;
-use App\Models\PricingTier;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
-use App\Repositories\PaymentTransaction\PaymentTransactionRepositoryInterface;
 use App\Repositories\PricingTier\PricingTierRepositoryInterface;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Repositories\School\SchoolRepositoryInterface;
@@ -21,7 +16,6 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class SchoolService
@@ -32,10 +26,8 @@ class SchoolService
         protected RoleRepositoryInterface $roleRepository,
         protected SchoolTierRepositoryInterface $schoolTierRepository,
         protected TierChangeRepositoryInterface $tierChangeRepository,
-        protected PaymentTransactionRepositoryInterface $paymentTransactionRepository,
         protected R2StorageService $r2Storage,
         protected RoleService $roleService,
-        protected SettingsService $settingsService,
     ) {}
 
     /**
@@ -104,73 +96,6 @@ class SchoolService
         $this->roleService->createDefaultRolesForSchool($school->id);
 
         return $school;
-    }
-
-    /**
-     * Record a pending payment transaction for a paid-tier school registration,
-     * deferring the actual school creation until the payment is confirmed.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    public function createRegistrationTransaction(User $user, PricingTier $tier, array $data): PaymentTransaction
-    {
-        if (($data['logo'] ?? null) instanceof UploadedFile) {
-            // The school doesn't exist yet (creation is deferred until payment
-            // confirms), so the logo is staged under a "pending" prefix rather
-            // than the final school-logos location.
-            $data['logo_path'] = $this->r2Storage->uploadPublicFile($data['logo'], 'school-logos/pending');
-        }
-        unset($data['logo']);
-
-        $data['tier_id'] = $tier->id;
-
-        $subtotal = (float) $tier->price;
-        $vatRate = $this->settingsService->getVatRate();
-        $adminFeeType = $this->settingsService->getAdminFeeType();
-        $adminFeeRate = $this->settingsService->getAdminFeeRate();
-        $vatAmount = $subtotal * $vatRate;
-        $adminFeeAmount = $this->settingsService->calculateAdminFee($subtotal);
-
-        return $this->paymentTransactionRepository->create([
-            'initiated_by' => $user->id,
-            'transaction_id' => (string) Str::uuid(),
-            'amount' => $subtotal + $vatAmount + $adminFeeAmount,
-            'currency' => 'IDR',
-            'status' => PaymentStatus::Pending,
-            'registration_data' => $data,
-            'subtotal' => $subtotal,
-            'vat_rate' => $vatRate,
-            'vat_amount' => $vatAmount,
-            'admin_fee_rate' => $adminFeeType === AdminFeeType::Percentage ? $adminFeeRate : 0,
-            'admin_fee_type' => $adminFeeType,
-            'admin_fee_amount' => $adminFeeAmount,
-            'tier_name' => $tier->name,
-            'billing_period' => strtolower($tier->billing_period->label()),
-        ]);
-    }
-
-    /**
-     * Finalize a paid-tier registration once its payment transaction has been
-     * confirmed: creates the school from the stored registration data and
-     * attaches the initiating user as its admin.
-     */
-    public function completeRegistrationTransaction(PaymentTransaction $transaction): School
-    {
-        if ($transaction->status === PaymentStatus::Completed && $transaction->school) {
-            return $transaction->school;
-        }
-
-        return DB::transaction(function () use ($transaction): School {
-            $school = $this->create($transaction->registration_data);
-            $this->attachAdmin($school, $transaction->initiatedBy);
-
-            $this->paymentTransactionRepository->update($transaction->id, [
-                'school_id' => $school->id,
-                'status' => PaymentStatus::Completed,
-            ]);
-
-            return $school;
-        });
     }
 
     /**

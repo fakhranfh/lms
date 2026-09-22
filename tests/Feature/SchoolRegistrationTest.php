@@ -2,7 +2,6 @@
 
 use App\Enums\RoleName;
 use App\Livewire\SchoolRegister;
-use App\Models\PaymentTransaction;
 use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\User;
@@ -172,15 +171,14 @@ test('registering with a free tier creates the school immediately and redirects 
         ->call('save')
         ->assertRedirect(route('manage.schools.index'));
 
-    expect(School::query()->where('domain', $schoolDomain)->exists())->toBeTrue()
-        ->and(PaymentTransaction::query()->count())->toBe(0);
+    expect(School::query()->where('domain', $schoolDomain)->exists())->toBeTrue();
 });
 
-test('registering with a paid tier is refused now that the payment checkout flow is removed', function () {
-    // The school-payment checkout flow (school.payment.* routes,
-    // SchoolPaymentController) was removed. SchoolRegister::save() no
-    // longer creates a pending registration transaction for paid tiers;
-    // see the TODO left there.
+test('registering with a paid tier is refused now that the payment gateway subsystem is removed', function () {
+    // The payment gateway subsystem (SchoolPaymentController and the
+    // school.payment.* routes, plus all gateway services/models) was
+    // removed entirely. SchoolRegister::save() no longer creates a pending
+    // registration transaction for paid tiers.
     $this->seed(PricingTierSeeder::class);
     $user = User::factory()->create(['school_id' => null]);
     $this->actingAs($user);
@@ -196,6 +194,5 @@ test('registering with a paid tier is refused now that the payment checkout flow
         ->call('save')
         ->assertHasErrors('tierId');
 
-    expect(School::query()->where('domain', $schoolDomain)->exists())->toBeFalse()
-        ->and(PaymentTransaction::query()->count())->toBe(0);
+    expect(School::query()->where('domain', $schoolDomain)->exists())->toBeFalse();
 });

@@ -140,30 +140,8 @@
 
                                     @if ($isDemoMode)
                                         <div class="mt-auto pt-space-md font-body-md text-body-md text-secondary text-center">Demo accounts cannot upgrade</div>
-                                    @elseif ($enabledGateways->count() > 0)
-                                        <form method="POST" action="{{ route('tier-management.change') }}" class="space-y-space-md mt-auto pt-space-md">
-                                            @csrf
-                                            <input type="hidden" name="tier_id" value="{{ $tier->id }}">
-
-                                            @if ($enabledGateways->count() > 1)
-                                                <select name="gateway_name" class="w-full px-space-md py-space-sm border border-outline-variant rounded-lg font-body-md text-body-md" required>
-                                                    <option value="">Select payment method</option>
-                                                    @foreach ($enabledGateways as $gateway)
-                                                        <option value="{{ $gateway->paymentGatewayType->name }}">
-                                                            {{ $gateway->paymentGatewayType->label }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            @else
-                                                <input type="hidden" name="gateway_name" value="{{ $enabledGateways->first()->paymentGatewayType->name }}">
-                                            @endif
-
-                                            <button type="submit" class="w-full px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">
-                                                Upgrade Now
-                                            </button>
-                                        </form>
                                     @else
-                                        <div class="mt-auto pt-space-md font-body-md text-body-md text-error">No payment gateway configured</div>
+                                        <div class="mt-auto pt-space-md font-body-md text-body-md text-error">Upgrading to a paid tier is currently unavailable</div>
                                     @endif
                                 </div>
                             @endforeach
@@ -214,7 +192,7 @@
 
                                     @if ($isDemoMode)
                                         <div class="mt-auto pt-space-md font-body-md text-body-md text-secondary text-center">Demo accounts cannot downgrade</div>
-                                    @elseif ($enabledGateways->count() > 0)
+                                    @else
                                         <form method="POST" action="{{ route('tier-management.change') }}" class="mt-auto pt-space-md">
                                             @csrf
                                             <input type="hidden" name="tier_id" value="{{ $tier->id }}">
@@ -222,8 +200,6 @@
                                                 Downgrade
                                             </button>
                                         </form>
-                                    @else
-                                        <div class="mt-auto pt-space-md font-body-md text-body-md text-error">No payment gateway configured</div>
                                     @endif
                                 </div>
                             @endforeach

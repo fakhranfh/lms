@@ -1,3 +1,5 @@
+> **REMOVED:** The payment gateway subsystem described in this document has been fully removed from the codebase (services, models, repositories, admin panel, and database schema). This document is kept for historical reference only.
+
 # Payment Gateway Integration Design (v2.0)
 
 **Architecture:** Flexible, Plugin-Based, Database-Driven  

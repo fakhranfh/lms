@@ -1,3 +1,5 @@
+> **REMOVED:** The payment gateway subsystem described in this document has been fully removed from the codebase. This document is kept for historical reference only.
+
 # Payment Gateway Response Format Standard
 
 **Status:** ✅ Standardized

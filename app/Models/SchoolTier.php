@@ -49,16 +49,6 @@ class SchoolTier extends Model
     }
 
     /**
-     * Get the payment transactions.
-     *
-     * @return HasMany<PaymentTransaction, $this>
-     */
-    public function paymentTransactions(): HasMany
-    {
-        return $this->hasMany(PaymentTransaction::class, 'subscription_id');
-    }
-
-    /**
      * Get the tier changes.
      *
      * @return HasMany<TierChange, $this>

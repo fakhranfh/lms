@@ -5,7 +5,6 @@ namespace App\Livewire;
 use App\Models\DemoLmsAccess;
 use App\Models\PricingTier;
 use App\Models\School;
-use App\Services\PaymentGatewayRegistry;
 use App\Services\TierChangeService;
 use Livewire\Component;
 
@@ -25,22 +24,10 @@ class MySchools extends Component
         $newTier = PricingTier::findOrFail($tierId);
 
         try {
-            $transaction = $tierChangeService->initiateTierChange($school, $newTier);
-
-            if ($transaction) {
-                // TODO: the school-payment checkout flow was removed
-                // (school.payment.* routes / SchoolPaymentController).
-                // TierChangeService::initiateTierChange() still creates a
-                // pending PaymentTransaction for paid upgrades and returns
-                // it here, expecting a redirect to the payment page to
-                // collect payment. That page no longer exists, so paid
-                // upgrades are refused until a replacement payment flow is
-                // decided. The pending transaction it already created is
-                // left as-is (visible/cancellable from My Transactions).
-                $this->addError('tier', 'Upgrading to a paid tier is currently unavailable.');
-
-                return null;
-            }
+            // Paid-tier upgrades throw here: the payment gateway subsystem
+            // that used to collect payment for them was removed, and no
+            // replacement payment flow exists yet.
+            $tierChangeService->initiateTierChange($school, $newTier);
 
             session()->flash('success', "Tier changed to {$newTier->name} successfully.");
         } catch (\Exception $e) {
@@ -61,12 +48,12 @@ class MySchools extends Component
         }
     }
 
-    public function render(TierChangeService $tierChangeService, PaymentGatewayRegistry $gatewayRegistry)
+    public function render(TierChangeService $tierChangeService)
     {
         $schools = auth()->user()->schools;
 
         $tierOverviews = $schools->mapWithKeys(
-            fn (School $school) => [$school->id => $this->buildTierOverview($school, $tierChangeService, $gatewayRegistry)]
+            fn (School $school) => [$school->id => $this->buildTierOverview($school, $tierChangeService)]
         );
 
         return view('livewire.my-schools', [
@@ -82,8 +69,7 @@ class MySchools extends Component
      */
     private function buildTierOverview(
         School $school,
-        TierChangeService $tierChangeService,
-        PaymentGatewayRegistry $gatewayRegistry
+        TierChangeService $tierChangeService
     ): array {
         $currentTier = $school->tier()->with('limits')->first();
         $availableTiers = PricingTier::with('limits')->where('is_active', true)->get();
@@ -115,7 +101,6 @@ class MySchools extends Component
             'prorations' => $prorations,
             'chargeAmounts' => $chargeAmounts,
             'pendingTier' => $pendingTier,
-            'enabledGateways' => $gatewayRegistry->getEnabledGateways(),
             'isDemoMode' => $this->isDemoMode($school),
         ];
     }

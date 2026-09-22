@@ -107,16 +107,8 @@
 
                                                 @if ($tierOverview['isDemoMode'])
                                                     <p class="font-body-sm text-body-sm text-secondary">Demo accounts cannot upgrade</p>
-                                                @elseif ($tierOverview['enabledGateways']->count() > 0)
-                                                    <button
-                                                        type="button"
-                                                        wire:click="changeTier('{{ $school->id }}', '{{ $tier->id }}')"
-                                                        class="mt-auto w-full px-space-md py-space-xs bg-primary text-on-primary rounded-lg font-label-sm text-label-sm hover:opacity-90 transition-opacity"
-                                                    >
-                                                        Upgrade Now
-                                                    </button>
                                                 @else
-                                                    <p class="font-body-sm text-body-sm text-error">No payment gateway configured</p>
+                                                    <p class="font-body-sm text-body-sm text-error">Upgrading to a paid tier is currently unavailable</p>
                                                 @endif
                                             </div>
                                         @endforeach
@@ -158,7 +150,7 @@
 
                                                 @if ($tierOverview['isDemoMode'])
                                                     <p class="font-body-sm text-body-sm text-secondary">Demo accounts cannot downgrade</p>
-                                                @elseif ($tierOverview['enabledGateways']->count() > 0)
+                                                @else
                                                     <button
                                                         type="button"
                                                         wire:click="changeTier('{{ $school->id }}', '{{ $tier->id }}')"
@@ -166,8 +158,6 @@
                                                     >
                                                         Downgrade
                                                     </button>
-                                                @else
-                                                    <p class="font-body-sm text-body-sm text-error">No payment gateway configured</p>
                                                 @endif
                                             </div>
                                         @endforeach

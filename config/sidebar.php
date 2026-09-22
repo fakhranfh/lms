@@ -77,12 +77,4 @@ return [
         'requires_role' => RoleName::SchoolAdmin->value,
         'requires_no_school' => true,
     ],
-    [
-        'label' => 'Transactions',
-        'route' => 'transactions.index',
-        'icon' => 'receipt_long',
-        'active_pattern' => 'transactions.index',
-        'requires_role' => RoleName::SchoolAdmin->value,
-        'requires_no_school' => true,
-    ],
 ];

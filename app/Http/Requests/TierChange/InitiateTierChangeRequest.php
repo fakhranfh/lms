@@ -20,10 +20,6 @@ class InitiateTierChangeRequest extends FormRequest
                 'integer',
                 Rule::exists('pricing_tiers', 'id')->where('is_active', true),
             ],
-            'gateway_name' => [
-                'nullable',
-                'string',
-            ],
         ];
     }
 }

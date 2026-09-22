@@ -1,13 +1,9 @@
 <?php
 
-use App\Enums\SubscriptionStatus;
 use App\Livewire\MySchools;
-use App\Models\PaymentGateway as PaymentGatewayModel;
-use App\Models\PaymentGatewayType;
 use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\User;
-use App\Services\TierChangeService;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
@@ -38,7 +34,7 @@ it('refuses to change the tier of a school the user does not administer', functi
         ->assertForbidden();
 });
 
-it('refuses a paid upgrade now that the payment checkout flow is removed', function () {
+it('refuses a paid upgrade now that the payment gateway subsystem is removed', function () {
     Queue::fake();
 
     $school = School::factory()->create();
@@ -46,9 +42,6 @@ it('refuses a paid upgrade now that the payment checkout flow is removed', funct
     $user->schools()->attach($school);
 
     $plusTier = PricingTier::where('slug', 'plus')->first();
-
-    $gatewayType = PaymentGatewayType::where('name', 'midtrans')->first();
-    PaymentGatewayModel::factory()->for($gatewayType)->create(['is_enabled' => true]);
 
     Livewire::actingAs($user)
         ->test(MySchools::class)
@@ -56,25 +49,15 @@ it('refuses a paid upgrade now that the payment checkout flow is removed', funct
         ->assertHasErrors(['tier']);
 });
 
-it('lets a school admin cancel a pending tier change', function () {
+it('reports no pending tier change to cancel when none exists', function () {
     Queue::fake();
 
     $school = School::factory()->create();
     $user = User::factory()->create(['school_id' => null]);
     $user->schools()->attach($school);
 
-    $plusTier = PricingTier::where('slug', 'plus')->first();
-
-    $gatewayType = PaymentGatewayType::where('name', 'midtrans')->first();
-    PaymentGatewayModel::factory()->for($gatewayType)->create(['is_enabled' => true]);
-
-    app(TierChangeService::class)->initiateTierChange($school, $plusTier, 'midtrans');
-
     Livewire::actingAs($user)
         ->test(MySchools::class)
         ->call('cancelTierChange', $school->id)
-        ->assertSee('cancelled');
-
-    $pendingTier = $school->schoolTiers()->where('status', SubscriptionStatus::Pending)->first();
-    expect($pendingTier)->toBeNull();
+        ->assertHasErrors(['tier']);
 });

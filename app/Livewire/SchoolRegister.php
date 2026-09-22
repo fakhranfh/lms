@@ -117,13 +117,9 @@ class SchoolRegister extends Component
         }
 
         if ((float) $tier->price !== 0.0) {
-            // TODO: the school-payment checkout flow was removed (along with
-            // SchoolPaymentController and the school.payment.* routes).
-            // Paid-tier registration used to create a pending
-            // PaymentTransaction via SchoolService::createRegistrationTransaction()
-            // and redirect to the payment page to collect payment. That page
-            // no longer exists, so paid-tier registration is disabled here
-            // until a replacement payment flow is decided.
+            // Paid-tier registration is unavailable: the payment gateway
+            // subsystem was removed and no replacement payment flow exists
+            // yet, so only the free tier can be selected at registration.
             $this->addError('tierId', 'Paid tier registration is currently unavailable. Please select the free tier.');
 
             return;

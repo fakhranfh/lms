@@ -50,7 +50,6 @@ use App\Livewire\Courses\SyllabusIndex;
 use App\Livewire\Dashboard;
 use App\Livewire\EditProfile;
 use App\Livewire\MediaLibrary\MediaLibraryIndex;
-use App\Livewire\MyTransactions;
 use App\Livewire\Raport\RaportIndex;
 use App\Livewire\Raport\RaportShow;
 use App\Livewire\Roles\RoleCreate;
@@ -70,10 +69,6 @@ use App\Livewire\Teachers\TeacherPhotoUpload;
 use App\Livewire\Users\UserRoles;
 use App\Models\Course;
 use Illuminate\Support\Facades\Route;
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/transactions', MyTransactions::class)->name('transactions.index');
-});
 
 Route::middleware(['auth', 'verified', 'redirect-if-no-school', EnsurePasswordIsChanged::class])->group(function () {
     Route::get('/force-password-change', ForcePasswordChange::class)->name('password.force-change');

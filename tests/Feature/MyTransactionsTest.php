@@ -33,11 +33,11 @@ it('only lists transactions initiated by the current user', function () {
     $this->actingAs($user)
         ->get(route('transactions.index'))
         ->assertOk()
-        ->assertSee(route('school.payment.index', $mine))
-        ->assertDontSee(route('school.payment.index', $notMine));
+        ->assertSee($mine->transaction_id)
+        ->assertDontSee($notMine->transaction_id);
 });
 
-it('shows a continue payment link for pending transactions', function () {
+it('shows a cancel action for pending transactions', function () {
     $user = User::factory()->create(['school_id' => null]);
     $school = School::factory()->create();
 
@@ -50,10 +50,10 @@ it('shows a continue payment link for pending transactions', function () {
     $this->actingAs($user)
         ->get(route('transactions.index'))
         ->assertOk()
-        ->assertSee(route('school.payment.index', $transaction));
+        ->assertSee("cancelId = '{$transaction->id}'", false);
 });
 
-it('does not show a continue payment link for completed transactions', function () {
+it('does not show a cancel action for completed transactions', function () {
     $user = User::factory()->create(['school_id' => null]);
     $school = School::factory()->create();
 
@@ -66,7 +66,7 @@ it('does not show a continue payment link for completed transactions', function 
     $this->actingAs($user)
         ->get(route('transactions.index'))
         ->assertOk()
-        ->assertDontSee(route('school.payment.index', $transaction));
+        ->assertDontSee("cancelId = '{$transaction->id}'", false);
 });
 
 it('adds transactions to the school admin sidebar', function () {

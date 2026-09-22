@@ -107,7 +107,7 @@ SubscriptionPaymentService
 ├─ refundSubscription(subscription, amount?)
 └─ getSubscriptionPaymentStatus(subscription)
 
-PaymentWebhookController
+PaymentWebhookController (removed — the school-payment checkout/webhook flow was decommissioned)
 ├─ handle(request) → Dynamic routing
 ├─ Signature verification (per-gateway)
 ├─ Webhook processing
@@ -462,7 +462,7 @@ User completes payment on Stripe
        ↓
 Stripe sends webhook to /webhooks/payment/stripe
        ↓
-PaymentWebhookController
+PaymentWebhookController (removed — the school-payment checkout/webhook flow was decommissioned)
 ├─ Verify signature
 ├─ Load credentials from DB
 ├─ Process webhook

@@ -39,9 +39,8 @@ class SubscriptionPaymentService
     }
 
     /**
-     * Create the gateway invoice for a pending tier-change transaction (mirrors
-     * SchoolService::initiateRegistrationPayment for the "existing school" case)
-     * and record the resulting channel/instructions on the transaction.
+     * Create the gateway invoice for a pending tier-change transaction and
+     * record the resulting channel/instructions on the transaction.
      *
      * @return array<string, mixed>
      */

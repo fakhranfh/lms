@@ -507,7 +507,7 @@ app/
 ├── Observers/
 │   └── AuditableObserver.php      # writes to audit_logs on mutations
 ├── Http/Controllers/
-│   ├── PaymentWebhookController.php    # [Phase 2.0C] Webhook handlers
+│   ├── (PaymentWebhookController.php removed — the school-payment checkout/webhook flow was decommissioned)
 │   └── DemoLmsController.php           # [Phase 2.2] Demo access endpoints
 ├── Livewire/
 │   ├── CourseBuilder.php

@@ -8,7 +8,6 @@ use App\Http\Controllers\ProctorSpeedTestController;
 use App\Http\Controllers\ProctorSubmissionStatusController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RaportExportController;
-use App\Http\Controllers\SchoolPaymentController;
 use App\Http\Controllers\StudentSelectionController;
 use App\Http\Controllers\TierChangeController;
 use App\Http\Controllers\UserAvailabilityController;
@@ -73,11 +72,6 @@ use App\Models\Course;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/payment/{transaction}', [SchoolPaymentController::class, 'index'])->name('school.payment.index');
-    Route::post('/payment/{transaction}/confirm', [SchoolPaymentController::class, 'confirm'])->name('school.payment.confirm');
-    Route::post('/payment/{transaction}/simulate', [SchoolPaymentController::class, 'simulate'])->name('school.payment.simulate');
-    Route::get('/payment/{transaction}/stream', [SchoolPaymentController::class, 'stream'])->name('school.payment.stream');
-
     Route::get('/transactions', MyTransactions::class)->name('transactions.index');
 });
 

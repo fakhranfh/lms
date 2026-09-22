@@ -4,7 +4,6 @@ use App\Enums\SubscriptionStatus;
 use App\Livewire\MySchools;
 use App\Models\PaymentGateway as PaymentGatewayModel;
 use App\Models\PaymentGatewayType;
-use App\Models\PaymentTransaction;
 use App\Models\PricingTier;
 use App\Models\School;
 use App\Models\User;
@@ -39,7 +38,7 @@ it('refuses to change the tier of a school the user does not administer', functi
         ->assertForbidden();
 });
 
-it('redirects straight to the payment page on upgrade', function () {
+it('refuses a paid upgrade now that the payment checkout flow is removed', function () {
     Queue::fake();
 
     $school = School::factory()->create();
@@ -51,18 +50,10 @@ it('redirects straight to the payment page on upgrade', function () {
     $gatewayType = PaymentGatewayType::where('name', 'midtrans')->first();
     PaymentGatewayModel::factory()->for($gatewayType)->create(['is_enabled' => true]);
 
-    $test = Livewire::actingAs($user)
+    Livewire::actingAs($user)
         ->test(MySchools::class)
-        ->call('changeTier', $school->id, $plusTier->id);
-
-    $pendingTier = $school->schoolTiers()->where('status', SubscriptionStatus::Pending)->first();
-    expect($pendingTier)->not->toBeNull();
-    expect($pendingTier->tier_id)->toBe($plusTier->id);
-
-    $transaction = PaymentTransaction::whereHas('detail', fn ($query) => $query->where('subscription_id', $pendingTier->id))->first();
-    expect($transaction)->not->toBeNull();
-
-    $test->assertRedirect(route('school.payment.index', $transaction));
+        ->call('changeTier', $school->id, $plusTier->id)
+        ->assertHasErrors(['tier']);
 });
 
 it('lets a school admin cancel a pending tier change', function () {

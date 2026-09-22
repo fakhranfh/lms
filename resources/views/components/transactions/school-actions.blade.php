@@ -1,7 +1,7 @@
+{{-- TODO: the "Continue Payment" link (school.payment.index) was removed
+     along with the school-payment checkout flow. Pending transactions can
+     currently only be cancelled here, not resumed. --}}
 @if ($transaction->status === \App\Enums\PaymentStatus::Pending)
-    <a href="{{ route('school.payment.index', $transaction) }}" class="inline-block px-space-md py-space-xs rounded-lg bg-primary text-on-primary font-label-sm text-label-sm hover:opacity-90 transition-opacity">
-        Continue Payment
-    </a>
     @if ($transaction->school)
         <button
             type="button"

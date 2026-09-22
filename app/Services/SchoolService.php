@@ -10,7 +10,6 @@ use App\Models\PricingTier;
 use App\Models\Role;
 use App\Models\School;
 use App\Models\User;
-use App\Repositories\PaymentGateway\PaymentGatewayRepositoryInterface;
 use App\Repositories\PaymentTransaction\PaymentTransactionRepositoryInterface;
 use App\Repositories\PricingTier\PricingTierRepositoryInterface;
 use App\Repositories\Role\RoleRepositoryInterface;
@@ -34,8 +33,6 @@ class SchoolService
         protected SchoolTierRepositoryInterface $schoolTierRepository,
         protected TierChangeRepositoryInterface $tierChangeRepository,
         protected PaymentTransactionRepositoryInterface $paymentTransactionRepository,
-        protected PaymentGatewayRepositoryInterface $paymentGatewayRepository,
-        protected PaymentGatewayFactory $paymentGatewayFactory,
         protected R2StorageService $r2Storage,
         protected RoleService $roleService,
         protected SettingsService $settingsService,
@@ -150,44 +147,6 @@ class SchoolService
             'tier_name' => $tier->name,
             'billing_period' => strtolower($tier->billing_period->label()),
         ]);
-    }
-
-    /**
-     * Create a payment request against the first enabled gateway for the
-     * given channel, and record the gateway/channel/real transaction id on
-     * the registration transaction so the payment page can show the
-     * customer's payment instructions (VA number, QRIS code, etc.).
-     *
-     * @return array<string, mixed>
-     */
-    public function initiateRegistrationPayment(PaymentTransaction $transaction, ?string $channel): array
-    {
-        $gateway = $this->paymentGatewayRepository->findFirstEnabled();
-
-        if (! $gateway) {
-            throw new \RuntimeException('No payment gateway configured.');
-        }
-
-        $gatewayInstance = $this->paymentGatewayFactory->make($gateway->paymentGatewayType->name, $gateway);
-
-        $invoice = $gatewayInstance->createInvoice([
-            'order_id' => $transaction->transaction_id,
-            'amount' => (float) $transaction->amount,
-            'currency' => $transaction->currency,
-            'channel' => $channel,
-            'description' => "School registration: {$transaction->registration_data['name']}",
-        ]);
-
-        if ($invoice['success'] ?? false) {
-            $this->paymentTransactionRepository->update($transaction->id, [
-                'payment_gateway_id' => $gateway->id,
-                'channel' => $channel ?? ($invoice['channel'] ?? null),
-                'payment_instructions' => $invoice['payment_url'] ?? null,
-                'transaction_id' => $invoice['transaction_id'] ?? $transaction->transaction_id,
-            ]);
-        }
-
-        return $invoice;
     }
 
     /**

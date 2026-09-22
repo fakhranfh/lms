@@ -116,18 +116,23 @@ class SchoolRegister extends Component
             $data['logo'] = $this->logo;
         }
 
-        if ((float) $tier->price === 0.0) {
-            $school = $schoolService->create($data);
-            $schoolService->attachAdmin($school, auth()->user());
-
-            $this->redirectRoute('manage.schools.index');
+        if ((float) $tier->price !== 0.0) {
+            // TODO: the school-payment checkout flow was removed (along with
+            // SchoolPaymentController and the school.payment.* routes).
+            // Paid-tier registration used to create a pending
+            // PaymentTransaction via SchoolService::createRegistrationTransaction()
+            // and redirect to the payment page to collect payment. That page
+            // no longer exists, so paid-tier registration is disabled here
+            // until a replacement payment flow is decided.
+            $this->addError('tierId', 'Paid tier registration is currently unavailable. Please select the free tier.');
 
             return;
         }
 
-        $transaction = $schoolService->createRegistrationTransaction(auth()->user(), $tier, $data);
+        $school = $schoolService->create($data);
+        $schoolService->attachAdmin($school, auth()->user());
 
-        $this->redirectRoute('school.payment.index', ['transaction' => $transaction]);
+        $this->redirectRoute('manage.schools.index');
     }
 
     public function render(PricingTierService $pricingTierService)

@@ -161,7 +161,6 @@ use App\Services\GroupService;
 use App\Services\PaymentGatewayConfigService;
 use App\Services\PaymentGatewayFactory;
 use App\Services\PaymentGatewayRegistry;
-use App\Services\PaymentWebhookService;
 use App\Services\PeriodService;
 use App\Services\PricingTierService;
 use App\Services\ProctorEventService;
@@ -283,7 +282,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(SubscriptionPaymentService::class);
         $this->app->singleton(TierChangeService::class);
         $this->app->singleton(PaymentGatewayConfigService::class);
-        $this->app->singleton(PaymentWebhookService::class);
         $this->app->singleton(CourseService::class);
         $this->app->singleton(R2StorageService::class);
         $this->app->singleton(SessionService::class);

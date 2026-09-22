@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\PricingTierBreakdownController;
 use App\Http\Controllers\TryDemoController;
 use App\Livewire\MySchools;
 use App\Livewire\SchoolAdminRegister;
@@ -12,8 +11,6 @@ use Illuminate\Support\Facades\Route;
 Route::view('/', 'landing-page')->name('home');
 
 Route::view('/features', 'features')->name('features');
-
-Route::get('/pricing-tiers/{pricingTier}/breakdown', [PricingTierBreakdownController::class, 'show'])->name('pricing-tiers.breakdown');
 
 Route::get('/get-started', SchoolAdminRegister::class)->name('get-started');
 Route::get('/get-started/school', SchoolRegister::class)->name('get-started.school');

@@ -77,10 +77,10 @@ class XenditGateway implements PaymentGateway
     }
 
     /**
-     * The callback-token signature is verified synchronously in
-     * PaymentWebhookService before the webhook is even queued (a queued job
-     * has no access to the original request's headers), so this only needs
-     * to sanity-check the payload shape.
+     * The callback-token signature is verified synchronously before the
+     * webhook is even queued (a queued job has no access to the original
+     * request's headers), so this only needs to sanity-check the payload
+     * shape.
      */
     public function handleWebhook(array $payload): bool
     {

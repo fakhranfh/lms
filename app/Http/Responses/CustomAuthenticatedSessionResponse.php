@@ -2,7 +2,6 @@
 
 namespace App\Http\Responses;
 
-use App\Repositories\PaymentTransaction\PaymentTransactionRepositoryInterface;
 use Laravel\Fortify\Contracts\LoginResponse;
 
 class CustomAuthenticatedSessionResponse implements LoginResponse
@@ -15,14 +14,12 @@ class CustomAuthenticatedSessionResponse implements LoginResponse
             return redirect()->route('verification.notice');
         }
 
-        if ($user && ! $request->session()->has('url.intended')) {
-            $pendingTransaction = app(PaymentTransactionRepositoryInterface::class)
-                ->findPendingRegistrationForUser($user->id);
-
-            if ($pendingTransaction) {
-                return redirect()->route('school.payment.index', $pendingTransaction);
-            }
-        }
+        // TODO: the school-payment checkout flow was removed. Previously,
+        // a user with a pending paid-tier registration transaction was
+        // redirected here to resume checkout (school.payment.index). That
+        // route no longer exists, so pending paid-tier registrations are
+        // currently unreachable after login. Revisit once a replacement
+        // payment flow is decided.
 
         return redirect()->intended(config('fortify.home'));
     }

@@ -98,7 +98,17 @@ class TierChangeController extends Controller
             );
 
             if ($transaction) {
-                return redirect()->route('school.payment.index', ['transaction' => $transaction]);
+                // TODO: the school-payment checkout flow was removed
+                // (school.payment.* routes / SchoolPaymentController).
+                // TierChangeService::initiateTierChange() still creates a
+                // pending PaymentTransaction for paid upgrades and returns
+                // it here, expecting the caller to redirect to the payment
+                // page to collect payment. That page no longer exists, so
+                // paid upgrades are refused until a replacement payment
+                // flow is decided. The pending transaction it already
+                // created is left as-is (visible/cancellable from My
+                // Transactions).
+                return back()->withErrors(['error' => 'Upgrading to a paid tier is currently unavailable.']);
             }
 
             return back()->with('success', "Tier changed to {$newTier->name} successfully.");

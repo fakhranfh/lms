@@ -315,7 +315,7 @@ payment_webhooks
 - [ ] (Optional: Add more gateways later - implement interface + register in DB)
 
 **Phase 2.0D: Webhooks & Controllers**
-- [ ] Create `PaymentWebhookController` (dynamic routing)
+- [x] ~~Create `PaymentWebhookController` (dynamic routing)~~ — implemented, then removed along with the rest of the school-payment checkout flow
 - [ ] Create admin panel for gateway management (add/edit/delete credentials)
 - [ ] Add webhook routes
 

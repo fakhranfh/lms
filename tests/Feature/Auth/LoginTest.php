@@ -103,7 +103,10 @@ test('login keeps existing timezone when ip lookup fails', function () {
     ]);
 });
 
-test('login redirects to the pending payment page when the user has an unpaid school registration', function () {
+test('login redirects to the intended/home page even when the user has an unpaid school registration', function () {
+    // The school-payment checkout flow (school.payment.* routes) was
+    // removed. CustomAuthenticatedSessionResponse no longer redirects to it
+    // for pending registration transactions; see the TODO left there.
     $this->seed(PricingTierSeeder::class);
     $tier = PricingTier::query()->where('slug', 'plus')->firstOrFail();
     $user = User::factory()->create([
@@ -135,7 +138,7 @@ test('login redirects to the pending payment page when the user has an unpaid sc
         'password' => 'password',
     ]);
 
-    $response->assertRedirect(route('school.payment.index', $transaction));
+    $response->assertRedirect('/dashboard');
 });
 
 test('login is throttled after 5 failed attempts', function () {

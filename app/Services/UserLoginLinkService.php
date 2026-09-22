@@ -49,13 +49,11 @@ class UserLoginLinkService
     }
 
     /**
-     * Build the absolute login URL for a link, scoped to the user's school
-     * domain so multi-tenant session/auth state resolves correctly.
+     * Build the absolute login URL for a link.
      */
     public function buildLoginUrl(UserLoginLink $link, string $scheme = 'http', ?int $port = null): string
     {
-        $school = $link->user->school();
-        $domain = $school !== null ? $school->domain : parse_url((string) config('app.url'), PHP_URL_HOST);
+        $domain = config('app.domain');
 
         $url = "{$scheme}://{$domain}/login-link/{$link->token}";
 

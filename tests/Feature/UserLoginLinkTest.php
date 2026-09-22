@@ -63,7 +63,7 @@ class UserLoginLinkTest extends TestCase
         $this->assertNotNull($this->userLoginLinkService->findValidByToken($link->token));
     }
 
-    public function test_build_login_url_uses_school_domain(): void
+    public function test_build_login_url_uses_app_domain(): void
     {
         $school = School::factory()->create(['domain' => 'testschool.lms.local']);
         $user = User::factory()->forSchool($school)->create();
@@ -71,7 +71,7 @@ class UserLoginLinkTest extends TestCase
 
         $url = $this->userLoginLinkService->buildLoginUrl($link);
 
-        $this->assertStringContainsString('testschool.lms.local', $url);
+        $this->assertStringContainsString(config('app.domain'), $url);
         $this->assertStringContainsString($link->token, $url);
         $this->assertStringContainsString('/login-link/', $url);
     }

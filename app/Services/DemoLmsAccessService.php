@@ -150,10 +150,12 @@ class DemoLmsAccessService
      */
     public function buildDemoLoginUrl(School $school, string $token, string $scheme = 'http', ?int $port = null): string
     {
-        $url = "{$scheme}://{$school->domain}/demo-lms/login/{$token}";
+        $domain = config('app.domain');
+
+        $url = "{$scheme}://{$domain}/demo-lms/login/{$token}";
 
         if ($port && ! in_array($port, [80, 443])) {
-            $url = "{$scheme}://{$school->domain}:{$port}/demo-lms/login/{$token}";
+            $url = "{$scheme}://{$domain}:{$port}/demo-lms/login/{$token}";
         }
 
         return $url;

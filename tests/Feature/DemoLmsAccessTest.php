@@ -272,7 +272,7 @@ class DemoLmsAccessTest extends TestCase
         }
     }
 
-    public function test_build_demo_login_url_uses_school_domain(): void
+    public function test_build_demo_login_url_uses_app_domain(): void
     {
         $school = School::factory()->create(['domain' => 'testschool.lms.local']);
         $access = DemoLmsAccess::factory()
@@ -280,7 +280,7 @@ class DemoLmsAccessTest extends TestCase
 
         $url = $this->demoService->buildDemoLoginUrl($school, $access->access_token);
 
-        $this->assertStringContainsString($school->domain, $url);
+        $this->assertStringContainsString(config('app.domain'), $url);
         $this->assertStringContainsString($access->access_token, $url);
         $this->assertTrue(str_starts_with($url, 'http://'));
         $this->assertStringContainsString('/demo-lms/login/', $url);
@@ -318,7 +318,7 @@ class DemoLmsAccessTest extends TestCase
 
         $url = $access->getLoginUrl();
 
-        $this->assertStringContainsString('myschool.lms.local', $url);
+        $this->assertStringContainsString(config('app.domain'), $url);
         $this->assertStringContainsString($access->access_token, $url);
         $this->assertStringContainsString('/demo-lms/login/', $url);
     }

@@ -157,13 +157,13 @@
                             <div class="space-y-space-xs">
                                 <p class="font-label-sm text-label-sm text-[--lp-muted]">Camera</p>
                                 <div class="flex aspect-video items-center justify-center rounded-lg bg-[--lp-dark]">
-                                    <span class="material-symbols-outlined text-[15px] text-[--lp-on-dark]/70">videocam</span>
+                                    <span class="material-symbols-outlined text-[15px] text-[--lp-on-dark]">videocam</span>
                                 </div>
                             </div>
                             <div class="space-y-space-xs">
                                 <p class="font-label-sm text-label-sm text-[--lp-muted]">Screen Share</p>
                                 <div class="flex aspect-video items-center justify-center rounded-lg bg-[--lp-dark]">
-                                    <span class="material-symbols-outlined text-[15px] text-[--lp-on-dark]/70">screen_share</span>
+                                    <span class="material-symbols-outlined text-[15px] text-[--lp-on-dark]">screen_share</span>
                                 </div>
                             </div>
                         </div>

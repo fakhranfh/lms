@@ -7,8 +7,6 @@ use Illuminate\Support\Facades\Route;
 // whatever domain (or IP) the app is served from.
 Route::view('/', 'landing-page')->name('home');
 
-Route::view('/features', 'features')->name('features');
-
 Route::get('/try-demo', [TryDemoController::class, 'index'])->name('try-demo');
 Route::get('/try-demo/{role}', [TryDemoController::class, 'login'])
     ->whereIn('role', ['teacher', 'student', 'school-admin'])

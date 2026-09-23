@@ -9,7 +9,7 @@ test('login page can be rendered on the root domain', function () {
 });
 
 test('login page can be rendered on a school subdomain', function () {
-    $school = School::factory()->create(['domain' => 'myschool.'.config('app.domain')]);
+    $school = School::factory()->create(['domain' => 'myschool.lms.local']);
 
     $this->get("http://{$school->domain}/login")->assertSuccessful();
 });

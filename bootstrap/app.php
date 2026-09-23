@@ -3,8 +3,6 @@
 use App\Http\Middleware\EnsureLocalEnvironment;
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\PreservePasswordUpdateErrors;
-use App\Http\Middleware\RedirectIfNoSchool;
-use App\Http\Middleware\RedirectLmsLocalToHttps;
 use App\Http\Middleware\RequireSchool;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrustReverseProxyScheme;
@@ -28,7 +26,6 @@ return Application::configure(basePath: dirname(__DIR__))
         }
 
         $middleware->prepend(TrustReverseProxyScheme::class);
-        $middleware->prepend(RedirectLmsLocalToHttps::class);
         $middleware->append(PreservePasswordUpdateErrors::class);
         $middleware->append(SecurityHeaders::class);
 
@@ -36,7 +33,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'local-only' => EnsureLocalEnvironment::class,
             'must-change-password' => EnsurePasswordIsChanged::class,
             'permission' => PermissionMiddleware::class,
-            'redirect-if-no-school' => RedirectIfNoSchool::class,
             'require-school' => RequireSchool::class,
             'role' => RoleMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,

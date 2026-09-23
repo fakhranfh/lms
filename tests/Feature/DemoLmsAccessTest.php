@@ -280,7 +280,8 @@ class DemoLmsAccessTest extends TestCase
 
         $url = $this->demoService->buildDemoLoginUrl($school, $access->access_token);
 
-        $this->assertStringContainsString(config('app.domain'), $url);
+        $expectedDomain = parse_url((string) config('app.url'), PHP_URL_HOST);
+        $this->assertStringContainsString($expectedDomain, $url);
         $this->assertStringContainsString($access->access_token, $url);
         $this->assertTrue(str_starts_with($url, 'http://'));
         $this->assertStringContainsString('/demo-lms/login/', $url);
@@ -318,7 +319,8 @@ class DemoLmsAccessTest extends TestCase
 
         $url = $access->getLoginUrl();
 
-        $this->assertStringContainsString(config('app.domain'), $url);
+        $expectedDomain = parse_url((string) config('app.url'), PHP_URL_HOST);
+        $this->assertStringContainsString($expectedDomain, $url);
         $this->assertStringContainsString($access->access_token, $url);
         $this->assertStringContainsString('/demo-lms/login/', $url);
     }

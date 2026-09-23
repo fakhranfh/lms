@@ -56,19 +56,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Root School Domain
-    |--------------------------------------------------------------------------
-    |
-    | The root domain used when building a school's public-facing subdomain
-    | (e.g. "{school}.{domain}") for links and demo access. Routing itself
-    | is no longer domain-scoped, so this only affects generated URLs.
-    |
-    */
-
-    'domain' => env('APP_DOMAIN', 'lms.local'),
-
-    /*
-    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

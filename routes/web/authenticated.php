@@ -69,7 +69,7 @@ use App\Livewire\Users\UserRoles;
 use App\Models\Course;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'redirect-if-no-school', EnsurePasswordIsChanged::class])->group(function () {
+Route::middleware(['auth', 'verified', EnsurePasswordIsChanged::class])->group(function () {
     Route::get('/force-password-change', ForcePasswordChange::class)->name('password.force-change');
 
     Route::get('/edit-profile', EditProfile::class)->name('edit-profile');

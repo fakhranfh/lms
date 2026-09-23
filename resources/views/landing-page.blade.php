@@ -28,8 +28,8 @@
                             Go to Dashboard
                         </a>
                     @else
-                        <a href="{{ route('get-started') }}" class="flex h-11 items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
-                            Start your school &rarr;
+                        <a href="{{ route('login') }}" class="flex h-11 items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors">
+                            Login &rarr;
                         </a>
                         @if (Route::has('try-demo'))
                             <a href="{{ route('try-demo') }}" class="group inline-flex items-center gap-space-xs font-label-md text-label-md text-on-surface hover:text-primary transition-colors">
@@ -62,7 +62,7 @@
                         <span class="h-2.5 w-2.5 rounded-full bg-outline-variant"></span>
                         <span class="h-2.5 w-2.5 rounded-full bg-outline-variant"></span>
                         <span class="h-2.5 w-2.5 rounded-full bg-outline-variant"></span>
-                        <span class="ml-space-xs font-label-sm text-label-sm text-on-surface-variant">yourschool.{{ config('app.domain', 'lms.test') }}</span>
+                        <span class="ml-space-xs font-label-sm text-label-sm text-on-surface-variant">lms.yourschool.com</span>
                     </div>
                     <div class="space-y-space-md px-space-lg py-space-md">
                         <div class="flex items-center justify-between">

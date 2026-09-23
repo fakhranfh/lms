@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Repositories\School\SchoolRepositoryInterface;
 use App\Services\DemoLmsAccessService;
+use App\Services\SchoolService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -12,7 +12,7 @@ class TryDemoController extends Controller
 {
     public function __construct(
         private DemoLmsAccessService $demoService,
-        private SchoolRepositoryInterface $schoolRepository,
+        private SchoolService $schoolService,
     ) {}
 
     /**
@@ -28,7 +28,7 @@ class TryDemoController extends Controller
      */
     public function login(Request $request, string $role): RedirectResponse
     {
-        $school = $this->schoolRepository->findByDomain('school.'.config('app.domain'));
+        $school = $this->schoolService->findRootDemo();
 
         abort_if(! $school, 404);
 

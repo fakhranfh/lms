@@ -53,6 +53,11 @@ class SchoolRepository implements SchoolRepositoryInterface
         return School::where('domain', $domain)->first();
     }
 
+    public function findRootDemo(): ?School
+    {
+        return School::where('name', 'School Demo')->first();
+    }
+
     /**
      * @param  array<string>  $with
      */

@@ -66,13 +66,6 @@
                 <span id="loginArrow" class="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
             </button>
         </form>
-        <!-- Register Link -->
-        <div class="mt-space-xl text-center">
-            <p class="font-body-sm text-body-sm text-secondary">
-                Don't have an account?
-                <a class="text-primary font-medium hover:underline transition-colors" href="{{ route('get-started') }}">Register</a>
-            </p>
-        </div>
     </div>
     </main>
 

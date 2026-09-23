@@ -3,10 +3,8 @@
 use App\Models\DemoLmsAccess;
 use App\Models\School;
 
-test('the try demo page is reachable on the root domain', function () {
-    $rootDomain = config('app.domain');
-
-    $response = $this->get("http://{$rootDomain}/try-demo");
+test('the try demo page is reachable', function () {
+    $response = $this->get('/try-demo');
 
     $response->assertOk();
     $response->assertSee('Login as Teacher');
@@ -15,12 +13,9 @@ test('the try demo page is reachable on the root domain', function () {
 });
 
 test('trying the demo as teacher generates access and logs the user in', function () {
+    $school = School::where('name', 'School Demo')->first() ?? School::factory()->create(['name' => 'School Demo']);
 
-    $rootDomain = config('app.domain');
-    $demoDomain = "school.{$rootDomain}";
-    $school = School::where('domain', $demoDomain)->first() ?? School::factory()->create(['domain' => $demoDomain]);
-
-    $response = $this->get("http://{$rootDomain}/try-demo/teacher");
+    $response = $this->get('/try-demo/teacher');
 
     $access = DemoLmsAccess::where('school_id', $school->id)->where('role', 'teacher')->first();
 
@@ -29,12 +24,9 @@ test('trying the demo as teacher generates access and logs the user in', functio
 });
 
 test('trying the demo as school admin generates access and logs the user in', function () {
+    $school = School::where('name', 'School Demo')->first() ?? School::factory()->create(['name' => 'School Demo']);
 
-    $rootDomain = config('app.domain');
-    $demoDomain = "school.{$rootDomain}";
-    $school = School::where('domain', $demoDomain)->first() ?? School::factory()->create(['domain' => $demoDomain]);
-
-    $response = $this->get("http://{$rootDomain}/try-demo/school-admin");
+    $response = $this->get('/try-demo/school-admin');
 
     $access = DemoLmsAccess::where('school_id', $school->id)->where('role', 'school-admin')->first();
 
@@ -43,12 +35,9 @@ test('trying the demo as school admin generates access and logs the user in', fu
 });
 
 test('trying the demo as student generates access and logs the user in', function () {
+    $school = School::where('name', 'School Demo')->first() ?? School::factory()->create(['name' => 'School Demo']);
 
-    $rootDomain = config('app.domain');
-    $demoDomain = "school.{$rootDomain}";
-    $school = School::where('domain', $demoDomain)->first() ?? School::factory()->create(['domain' => $demoDomain]);
-
-    $response = $this->get("http://{$rootDomain}/try-demo/student");
+    $response = $this->get('/try-demo/student');
 
     $access = DemoLmsAccess::where('school_id', $school->id)->where('role', 'student')->first();
 
@@ -57,24 +46,29 @@ test('trying the demo as student generates access and logs the user in', functio
 });
 
 test('trying the demo reuses an existing valid access token instead of generating a new one', function () {
+    School::where('name', 'School Demo')->first() ?? School::factory()->create(['name' => 'School Demo']);
 
-    $rootDomain = config('app.domain');
-    $demoDomain = "school.{$rootDomain}";
-    $school = School::where('domain', $demoDomain)->first() ?? School::factory()->create(['domain' => $demoDomain]);
+    $this->get('/try-demo/teacher');
+    $firstAccess = DemoLmsAccess::where('role', 'teacher')->first();
 
-    $this->get("http://{$rootDomain}/try-demo/teacher");
-    $firstAccess = DemoLmsAccess::where('school_id', $school->id)->where('role', 'teacher')->first();
-
-    $this->get("http://{$rootDomain}/try-demo/teacher");
-    $secondAccess = DemoLmsAccess::where('school_id', $school->id)->where('role', 'teacher')->first();
+    $this->get('/try-demo/teacher');
+    $secondAccess = DemoLmsAccess::where('role', 'teacher')->first();
 
     expect($secondAccess->id)->toBe($firstAccess->id);
 });
 
 test('an invalid demo role is rejected', function () {
-    $rootDomain = config('app.domain');
+    School::where('name', 'School Demo')->first() ?? School::factory()->create(['name' => 'School Demo']);
 
-    $response = $this->get("http://{$rootDomain}/try-demo/superadmin");
+    $response = $this->get('/try-demo/superadmin');
+
+    $response->assertNotFound();
+});
+
+test('try demo login returns not found when no root demo school exists', function () {
+    School::where('name', 'School Demo')->delete();
+
+    $response = $this->get('/try-demo/teacher');
 
     $response->assertNotFound();
 });

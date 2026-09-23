@@ -18,11 +18,10 @@ test('landing page displays correct heading and description', function () {
     });
 });
 
-test('guest users see login and register links', function () {
+test('guest users see login link', function () {
     $this->browse(function (Browser $browser) {
         $browser->visit('/')
-            ->assertSee('Log in')
-            ->assertSee('Register');
+            ->assertSee('Log in');
     });
 });
 
@@ -31,14 +30,6 @@ test('guest users can navigate to login from landing page', function () {
         $browser->visit('/')
             ->clickLink('Log in')
             ->assertPathIs('/login');
-    });
-});
-
-test('guest users can navigate to register from landing page', function () {
-    $this->browse(function (Browser $browser) {
-        $browser->visit('/')
-            ->clickLink('Get Started')
-            ->assertPathIs('/get-started');
     });
 });
 

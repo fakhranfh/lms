@@ -150,7 +150,7 @@ class DemoLmsAccessService
      */
     public function buildDemoLoginUrl(School $school, string $token, string $scheme = 'http', ?int $port = null): string
     {
-        $domain = config('app.domain');
+        $domain = parse_url((string) config('app.url'), PHP_URL_HOST) ?? 'localhost';
 
         $url = "{$scheme}://{$domain}/demo-lms/login/{$token}";
 

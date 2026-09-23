@@ -142,7 +142,6 @@ jobs:
         DB_USERNAME: root
         DB_PASSWORD: ""
         APP_URL: http://lms.local
-        APP_DOMAIN: lms.local
       run: php artisan migrate --force
 
     - name: Run migrations (pgsql)
@@ -155,7 +154,6 @@ jobs:
         DB_USERNAME: postgres
         DB_PASSWORD: postgres
         APP_URL: http://lms.local
-        APP_DOMAIN: lms.local
       run: php artisan migrate --force
 
     - name: Execute tests (Unit and Feature tests) via Pest (mysql)
@@ -168,7 +166,6 @@ jobs:
         DB_USERNAME: root
         DB_PASSWORD: ""
         APP_URL: http://lms.local
-        APP_DOMAIN: lms.local
         REDIS_HOST: 127.0.0.1
         REDIS_PORT: 6379
       run: php artisan test --compact
@@ -183,7 +180,6 @@ jobs:
         DB_USERNAME: postgres
         DB_PASSWORD: postgres
         APP_URL: http://lms.local
-        APP_DOMAIN: lms.local
         REDIS_HOST: 127.0.0.1
         REDIS_PORT: 6379
       run: php artisan test --compact

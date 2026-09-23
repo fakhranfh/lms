@@ -71,7 +71,8 @@ class UserLoginLinkTest extends TestCase
 
         $url = $this->userLoginLinkService->buildLoginUrl($link);
 
-        $this->assertStringContainsString(config('app.domain'), $url);
+        $expectedDomain = parse_url((string) config('app.url'), PHP_URL_HOST);
+        $this->assertStringContainsString($expectedDomain, $url);
         $this->assertStringContainsString($link->token, $url);
         $this->assertStringContainsString('/login-link/', $url);
     }

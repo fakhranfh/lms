@@ -59,6 +59,14 @@ class SchoolService
     }
 
     /**
+     * Find the designated root/demo school.
+     */
+    public function findRootDemo(): ?School
+    {
+        return $this->schoolRepository->findRootDemo();
+    }
+
+    /**
      * Find a school by ID with eager-loaded relationships.
      *
      * @param  array<string>  $with
@@ -121,10 +129,11 @@ class SchoolService
     public function delete(string $id): int
     {
         $school = $this->schoolRepository->find($id);
+        $rootSchool = $this->findRootDemo();
 
-        if ($school && $school->domain === config('app.domain')) {
+        if ($school && $rootSchool && $school->id === $rootSchool->id) {
             throw ValidationException::withMessages([
-                'school' => __('The root domain school cannot be deleted.'),
+                'school' => __('The root demo school cannot be deleted.'),
             ]);
         }
 

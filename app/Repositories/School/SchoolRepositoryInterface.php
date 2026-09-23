@@ -32,6 +32,12 @@ interface SchoolRepositoryInterface
     public function findByDomain(string $domain): ?School;
 
     /**
+     * Find the designated root/demo school (seeded by the
+     * create_root_domain_school_with_demo_credentials migration).
+     */
+    public function findRootDemo(): ?School;
+
+    /**
      * Find a school by ID with eager-loaded relationships.
      *
      * @param  array<string>  $with

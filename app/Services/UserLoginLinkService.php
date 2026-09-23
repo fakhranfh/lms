@@ -53,7 +53,7 @@ class UserLoginLinkService
      */
     public function buildLoginUrl(UserLoginLink $link, string $scheme = 'http', ?int $port = null): string
     {
-        $domain = config('app.domain');
+        $domain = parse_url((string) config('app.url'), PHP_URL_HOST) ?? 'localhost';
 
         $url = "{$scheme}://{$domain}/login-link/{$link->token}";
 

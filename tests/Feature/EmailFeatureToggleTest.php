@@ -15,7 +15,7 @@ test('forgot password and email verification routes are registered by default', 
 });
 
 test('login page shows the forgot password link by default', function () {
-    $school = School::factory()->create(['domain' => 'myschool.'.config('app.domain')]);
+    $school = School::factory()->create(['domain' => 'myschool.lms.local']);
 
     $this->get("http://{$school->domain}/login")->assertSee('Forgot Password?');
 });
@@ -59,7 +59,7 @@ describe('when FEATURE_EMAIL_ENABLED is false', function () {
     });
 
     test('login page hides the forgot password link', function () {
-        $school = School::factory()->create(['domain' => 'myschool.'.config('app.domain')]);
+        $school = School::factory()->create(['domain' => 'myschool.lms.local']);
 
         $this->get("http://{$school->domain}/login")->assertDontSee('Forgot Password?');
     });

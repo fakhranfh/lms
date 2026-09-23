@@ -64,16 +64,6 @@ test('login fails with unregistered email', function () {
     });
 });
 
-test('login page has link to register page', function () {
-    $this->browse(function (Browser $browser) {
-        $browser->visit('/login')
-            ->waitForLocation('/login')
-            ->clickLink('Register')
-            ->pause(500)
-            ->assertPathIs('/get-started');
-    });
-});
-
 test('login page has link to forgot password', function () {
     $this->browse(function (Browser $browser) {
         $browser->visit('/login')

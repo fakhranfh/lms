@@ -25,13 +25,13 @@
                 </form>
             @else
                 @if (Route::has('try-demo'))
-                    <a href="{{ route('try-demo') }}" class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors">
+                    <a href="{{ route('try-demo') }}" class="topbar-cta-outline flex h-11 items-center rounded border border-outline-variant bg-surface px-space-lg font-label-md text-label-md text-on-surface hover:border-on-surface transition-colors">
                         Try Demo
                     </a>
                 @endif
 
-                <a href="{{ route('login') }}" class="font-label-md text-label-md text-secondary hover:text-on-surface transition-colors">
-                    Login
+                <a href="{{ route('login') }}" class="topbar-cta-primary flex h-11 items-center rounded bg-primary px-space-lg font-label-md text-label-md text-on-primary hover:bg-primary-container transition-colors">
+                    Login &rarr;
                 </a>
 
             @endauth

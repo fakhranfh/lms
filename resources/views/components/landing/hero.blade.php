@@ -22,19 +22,4 @@
             @endif
         @endauth
     </div>
-
-    <dl class="reveal mx-auto mt-space-xl grid max-w-2xl grid-cols-3 gap-space-md border-t border-[--lp-outline] pt-space-lg" style="animation-delay: 0.34s">
-        <div>
-            <dt class="font-headline-sm text-headline-sm text-[--lp-ink]">&lt; 5 min</dt>
-            <dd class="font-label-sm text-label-sm text-[--lp-muted]">To launch a school</dd>
-        </div>
-        <div>
-            <dt class="font-headline-sm text-headline-sm text-[--lp-ink]">Live</dt>
-            <dd class="font-label-sm text-label-sm text-[--lp-muted]">Video classes &amp; exam proctoring</dd>
-        </div>
-        <div>
-            <dt class="font-headline-sm text-headline-sm text-[--lp-ink]">8+</dt>
-            <dd class="font-label-sm text-label-sm text-[--lp-muted]">Tools for teachers to build on</dd>
-        </div>
-    </dl>
 </section>

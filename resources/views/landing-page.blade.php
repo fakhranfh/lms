@@ -50,6 +50,28 @@
             color: var(--lp-primary) !important;
         }
 
+        .lp-topbar .topbar-cta-primary {
+            background-color: var(--lp-primary) !important;
+            border-color: transparent !important;
+            color: var(--lp-on-primary) !important;
+        }
+
+        .lp-topbar .topbar-cta-primary:hover {
+            background-color: var(--lp-primary-hover) !important;
+            color: var(--lp-on-primary) !important;
+        }
+
+        .lp-topbar .topbar-cta-outline {
+            background-color: var(--lp-surface) !important;
+            border-color: var(--lp-outline) !important;
+            color: var(--lp-ink) !important;
+        }
+
+        .lp-topbar .topbar-cta-outline:hover {
+            border-color: var(--lp-ink) !important;
+            color: var(--lp-ink) !important;
+        }
+
         @media (prefers-reduced-motion: no-preference) {
             .reveal {
                 opacity: 0;

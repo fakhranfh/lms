@@ -45,12 +45,16 @@
 <div class="reveal flex flex-col justify-between gap-space-lg rounded-xl border border-[--lp-outline] bg-[--lp-bg] p-space-lg lg:col-span-6" style="animation-delay: 0.06s">
     <div>
         <h3 class="font-headline-sm text-headline-sm text-[--lp-ink]">Assessments &amp; grading</h3>
-        <p class="mt-space-xs font-body-sm text-body-sm text-[--lp-muted]">Quizzes, assignments, final exams, attendance, and forum discussion &mdash; grouped by weight, with a queue-monitored scoring pipeline for instructors to review and finalize.</p>
+        <p class="mt-space-xs font-body-sm text-body-sm text-[--lp-muted]">Quizzes, assignments, final exams, attendance, and forum discussion &mdash; grouped by weight, with a queue-monitored scoring pipeline for teacher to review and finalize.</p>
     </div>
 
-    <div class="space-y-space-sm" x-data="{ openGroups: [0] }">
-        @foreach ($groups as $index => $group)
-            <div class="overflow-hidden rounded-lg border border-[--lp-outline]">
+    <div>
+        <p class="font-label-sm text-label-sm text-[--lp-ink]">Assessment overview</p>
+        <p class="mt-space-xxs font-body-sm text-body-sm text-[--lp-muted]">Students and teacher see every assessment type grouped by its weight toward the final grade.</p>
+
+        <div class="mt-space-sm space-y-space-sm" x-data="{ openGroups: [0] }">
+            @foreach ($groups as $index => $group)
+                <div class="overflow-hidden rounded-lg border border-[--lp-outline]">
                 <button
                     type="button"
                     @click="openGroups.includes({{ $index }}) ? openGroups = openGroups.filter(i => i !== {{ $index }}) : openGroups.push({{ $index }})"
@@ -122,5 +126,77 @@
                 </div>
             </div>
         @endforeach
+        </div>
+    </div>
+
+    <div>
+        <p class="font-label-sm text-label-sm text-[--lp-ink]">Grading</p>
+        <p class="mt-space-xxs font-body-sm text-body-sm text-[--lp-muted]">teacher score each question against the submitted answer and leave feedback, right from the submission.</p>
+
+        <div
+            class="mt-space-sm overflow-hidden rounded-lg border border-[--lp-outline] bg-[--lp-surface]"
+            x-data="{
+                questions: [
+                    { label: 'Question 1 (5 pts)', prompt: 'Explain how photosynthesis converts light energy into chemical energy.', max: 5, score: '' },
+                    { label: 'Question 2 (5 pts)', prompt: 'Describe the role of chlorophyll in the light-dependent reactions.', max: 5, score: '' },
+                ],
+                feedback: '',
+                saved: false,
+                saveGrade() { this.saved = true; setTimeout(() => this.saved = false, 2000); },
+            }"
+        >
+            <div class="flex items-center gap-space-sm border-b border-[--lp-outline] px-space-md py-space-sm">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[--lp-primary] font-label-md text-label-md text-[--lp-on-primary]">D</div>
+                <div>
+                    <p class="font-label-sm text-label-sm text-[--lp-ink]">Grade &mdash; Demo Student</p>
+                    <p class="font-label-sm text-label-sm text-[--lp-muted]">Attempt 1 &middot; submitted Sep 23, 2026 12:10</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2">
+                <div class="border-b border-[--lp-outline] p-space-md md:border-b-0 md:border-r">
+                    <p class="mb-space-sm font-label-sm text-label-sm text-[--lp-ink]">Answer</p>
+                    <p class="font-body-sm text-body-sm text-[--lp-muted]">Photosynthesis converts light energy into chemical energy stored in glucose, using chlorophyll in the chloroplasts to capture sunlight during the light-dependent reactions.</p>
+                </div>
+
+                <div class="space-y-space-md p-space-md">
+                    <div class="space-y-space-md">
+                        <p class="font-label-sm text-label-sm text-[--lp-ink]">Question Scores</p>
+                        <template x-for="(question, index) in questions" :key="index">
+                            <div>
+                                <label class="mb-space-xxs block font-label-sm text-label-sm text-[--lp-muted]" x-text="question.label"></label>
+                                <p class="mb-space-xxs font-body-sm text-body-sm text-[--lp-muted]" x-text="question.prompt"></p>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    :max="question.max"
+                                    x-model="question.score"
+                                    class="w-full rounded-lg border border-[--lp-outline] bg-[--lp-bg] px-space-md py-space-sm font-body-sm text-body-sm text-[--lp-ink] focus:outline-none"
+                                />
+                            </div>
+                        </template>
+                    </div>
+
+                    <div>
+                        <label class="mb-space-xxs block font-label-sm text-label-sm text-[--lp-muted]">Feedback</label>
+                        <textarea
+                            x-model="feedback"
+                            rows="3"
+                            class="w-full resize-none rounded-lg border border-[--lp-outline] bg-[--lp-bg] px-space-md py-space-sm font-body-sm text-body-sm text-[--lp-ink] focus:outline-none"
+                        ></textarea>
+                    </div>
+
+                    <button
+                        type="button"
+                        @click="saveGrade()"
+                        class="rounded-lg bg-[--lp-primary] px-space-lg py-space-sm font-label-sm text-label-sm text-[--lp-on-primary]"
+                    >
+                        <span x-show="!saved">Save Grade</span>
+                        <span x-show="saved" x-cloak>Saved &#10003;</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

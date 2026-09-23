@@ -7,7 +7,7 @@
             </div>
             <div class="pt-space-md text-center sm:pt-0">
                 <p class="font-headline-lg text-headline-lg text-[--lp-ink]">Role-based</p>
-                <p class="mt-space-xs font-label-sm text-label-sm text-[--lp-muted]">School-scoped access for admins, instructors &amp; students</p>
+                <p class="mt-space-xs font-label-sm text-label-sm text-[--lp-muted]">School-scoped access for admins, teacher &amp; students</p>
             </div>
             <div class="pt-space-md text-center sm:pt-0">
                 <p class="font-headline-lg text-headline-lg text-[--lp-ink]">Isolated</p>

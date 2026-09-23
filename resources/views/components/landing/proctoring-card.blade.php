@@ -14,7 +14,7 @@
 <div class="reveal flex flex-col gap-space-lg rounded-xl border border-[--lp-outline] bg-[--lp-bg] p-space-lg lg:col-span-6" style="animation-delay: 0.1s">
     <div>
         <h3 class="font-headline-sm text-headline-sm text-[--lp-ink]">Exam proctoring</h3>
-        <p class="mt-space-xs font-body-sm text-body-sm text-[--lp-muted]">Live sessions capture snapshots and integrity events during timed exams, so instructors can review anything flagged after the fact.</p>
+        <p class="mt-space-xs font-body-sm text-body-sm text-[--lp-muted]">Live sessions capture snapshots and integrity events during timed exams, so teacher can review anything flagged after the fact.</p>
     </div>
 
     <div class="grid gap-space-lg lg:grid-cols-2">

@@ -13,9 +13,7 @@
     <main class="lp flex-1 bg-[--lp-bg] text-[--lp-ink]">
         <x-landing.hero />
         <x-landing.features />
-        <x-landing.tech-stack />
         <x-landing.stats />
-        <x-landing.cta />
     </main>
 
     @include('partials.footer')

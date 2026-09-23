@@ -3,7 +3,7 @@
         Launch your own online school in minutes, not months.
     </h1>
     <p class="reveal mx-auto mt-space-md max-w-xl text-pretty font-body-md text-body-md text-[--lp-muted]" style="animation-delay: 0.15s">
-        Courses, exams, attendance, gradebooks, forums, and video classes &mdash; one platform per school, wired up from day one.
+        Course builder, discussion forums, assessments, grading, exam proctoring, gradebooks, and report cards &mdash; one platform per school, wired up from day one.
     </p>
 
     <div class="reveal mt-space-lg flex flex-wrap items-center justify-center gap-x-space-lg gap-y-space-sm" style="animation-delay: 0.2s">

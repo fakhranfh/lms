@@ -7,13 +7,10 @@
 
         <div class="mt-space-xl grid grid-cols-1 gap-space-lg">
             <x-landing.course-builder-card />
+            <x-landing.forums-card />
             <x-landing.assessments-card />
             <x-landing.proctoring-card />
-            <x-landing.attendance-card />
             <x-landing.gradebook-card />
-            <x-landing.video-conferencing-card />
-            <x-landing.forums-card />
-            <x-landing.media-library-card />
         </div>
     </div>
 </section>

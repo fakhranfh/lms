@@ -33,7 +33,7 @@
 <div class="reveal flex flex-col justify-between gap-space-lg rounded-xl border border-[--lp-outline] bg-[--lp-bg] p-space-lg lg:col-span-6" style="animation-delay: 0.02s">
     <div>
         <h3 class="font-headline-sm text-headline-sm text-[--lp-ink]">Course builder</h3>
-        <p class="mt-space-xs max-w-md font-body-sm text-body-sm text-[--lp-muted]">Structure courses into sessions, define learning outcomes and rubrics, and set class policies &mdash; then publish when ready.</p>
+        <p class="mt-space-xs font-body-sm text-body-sm text-[--lp-muted]">Structure courses into sessions, define learning outcomes and rubrics, and set class policies &mdash; then publish when ready.</p>
     </div>
 
     <div class="overflow-hidden rounded-lg border border-[--lp-outline] bg-[--lp-surface]" x-data="{ active: 0, chip: 'material', sessions: @js($sessions) }">

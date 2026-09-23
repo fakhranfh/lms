@@ -1,6 +1,6 @@
 <section class="mx-auto max-w-5xl px-gutter pb-space-xl pt-space-xl text-center lg:px-space-xl lg:pt-20">
     <h1 class="reveal mx-auto mt-space-sm max-w-3xl text-balance font-headline-lg text-headline-lg text-[--lp-ink] sm:text-[2.75rem] sm:leading-[1.08] lg:text-[3.25rem] lg:leading-[1.05] tracking-[-0.03em]" style="animation-delay: 0.1s">
-        Launch your own online school in <span class="underline decoration-[--lp-accent] decoration-4 underline-offset-4">minutes</span>, not months.
+        Launch your own online school in minutes, not months.
     </h1>
     <p class="reveal mx-auto mt-space-md max-w-xl text-pretty font-body-md text-body-md text-[--lp-muted]" style="animation-delay: 0.15s">
         Courses, exams, attendance, gradebooks, forums, and video classes &mdash; one platform per school, wired up from day one.

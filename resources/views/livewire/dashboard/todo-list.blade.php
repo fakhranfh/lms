@@ -61,6 +61,8 @@
                     </li>
                 @endforeach
             </ul>
+
+            <x-ui.pagination-links :paginator="$this->todoItems" class="mt-space-md" />
         @endif
     </div>
 </div>

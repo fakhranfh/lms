@@ -175,6 +175,27 @@ class DashboardTest extends TestCase
             ->assertDontSee('Submitted Quiz');
     }
 
+    public function test_todo_list_paginates_items(): void
+    {
+        $session = Session::factory()->for($this->course)->create();
+
+        for ($i = 1; $i <= 6; $i++) {
+            $material = MediaLibraryItem::factory()->for($this->school)->create(['title' => "Todo Material {$i}"]);
+            $session->materials()->attach([$material->id => ['order' => $i]]);
+        }
+
+        $this->actingAs($this->student);
+
+        Livewire::withoutLazyLoading()
+            ->test(TodoList::class)
+            ->assertSee('Todo Material 1')
+            ->assertSee('Todo Material 5')
+            ->assertDontSee('Todo Material 6')
+            ->call('nextPage', 'todoPage')
+            ->assertDontSee('Todo Material 1')
+            ->assertSee('Todo Material 6');
+    }
+
     public function test_forum_posts_only_show_threads_from_enrolled_courses(): void
     {
         $otherCourse = Course::factory()->for($this->school)->create(['title' => 'Other Course']);

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Livewire\Courses;
 
+use App\Enums\AssessmentQuestionType;
 use App\Enums\AssessmentType;
 use App\Enums\FinalExamType;
 use App\Enums\ProctorSnapshotType;
@@ -381,7 +382,7 @@ class AssessmentFinalExamGradeTest extends TestCase
 
         AssessmentQuestion::factory()->for($this->assessment)->count(7)->sequence(
             fn ($sequence) => ['description' => 'Question body '.$sequence->index, 'order' => $sequence->index + 1]
-        )->create();
+        )->create(['question_type' => AssessmentQuestionType::MultipleChoice]);
 
         AssessmentAttempt::factory()->for($this->assessment)->create(['user_id' => $this->student->id]);
 

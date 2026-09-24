@@ -59,7 +59,8 @@ class Session extends Model
     {
         return $this->belongsToMany(MediaLibraryItem::class, 'session_materials', 'session_id', 'media_library_item_id')
             ->withPivot('order')
-            ->withTimestamps();
+            ->withTimestamps()
+            ->orderByPivot('order');
     }
 
     /**

@@ -3,6 +3,7 @@
         <div class="mx-auto max-w-2xl text-center">
             <h2 class="text-balance font-headline-md text-headline-md text-[--lp-ink] tracking-[-0.02em]">Everything a school runs on, in one place</h2>
             <p class="mx-auto mt-space-sm max-w-lg text-pretty font-body-md text-body-md text-[--lp-muted]">From course builder to report cards, {{ config('app.name', 'Laravel') }} covers the academic year end to end &mdash; for admins, teacher, and students alike.</p>
+            <p class="mx-auto mt-space-xs max-w-lg text-pretty font-body-sm text-body-sm text-[--lp-muted]">Try it yourself &mdash; every preview below is interactive.</p>
         </div>
 
         <div class="mt-space-xl grid grid-cols-1 gap-space-lg">

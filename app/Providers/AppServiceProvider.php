@@ -30,6 +30,7 @@ use App\Repositories\Attendance\AttendanceRepository;
 use App\Repositories\Attendance\AttendanceRepositoryInterface;
 use App\Repositories\Auth\AuthRepository;
 use App\Repositories\Auth\AuthRepositoryInterface;
+use App\Repositories\Cache\CacheRepository;
 use App\Repositories\Cache\CacheRepositoryInterface;
 use App\Repositories\Course\CourseRepository;
 use App\Repositories\Course\CourseRepositoryInterface;
@@ -77,7 +78,6 @@ use App\Repositories\Quiz\QuizRepository;
 use App\Repositories\Quiz\QuizRepositoryInterface;
 use App\Repositories\QuizInstruction\QuizInstructionRepository;
 use App\Repositories\QuizInstruction\QuizInstructionRepositoryInterface;
-use App\Repositories\Redis\RedisRepository;
 use App\Repositories\Role\RoleRepository;
 use App\Repositories\Role\RoleRepositoryInterface;
 use App\Repositories\School\SchoolRepository;
@@ -236,7 +236,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(GradebookSessionEntryRepositoryInterface::class, GradebookSessionEntryRepository::class);
         $this->app->bind(AttendanceRepositoryInterface::class, AttendanceRepository::class);
         $this->app->bind(CourseAttendanceSettingRepositoryInterface::class, CourseAttendanceSettingRepository::class);
-        $this->app->bind(CacheRepositoryInterface::class, RedisRepository::class);
+        $this->app->bind(CacheRepositoryInterface::class, CacheRepository::class);
 
         $this->app->singleton(CredentialEncryption::class);
         $this->app->singleton(SchoolService::class);

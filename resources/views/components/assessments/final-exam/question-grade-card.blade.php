@@ -5,7 +5,7 @@
     questions expose a score input bound to `gradeQuestionScores.<id>`
     on the enclosing Livewire component.
 --}}
-@props(['question', 'number', 'questionAnswer', 'needsScore' => false])
+@props(['question', 'number', 'questionAnswer', 'needsScore' => false, 'disabled' => false])
 
 <div>
     <label class="flex items-center gap-space-sm font-label-sm text-label-sm text-secondary mb-space-xs">
@@ -46,8 +46,9 @@
             step="0.01"
             min="0"
             max="{{ $question->points }}"
-            wire:model="gradeQuestionScores.{{ $question->id }}"
-            class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"
+            wire:model.blur.live="gradeQuestionScores.{{ $question->id }}"
+            @disabled($disabled)
+            class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:bg-surface-container disabled:text-on-surface-variant disabled:cursor-not-allowed"
         />
         @error("gradeQuestionScores.{$question->id}") <p class="text-body-xs text-error mt-space-xs">{{ $message }}</p> @enderror
     @endif

@@ -433,7 +433,9 @@ class AssessmentFinalExamGrade extends Component
             'possible' => $mcQuestions->sum('points'),
         ];
 
-        $essayUnscoredCount = $essayQuestions->filter(fn ($question) => ($this->gradeQuestionScores[$question->id] ?? '') === '')->count();
+        $essayUnscoredCount = $finalScore !== null
+            ? 0
+            : $essayQuestions->filter(fn ($question) => ($this->gradeQuestionScores[$question->id] ?? '') === '')->count();
 
         return view('livewire.courses.assessment-final-exam-grade', [
             'course' => $this->course,

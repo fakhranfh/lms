@@ -162,12 +162,13 @@
                     <div wire:loading.remove wire:target="previousPage,nextPage,gotoPage,questionsPerPage,questionTab" class="space-y-space-md">
                         @foreach ($paginatedQuestions as $question)
                             @php($questionAnswer = $questionAnswers->get($question->id))
-                            @php($needsScore = $question->question_type->value === 'essay' && (($gradeQuestionScores[$question->id] ?? '') === ''))
+                            @php($needsScore = ! $alreadyGraded && $question->question_type->value === 'essay' && (($gradeQuestionScores[$question->id] ?? '') === ''))
                             <x-assessments.final-exam.question-grade-card
                                 :question="$question"
                                 :number="$paginatedQuestions->firstItem() + $loop->index"
                                 :question-answer="$questionAnswer"
                                 :needs-score="$needsScore"
+                                :disabled="$alreadyGraded"
                             />
                         @endforeach
                     </div>
@@ -193,7 +194,7 @@
 
                 <div>
                     <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">Feedback</label>
-                    <textarea wire:model="gradeFeedback" rows="3" class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50"></textarea>
+                    <textarea wire:model="gradeFeedback" rows="3" @disabled($alreadyGraded) class="w-full px-space-md py-space-sm border border-outline rounded-lg font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:bg-surface-container disabled:text-on-surface-variant disabled:cursor-not-allowed"></textarea>
                 </div>
 
                 <div class="flex gap-space-md">

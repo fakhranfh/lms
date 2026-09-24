@@ -41,6 +41,8 @@ class AssessmentFinalExamGrade extends Component
 
     public int $questionsPerPage = 5;
 
+    public string $questionTab = 'multiple_choice';
+
     public ?string $errorMessage = null;
 
     public ?string $successMessage = null;
@@ -104,7 +106,7 @@ class AssessmentFinalExamGrade extends Component
 
     public function updating(string $property): void
     {
-        if ($property === 'questionsPerPage') {
+        if ($property === 'questionsPerPage' || $property === 'questionTab') {
             $this->resetPage('questionsPage');
         }
     }
@@ -175,7 +177,9 @@ class AssessmentFinalExamGrade extends Component
         };
 
         if ($this->getErrorBag()->isNotEmpty()) {
-            $this->errorMessage = __('Please enter a score for every essay question before saving. Check the other pages of Question Scores for missing scores.');
+            $this->questionTab = 'essay';
+            $this->resetPage('questionsPage');
+            $this->errorMessage = __('Please enter a score for every essay question before saving. Check the Essay tab for missing scores.');
 
             return;
         }
@@ -401,18 +405,22 @@ class AssessmentFinalExamGrade extends Component
             : 0;
 
         $questions = $this->assessment->questions->loadMissing('options');
+        $mcQuestions = $questions->filter(fn ($question) => $question->question_type === AssessmentQuestionType::MultipleChoice)->values();
+        $essayQuestions = $questions->filter(fn ($question) => $question->question_type === AssessmentQuestionType::Essay)->values();
+
+        $activeQuestions = $this->questionTab === 'essay' ? $essayQuestions : $mcQuestions;
+
         $questionsPage = $this->getPage('questionsPage');
-        $questionsPerPage = $isTakeHome ? max($questions->count(), 1) : $this->questionsPerPage;
+        $questionsPerPage = $isTakeHome ? max($activeQuestions->count(), 1) : $this->questionsPerPage;
 
         $paginatedQuestions = new LengthAwarePaginator(
-            $questions->forPage($questionsPage, $questionsPerPage)->values(),
-            $questions->count(),
+            $activeQuestions->forPage($questionsPage, $questionsPerPage)->values(),
+            $activeQuestions->count(),
             $questionsPerPage,
             $questionsPage,
             ['path' => request()->url(), 'pageName' => 'questionsPage']
         );
 
-        $mcQuestions = $questions->filter(fn ($question) => $question->question_type === AssessmentQuestionType::MultipleChoice);
         $keyedAnswers = $questionAnswers->keyBy('assessment_question_id');
         $mcScore = [
             'count' => $mcQuestions->count(),
@@ -425,6 +433,8 @@ class AssessmentFinalExamGrade extends Component
             'possible' => $mcQuestions->sum('points'),
         ];
 
+        $essayUnscoredCount = $essayQuestions->filter(fn ($question) => ($this->gradeQuestionScores[$question->id] ?? '') === '')->count();
+
         return view('livewire.courses.assessment-final-exam-grade', [
             'course' => $this->course,
             'assessment' => $this->assessment,
@@ -433,6 +443,10 @@ class AssessmentFinalExamGrade extends Component
             'answer' => $answer,
             'questionAnswers' => $keyedAnswers,
             'paginatedQuestions' => $paginatedQuestions,
+            'mcQuestionsCount' => $mcQuestions->count(),
+            'essayQuestionsCount' => $essayQuestions->count(),
+            'essayUnscoredCount' => $essayUnscoredCount,
+            'gradeQuestionScores' => $this->gradeQuestionScores,
             'mcScore' => $mcScore,
             'finalScore' => $finalScore,
             'alreadyGraded' => $finalScore !== null,

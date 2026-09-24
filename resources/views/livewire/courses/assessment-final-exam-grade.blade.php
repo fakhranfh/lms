@@ -127,6 +127,30 @@
                         <h4 class="font-label-md text-label-md text-on-surface">Question Scores</h4>
                     </div>
 
+                    @if ($mcQuestionsCount > 0 && $essayQuestionsCount > 0)
+                        <div class="flex gap-space-sm border-b border-outline-variant">
+                            <button
+                                type="button"
+                                wire:click="$set('questionTab', 'multiple_choice')"
+                                class="px-space-md py-space-sm border-b-2 font-label-md text-label-md transition-colors {{ $questionTab === 'multiple_choice' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:text-on-surface' }}"
+                            >
+                                {{ __('Multiple Choice') }} ({{ $mcQuestionsCount }})
+                            </button>
+                            <button
+                                type="button"
+                                wire:click="$set('questionTab', 'essay')"
+                                class="px-space-md py-space-sm border-b-2 font-label-md text-label-md transition-colors inline-flex items-center gap-space-xs {{ $questionTab === 'essay' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:text-on-surface' }}"
+                            >
+                                {{ __('Essay') }} ({{ $essayQuestionsCount }})
+                                @if ($essayUnscoredCount > 0)
+                                    <span class="inline-flex items-center px-space-xs py-0.5 rounded-full text-body-xs font-medium bg-error/10 text-error">
+                                        {{ __('Not graded') }} ({{ $essayUnscoredCount }})
+                                    </span>
+                                @endif
+                            </button>
+                        </div>
+                    @endif
+
                     @unless ($isTakeHome)
                         <x-ui.pagination-links
                             :paginator="$paginatedQuestions"
@@ -135,18 +159,20 @@
                         />
                     @endunless
 
-                    <div wire:loading.remove wire:target="previousPage,nextPage,gotoPage,questionsPerPage" class="space-y-space-md">
+                    <div wire:loading.remove wire:target="previousPage,nextPage,gotoPage,questionsPerPage,questionTab" class="space-y-space-md">
                         @foreach ($paginatedQuestions as $question)
                             @php($questionAnswer = $questionAnswers->get($question->id))
+                            @php($needsScore = $question->question_type->value === 'essay' && (($gradeQuestionScores[$question->id] ?? '') === ''))
                             <x-assessments.final-exam.question-grade-card
                                 :question="$question"
                                 :number="$paginatedQuestions->firstItem() + $loop->index"
                                 :question-answer="$questionAnswer"
+                                :needs-score="$needsScore"
                             />
                         @endforeach
                     </div>
 
-                    <div wire:loading.block wire:target="previousPage,nextPage,gotoPage,questionsPerPage" class="space-y-space-md">
+                    <div wire:loading.block wire:target="previousPage,nextPage,gotoPage,questionsPerPage,questionTab" class="space-y-space-md">
                         @php($skeletonRows = min($questionsPerPage, 5))
                         @for ($i = 0; $i < $skeletonRows; $i++)
                             <div class="space-y-space-sm">

@@ -5,11 +5,16 @@
     questions expose a score input bound to `gradeQuestionScores.<id>`
     on the enclosing Livewire component.
 --}}
-@props(['question', 'number', 'questionAnswer'])
+@props(['question', 'number', 'questionAnswer', 'needsScore' => false])
 
 <div>
-    <label class="block font-label-sm text-label-sm text-secondary mb-space-xs">
+    <label class="flex items-center gap-space-sm font-label-sm text-label-sm text-secondary mb-space-xs">
         Question {{ $number }} ({{ rtrim(rtrim(number_format($question->points, 2), '0'), '.') }} pts)
+        @if ($needsScore)
+            <span class="inline-flex items-center px-space-xs py-0.5 rounded-full text-body-xs font-medium bg-error/10 text-error">
+                {{ __('Required') }}
+            </span>
+        @endif
     </label>
     <div class="rte-content prose prose-sm max-w-none text-on-surface-variant mb-space-xs">{!! $question->description !!}</div>
 

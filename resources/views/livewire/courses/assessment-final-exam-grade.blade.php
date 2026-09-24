@@ -17,12 +17,33 @@
         </div>
     @endif
 
-    @if ($errorMessage)
-        <div class="px-gutter py-space-md bg-error/10 border border-error/20 rounded-lg flex items-center gap-space-md">
-            <span class="material-symbols-outlined text-error text-[20px]" data-weight="fill">error</span>
-            <p class="font-body-md text-body-md text-error">{{ $errorMessage }}</p>
-        </div>
-    @endif
+    <div x-data="{ dismissed: false }" x-effect="if ($wire.errorMessage) { dismissed = false }">
+        <template x-teleport="body">
+            <div
+                x-show="$wire.errorMessage && ! dismissed"
+                x-cloak
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="fixed inset-0 z-[130] flex items-center justify-center bg-black/50 px-gutter"
+                @click.self="dismissed = true"
+            >
+                <div class="bg-surface border border-outline-variant rounded-lg p-space-lg max-w-sm w-full space-y-space-lg">
+                    <div class="flex items-center gap-space-md">
+                        <span class="material-symbols-outlined text-error text-[20px]" data-weight="fill">error</span>
+                        <h2 class="font-headline-sm text-headline-sm text-on-surface">{{ __('Unable to Save') }}</h2>
+                    </div>
+                    <p class="font-body-md text-body-md text-secondary" x-text="$wire.errorMessage"></p>
+                    <div class="flex items-center justify-end gap-space-md">
+                        <button type="button" @click="dismissed = true" class="px-space-lg py-space-sm bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity">{{ __('Close') }}</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
 
     <div class="bg-surface border border-outline-variant rounded-lg overflow-hidden" x-data="rteVideoPreview()" @click="onContentClick($event)">
         <div class="flex items-center gap-space-md px-space-lg py-space-md border-b border-outline-variant">

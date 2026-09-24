@@ -175,6 +175,8 @@ class AssessmentFinalExamGrade extends Component
         };
 
         if ($this->getErrorBag()->isNotEmpty()) {
+            $this->errorMessage = __('Please enter a score for every essay question before saving. Check the other pages of Question Scores for missing scores.');
+
             return;
         }
 

@@ -41,6 +41,9 @@
                         <button
                             type="button"
                             wire:click="gotoPage(1, '{{ $pageName }}')"
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-60"
+                            wire:target="gotoPage(1, '{{ $pageName }}')"
                             @disabled($paginator->onFirstPage())
                             class="{{ $iconButtonClasses }}"
                             aria-label="{{ __('First page') }}"
@@ -50,6 +53,9 @@
                         <button
                             type="button"
                             wire:click="previousPage('{{ $pageName }}')"
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-60"
+                            wire:target="previousPage('{{ $pageName }}')"
                             @disabled($paginator->onFirstPage())
                             class="{{ $iconButtonClasses }}"
                             aria-label="{{ __('pagination.previous') }}"
@@ -66,6 +72,9 @@
                                 <button
                                     type="button"
                                     wire:click="gotoPage({{ $page }}, '{{ $pageName }}')"
+                                    wire:loading.attr="disabled"
+                                    wire:loading.class="opacity-60"
+                                    wire:target="gotoPage({{ $page }}, '{{ $pageName }}')"
                                     class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-outline-variant text-on-surface text-body-sm hover:bg-surface-container-lowest transition"
                                     aria-label="{{ __('Go to page :page', ['page' => $page]) }}"
                                 >
@@ -77,6 +86,9 @@
                         <button
                             type="button"
                             wire:click="nextPage('{{ $pageName }}')"
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-60"
+                            wire:target="nextPage('{{ $pageName }}')"
                             @disabled(! $paginator->hasMorePages())
                             class="{{ $iconButtonClasses }}"
                             aria-label="{{ __('pagination.next') }}"
@@ -86,6 +98,9 @@
                         <button
                             type="button"
                             wire:click="gotoPage({{ $paginator->lastPage() }}, '{{ $pageName }}')"
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-60"
+                            wire:target="gotoPage({{ $paginator->lastPage() }}, '{{ $pageName }}')"
                             @disabled(! $paginator->hasMorePages())
                             class="{{ $iconButtonClasses }}"
                             aria-label="{{ __('Last page') }}"

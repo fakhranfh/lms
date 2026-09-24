@@ -18,10 +18,10 @@
         </div>
     </div>
 
-    <!-- Skeleton Loading (shown while filters are in flight) -->
+    <!-- Skeleton Loading (shown while filters or pagination are in flight) -->
     <div
         wire:loading.delay.class.remove="hidden"
-        wire:target="todoCourseFilter,todoTypeFilter"
+        wire:target="todoCourseFilter,todoTypeFilter,gotoPage,previousPage,nextPage"
         class="hidden animate-pulse divide-y divide-outline-variant"
     >
         @for ($i = 0; $i < 4; $i++)
@@ -38,7 +38,7 @@
         @endfor
     </div>
 
-    <div wire:loading.delay.remove wire:target="todoCourseFilter,todoTypeFilter">
+    <div wire:loading.delay.remove wire:target="todoCourseFilter,todoTypeFilter,gotoPage,previousPage,nextPage">
         @if($this->todoItems->isEmpty())
             <p class="text-body-sm text-secondary">Nothing left to do &mdash; great job!</p>
         @else
@@ -61,8 +61,8 @@
                     </li>
                 @endforeach
             </ul>
-
-            <x-ui.pagination-links :paginator="$this->todoItems" class="mt-space-md" />
         @endif
     </div>
+
+    <x-ui.pagination-links :paginator="$this->todoItems" class="mt-space-md" />
 </div>

@@ -50,7 +50,7 @@
 
     <div>
         <p class="font-label-sm text-label-sm text-[--lp-ink]">Assessment overview</p>
-        <p class="mt-space-xxs font-body-sm text-body-sm text-[--lp-muted]">Students and teacher see every assessment type grouped by its weight toward the final grade.</p>
+        <p class="mt-space-xxs font-body-sm text-body-sm text-[--lp-muted]">Students and teachers see every assessment type grouped by its weight toward the final grade.</p>
 
         <div class="mt-space-sm space-y-space-sm" x-data="{ openGroups: [0] }">
             @foreach ($groups as $index => $group)
@@ -131,7 +131,7 @@
 
     <div>
         <p class="font-label-sm text-label-sm text-[--lp-ink]">Grading</p>
-        <p class="mt-space-xxs font-body-sm text-body-sm text-[--lp-muted]">teacher score each question against the submitted answer and leave feedback, right from the submission.</p>
+        <p class="mt-space-xxs font-body-sm text-body-sm text-[--lp-muted]">Teachers score each question against the submitted answer and leave feedback, right from the submission.</p>
 
         <div
             class="mt-space-sm overflow-hidden rounded-lg border border-[--lp-outline] bg-[--lp-surface]"

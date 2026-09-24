@@ -1012,18 +1012,28 @@
         </div>
     @elseif ($submitting)
         <div
-            x-data="{ eventSource: null }"
+            x-data="{ eventSource: null, pollTimer: null }"
             x-init="
-                eventSource = new EventSource(@js(route('assessments.final-exam.proctor.submission-status-stream', $assessment)));
-                eventSource.onmessage = (e) => {
-                    const data = JSON.parse(e.data);
-                    if (data.status !== 'submitting') {
-                        eventSource.close();
+                const onStatus = (status) => {
+                    if (status !== 'submitting') {
+                        eventSource?.close();
+                        clearInterval(pollTimer);
                         window.location.reload();
                     }
                 };
+
+                @if (config('features.sse_enabled'))
+                    eventSource = new EventSource(@js(route('assessments.final-exam.proctor.submission-status-stream', $assessment)));
+                    eventSource.onmessage = (e) => onStatus(JSON.parse(e.data).status);
+                @else
+                    const poll = () => fetch(@js(route('assessments.final-exam.proctor.submission-status', $assessment)))
+                        .then((r) => r.json())
+                        .then((data) => onStatus(data.status));
+                    poll();
+                    pollTimer = setInterval(poll, 2000);
+                @endif
             "
-            x-on:destroy="eventSource?.close()"
+            x-on:destroy="eventSource?.close(); clearInterval(pollTimer)"
             class="fixed inset-0 z-[100] bg-surface flex flex-col items-center justify-center gap-space-lg px-gutter"
         >
             <span class="material-symbols-outlined animate-spin text-primary text-[48px]">progress_activity</span>

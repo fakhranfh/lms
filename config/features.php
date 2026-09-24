@@ -16,4 +16,18 @@ return [
 
     'email_enabled' => env('FEATURE_EMAIL_ENABLED', true),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Server-Sent Events
+    |--------------------------------------------------------------------------
+    |
+    | Controls whether real-time endpoints stream updates over Server-Sent
+    | Events. Some hosting setups (certain shared hosts, proxies that buffer
+    | responses) don't support long-lived streamed connections, so this lets
+    | those endpoints fall back to client-side AJAX polling instead.
+    |
+    */
+
+    'sse_enabled' => env('FEATURE_SSE_ENABLED', true),
+
 ];

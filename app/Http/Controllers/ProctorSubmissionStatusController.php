@@ -8,6 +8,7 @@ use App\Models\Assessment;
 use App\Services\ProctorSessionService;
 use App\Services\ProctorSessionStatusService;
 use App\Support\Sse;
+use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProctorSubmissionStatusController extends Controller
@@ -21,8 +22,7 @@ class ProctorSubmissionStatusController extends Controller
      */
     public function stream(Assessment $assessment, ProctorSessionStatusService $statusService, ProctorSessionService $proctorSessionService): StreamedResponse
     {
-        abort_unless(auth()->user()->can('assessment.view'), 403);
-        abort_unless(auth()->user()->hasRole(RoleName::Student), 403);
+        $this->authorizeAccess();
 
         return Sse::response(function () use ($assessment, $statusService, $proctorSessionService): void {
             set_time_limit(0);
@@ -47,5 +47,33 @@ class ProctorSubmissionStatusController extends Controller
                 sleep(2);
             }
         });
+    }
+
+    /**
+     * JSON equivalent of stream(), used by clients that poll via AJAX when
+     * SSE is disabled (FEATURE_SSE_ENABLED=false), since some hosting setups
+     * don't support long-lived streamed connections.
+     */
+    public function status(Assessment $assessment, ProctorSessionStatusService $statusService, ProctorSessionService $proctorSessionService): JsonResponse
+    {
+        $this->authorizeAccess();
+
+        return response()->json([
+            'status' => $this->resolveStatus($assessment, $statusService, $proctorSessionService)?->value,
+        ]);
+    }
+
+    private function authorizeAccess(): void
+    {
+        abort_unless(auth()->user()->can('assessment.view'), 403);
+        abort_unless(auth()->user()->hasRole(RoleName::Student), 403);
+    }
+
+    private function resolveStatus(Assessment $assessment, ProctorSessionStatusService $statusService, ProctorSessionService $proctorSessionService): ?ProctorSessionStatus
+    {
+        $session = $statusService->latestSessionForAssessment($assessment->id, auth()->id());
+        $submitting = $session !== null && $proctorSessionService->isSubmitting($session->id);
+
+        return $submitting ? ProctorSessionStatus::Submitting : $session?->status;
     }
 }

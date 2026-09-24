@@ -55,3 +55,41 @@ test('disqualification stream reports the terminated status immediately when the
     expect($response->headers->get('Content-Type'))->toContain('text/event-stream');
     expect($response->streamedContent())->toContain('"status":"terminated"');
 });
+
+test('polling endpoint reports the current status as json', function () {
+    $school = School::factory()->create();
+    $student = User::factory()->forSchool($school)->create();
+    $course = Course::factory()->for($school)->create();
+
+    $studentRole = Role::firstOrCreate(['name' => RoleName::Student->value, 'guard_name' => 'web', 'school_id' => $school->id]);
+    $student->assignRole($studentRole);
+    $student->givePermissionTo('assessment.view');
+
+    CoursePerson::factory()->for($course)->student()->create(['user_id' => $student->id]);
+
+    $assessment = Assessment::factory()->for($course)->create([
+        'type' => AssessmentType::TheoryFinalExam,
+        'end_date' => now()->addWeek(),
+    ]);
+    $period = Period::factory()->for($course)->create();
+    FinalExam::factory()->for($assessment)->create([
+        'period_id' => $period->id,
+        'exam_type' => FinalExamType::OpenBook,
+    ]);
+
+    $attempt = AssessmentAttempt::factory()->for($assessment)->create([
+        'user_id' => $student->id,
+        'attempt_number' => 1,
+        'started_at' => now(),
+        'submitted_at' => now(),
+    ]);
+    ProctorSession::factory()->for($attempt, 'attempt')->create([
+        'status' => ProctorSessionStatus::Terminated,
+        'review_decision' => ProctorReviewDecision::Disqualified,
+    ]);
+
+    $response = $this->actingAs($student)
+        ->get(route('assessments.final-exam.proctor.submission-status', $assessment));
+
+    $response->assertOk()->assertJson(['status' => 'terminated']);
+});

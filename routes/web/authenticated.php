@@ -149,6 +149,7 @@ Route::middleware(['auth', 'verified', EnsurePasswordIsChanged::class])->group(f
         Route::get('/assessments/{assessment}/final-exam/proctor/preflight', ProctorPreflightShow::class)->middleware('permission:assessment.view')->name('assessments.final-exam.proctor.preflight');
         Route::get('/assessments/{assessment}/final-exam/proctor', ProctorExamShow::class)->middleware('permission:assessment.view')->name('assessments.final-exam.proctor.show');
         Route::get('/assessments/{assessment}/final-exam/proctor/submission-status-stream', [ProctorSubmissionStatusController::class, 'stream'])->middleware('permission:assessment.view')->name('assessments.final-exam.proctor.submission-status-stream');
+        Route::get('/assessments/{assessment}/final-exam/proctor/submission-status', [ProctorSubmissionStatusController::class, 'status'])->middleware('permission:assessment.view')->name('assessments.final-exam.proctor.submission-status');
         Route::get('/assessments/{assessment}/attendance', AssessmentAttendanceShow::class)->middleware('permission:assessment.view')->name('assessments.attendance.show');
         Route::get('/assessments/{assessment}/forum-discussion', AssessmentForumDiscussionShow::class)->middleware('permission:assessment.view')->name('assessments.forum-discussion.show');
         Route::get('/quiz-instructions', QuizInstructionEdit::class)->middleware('permission:assessment.edit')->name('quiz-instructions.edit');
